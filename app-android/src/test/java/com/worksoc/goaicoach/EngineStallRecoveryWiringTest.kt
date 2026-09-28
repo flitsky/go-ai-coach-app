@@ -2,6 +2,7 @@ package com.worksoc.goaicoach
 
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.application.safety.EngineStuckWaitAction
+import com.worksoc.goaicoach.application.safety.EngineTurnWatchdogAttempt
 import com.worksoc.goaicoach.application.safety.engineStuckWaitActionFor
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
 import com.worksoc.goaicoach.application.safety.isEngineStuckDialogVisible
@@ -299,6 +300,61 @@ class EngineStallRecoveryWiringTest {
         assertEquals(1, events(context, "ai_turn_success"))
     }
 
+    /**
+     * B2 — **와치독은 차례가 아니라 시도마다 다시 건다**(refactor backlog #109 ⓑ). 첫 시도가 멎어 팝업이 뜨고, 그 시도가
+     * 진짜 실패로 끝나면 팝업은 닫히고(완료 순번) 같은 차례를 조용히 한 번 더 시도한다. 예전에는 그 재시도가 또 멎어도
+     * 팝업도 「엔진 다시 시작하기」도 없었다 — 와치독의 보고 표시가 차례 내내 남고, 차례 시작 시각이 키라 바뀌지 않았다.
+     * 이제는 앞 시도가 끝난 순간부터 다시 재서 재시도가 한도를 넘기면 **다시** 뜨고, 다시 시작하기로 복구된다.
+     */
+    @Test
+    fun theWatchdogRearmsForTheSilentRetryAfterARealFailureAndFiresAgainWhenThatRetryStalls() {
+        val context = newContext(inGameSession(playerSetup = AiBlackHumanWhite, boardSize = BoardSize.Nine))
+        val firstAttempt = engine.hangNextAnalysis()
+        startAiTurnUntilTheEngineIsStuck(context, firstAttempt)
+        val watchdog = WatchdogLoop(context, turnStartedAtMillis = 0L)
+
+        // ── 첫 시도가 멎어 한도를 넘긴다 → 팝업(상태 A).
+        assertFalse("한도 전에는 팝업이 없다", watchdog.tick(watchdogThresholdMillis - 1))
+        assertTrue("한도를 넘기면 팝업이 뜬다", watchdog.tick(watchdogThresholdMillis))
+
+        // ── 그 시도가 진짜 실패로 끝난다 → 차례는 그대로, 첫 실패라 묻지 않고 조용히 한 번 더 시도한다(#109 ⓐ).
+        val retry = engine.wedgeNextAnalysis()
+        val completionSeqBefore = screenOf(context).engine.engineTurnWaitCompletionSeq
+        firstAttempt.failForReal()
+        pumpUntil(context, "첫 시도의 실패") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+        assertEquals(1, events(context, "ai_turn_failure"))
+        assertTrue("차례 대기가 끝나 완료 순번이 바뀌었다", screenOf(context).engine.engineTurnWaitCompletionSeq != completionSeqBefore)
+        assertTrue("차례는 그대로다 — 와치독의 차례 키(차례 시작 시각)는 바뀌지 않는다", context.gameState().moves.isEmpty())
+        assertFalse("첫 실패는 아직 묻지 않는다", screenOf(context).isAwaitingEngineTimeoutChoice)
+        val failedAtMillis = watchdogThresholdMillis + 3_000L
+        assertFalse(watchdog.tick(failedAtMillis))
+
+        runTurnAutomationEffect(context)
+        assertEquals("조용한 재시도", 2, events(context, "ai_turn_schedule"))
+        assertTrue("재시도의 본문이 돈다", context.dispatcher.runNext())
+        assertTrue("재시도가 분석에서 멎어야 한다 — 호출: ${engine.calls}", retry.awaitEntered())
+
+        // ── 재시도도 멎는다 → 앞 시도가 끝난 순간부터 한도만큼 지나면 팝업이 **다시** 뜬다.
+        assertFalse("다시 건 순간부터 잰다 — 그 한도 전에는 없다", watchdog.tick(failedAtMillis + watchdogThresholdMillis - 1))
+        assertTrue(
+            "실패 뒤 조용히 다시 도는 시도가 멎으면 팝업이 다시 떠야 한다 — 안 뜨면 「엔진 다시 시작하기」가 없다",
+            watchdog.tick(failedAtMillis + watchdogThresholdMillis),
+        )
+
+        // ── 「엔진 다시 시작하기」 → 멎은 재시도는 취소로 끝나고(실패가 아니다), 새 프로세스에서 정상 분석이 둔다.
+        dispatch(context, GameUiEvent.ForceResetEngine)
+        pumpUntil(context, "취소된 재시도의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+        runTurnAutomationEffect(context)
+        pumpUntil(context, "다시 시작한 뒤의 AI 차례") { context.gameState().moves.size == 1 && !context.holder.current.autoAiTurn.isPending }
+        drainQueue(context)
+
+        assertAiStoneLandedOnce(context, aiColor = StoneColor.Black, failedGenMoves = 1)
+        assertFreshProcessWasSyncedBeforeAnalysis(engine.calls)
+        assertEquals("닫힌 파이프의 예외는 실패로 세지 않는다", 1, events(context, "ai_turn_failure"))
+    }
+
     // ── 시나리오 뼈대 ──────────────────────────────────────────────────────────────────────────
 
     /**
@@ -471,6 +527,37 @@ class EngineStallRecoveryWiringTest {
             isWatchdogTriggered = watchdogTriggered && !turnWaitEnded,
             isAwaitingTimeoutChoice = screen.isAwaitingEngineTimeoutChoice,
         )
+    }
+
+    /**
+     * `GamePlaySection`의 와치독 루프를 **같은 순수 규칙**으로 돌린다(refactor backlog #109). 효과가 시작될 때 차례 시작
+     * 시각과 지금의 완료 순번으로 시도를 걸고, 틱마다 [EngineTurnWatchdogAttempt.observe]로 순번을 본 뒤, 한도를 넘기면
+     * 그 시도에서 한 번 보고한다. 틱 사이의 시간은 테스트가 숫자로 준다.
+     */
+    private inner class WatchdogLoop(private val context: FakeGoCoachAppWiringContext, turnStartedAtMillis: Long) {
+        private var attempt = EngineTurnWatchdogAttempt(
+            baseMillis = turnStartedAtMillis,
+            completionSeq = screenOf(context).engine.engineTurnWaitCompletionSeq,
+        )
+
+        /** [nowMillis]의 한 틱 — 이번 틱에 팝업을 띄웠으면 참. */
+        fun tick(nowMillis: Long): Boolean {
+            val screen = screenOf(context)
+            attempt = attempt.observe(nowMillis = nowMillis, completionSeq = screen.engine.engineTurnWaitCompletionSeq)
+            if (attempt.isReported) return false
+            val isAiTurn = when (context.turnTimeState().currentTurnPlayer) {
+                StoneColor.Black -> screen.playerSetup.black.controller == SeatController.Ai
+                StoneColor.White -> screen.playerSetup.white.controller == SeatController.Ai
+            }
+            val fired = isEngineTurnWatchdogTriggered(
+                isAiTurn = isAiTurn,
+                elapsedSinceTurnStartMillis = attempt.elapsedMillis(nowMillis),
+                searchTimeLimit = screen.searchTimeSettings.limit,
+                isResolvingEndgame = screen.gameState.hasConsecutivePasses() || screen.gameState.isBoardFull(),
+            )
+            if (fired) attempt = attempt.reported()
+            return fired
+        }
     }
 
     // ── 돌리기와 단언 ──────────────────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.safety.EngineEndgameWatchdogTimeoutMillis
 import com.worksoc.goaicoach.application.safety.EngineResponseGraceMillis
 import com.worksoc.goaicoach.application.safety.EngineStuckWaitAction
+import com.worksoc.goaicoach.application.safety.EngineTurnWatchdogAttempt
 import com.worksoc.goaicoach.application.safety.engineStuckWaitActionFor
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogBaseMillis
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
@@ -163,5 +164,35 @@ class EngineTurnWatchdogTest {
         val base = engineTurnWatchdogBaseMillis(turnStartedAtMillis = 1_000L, rearmedAtMillis = 25_000L)
         assertFalse(isEngineTurnWatchdogTriggered(true, (25_000L + threshold - 1L) - base, SearchTimeLimit.WithinTenSeconds))
         assertTrue(isEngineTurnWatchdogTriggered(true, (25_000L + threshold) - base, SearchTimeLimit.WithinTenSeconds))
+    }
+
+    /**
+     * refactor backlog #109 ⓑ — 와치독은 **시도마다** 다시 건다. 첫 시도에서 팝업을 띄운 뒤(보고 표시) 그 시도가 끝나면
+     * (완료 순번이 바뀐다) 그 순간부터 새 시도로 다시 재고, 조용한 재시도가 한도를 넘기면 **다시** 뜬다. 예전에는 보고
+     * 표시가 차례 내내 남아 재시도가 멎어도 아무것도 뜨지 않았다. 숫자는 손으로 적는다(1초 제한의 한도 9.2초).
+     */
+    @Test
+    fun aFinishedAttemptRearmsTheWatchdogSoAStalledRetryIsReportedAgain() {
+        val limit = SearchTimeLimit.WithinOneSecond
+        fun fires(attempt: EngineTurnWatchdogAttempt, nowMillis: Long) =
+            !attempt.isReported && isEngineTurnWatchdogTriggered(true, attempt.elapsedMillis(nowMillis), limit)
+
+        // 첫 시도: 차례 시작 1초, 완료 순번 3. 한도(9.2초)에서 뜨고 보고 표시가 붙는다.
+        var attempt = EngineTurnWatchdogAttempt(baseMillis = 1_000L, completionSeq = 3)
+        assertFalse(fires(attempt.observe(nowMillis = 10_199L, completionSeq = 3), 10_199L))
+        attempt = attempt.observe(nowMillis = 10_200L, completionSeq = 3)
+        assertTrue(fires(attempt, 10_200L))
+        attempt = attempt.reported()
+        assertFalse(fires(attempt.observe(nowMillis = 60_000L, completionSeq = 3), 60_000L), "같은 시도에서는 한 번만 뜬다")
+
+        // 첫 시도가 13초에 실패로 끝났다(순번 4) → 그 순간부터 새 시도. 재시도가 멎으면 13 + 9.2초에 **다시** 뜬다.
+        attempt = attempt.observe(nowMillis = 13_000L, completionSeq = 4)
+        assertEquals(EngineTurnWatchdogAttempt(baseMillis = 13_000L, completionSeq = 4), attempt)
+        assertFalse(fires(attempt.observe(nowMillis = 22_199L, completionSeq = 4), 22_199L))
+        assertTrue(fires(attempt.observe(nowMillis = 22_200L, completionSeq = 4), 22_200L), "실패 뒤 조용히 다시 도는 시도가 멎어도 와치독이 다시 뜬다")
+
+        // 순번은 바뀌었는지만 본다 — 엔진 수명 리셋으로 0으로 돌아가도 새 시도다.
+        val afterReset = attempt.reported().observe(nowMillis = 30_000L, completionSeq = 0)
+        assertEquals(EngineTurnWatchdogAttempt(baseMillis = 30_000L, completionSeq = 0), afterReset)
     }
 }

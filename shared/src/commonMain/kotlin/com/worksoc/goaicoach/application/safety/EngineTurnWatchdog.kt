@@ -71,6 +71,7 @@ fun engineTurnWatchdogTimeoutMillisFor(
  * 「엔진 응답 지연」 팝업 하나가 두 순간을 맡는다(refactor backlog #74, 설계 C-8·C-9).
  * - 상태 A — 와치독 한도를 넘긴 순간([isWatchdogTriggered], 화면 지역 상태). 차례 대기 작업이 끝나면 저절로 닫힌다.
  * - 상태 B — 탐색이 시간 초과로 **끝난** 뒤 사용자의 선택을 기다리는 동안([isAwaitingTimeoutChoice], 세션 상태).
+ *   같은 국면에서 진짜 실패가 잇달아 나도 이 상태다(refactor backlog #109).
  *   그 끝남 자체가 차례 대기 작업의 완료라, 완료로 닫히는 것은 A의 지역 표시뿐이다 — B는 사용자가 고를 때까지 남는다.
  * 둘 중 하나면 **한 벌만** 뜬다(둘이 겹쳐도 팝업은 하나다).
  */
@@ -107,6 +108,36 @@ fun engineTurnWatchdogBaseMillis(
     turnStartedAtMillis: Long,
     rearmedAtMillis: Long?,
 ): Long = maxOf(turnStartedAtMillis, rearmedAtMillis ?: turnStartedAtMillis)
+
+/**
+ * 와치독이 재는 **한 번의 시도**(refactor backlog #109). 한 차례 안에도 시도는 여럿일 수 있다 — 진짜 실패 뒤의 조용한
+ * 재시도가 같은 차례의 새 시도다.
+ *
+ * 예전에는 와치독이 **차례마다** 한 번만 보고했다. 첫 시도에서 팝업이 뜨고 그 시도가 실패로 끝나 팝업이 닫히면(완료
+ * 순번), 같은 차례의 재시도가 멎어도 팝업도 「엔진 다시 시작하기」도 다시 없었다 — 보고 표시가 남고, 차례 시작 시각이
+ * 키라 바뀌지 않았다. 그래서 **차례 대기 작업이 끝날 때마다**(완료 순번 [completionSeq]가 바뀔 때마다) 그 순간부터 다시
+ * 잰다 — 다음 시도가 곧 그 뒤에 시작된다. 순번은 바뀌었는지만 본다(엔진 수명 리셋으로 0이 돼도 바뀐 것이다).
+ *
+ * @property baseMillis 이 시도의 경과를 재는 기준 — 처음은 [engineTurnWatchdogBaseMillis], 다시 걸면 그 순간.
+ * @property isReported 이 시도에서 이미 팝업을 띄웠는가 — 한 시도에 한 번만 띄운다.
+ */
+data class EngineTurnWatchdogAttempt(
+    val baseMillis: Long,
+    val completionSeq: Int,
+    val isReported: Boolean = false,
+) {
+    /** 지금의 완료 순번을 본다. 바뀌었으면 앞 시도가 끝난 것이다 — [nowMillis]부터 새 시도로 다시 건다. */
+    fun observe(nowMillis: Long, completionSeq: Int): EngineTurnWatchdogAttempt =
+        if (completionSeq == this.completionSeq) {
+            this
+        } else {
+            EngineTurnWatchdogAttempt(baseMillis = nowMillis, completionSeq = completionSeq)
+        }
+
+    fun elapsedMillis(nowMillis: Long): Long = (nowMillis - baseMillis).coerceAtLeast(0L)
+
+    fun reported(): EngineTurnWatchdogAttempt = copy(isReported = true)
+}
 
 /** AI 차례에서 [elapsedSinceTurnStartMillis]가 와치독 한도를 넘겼는지 판정한다. */
 fun isEngineTurnWatchdogTriggered(

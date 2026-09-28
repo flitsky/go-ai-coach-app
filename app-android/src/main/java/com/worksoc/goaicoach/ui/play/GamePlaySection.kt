@@ -58,6 +58,7 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.safety.EngineStuckWaitAction
+import com.worksoc.goaicoach.application.safety.EngineTurnWatchdogAttempt
 import com.worksoc.goaicoach.application.safety.engineStuckWaitActionFor
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogBaseMillis
 import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisFor
@@ -147,16 +148,25 @@ internal fun GamePlaySection(
         turnStartedAtMillis = turnTimeState.currentTurnStartedAtMillis,
         rearmedAtMillis = watchdogRearmedAtMillis,
     )
+    // 차례 대기 작업의 완료 순번 — 아래 와치독(시도마다 다시 건다)과 팝업 닫기가 함께 본다.
+    val liveEngineTurnWaitCompletionSeq = rememberUpdatedState(screenState.engine.engineTurnWaitCompletionSeq)
     LaunchedEffect(watchdogBaseMillis, turnTimeState.isPaused, screenState.isGameEnded) {
         // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다, 그리고 다시 걸 때마다(이 effect가 재시작될
-        // 때마다) 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번에 이미 보고했는지"를 추적한다.
-        var watchdogReported = false
+        // 때마다) 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 시도에서 이미 보고했는지"를 추적한다.
+        // ⚠️ **차례가 아니라 시도마다** 다시 건다(refactor backlog #109) — 차례 대기 작업이 끝나면(완료 순번이 바뀌면)
+        // 그 순간부터 다시 잰다. 그래야 실패 뒤 조용히 다시 도는 시도가 멎어도 팝업이 다시 뜬다.
+        var watchdogAttempt = EngineTurnWatchdogAttempt(
+            baseMillis = watchdogBaseMillis,
+            completionSeq = liveEngineTurnWaitCompletionSeq.value,
+        )
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
             delay(TurnTimerTickIntervalMillis)
             now = System.currentTimeMillis()
-            if (!watchdogReported) {
-                // 차례 시작(또는 다시 건 시각)부터의 경과 — 시계(착수 시간)는 이것과 무관하게 차례 시작부터 잰다.
-                val elapsedSinceTurnStartMillis = (now - watchdogBaseMillis).coerceAtLeast(0L)
+            watchdogAttempt = watchdogAttempt.observe(nowMillis = now, completionSeq = liveEngineTurnWaitCompletionSeq.value)
+            if (!watchdogAttempt.isReported) {
+                // 이 시도의 시작(차례 시작, 다시 건 시각, 또는 앞 시도가 끝난 순간)부터의 경과 — 시계(착수 시간)는
+                // 이것과 무관하게 차례 시작부터 잰다.
+                val elapsedSinceTurnStartMillis = watchdogAttempt.elapsedMillis(now)
                 val isAiTurn = when (turnTimeState.currentTurnPlayer) {
                     StoneColor.Black -> screenState.playerSetup.black.controller == SeatController.Ai
                     StoneColor.White -> screenState.playerSetup.white.controller == SeatController.Ai
@@ -168,7 +178,7 @@ internal fun GamePlaySection(
                 val isResolvingEndgame = screenState.gameState.hasConsecutivePasses() ||
                     screenState.gameState.isBoardFull()
                 if (isEngineTurnWatchdogTriggered(isAiTurn, elapsedSinceTurnStartMillis, searchTimeLimit, isResolvingEndgame)) {
-                    watchdogReported = true
+                    watchdogAttempt = watchdogAttempt.reported()
                     val thresholdMillis = engineTurnWatchdogTimeoutMillisFor(searchTimeLimit, isResolvingEndgame)
                     onEvent(
                         GameUiEvent.ReportEngineTurnWatchdogTriggered(
@@ -199,7 +209,6 @@ internal fun GamePlaySection(
     // 도입해, "팝업이 뜬 시점의 카운터 값과 달라지는 순간"을 snapshotFlow로 기다린다 — 카운터는
     // 절대 이전 값으로 되돌아가지 않으므로 중간값이 뭉개져도 최종적으로 값이 다르다는 사실
     // 자체는 유실되지 않는다.
-    val liveEngineTurnWaitCompletionSeq = rememberUpdatedState(screenState.engine.engineTurnWaitCompletionSeq)
     LaunchedEffect(showEngineStuckDialog) {
         if (showEngineStuckDialog) {
             val openedAtSeq = liveEngineTurnWaitCompletionSeq.value
