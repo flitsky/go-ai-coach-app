@@ -151,6 +151,22 @@ class EngineStallRecoverySmokeTest {
         waitForMoveCount(2, "「엔진 다시 시작하기」 뒤 새 프로세스에서 AI의 돌")
         waitUntilThePopupIsGone()
         assertTrue("다시 시작이 기록됐다", diagnosticLogFile.readTextOrEmpty().contains("engine_force_reset_requested"))
+        // 돌이 놓였다는 것만으로는 모자란다 — 다시 시작이 차례를 취소하지 않아도(#74 이전 배선) 닫힌 파이프의 예외가
+        // "진짜 실패"로 읽혀 **같은 차례가 genMove로** 돌을 놓는다(2026-09-28 역검증에서 이 테스트가 그대로 초록이었다).
+        // 그래서 ① 다시 시작이 도는 AI 차례를 **취소했다**는 기록(`cancelInFlightAutoAiTurn`만 이 메시지를 쓴다 —
+        // 같은 코드를 쓰는 `cancelBackgroundOperations`는 메시지가 다르다)과 ② 그 돌이 genMove 폴백이 아니라
+        // 새 차례의 정상 분석에서 왔다는 것을 함께 못박는다.
+        assertTrue(
+            "다시 시작이 도는 AI 차례를 먼저 취소했다",
+            diagnosticLogFile.readTextOrEmpty().lines().any {
+                it.contains("\"code\":\"engine_operation_cancelled\"") && it.contains("Cancelled the in-flight AI turn.")
+            },
+        )
+        assertEquals(
+            "AI의 돌은 genMove 폴백(「AI replied with …」)이 아니라 정상 분석에서 왔다",
+            0,
+            runtimeLogFile.readTextOrEmpty().lines().count { it.contains("summary=AI replied with") },
+        )
         assertEquals(1, runtimeEvents("ai_turn_success"))
         assertEquals("닫힌 파이프의 예외가 「AI turn failed」로 새지 않았다", 0, runtimeEvents("ai_turn_failure"))
     }
