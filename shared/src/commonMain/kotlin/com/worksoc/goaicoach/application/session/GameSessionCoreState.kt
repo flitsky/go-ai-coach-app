@@ -136,6 +136,7 @@ data class GameSessionCoreState(
             komi = setup.komi,
         )
 
+    /** 위 [applyGameSetupPreview]를 네 값으로 풀어 받는 형태 — 뜻은 같다. */
     fun applyGameSetupPreview(
         ruleset: Ruleset,
         boardSize: BoardSize,
