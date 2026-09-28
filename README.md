@@ -11,7 +11,7 @@ As of 2026-08-29, this is a playable local AI Go coaching app on 9x9, 13x13 and 
 Implemented baseline as of 2026-08-29:
 
 1. Android Compose UI: board, player setup, search-time controls, score/win-rate graph, top-moves display, debug report copy, saved-game resume.
-2. `shared` Kotlin Multiplatform module: board rules, scoring (Area/Territory), engine core API contract, analysis policy, two engine search modes.
+2. `shared` Kotlin Multiplatform module: board rules, scoring (Area/Territory), engine core API contract, analysis policy, two engine search modes. (Since 2026-09-28 — refactor backlog #49 — board rules live in `:core:domain`, a module with no dependencies at all, and the engine contract plus scoring in `:core:enginecontract`; `:shared` depends on both through `api`. Package names did not change.)
 3. `engine-android`: local KataGo process adapter (`libkatago.so`) supporting both GTP stateful-fast and JSON position-analysis paths, plus a stub adapter for engine-free UI work.
 4. The `application/` tree lives in `:shared` — 27 feature-domain packages as of 2026-08-29 (session, autoai, undo, humanmove, startgame, savedgame, topmoves, engine, analysis, attendance, botcharacter, consumable, gamehistory, ...), each following a small `XxxController` + `XxxApplication.kt` pure-function pattern. Only `diagnostic/` stays in `app-android`, permanently, because its file sink needs the platform. `GoCoachApp.kt` is an 854-line composition root (was 1838 lines before the 2026-06 refactor); `LayeringContractTest` enforces that line count and a 46-state-hook budget.
 5. Four AI level groups exist in code (Fast Beginner / Beginner / Intermediate / Advanced — UI labels are in Korean) mapped to different visits/time/search-mode policy, but **only Fast Beginner is exposed to users** since 2026-08-18: it was split into five tiers (초보/하수/중수/고수/초고수) and the level picker collapsed to one dropdown. The other three groups are kept in code and hidden. See `ENGINE.md`.
@@ -82,7 +82,7 @@ make install-dev-engine
 Raw Gradle command:
 
 ```sh
-JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :shared:check :app-android:assembleDebug
+JAVA_HOME=$(/usr/libexec/java_home -v 17) ANDROID_HOME=/Users/ryan9kim/Library/Android/sdk ./gradlew :core:domain:check :core:enginecontract:check :shared:check :app-android:assembleDebug
 ```
 
 Optional Android unit-test task:

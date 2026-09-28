@@ -192,6 +192,15 @@ CODE_EXTS = (".kt", ".kts", ".py", ".sh")
 #      `shared/diagnostic/X.kt`로 적은 파일을 `application/diagnostic/`으로 옮기면, (b) 전엔 빨갛고 지금은 초록이다.
 #      지금 `shared` 모듈 안에서 이름이 겹치는 폴더는 `diagnostic` 하나이고 그 꼴의 표기는 0건이라 받아들였다.
 #      좁히려면 (b)의 `(?:.*/)?`를 "패키지 루트 바로 아래"로 제한하면 된다.
+#   ⚠️ **중첩 모듈**(2026-09-28, refactor backlog #49 — `:core:domain`·`:core:enginecontract`)도 같은 규칙이다.
+#      `include(":core:domain")`은 폴더 `core/domain`이 되고, 판정은 **마지막 조각**(`domain`)의 모양으로 한다 —
+#      패키지가 될 수 있으므로 (b)다. 그래서 `core/domain/BoardModels.kt`는 풀지 않는다(`core/domain/.../BoardModels.kt`로
+#      적는다). `:core` 자체는 `include`에 없어 모듈이 아니다 — `core/X.kt` 꼴은 ③으로 풀리지 않는다.
+#      ⚠️ 그 이동으로 **죽는 것은 완전 경로뿐이다.** `shared/src/commonMain/…/shared/domain/X.kt`는 죽었지만, 패키지 경로
+#      꼴 `shared/domain/X.kt`는 ②(꼬리 일치)로 계속 산다 — 새 자리 `core/domain/src/…/shared/domain/X.kt`도 그 꼬리로
+#      끝나기 때문이다(패키지 이름은 그대로 두고 모듈만 옮겼다). 패키지 경로 꼴은 모듈 이동을 원래 못 잡는 표기다.
+#      (b)가 권하는 `shared/.../X.kt`도 같은 이유로 산다 — 새 경로 안에 패키지 폴더 `shared/`가 있어 ②가 먼저 푼다.
+#      즉 `shared`로 시작하는 짧은 꼴은 `:shared` → `:core:*` 이동을 못 잡는다. 모듈까지 못박으려면 완전 경로를 적는다.
 #   ⚠️ (a)·(b)를 가르는 것은 **이름의 모양**이지 "지금 그 이름의 패키지 폴더가 있는가"가 아니다 — 후자로
 #      가르면 패키지를 비우는 이동 자체가 규칙을 (b)→(a)로 바꿔, 방금 죽은 경로를 그 이동이 살려 낸다.
 #   ⚠️ 모듈 목록을 **최상위 폴더로 넓히지 않는다** — `docs/`·`scripts/`·`work/`에는 생략할 `src/…/패키지`가

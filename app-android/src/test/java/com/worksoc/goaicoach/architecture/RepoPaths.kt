@@ -121,6 +121,12 @@ internal object RepoPaths {
     /** 셸 상태 원장(#46). ⚠️ 옮기면 app-android/build.gradle.kts의 architectureBudgets 입력도 옮길 것(#103). */
     val architectureBudgets: File get() = root.resolve("app-android/architecture-budgets.json")
 
+    /**
+     * 도메인 커널 모듈의 빌드 스크립트 — `DomainModuleBuildScriptContractTest`가 "본 소스셋 의존 0"을 읽는다
+     * (refactor backlog #49). ⚠️ 옮기면 app-android/build.gradle.kts의 coreDomainBuildScript 입력도 옮길 것.
+     */
+    val coreDomainBuildScript: File get() = root.resolve("core/domain/build.gradle.kts")
+
     /** L17 자기검증이 읽는 모듈 빌드 스크립트. */
     val appAndroidBuildScript: File get() = root.resolve("app-android/build.gradle.kts")
 

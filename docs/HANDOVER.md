@@ -166,8 +166,12 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 일감 하나를 끝냈을 때 도는 검증 루프:
 
 ```bash
-./gradlew :shared:testDebugUnitTest :app-android:testDebugUnitTest
+./gradlew :core:domain:testDebugUnitTest :core:enginecontract:testDebugUnitTest :shared:testDebugUnitTest :app-android:testDebugUnitTest
 ```
+
+- ⚠️ **KMP 모듈은 셋이다**(2026-09-28, refactor backlog #49): 바둑 규칙 `:core:domain`, 엔진 계약·계가기
+  `:core:enginecontract`, 나머지 `:shared`. `:shared`의 테스트는 아래 두 모듈의 테스트를 부르지 않으므로
+  `:shared:testDebugUnitTest`만 돌리면 규칙·계가 테스트 약 80건이 **빠진다.** `make test`는 셋을 다 부른다.
 
 환경 점검과 실기기 설치는 Makefile 쪽이 편합니다:
 
@@ -181,9 +185,9 @@ make doctor
   (`docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "플랫폼 누수 회귀 복구" 참고 — 에러 49개, 원인은 `import java.` 검사를
   통과해버리는 `System.currentTimeMillis()`/`kotlin.synchronized`/`Dispatchers.IO`였습니다).
   ⚠️ **평소 안드로이드 빌드/테스트가 그린이어도 이 타깃은 조용히 깨질 수 있습니다** — 아무도 안 켜기 때문입니다.
-  그래서 `shared/`를 건드린 일감은 아래 명령까지 돌리는 것이 백로그의 규칙입니다:
+  그래서 `shared/`나 `core/`를 건드린 일감은 아래 명령까지 돌리는 것이 백로그의 규칙입니다(세 모듈의 본·테스트 컴파일):
   ```bash
-  ./gradlew :shared:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
+  make test-ios
   ```
 
 ---

@@ -2,6 +2,7 @@
 
 작성일: 2026-07-30
 갱신: 2026-09-23 — 260816 `:shared` 대이동을 매핑에 반영해 **아래 경로를 전부 실재 경로로 되돌렸고**, 매핑 밖에 떠 있던 패키지(`persistence/`·`vision/`·`shared/shared/` 하위)를 계층에 편입했으며, 2026-09-23 실측(import 방향 위반·`application/` 내부 SCC)을 「알려진 갭」에 편입했다.
+갱신: 2026-09-28 — refactor backlog #49·#81: `shared.domain`을 `:core:domain`, `shared.enginecontract`·`shared.scoring`을 `:core:enginecontract` Gradle 모듈로 뗐다(패키지 이름 그대로). 아래 경로와 「Gradle 모듈 지도」에 반영했다.
 레이어 순서 갱신: 2026-07-30 — External Integration이 4계층(3계층과 대등한 서비스 계층)으로 재배치되며 Application(5)/Session & Continuity(6)/Presentation(7) 번호가 한 칸씩 밀렸다. `docs/ARCHITECTURE.md`의 "레이어 순서 확정" 항목 참고.
 기능 엔타이틀먼트 정책 배치: 2026-08-14 — "무료/광고/구매/클레임" 같은 기능별 정책이 앞으로도 계속 바뀔 것을 전제로, 그 정책 판정을 6계층에 `FeatureAccessPolicy`로 명문화하고(설계 초안엔 5계층으로 잘못 적었다가 착수 시점에 정정 — 6계층 `PremiumState`를 파라미터로 받으므로 5계층일 수 없다) 6계층 `PremiumState`를 단일 플래그(`isUndoClaimed`)에서 기능별 원장(`claimedFeatures: Set<FeatureId>`)으로 일반화, 프레젠테이션 3곳(`ui/play/GamePlaySection.kt` 2곳, `ui/setup/KaTrainUxPanels.kt` 1곳)에 하드코딩돼 있던 판정을 이걸로 교체했다 — 구현 완료. 상세는 "알려진 갭"·"고도화 로드맵" 절, 그리고 `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` 2장(같은 결론을 정책 문서 쪽에서 먼저 제안해 뒀던 것).
 5·6계층 재분류: 2026-09-25(refactor backlog #84) — 엔타이틀먼트 클러스터(`premium.app`·`attendance`·`consumable`·`botcharacter`·`lifecycle`·`device`)를 5계층에서 6계층으로 다시 매핑했다. 5계층 규칙(*"6계층을 모른다"*)은 그대로이고 코드 이동·동작 변경은 없다. 5→6 import가 16줄에서 0줄이 됐다. 상세는 5계층 절 「2026-09-25 재분류」.
@@ -29,6 +30,22 @@
 >
 > ✅ **260816 이전 완료 — 아래 경로는 전부 실재 경로다**(2026-09-23 `find`로 재확인). 2026-07-30판에 있던 *"코드는 아직 옮기지 않았다, 아래는 개념적 재배치"* 경고는 더 이상 사실이 아니라 걷어냈다. 260816 웨이브 1~6으로 `application/` 트리 124개 프로덕션 파일과 `match/`가 `app-android`에서 `:shared`로 물리 이전됐고, 지금 `app-android/.../application/`에 남은 것은 영구 예외 `diagnostic/LocalFileDiagnosticEventExternalSink.kt` **하나뿐**이며 `app-android/.../match/`는 **디렉터리 자체가 없다.**
 
+> 🧱 **Gradle 모듈 지도**(2026-09-28, refactor backlog #49·#81). 패키지 이름은 하나도 바뀌지 않았다 — 모듈만 갈랐다.
+>
+> | 모듈 | 폴더 | 담은 패키지 | 본 소스셋 의존 |
+> |---|---|---|---|
+> | `:core:domain` | `core/domain/` | `shared.domain`(바둑 규칙 커널, 7파일) | **없음** — `DomainModuleBuildScriptContractTest`가 빌드 스크립트를 읽어 막는다 |
+> | `:core:enginecontract` | `core/enginecontract/` | `shared.enginecontract`(2계층 계약) · `shared.scoring`(로컬 계가기) | `api(:core:domain)` |
+> | `:shared` | `shared/` | `application.*` 37개 · `match` · `shared.policy`·`diagnostic`·`content`·`vision` | `api(:core:enginecontract)` + 코루틴 |
+> | `:engine-android` | `engine-android/` | `engine.android` | `api(:core:enginecontract)` — 앱 계층(`:shared`)은 **테스트만** 본다 |
+> | `:app-android` | `app-android/` | 나머지 전부 | `:shared` + `:engine-android` |
+>
+> - **컴파일러가 새로 지키는 것**: 도메인은 라이브러리·계약·앱 계층을 모른다. 계약·계가기는 앱 계층(`application.*`·`match`·`shared.policy` 등)을 모른다. `engine-android` 본 코드도 앱 계층을 모른다. 아래 모듈의 `internal`(`BoardRegionAnalyzer` 등)은 앱 계층에서 안 보인다.
+> - **여전히 테스트가 지키는 것**: `:shared` **안**의 계층(3·4α·5·6계층이 한 모듈에 있다) — `LayeringContractTest`·`PackageCycleRatchetTest`(세 모듈의 commonMain을 한 그래프로 본다).
+> - ⚠️ `shared.scoring`은 원칙상 5계층(순수 규칙)이지만 모듈은 `:core:enginecontract`다 — 계가기가 전부 계약 타입(`FinalScoreResult`·`ScoreEstimate`·`EngineStatus`)을 돌려주기 때문이다. 모듈과 계층이 1:1이 아니다.
+> - ⚠️ 모듈 사이 테스트 픽스처(골든 판 파서 등)는 `core/domain/src/commonTestFixtures/`에 있고 위 모듈들이 srcDir로 함께 컴파일한다(`shared/build.gradle.kts`의 commonTestSupport와 같은 수단).
+> - `:shared` → `:core:application` 개명(설계 C4)은 하지 않았다 — 새로 지켜지는 것 없이 300여 파일만 옮겨진다.
+
 ### 1계층 — Physical Compute
 
 **위치**: `engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoProcessRuntime.kt`(실행 파일/모델 검증, CLI 인수 빌드, 프로세스 시작/종료 — `interface EngineProcessRuntime` + `LocalKataGoProcessRuntime`, 띄운 프로세스 하나의 파이프·수명은 `EngineProcessPipes`) · `EngineProcessLifecycle.kt`(지금 프로세스 자리 `EngineProcessSlot`과 값 객체 `EngineProcessHandle` — 기동은 수명 락 안, 폐기는 세대 CAS, refactor backlog #14). 2계층 어댑터는 핸들의 writer/reader만 쓰고 프로세스를 직접 만들지 않는다.
@@ -38,7 +55,7 @@
 ### 2계층 — Middleware / Bridge
 
 **위치**:
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/enginecontract/EngineModels.kt` — `EngineCoreApi` 인터페이스(1:1 원시 계약: `initialize`, `configure`, `playMove`, `analyze`, `estimateScore`, `deadStones`, `scoreFinal`, `clearSearchCache`, `stop`, `forceReset` 등), `AnalysisLimit`/`EngineProfile`/`CandidateMove` 등 순수 데이터 모델. 같은 폴더의 `RemotePositionAnalysisTransport.kt` — position-analysis 단위 원격 호출 계약(`RemotePositionAnalysisTransport`/`Request`/`Response`, 260804 이전엔 app-android에 있었음, §재편 여부 참고)
+- `core/enginecontract/src/commonMain/kotlin/com/worksoc/goaicoach/shared/enginecontract/EngineModels.kt`(2026-09-28 refactor backlog #49로 `:core:enginecontract` 모듈) — `EngineCoreApi` 인터페이스(1:1 원시 계약: `initialize`, `configure`, `playMove`, `analyze`, `estimateScore`, `deadStones`, `scoreFinal`, `clearSearchCache`, `stop`, `forceReset` 등), `AnalysisLimit`/`EngineProfile`/`CandidateMove` 등 순수 데이터 모델. 같은 폴더의 `RemotePositionAnalysisTransport.kt` — position-analysis 단위 원격 호출 계약(`RemotePositionAnalysisTransport`/`Request`/`Response`, 260804 이전엔 app-android에 있었음, §재편 여부 참고)
 - `engine-android/.../KataGoProcessEngineAdapter.kt` — `EngineCoreApi`의 **로컬** 구현체. GTP(`KataGoGtpAnalysisClient.kt`, `KataGoProtocolCommands.kt`)와 JSON(`KataGoJsonPositionAnalysisClient.kt`, `KataGoJsonAnalysisQueryFactory.kt`, `KataGoJsonAnalysisParser.kt`) 두 경로를 조율. 두 경로 공통 파싱은 `KataGoAnalysisParser.kt`/`KataGoAnalysisContext.kt`
 - `engine-android/.../StubEngineAdapter.kt` — `EngineCoreApi`의 **스텁** 구현체(엔진 없이 UI/도메인 검증용)
 - `engine-android/.../RemoteEngineCoreApiAdapter.kt` — `EngineCoreApi`의 **원격** 구현체(13개 메서드 전체, 260803 Stage D). 상태변경 호출은 로컬에서 `GameState`를 추적하고, `genMove`/`analyze`/`estimateScore`/`deadStones`/`scoreFinal`만 원격 전송하는 상태 비저장 설계. `HttpRemoteEngineOperationTransport`가 HTTP 구현체
@@ -116,7 +133,7 @@
 ### 5계층 — Application / Domain
 
 **위치**:
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/`(2026-09-24 refactor backlog #24로 하위 패키지 분리) — 순수 바둑 규칙(KMP `commonMain`). `domain/BoardModels.kt`, `domain/BoardRules.kt`, `domain/LegalMoveGenerator.kt`, `scoring/BoardScorer.kt`(+`scoring/BoardAreaScorer.kt`/`scoring/BoardTerritoryScorer.kt`, 두 계가기가 함께 쓰는 빈 점 소유 판정 `scoring/BoardRegionAnalyzer.kt` — 2026-09-25 refactor backlog #38), `domain/DeadStoneDetector.kt`/`domain/DeadStoneCleaner.kt`, `policy/EndgameScoreSelector.kt`, `domain/GameStateReplayer.kt`, `scoring/ScoreTimeline.kt` 등
+- `core/domain/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/` · `core/enginecontract/src/commonMain/kotlin/com/worksoc/goaicoach/shared/scoring/` · `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/`(2026-09-24 refactor backlog #24로 하위 패키지 분리, 2026-09-28 #49로 `domain`은 `:core:domain`·`scoring`은 `:core:enginecontract` 모듈로 — 위 「Gradle 모듈 지도」) — 순수 바둑 규칙(KMP `commonMain`). `domain/BoardModels.kt`, `domain/BoardRules.kt`, `domain/LegalMoveGenerator.kt`, `scoring/BoardScorer.kt`(+`scoring/BoardAreaScorer.kt`/`scoring/BoardTerritoryScorer.kt`, 두 계가기가 함께 쓰는 빈 점 소유 판정 `scoring/BoardRegionAnalyzer.kt` — 2026-09-25 refactor backlog #38), `domain/DeadStoneDetector.kt`/`domain/DeadStoneCleaner.kt`, `policy/EndgameScoreSelector.kt`, `domain/GameStateReplayer.kt`, `scoring/ScoreTimeline.kt` 등
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/diagnostic/DiagnosticEventModel.kt` — 진단 이벤트 순수 모델(`DiagnosticEvent`/`DiagnosticSeverity`). 실제 기록은 4계층 어댑터가 한다(2026-09-23 매핑 편입)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/match/MatchReferee.kt`, `AiMoveSelectionPolicy.kt`, `MatchPolicy.kt`, `MatchTurnOrchestration.kt` — 대국 정책(참여 주체, 턴 권한, AI 레벨링). **260804 경로 정정**: 이전엔 `app-android/.../match/`였으나 "도메인별 파일 분리" 작업(커밋 `5278c12`)으로 `shared`로 이동했다 — 순수 로직이라 KMP 이식 대상이었다. 지금 `app-android`에는 `match/` 디렉터리가 없다.
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/` — 유스케이스 오케스트레이션. **2026-09-25 기준 하위 디렉터리 33개, `package` 선언으로는 37개**(#85의 `profile` 포함)(`auth`·`premium`·`engine`이 하위 패키지로 갈린다). 그중 **5계층은 21개**다: `autoai`·`concurrency`·`contract`·`debugreport`·`diagnostic`·`endgame`·`gamehistory`·`guide`·`humanmove`·`movereview`·`orchestration`·`preferences`·`prompt`·`runtime`·`savedgame`·`score`·`session`·`startgame`·`time`·`topmoves`·`undo`. 나머지 15개는 3계층(`engine`·`engine.operation`·`safety`·`analysis`·`cacheoptimization` 5개), 4계층 α(`auth.port`·`premium.port` 2개), 6계층(`auth.state`·`premium.state`·`premium.app`·`attendance`·`consumable`·`botcharacter`·`lifecycle`·`device`·`profile` 9개)이다 — 각 계층 절 참고. 배정은 패키지 단위라, 5계층 패키지 안에 선언된 4계층 α 포트(`gamehistory`·`diagnostic`의 `*Port` 등)는 파일 단위 예외로 본다. ⚠️ 2026-09-23판의 *"29개 서브패키지"* 는 그날 기준으로 맞았다 — 그 뒤 2026-09-24(refactor backlog #32)에 `cacheoptimization`·`contract`·`orchestration`이 새로 생겨 32개가 됐다. **260816**: 웨이브 1~6으로 `app-android`에서 `shared`로 물리 이전 완료(영구 예외 1개, 아래 "핵심 갭" 참고). `session/GameSessionStateHolder.kt`가 세션 상태의 단일 source of truth
@@ -203,6 +220,7 @@
 - **계층 강제 수단이 문자열 스캔이라는 것 자체가 갭이다**(2026-09-23 실측, 진단서 §1.2). `LayeringContractTest.kt`의 import 규칙 10개 중 **4개가 0개 파일을 검사하며 무조건 통과**하고 있었다 — 260816에 코드가 `shared`로 이사했는데 스캔 경로가 따라오지 않았고, `ktFilesIn`이 없는 디렉터리를 조용히 빈 목록으로 돌려줬기 때문이다. 즉 **초록이 "위반 없음"이 아니라 "검사 안 함"이었다.** 오늘 `0c33d32c`(경로 갱신)와 `01a85479`(`ktFilesIn`에 `require(files.isNotEmpty())`)로 **빈 디렉터리**는 봉했지만, *"스캔은 되는데 금지 문자열이 낡아 아무것도 못 잡는다"* 는 **여전히 조용히 통과한다.** 금지 조각이 저장소에 실재하는지 보는 메타 검사가 필요하다.
 - **import 방향 위반이 730/2,004개(36%)다**(2026-09-23 실측). 내역: L7→L5 **389**, L3→L5 **169**(엔진 서비스가 세션/도메인을 안다 — 방향이 거꾸로다), L2→L5 66, L7→L3·L4·L2 92, 기타 14. 즉 UI가 계층을 건너뛰어 유스케이스를 직접 부르고, 아래 계층이 위 계층을 아는 구간이 실재한다.
 - **`application/` 안에 17개 패키지 강결합 사이클(SCC)이 있다**(2026-09-23 실측, Tarjan). `analysis, autoai, debugreport, diagnostic, endgame, engine, engine.operation, humanmove, preferences, runtime, savedgame, score, session, startgame, topmoves, undo` + `middleware`. **3계층으로 선언된 `application/engine`과 5계층으로 선언된 `application/session`이 같은 사이클 안에 있다** — 사이클 안에서는 어느 쪽이 상위인지 정의되지 않으므로, 이 구간에 대해 7계층 서사는 참도 거짓도 아니고 **성립하지 않는다.**
+  ✅ 2026-09-28(refactor backlog #49): 사이클이 0이 된 뒤(`#32`) **사이클 아래쪽**의 두 모듈(`:core:domain`·`:core:enginecontract`)만 뗐다 — 아래 경고가 말하는 `application/` 안쪽 분리가 아니다. `application/` 안은 여전히 한 모듈이다.
   ⚠️ **그래서 지금 "모듈 분리"를 제안하면 안 된다.** `application/engine`만 떼어내는 순간 session·score·match·runtime·endgame이 딸려오고, 그것들이 다시 engine을 참조해 **Gradle 순환 의존으로 빌드가 멈춘다. 사이클을 먼저 끊지 않은 모듈화는 컴파일에서 죽는다.** 모듈 경계는 이 문제를 **원리적으로 보지 못한다**(목표 그래프에서 17패키지가 전부 한 모듈 안에 들어가기 때문).
   ⚠️ 위 두 줄은 **2026-09-23 실측값**이고, 엣지 추출·SCC 계산 **방법과 원자료는 `work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §1에 있다.** 수치가 의심스러우면 거기 적힌 방법으로 다시 잰다 — 재생산 절차를 이 문서에 복사하지 않는다(낡으면 두 곳이 어긋난다).
 - 4계층(외부 연동)이 포트(α)만 있고 안정화 서비스 본체가 얇다.

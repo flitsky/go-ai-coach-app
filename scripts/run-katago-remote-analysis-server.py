@@ -209,7 +209,7 @@ GTP_COLUMNS = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
 
 def handicap_stone_positions(board_size: int, count: int) -> list[str]:
     """Port of the Kotlin `BoardSize.handicapStonePositions(count)`
-    (shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt),
+    (core/domain/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt),
     returning GTP labels in the same order: upper-right, lower-left,
     lower-right, upper-left, center, then (19x19 only) left, right, bottom,
     top side star points. Keep the two in sync — this is how the app itself

@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 
 /**
  * 엔진 호출의 마감 — 로컬 어댑터가 `engine-android`에서 쓰던 값 그대로여야 한다(refactor backlog #17은 함수를
- * `:shared`로 옮겨 원격·진단이 같이 쓰게 할 뿐, 로컬의 대기 시간은 바꾸지 않는다).
+ * `:shared`(#49부터 `:core:enginecontract`)로 옮겨 원격·진단이 같이 쓰게 할 뿐, 로컬의 대기 시간은 바꾸지 않는다).
  */
 class EngineDeadlinesTest {
     @Test

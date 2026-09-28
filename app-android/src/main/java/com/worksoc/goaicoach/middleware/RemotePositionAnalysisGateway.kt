@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.shared.enginecontract.RemotePositionAnalysisTranspo
  * genmove/play/undo. That keeps remote rollout safe: the app can first compare
  * remote analysis quality/latency while local offline play remains unchanged.
  *
- * [transport]는 `:shared`의 [RemotePositionAnalysisTransport] 계약을 만족하는 아무 구현체나
+ * [transport]는 `:core:enginecontract`의 [RemotePositionAnalysisTransport] 계약을 만족하는 아무 구현체나
  * 받는다 — 실제 JVM/HTTP 구현체는 `engine-android` 모듈에 있다(엔진 로컬/원격 구현체를
  * 물리적으로 한 곳에 모은 260804 정리). 이 파일은 그 구현체 이름조차 몰라야 하는 계약 위치라
  * 일부러 이름을 적지 않는다 — `LayeringContractTest`가 이 파일에 transport 세부사항이 새어

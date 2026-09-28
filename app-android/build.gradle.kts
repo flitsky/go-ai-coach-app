@@ -522,6 +522,11 @@ tasks.withType<Test>().configureEach {
     inputs.file(rootDir.resolve("app-android/architecture-budgets.json"))
         .withPropertyName("architectureBudgets")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // 도메인 모듈 빌드 스크립트(refactor backlog #49) — `DomainModuleBuildScriptContractTest`가 "본 소스셋 의존 0"을
+    // 실행 중에 읽는다. 스캔 트리(`core/domain/src`) 밖이라 선언하지 않으면 의존 한 줄만 더한 빌드가 UP-TO-DATE로 건너뛰어진다.
+    inputs.file(rootDir.resolve("core/domain/build.gradle.kts"))
+        .withPropertyName("coreDomainBuildScript")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 // import 순서 게이트(refactor backlog #72). 어떤 ktlint 규칙이 도는지는 루트 .editorconfig가 정한다 —

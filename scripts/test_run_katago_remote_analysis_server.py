@@ -43,7 +43,7 @@ build_katago_query = remote_server.build_katago_query
 
 # Independently computed from the production placement rule this script
 # ports (`BoardSize.handicapStonePositions`,
-# shared/src/commonMain/kotlin/.../domain/BoardModels.kt: near/far/mid offsets
+# core/domain/src/commonMain/kotlin/.../domain/BoardModels.kt: near/far/mid offsets
 # + `BoardCoordinate.label()`'s "ABCDEFGHJKLMNOPQRSTUVWXYZ" column letters,
 # skipping "I") — not derived from the function under test, so a coordinate
 # bug in `handicap_stone_positions()` itself would still be caught here.

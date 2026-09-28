@@ -33,7 +33,7 @@ import org.junit.Test
  * 실어 보내든)는 구현체 자유다.
  *
  * ## 여기에 둔 이유 / 빠진 구현체
- * 계약은 `:shared`(commonMain)에 있지만 구현체는 `engine-android`에 있고, `:shared`의
+ * 계약은 `:core:enginecontract`(commonMain)에 있지만 구현체는 `engine-android`에 있고, KMP 모듈의
  * commonTest는 다른 모듈에서 소비할 수 없다(테스트 픽스처 아티팩트를 따로 내보내는 gradle
  * 배선이 없다). 그래서 스위트를 구현체 쪽에 뒀다.
  * - [StubEngineAdapter] → [StubEngineAdapterStaticPositionContractTest]
