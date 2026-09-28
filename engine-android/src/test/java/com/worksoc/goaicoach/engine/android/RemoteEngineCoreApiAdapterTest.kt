@@ -277,7 +277,9 @@ class RemoteEngineCoreApiAdapterTest {
         )
 
         try {
-            transport.execute(sampleRequest())
+            // 탐색이 없는 오퍼레이션이다 — 설정의 읽기 예산(10ms)이 그대로 마감이다. 탐색(genMove·analyze)은 로컬과 같은
+            // 탐색 마감(캡 + 20초)을 쓴다(refactor backlog #17, 아래 테스트).
+            transport.execute(sampleRequest(operation = RemoteEngineOperation.DeadStones))
             fail("A remote call stuck past the configured timeout must be cancelled.")
         } catch (timeout: TimeoutCancellationException) {
             // expected — mirrors KataGoProcessEngineAdapter.sendCommand's TimeoutCancellationException.
@@ -301,6 +303,39 @@ class RemoteEngineCoreApiAdapterTest {
             wedgedThread,
             wedgedConnection.firstDisconnectThread,
         )
+    }
+
+    /**
+     * 원격도 로컬과 **같은 함수**로 기다린다(refactor backlog #17). 예전에는 같은 [AnalysisLimit]에 로컬은
+     * 캡 + 20초(캡 없으면 120초), 원격은 늘 33초(연결 3초 + 읽기 30초)여서, 캡 40초 탐색은 원격에서만 답이 오기
+     * 전에 끊겼다. 탐색이 없는 오퍼레이션은 지금처럼 설정의 읽기 예산(로컬의 명령 기본 마감 30초와 같다)이다.
+     */
+    @Test
+    fun httpTransportWaitsForASearchAsLongAsTheLocalAdapterWould() = runBlocking {
+        suspend fun readTimeoutFor(operation: RemoteEngineOperation, limit: AnalysisLimit): Int {
+            val connection = FakeEngineHttpURLConnection(URL("http://example.test/engine"), responseBody = """{"result": {"summary": "ok"}}""")
+            HttpRemoteEngineOperationTransport(
+                config = RemoteEngineHttpConfig(endpointUrl = "http://example.test/engine", enabled = true),
+                connectionFactory = object : RemotePositionAnalysisHttpConnectionFactory {
+                    override fun open(url: URL): HttpURLConnection = connection
+                },
+            ).execute(sampleRequest(operation = operation).copy(limit = limit))
+            return connection.readTimeout
+        }
+        val capped = AnalysisLimit(visits = 16, timeMillis = 40_000L, minTimeMillis = null)
+        val uncapped = AnalysisLimit(visits = 16, timeMillis = null, minTimeMillis = null)
+
+        assertEquals(60_000, readTimeoutFor(RemoteEngineOperation.GenMove, capped))
+        assertEquals(120_000, readTimeoutFor(RemoteEngineOperation.GenMove, uncapped))
+        assertEquals(60_000, readTimeoutFor(RemoteEngineOperation.Analyze, capped))
+        assertEquals(
+            "analyze raises its cap to minTimeMillis, as the local adapter does",
+            22_000,
+            readTimeoutFor(RemoteEngineOperation.Analyze, uncapped.copy(minTimeMillis = 2_000L)),
+        )
+        assertEquals(30_000, readTimeoutFor(RemoteEngineOperation.DeadStones, capped))
+        assertEquals(30_000, readTimeoutFor(RemoteEngineOperation.ScoreFinal, capped))
+        assertEquals(30_000, readTimeoutFor(RemoteEngineOperation.EstimateScore, capped))
     }
 
     /**

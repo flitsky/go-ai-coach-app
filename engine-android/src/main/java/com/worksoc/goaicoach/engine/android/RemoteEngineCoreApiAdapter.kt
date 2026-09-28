@@ -20,6 +20,8 @@ import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipPoint
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.enginecontract.analysisSearchTimeoutMillis
+import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -241,6 +243,7 @@ data class RemoteEngineHttpConfig(
     val endpointUrl: String,
     val enabled: Boolean = false,
     val connectTimeoutMillis: Int = 3_000,
+    /** 탐색이 없는 오퍼레이션의 읽기 예산. genMove·analyze는 로컬과 같은 탐색 마감을 쓴다(refactor backlog #17). */
     val readTimeoutMillis: Int = 30_000,
 )
 
@@ -304,12 +307,13 @@ internal class HttpRemoteEngineOperationTransport(
         check(config.enabled) { "Remote engine HTTP transport is disabled." }
         require(config.endpointUrl.isNotBlank()) { "endpointUrl must not be blank when remote engine is enabled." }
 
-        val responseBudgetMillis = config.connectTimeoutMillis.toLong() + config.readTimeoutMillis.toLong()
+        val readBudgetMillis = readBudgetMillisFor(request)
+        val responseBudgetMillis = config.connectTimeoutMillis.toLong() + readBudgetMillis
         return coroutineScope {
             val awaitingResponse = CompletableDeferred<Unit>()
             val call = async(Dispatchers.IO) {
                 try {
-                    runInterruptible { executeBlocking(request) { awaitingResponse.complete(Unit) } }
+                    runInterruptible { executeBlocking(request, readBudgetMillis) { awaitingResponse.complete(Unit) } }
                 } catch (failure: Throwable) {
                     // 이미 취소된 뒤 — 즉 타임아웃이 연결을 강제로 끊은 뒤 — 막혔던 읽기가
                     // 풀리며 나는 예외는 **결과가 아니다.** 그대로 흘리면 이 예외가 호출자에게
@@ -347,8 +351,24 @@ internal class HttpRemoteEngineOperationTransport(
         activeConnection?.let { connection -> runCatching { connection.disconnect() } }
     }
 
+    /**
+     * 이 요청이 응답을 기다릴 읽기 예산 — 로컬 어댑터와 **같은 함수**다(refactor backlog #17). 탐색이 걸린 genMove·analyze는
+     * 탐색 마감(캡 + 20초, 캡 없으면 120초 — analyze는 minTimeMillis를 바닥으로), 나머지는 설정의 읽기 예산(기본 30초 =
+     * 로컬의 명령 기본 마감). 예전에는 전부 설정의 30초였다.
+     */
+    private fun readBudgetMillisFor(request: RemoteEngineOperationRequest): Long =
+        when (request.operation) {
+            RemoteEngineOperation.GenMove -> searchTimeoutMillisFor(request.limit.timeMillis)
+            RemoteEngineOperation.Analyze -> request.limit.analysisSearchTimeoutMillis()
+            RemoteEngineOperation.EstimateScore,
+            RemoteEngineOperation.DeadStones,
+            RemoteEngineOperation.ScoreFinal,
+            -> config.readTimeoutMillis.toLong()
+        }
+
     private fun executeBlocking(
         request: RemoteEngineOperationRequest,
+        readBudgetMillis: Long,
         onAwaitingResponse: () -> Unit,
     ): RemoteEngineOperationResponse {
         val connection = connectionFactory.open(URL(config.endpointUrl))
@@ -356,7 +376,7 @@ internal class HttpRemoteEngineOperationTransport(
         return try {
             connection.requestMethod = "POST"
             connection.connectTimeout = config.connectTimeoutMillis
-            connection.readTimeout = config.readTimeoutMillis
+            connection.readTimeout = readBudgetMillis.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
             connection.doOutput = true
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
             connection.setRequestProperty("Accept", "application/json")
