@@ -412,6 +412,8 @@ class LayeringContractTest {
             "AttendanceCheckInCoordinator.kt",
             "DeveloperModeResetCoordinator.kt",
             "ReleaseResetCoordinator.kt",
+            // #110: 엔진 묶음의 프로세스 수명 소유자 — MainActivity의 엔진 조립을 옮겨 왔다. 조립만 한다.
+            "GoCoachProcessRuntime.kt",
             // #26: ui/에서 옮겨 온 배선.
             "GameExitRecording.kt",
             "GameLifecycleControllerWiring.kt",

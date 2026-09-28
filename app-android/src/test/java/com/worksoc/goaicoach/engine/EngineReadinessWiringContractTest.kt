@@ -20,6 +20,9 @@ class EngineReadinessWiringContractTest {
             .lines().joinToString("\n") { it.substringBefore("//") }
 
     private val mainActivity = codeOnly("src/main/java/com/worksoc/goaicoach/MainActivity.kt")
+
+    // 엔진 조립은 MainActivity에서 프로세스 수명 소유자로 옮겨 갔다(refactor backlog #110) — 조립 계약은 그 파일을 잰다.
+    private val processRuntime = codeOnly("src/main/java/com/worksoc/goaicoach/GoCoachProcessRuntime.kt")
     private val goCoachApp = codeOnly(RepoPaths.uiFile("GoCoachApp.kt").path)
     private val failureNotice =
         codeOnly(RepoPaths.uiFile("EngineUnavailableNoticeDialog.kt").path)
@@ -38,22 +41,48 @@ class EngineReadinessWiringContractTest {
 
     @Test
     fun theEngineClientIsBuiltOnceAndDoesNotRekeyWhenTheBootstrapLands() {
-        val start = mainActivity.indexOf("val engineClient = remember(")
-        assertTrue("`val engineClient = remember(`를 찾지 못했다 — 이 계약의 전제가 무너졌다.", start >= 0)
-        val keys = mainActivity.substring(start, mainActivity.indexOf(") {", start))
-
-        // ⚠️ 부트스트랩을 키로 넣으면 도착하는 순간 클라이언트가 새로 만들어지고,
-        // `GoCoachApp`의 `LaunchedEffect(engineClient)`가 **엔진 기동을 처음부터 다시** 돌린다.
+        val start = processRuntime.indexOf("val engineClient: EngineSessionClient =")
+        val end = processRuntime.indexOf("private val bootstrapScope", start)
         assertTrue(
-            "engineClient가 engineBootstrap을 키로 쓴다 — 부트스트랩 도착 시 엔진 기동이 재실행된다(#101).",
-            "engineBootstrap" !in keys,
+            "`val engineClient: EngineSessionClient =`(한 번 초기화하는 필드)를 찾지 못했다 — 이 계약의 전제가 무너졌다.",
+            start >= 0 && end > start,
+        )
+        val initializer = processRuntime.substring(start, end)
+        val capabilities = initializer.substringAfter("capabilitiesProvider = {").substringBefore("positionAnalysisCacheStore =")
+
+        // ⚠️ 부트스트랩에서 파생하면(도착할 때 다시 만들면) 클라이언트 정체가 바뀌고,
+        // `GoCoachApp`의 `LaunchedEffect(engineClient)`가 **엔진 기동을 처음부터 다시** 돌린다.
+        // 부트스트랩은 `capabilitiesProvider` 람다 안에서만 읽는다.
+        assertTrue(
+            "engineClient가 engineBootstrap에서 파생한다 — 부트스트랩 도착 시 엔진 기동이 재실행된다(#101).",
+            "engineBootstrap" !in initializer.replace(capabilities, ""),
+        )
+    }
+
+    /**
+     * 액티비티는 엔진을 조립하지 않는다(refactor backlog #110). 조립이 컴포지션으로 돌아오면 같은 프로세스에서 액티비티가
+     * 다시 만들어질 때마다 새 어댑터가 KataGo를 새로 띄우고 옛것은 남는다 — `EngineProcessCountSmokeTest`가 기기에서 재는
+     * 쌓임이다. 이 계약은 그 모양을 `make test`에서 먼저 잡는다.
+     */
+    @Test
+    fun theActivityDoesNotAssembleTheEngine() {
+        listOf("createEngineBootstrap(", "LocalEngineSessionClient(", "createRemoteEngineSessionClient(", "CompletableDeferred").forEach {
+            assertTrue(
+                "MainActivity가 엔진을 조립한다(`$it`) — 액티비티가 다시 만들어질 때마다 KataGo가 쌓인다. " +
+                    "GoCoachProcessRuntime에 둘 것(#110).",
+                it !in mainActivity,
+            )
+        }
+        assertTrue(
+            "엔진 부트스트랩이 프로세스에 한 번이 아니다 — 다시 만들어진 액티비티가 모델 복사·어댑터를 한 벌 더 만든다(#110).",
+            "if (bootstrapStarted) return" in processRuntime,
         )
     }
 
     @Test
     fun theEngineIsUnlockedBeforeItsIdentityIsAnnounced() {
-        val unlock = mainActivity.indexOf("coreApiDeferred.complete(")
-        val announce = mainActivity.indexOf("engineBootstrap = ready")
+        val unlock = processRuntime.indexOf("coreApiDeferred.complete(")
+        val announce = processRuntime.indexOf("engineBootstrap = ready")
 
         assertTrue("부트스트랩 완료 배선을 찾지 못했다 — 전제가 무너졌다.", unlock >= 0 && announce >= 0)
         // ⚠️ 반대로 하면, 정체를 보고 재구성된 화면이 *"엔진 있음"* 으로 보이는 찰나에 엔진은
@@ -155,12 +184,12 @@ class EngineReadinessWiringContractTest {
 
     @Test
     fun theEngineClientReadsTheSessionGenerationOfTheLiveSessionHolder() {
-        // refactor backlog #18: 클라이언트(MainActivity)가 세션 홀더(GoCoachApp)보다 먼저 생기므로
-        // 둘은 중계기로만 이어진다. 잇는 줄이 빠지면 **컴파일도 테스트도 초록인 채** 모든
+        // refactor backlog #18: 클라이언트(GoCoachProcessRuntime, #110 전에는 MainActivity)가 세션 홀더(GoCoachApp)보다
+        // 먼저 생기므로 둘은 중계기로만 이어진다. 잇는 줄이 빠지면 **컴파일도 테스트도 초록인 채** 모든
         // `position_analysis` 로그가 다시 `g0`으로 찍힌다 — 중계기는 잇기 전에 0을 답하기 때문이다.
         assertTrue(
-            "MainActivity가 로컬 엔진 클라이언트에 중계기를 넘기지 않는다 — 세대가 로그에 실리지 않는다(#18).",
-            "currentSessionGeneration = sessionGenerationRelay::current" in mainActivity,
+            "GoCoachProcessRuntime이 로컬 엔진 클라이언트에 중계기를 넘기지 않는다 — 세대가 로그에 실리지 않는다(#18).",
+            "currentSessionGeneration = sessionGenerationRelay::current" in processRuntime,
         )
         val holderStart = goCoachApp.indexOf("val sessionHolder = remember {")
         val holderEnd = goCoachApp.indexOf("var sessionSnapshot by", holderStart)

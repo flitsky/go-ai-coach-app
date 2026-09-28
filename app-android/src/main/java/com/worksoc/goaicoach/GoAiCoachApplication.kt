@@ -19,6 +19,14 @@ import com.google.android.gms.ads.RequestConfiguration
  * 때문이다 — 출석 체크인이 먼저 돌면 그날 기록이 붙었다가 곧바로 지워져 사용자가 출석을 잃는다.
  */
 class GoAiCoachApplication : Application() {
+    /**
+     * 엔진 묶음의 프로세스 수명 소유자(refactor backlog #110) — 사유는 [GoCoachProcessRuntime]의 KDoc.
+     *
+     * ⚠️ **[onCreate]에서 만들지 않는다**(`by lazy`) — 처음 화면이 붙을 때 만들어지므로 아래 초기화 순서
+     * 계약(#99 개발자 모드 초기화 → #63 릴리즈 초기화가 다른 무엇보다 먼저)보다 늘 늦다.
+     */
+    internal val processRuntime: GoCoachProcessRuntime by lazy { GoCoachProcessRuntime.forApplication(this) }
+
     override fun onCreate() {
         super.onCreate()
         applyAdContentRating()

@@ -1,8 +1,10 @@
 package com.worksoc.goaicoach.smoke
 
+import android.util.Log
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
@@ -13,6 +15,9 @@ import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.persistence.UiLanguageStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import java.io.File
@@ -36,7 +41,7 @@ import org.junit.runner.RunWith
  * ## 세는 법
  * [kataGoProcessCensus] — 앱 uid의 `/proc`만 본다. 기준은 **종류마다** 1개 이하다(gtp ≤ 1, analysis ≤ 1). 어댑터 하나가
  * 두 종류를 하나씩 띄우므로 합계 1은 정상 동작에서도 틀린 기준이다. 내려간 프로세스가 거둬지기 전의 짧은 창이 있어
- * 한 번 보고 끝내지 않고 [SettleMillis]까지 다시 본다. 엔진 준비 뒤에는 gtp가 **하나 이상** 보여야 한다 — 세는 법이
+ * 한 번 보고 끝내지 않고 [SettleMillis]까지 다시 본다(새 대국은 일부러 프로세스를 갈아 끼운다 — `startNewGame`). 엔진 준비 뒤에는 gtp가 **하나 이상** 보여야 한다 — 세는 법이
  * 고장나 늘 0을 답하는 거짓 초록을 막는다.
  *
  * ## 전제
@@ -64,7 +69,14 @@ class EngineProcessCountSmokeTest {
         stopLeftoverKataGoProcesses()
         resetToFreshInstallState()
         // 흑=사람·백=AI(기본값)라 로비의 시작 버튼이 엔진 준비를 기다린다. 온보딩을 본 것으로 둬 첫 실행 처리를 건너뛴다.
-        UserPreferencesStore(context).save(UserPreferencesSnapshot(boardSize = BoardSize.Nine, hasSeenOnboarding = true))
+        // 탐색은 가장 짧게(1초) — 끝의 AI 한 수를 빨리 받는다.
+        UserPreferencesStore(context).save(
+            UserPreferencesSnapshot(
+                boardSize = BoardSize.Nine,
+                searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinOneSecond),
+                hasSeenOnboarding = true,
+            ),
+        )
         assertTrue(
             "진짜 KataGo 모델이 없다 — 스텁 엔진으로는 셀 프로세스가 없다. `make install-dev-engine TARGET=emu`로 모델을 넣을 것.",
             File(context.filesDir, "katago/model.bin.gz").isFile,
@@ -91,7 +103,12 @@ class EngineProcessCountSmokeTest {
         }
     }
 
-    /** 그 자리에서 다시 만들기 — `configChanges` 밖의 설정 변경·「활동 유지 안 함」과 같은 모양(프로세스는 그대로). */
+    /**
+     * 그 자리에서 다시 만들기 — `configChanges` 밖의 설정 변경·「활동 유지 안 함」과 같은 모양(프로세스는 그대로).
+     *
+     * 끝에서 AI 대국을 한 수 둔다 — 다시 만들어진 화면들이 **이미 떠 있는** 엔진 위에서 기동을 되풀이한 뒤에도 그 엔진이
+     * 멀쩡히 AI 차례를 돌려준다는 것(두 번째 기동이 프로세스를 하나 더 띄우지도, 엔진을 망가뜨리지도 않는다).
+     */
     @Test
     fun recreatingTheActivityAgainAndAgainNeverStacksKataGo() {
         val launched = ActivityScenario.launch(MainActivity::class.java)
@@ -103,6 +120,15 @@ class EngineProcessCountSmokeTest {
             waitUntilTheEngineIsReady()
             assertAtMostOneKataGoPerKind("${round + 1}번째 재생성 — 엔진 준비 뒤", engineIsUp = true)
         }
+
+        composeRule.onNode(hasText(strings.startMatchAction, substring = true) and isEnabled()).performClick()
+        waitUntilDoing(EngineTimeoutMillis, "사람의 첫 수") {
+            if (exists(moveCountText(1)) || exists(moveCountText(2))) return@waitUntilDoing true
+            if (exists(moveCountText(0))) composeRule.onNodeWithTag(TestTags.GoBoard).performClick()
+            false
+        }
+        waitUntilDoing(EngineTimeoutMillis, "AI의 돌") { exists(moveCountText(2)) }
+        assertAtMostOneKataGoPerKind("재생성 ${Rounds}번 뒤 AI가 한 수 둔 뒤", engineIsUp = true)
     }
 
     // ── 앱을 움직이는 손잡이 ──────────────────────────────────────────────────────────────────
@@ -138,6 +164,7 @@ class EngineProcessCountSmokeTest {
         val gtp = census.count { it.kind == "gtp" }
         val analysis = census.count { it.kind == "analysis" }
         observations += "$moment: gtp=$gtp analysis=$analysis ${census.map { "${it.pid}/${it.kind}/${it.state}" }}"
+        Log.i(LogTag, observations.last())
         val trace = observations.joinToString("\n")
         if (engineIsUp) {
             assertTrue("엔진이 준비됐는데 gtp가 안 보인다 — 세는 법이 고장났거나 스텁으로 떨어졌다.\n$trace", gtp >= 1)
@@ -149,6 +176,8 @@ class EngineProcessCountSmokeTest {
         count { it.kind == "gtp" } > 1 || count { it.kind == "analysis" } > 1
 
     // ── 도우미 ────────────────────────────────────────────────────────────────────────────
+
+    private fun moveCountText(count: Int): String = "${strings.moveCountPrefix} $count${strings.moveCountSuffix}"
 
     private fun exists(text: String): Boolean =
         composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
@@ -165,6 +194,8 @@ class EngineProcessCountSmokeTest {
     }
 
     private companion object {
+        /** 관측은 초록일 때도 logcat에 남는다 — `adb logcat -s EngineProcessCount`. */
+        const val LogTag = "EngineProcessCount"
         const val Rounds = 4
         const val SettleMillis = 5_000L
         const val PollMillis = 250L

@@ -4,7 +4,8 @@ package com.worksoc.goaicoach.engine
  * 엔진 세션 클라이언트가 **세션 세대**를 물어보는 자리(refactor backlog #18).
  *
  * ## 왜 필요한가 — 만드는 순서가 거꾸로다
- * `LocalEngineSessionClient`는 `MainActivity`가 만든다(#101 이후 엔진보다도 먼저). 세대의 원천인
+ * `LocalEngineSessionClient`는 `GoCoachProcessRuntime`이 프로세스에 한 번 만든다(#101 이후 엔진보다도 먼저, #110 전에는
+ * `MainActivity`가 만들었다). 세대의 원천인
  * `GameSessionStateHolder`는 그 아래 `GoCoachApp`이 만든다. 클라이언트를 만드는 순간에는 읽을
  * 대상이 아직 없다. 그래서 클라이언트에는 **이 중계기를 읽는 람다**를 주고, 홀더가 생기는 자리에서
  * 중계기를 그 홀더에 잇는다. [DeferredEngineCoreApi]가 *"아직 없는 엔진"* 을 기다리는 것과 같은

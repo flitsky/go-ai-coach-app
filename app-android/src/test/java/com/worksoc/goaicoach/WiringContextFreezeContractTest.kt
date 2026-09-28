@@ -391,8 +391,8 @@ class WiringContextFreezeContractTest {
         /** 붙잡혀도 되는 지역 값 → 그 이유. 여기 올리려면 "왜 컴포지션 내내 같은가"를 적어야 한다. */
         val CapturedByDesign: Map<String, String> = mapOf(
             "context" to "androidContext = context.applicationContext — Application은 프로세스에 하나다.",
-            "engineClient" to "GoCoachScreen 매개변수 — MainActivity가 remember로 한 번 만든 인스턴스다(엔진 기동이 그 정체에 묶여 있다).",
-            "diagnosticEventLog" to "GoCoachScreen 매개변수 — MainActivity가 remember(applicationContext)로 한 번 만든다.",
+            "engineClient" to "GoCoachScreen 매개변수 — GoCoachProcessRuntime이 프로세스에 한 번 만든 인스턴스다(#110, 엔진 기동이 그 정체에 묶여 있다).",
+            "diagnosticEventLog" to "GoCoachScreen 매개변수 — GoCoachProcessRuntime이 프로세스에 한 번 만든다(#110).",
             "cancelUndoSync" to "지역 var — 객체를 만든 바로 그 컴포지션에서 `cancelUndoSync = controllers.undoController::" +
                 "cancelPendingSync`로, 이 객체로 배선한 무르기 컨트롤러를 가리키게 된다. 객체와 함께 새로 태어난다.",
         )

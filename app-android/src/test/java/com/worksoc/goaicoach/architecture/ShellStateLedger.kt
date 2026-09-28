@@ -230,7 +230,7 @@ internal object ShellStateLedger {
      * 효과를 지웠으면 그 셸의 효과 수를 내린다. 바꾼 사유는 LayeringContractTest 이력 주석에 적는다.
      */
     val GUARDED_SHELLS: Map<String, GuardedShell> = mapOf(
-        "mainActivity" to GuardedShell({ RepoPaths.compositionFile("MainActivity.kt") }, Role.COMPOSITION_ROOT, 95, 2),
+        "mainActivity" to GuardedShell({ RepoPaths.compositionFile("MainActivity.kt") }, Role.COMPOSITION_ROOT, 43, 2),
         "goCoachApp" to GuardedShell({ RepoPaths.goCoachApp }, Role.APP_SHELL, 777, 8),
         "settingsScreen" to GuardedShell({ RepoPaths.uiFile("SettingsScreen.kt") }, Role.SCREEN, 400, 0),
         "developerTestSection" to GuardedShell({ RepoPaths.uiFile("DeveloperTestSection.kt") }, Role.SECTION, 350, 0),

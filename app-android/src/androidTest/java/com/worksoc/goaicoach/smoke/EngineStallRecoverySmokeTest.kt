@@ -59,11 +59,12 @@ import org.junit.runner.RunWith
  * 에뮬레이터는 느리다(KataGo 재기동·모델 적재가 수십 초 걸릴 수 있다). 기다림의 상한은 넉넉히 둔다.
  *
  * ## ⚠️ 앞뒤로 남은 KataGo 프로세스를 내린다(2026-09-28 실측)
- * 계기 테스트는 한 프로세스에서 [MainActivity]를 **여러 번** 띄운다. 앱은 액티비티가 닫혀도 KataGo 자식 프로세스를
- * 내리지 않으므로(실사용에서는 프로세스 하나 = 액티비티 하나라 문제가 없다) 테스트마다 KataGo가 하나씩 쌓인다.
- * 2GB 에뮬레이터에서 `make test-device`로 넷을 함께 돌리면 `AppLaunchSmokeTest`가 남긴 것까지 셋이 겹쳐
- * **lowmemorykiller가 앱 프로세스를 죽였다**(빈 실패 메시지 + 뒤의 테스트가 아예 안 돈다). 그래서 이 테스트는
- * 시작 전과 끝난 뒤에 같은 uid의 KataGo를 내린다([stopLeftoverKataGoProcesses]) — 앱 코드는 건드리지 않는다.
+ * 계기 테스트는 한 프로세스에서 [MainActivity]를 **여러 번** 띄운다. 그때는 액티비티를 띄울 때마다 엔진이 새로
+ * 조립돼 테스트마다 KataGo가 하나씩 쌓였고, 2GB 에뮬레이터에서 `make test-device`로 넷을 함께 돌리면
+ * `AppLaunchSmokeTest`가 남긴 것까지 셋이 겹쳐 **lowmemorykiller가 앱 프로세스를 죽였다**(빈 실패 메시지 + 뒤의 테스트가
+ * 아예 안 돈다). 그 쌓임은 refactor backlog #110이 고쳤다 — 엔진은 이제 프로세스에 한 벌이고(`GoCoachProcessRuntime`),
+ * `EngineProcessCountSmokeTest`가 그것을 잰다. 시작 전과 끝난 뒤에 같은 uid의 KataGo를 내리는 것([stopLeftoverKataGoProcesses])은
+ * 안전망으로 남는다 — 앞 테스트가 멈춰 둔 프로세스를 물려받지 않게. 내린 엔진은 다음 호출이 거두고 다시 띄운다(#14).
  */
 @RunWith(AndroidJUnit4::class)
 class EngineStallRecoverySmokeTest {

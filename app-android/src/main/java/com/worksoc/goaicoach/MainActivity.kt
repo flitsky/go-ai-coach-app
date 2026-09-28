@@ -8,42 +8,22 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
-import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
-import com.worksoc.goaicoach.application.engine.EngineSessionBackend
-import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
-import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
-import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
-import com.worksoc.goaicoach.engine.DeferredEngineCoreApi
-import com.worksoc.goaicoach.engine.EngineBootstrap
-import com.worksoc.goaicoach.engine.EngineIdentity
-import com.worksoc.goaicoach.engine.SessionGenerationRelay
-import com.worksoc.goaicoach.engine.createEngineBootstrap
-import com.worksoc.goaicoach.engine.createRemoteEngineSessionClient
-import com.worksoc.goaicoach.engine.identity
-import com.worksoc.goaicoach.persistence.DiagnosticEventLog
-import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.platform.AdsConsentManager
-import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
-import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.ui.play.allowsRotation
 import com.worksoc.goaicoach.ui.settings.AppFontScaleState
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
 import com.worksoc.goaicoach.ui.splash.AppSplash
-import java.io.File
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
+    /** 엔진 묶음의 프로세스 수명 소유자(refactor backlog #110) — 사유는 [GoCoachProcessRuntime]의 KDoc. */
+    private val processRuntime: GoCoachProcessRuntime by lazy { (application as GoAiCoachApplication).processRuntime }
+
     /**
      * 회전 정책(백로그 #147) — 폰은 세로 고정, 큰 화면(sw≥600dp)은 자유. 판정은 `allowsRotation` 하나가 한다.
      *
@@ -89,92 +69,21 @@ class MainActivity : ComponentActivity() {
                 //
                 // 이제 홈이 곧 랜딩이다. 준비는 뒤에서 돌고, 사용자가 온보딩·홈을 훑는 **그 시간에**
                 // 끝난다. 준비 전에 대국을 시작하려 하면 로비의 시작 버튼이 막아 준다(#101 0단계).
-                val positionAnalysisCacheStore = remember(applicationContext) {
-                    JsonPositionAnalysisCacheStore(applicationContext)
-                }
-                val diagnosticEventLog: DiagnosticEventLogPort = remember(applicationContext) {
-                    DiagnosticEventLog(File(applicationContext.filesDir, DiagnosticEventLog.FileName))
-                }
-                // 엔진 호출은 이 `Deferred`가 완성될 때까지 `DeferredEngineCoreApi` 안에서 기다린다.
-                val coreApiDeferred = remember { CompletableDeferred<EngineCoreApi>() }
-                // 세션 세대도 같은 사정이다 — 그 원천(`GameSessionStateHolder`)은 아래 `GoCoachApp`이
-                // 만든다. 클라이언트는 이 중계기를 읽고, `GoCoachApp`이 홀더를 만들면서 잇는다(refactor backlog #18).
-                val sessionGenerationRelay = remember { SessionGenerationRelay() }
-                var engineBootstrap by remember { mutableStateOf<EngineBootstrap?>(null) }
-                LaunchedEffect(Unit) {
-                    val ready = withContext(Dispatchers.IO) {
-                        createEngineBootstrap(
-                            context = applicationContext,
-                            nativeLibraryDir = applicationInfo.nativeLibraryDir,
-                        )
-                    }
-                    // ⚠️ **엔진을 먼저 풀어주고 정체를 나중에 알린다.** 반대로 하면, 정체를 보고
-                    // 재구성된 화면이 *"엔진 준비됨"* 으로 보이는 찰나에 엔진은 아직 잠겨 있다.
-                    coreApiDeferred.complete(ready.coreApi)
-                    engineBootstrap = ready
-                }
-                // 개발용 원격 엔진 스파이크(`REMOTE_ENGINE_AND_LAYERING.md` Stage E-3).
-                // BuildConfig.REMOTE_ENGINE_URL은 debug 빌드에서만, local.properties의
-                // debug.remoteEngineUrl 키가 있을 때만 비어있지 않다(app-android/build.gradle.kts 참고)
-                // — playInternal/release는 항상 빈 문자열로 고정돼 있어 이 분기를 절대 타지 않는다.
-                val remoteEngineUrl = BuildConfig.REMOTE_ENGINE_URL
-                val remoteEngineRequested = BuildConfig.DEBUG && remoteEngineUrl.isNotBlank()
-                // ⚠️ 예전에는 아래 `engineClient`를 만드는 `remember` 블록 **안에서** 컴포즈 상태
-                // (`usingRemoteEngine`)에 값을 썼다 — 컴포지션 도중의 상태 쓰기이고, 그 블록은
-                // 키가 그대로면 다시 돌지 않으므로 값이 어긋날 수 있었다. 후보 선택 자체를 밖으로
-                // 꺼내 **평범한 값**으로 만들었다.
-                val remoteClient = remember(positionAnalysisCacheStore, diagnosticEventLog) {
-                    if (remoteEngineRequested) {
-                        createRemoteEngineSessionClient(
-                            candidates = listOf(RemoteEngineCandidate(endpointUrl = remoteEngineUrl, enabled = true)),
-                            currentSessionGeneration = sessionGenerationRelay::current,
-                            positionAnalysisCacheStore = positionAnalysisCacheStore,
-                            diagnosticEventLog = diagnosticEventLog,
-                        )
-                    } else {
-                        null
-                    }
-                }
-                // ⚠️ **`engineBootstrap`을 키로 쓰지 말 것.** 부트스트랩이 도착할 때 클라이언트가
-                // 새로 만들어지면 `GoCoachApp`의 `LaunchedEffect(engineClient)`가 **엔진 기동을
-                // 다시** 돌린다. 그래서 부트스트랩은 키가 아니라 **람다 안에서 읽는다.**
-                val engineClient = remember(remoteClient, positionAnalysisCacheStore, diagnosticEventLog) {
-                    // 원격 후보가 있으면 우선 쓰고, 어떤 이유로든(엔드포인트가 비활성 등) 후보를 못
-                    // 고르면 항상 로컬로 폴백한다.
-                    remoteClient ?: LocalEngineSessionClient(
-                        coreApi = DeferredEngineCoreApi(coreApiDeferred),
-                        currentSessionGeneration = sessionGenerationRelay::current,
-                        capabilitiesProvider = {
-                            EngineSessionCapabilities(
-                                // 준비 전에는 `null`이라 false다 — 없는 능력을 열어주지 않는다.
-                                supportsDeviceBenchmark = engineBootstrap?.mode == EngineMode.LocalProcess,
-                                backend = EngineSessionBackend.LocalEngine,
-                            )
-                        },
-                        positionAnalysisCacheStore = positionAnalysisCacheStore,
-                        diagnosticEventLog = diagnosticEventLog,
-                    )
-                }
+                // ⚠️ **엔진 묶음은 여기서 만들지 않는다**(refactor backlog #110) — 부트스트랩·세션 클라이언트·진단 로그는
+                // 프로세스가 든다(`GoCoachProcessRuntime`). 여기서 만들면 액티비티가 다시 만들어질 때마다 KataGo가 한 벌씩 쌓인다.
+                // 부트스트랩은 프로세스에 한 번이다 — 다시 만들어진 액티비티가 부르면 아무것도 하지 않는다.
+                LaunchedEffect(Unit) { processRuntime.startEngineBootstrap() }
                 // ⚠️ **홈을 스플래시 뒤에 두지 않고 함께 컴포즈한다**(백로그 #125). 스플래시가
                 // 도는 1초 동안 홈은 이미 조립되고 엔진 부트스트랩도 돌고 있어야, 그 1초가
                 // **버려지는 시간이 아니라 벌어 두는 시간**이 된다. `AppSplash`는 위에 얹혀
                 // 터치를 먹고 스스로 사라진다.
                 Box {
                     GoCoachApp(
-                        engineClient = engineClient,
-                        // ⚠️ **예측하지 않는다** — 준비 전에는 `EngineIdentity.Unresolved`(mode=Unknown)를
-                        // 그대로 넘긴다(2026-09-05 사용자 결정). 여기서 *"어차피 KataGo겠지"* 로 찍으면
-                        // 스텁 폴백 기기의 진단 리포트가 거짓말을 한다.
-                        engineIdentity = {
-                            val resolved = engineBootstrap?.identity() ?: EngineIdentity.Unresolved
-                            if (remoteClient != null) {
-                                resolved.copy(name = "${resolved.name} (remote: $remoteEngineUrl)")
-                            } else {
-                                resolved
-                            }
-                        },
-                        diagnosticEventLog = diagnosticEventLog,
-                        sessionGenerationRelay = sessionGenerationRelay,
+                        engineClient = processRuntime.engineClient,
+                        // ⚠️ 값이 아니라 공급자로 넘긴다 — 준비 전에는 `Unresolved`다(#101, `engineIdentity`의 KDoc).
+                        engineIdentity = { processRuntime.engineIdentity() },
+                        diagnosticEventLog = processRuntime.diagnosticEventLog,
+                        sessionGenerationRelay = processRuntime.sessionGenerationRelay,
                     )
                     AppSplash()
                 }
