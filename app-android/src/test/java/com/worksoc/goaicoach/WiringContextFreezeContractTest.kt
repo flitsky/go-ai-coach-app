@@ -58,6 +58,9 @@ import org.junit.Test
  *   `cancelUndoSync()`에 닿고, 배선 뒤에 `cancelUndoSync = controllers.undoController::cancelPendingSync`가 있다.
  * - 엔진 작업 수명 컨트롤러의 로그 문맥: 키 없는 `val lifecycleController = remember { … }`가 컴포지션 지역 값을
  *   붙잡지 않고, 엔진 정체를 부를 때 읽는다(#108) — [theLifecycleControllerRuntimeLogContextReadsTheCurrentEngineIdentity].
+ * - 다시 배선돼도 살아남아야 하는 자리(무르기 뒤 재동기화 `postUndoSync`·추천 수 유예 `deferredTopMoveAnalysis`):
+ *   키 없는 `remember { 타입() }`로 한 번 만들고 객체의 멤버가 그 지역 값을 그대로 넘긴다(#107) —
+ *   [theSlotsThatOutliveRewiringAreRememberedOnceAndHandedOverAsIs].
  *
  * ⚠️ 이 계약은 **이름을 읽는** 근사다. 문자열 안의 낱말도 읽기로 센다(템플릿 `$x`가 곧 읽기다 — 보수적),
  * 람다 매개변수가 지역 이름을 가리는 경우는 구분하지 않는다. 지역 함수의 식 본문은 줄 끝의 이항 연산자·다음
@@ -199,6 +202,43 @@ class WiringContextFreezeContractTest {
     }
 
     /**
+     * 컨트롤러가 다시 배선돼도 **살아남아야 하는** 자리([RewireSurvivingSlots], refactor backlog #107). 무르기는
+     * `isPendingUndoSync`·`undoEngineInterventionQuietUntil`을, 엔진 작업은 `isEngineBusy`를 바꾼다 — 전부
+     * [PinnedWiringContextKeys]라 그때마다 컨텍스트 객체와 컨트롤러가 통째로 새로 만들어진다. 옛 `UndoController`가
+     * 걸어 둔 재동기화를 새 인스턴스가 끊고, 바쁠 때 미뤄 둔 추천 수 분석을 한가해진 뒤의 새 `TopMovesController`가
+     * 꺼내려면 그 상태가 컨트롤러 밖, **키 없는** `remember { 타입() }`로 한 번만 만든 자리에 있고 객체의 같은 이름
+     * 멤버가 그 지역 값을 그대로 넘겨야 한다.
+     *
+     * `GoCoachControllerWiringTest`는 한 번 만든 페이크(`FakeGoCoachAppWiringContext`)를 다시 배선할 뿐이라 이
+     * 모양을 못 본다 — 키를 달거나(`remember(isPendingUndoSync) { … }`), 객체 안에서 새로 만들거나
+     * (`override val postUndoSync = PostUndoSyncSlot()`), 컨텍스트와 함께 태어나는 자리로 옮기면 배선 테스트는 전부
+     * 초록인 채 #107이 돌아온다. 원장(ShellStateLedger)의 WIRING 종류도 키를 보지 않는다. 그래서 모양을 잰다.
+     */
+    @Test
+    fun theSlotsThatOutliveRewiringAreRememberedOnceAndHandedOverAsIs() {
+        RewireSurvivingSlots.forEach { (name, type) ->
+            assertEquals(
+                "`val $name = remember { $type() }`(키 없음)가 아니다 — 무르기·엔진 작업이 wiringContext 키를 바꿀 때마다 " +
+                    "새 자리가 생겨, 다시 만들어진 컨트롤러가 옛 인스턴스가 걸어 둔 일을 못 보고 못 끊는다(#107). remember에 " +
+                    "키를 달지 말 것 — 키는 PinnedWiringContextKeys 가운데 하나여도 같다. 지금: ${source.rememberedBlock(name)}",
+                RememberedBlock(keys = emptyList(), captured = emptySet()),
+                source.rememberedBlock(name),
+            )
+            assertTrue(
+                "`val $name = remember { … }`가 $type()를 한 번 만드는 모양이 아니다(#107).",
+                source.containsCode(Regex("""\bval $name = remember\s*\{\s*$type\(\s*\)\s*}""")),
+            )
+            assertEquals(
+                "익명 컨텍스트의 `override val $name`이 키 없이 remember한 지역 값 `$name`을 그대로 넘기지 않는다 — 객체 " +
+                    "안에서 새로 만들면(`= $type()`) 키가 바뀔 때마다 새 자리가 생겨 #107이 돌아온다. " +
+                    "`override val $name: $type = $name`로 둘 것.",
+                name,
+                source.memberBody(name),
+            )
+        }
+    }
+
+    /**
      * 파서 자기 시험 — 멤버 모양 다섯(식 본문 타입 있음/없음·블록 본문·초기화식·게터), 지역 함수 위임, 매개변수,
      * 지역 `var`, 선언 없는 뿌리, `remember` 키, 줄을 넘는 식, 객체 안 도우미를 **붙잡는 쪽**(평범한 값)과
      * **안 붙잡는 쪽**(위임·remember)으로 하나씩 잰다. 여기가 빨개지면 실제 앱을 재는 위 테스트도 믿을 수 없다.
@@ -257,6 +297,9 @@ class WiringContextFreezeContractTest {
         assertEquals(listOf("this.readHelper()", "plainHelper"), snippet.reachedCode("viaThisHelper").map { it.trim() })
         assertEquals(RememberedBlock(emptyList(), setOf("plainG")), snippet.rememberedBlock("frozenBlock"))
         assertEquals(RememberedBlock(listOf("plainA"), setOf("plainA")), snippet.rememberedBlock("keyedByPlain"))
+        assertEquals(RememberedBlock(emptyList(), emptySet()), snippet.rememberedBlock("remembered"))
+        assertEquals("remembered", snippet.memberBody("initializerRemembered"))
+        assertEquals("plainF", snippet.memberBody("getterPlain"))
         assertFalse("코드 검색은 문자열 속 글자를 코드로 읽지 않는다.", snippet.containsCode(Regex("""override fun fake""")))
     }
 
@@ -352,6 +395,17 @@ class WiringContextFreezeContractTest {
             "diagnosticEventLog" to "GoCoachScreen 매개변수 — MainActivity가 remember(applicationContext)로 한 번 만든다.",
             "cancelUndoSync" to "지역 var — 객체를 만든 바로 그 컴포지션에서 `cancelUndoSync = controllers.undoController::" +
                 "cancelPendingSync`로, 이 객체로 배선한 무르기 컨트롤러를 가리키게 된다. 객체와 함께 새로 태어난다.",
+        )
+
+        /**
+         * 다시 배선돼도 살아남아야 하는 자리 → 그것을 만드는 타입(인자 없는 생성자). 키 없는 `remember { 타입() }`로
+         * 한 번 만들고, 객체의 같은 이름 멤버가 그 지역 값을 그대로 넘긴다(#107).
+         */
+        val RewireSurvivingSlots: Map<String, String> = mapOf(
+            // 무르기 뒤 대기 중인 재동기화 한 건 — 무르기가 isPendingUndoSync를 바꿔 UndoController가 새로 만들어진다(#107).
+            "postUndoSync" to "PostUndoSyncSlot",
+            // 엔진이 바쁠 때 미룬 추천 수 분석 — isEngineBusy가 풀리는 순간 새로 배선된 TopMovesController가 꺼낸다.
+            "deferredTopMoveAnalysis" to "TopMoveAnalysisDeferral",
         )
 
         /** [CapturedByDesign] 가운데 조용한 구간 테스트가 제 메시지로 지키는 값. */
@@ -596,6 +650,9 @@ private class WiringContextSource(code: String, private val stableRoots: Set<Str
         val block = call.block ?: return null
         return RememberedBlock(call.keys, capturedLocals(Body(screen.text.substring(block.first, block.last + 1), emptySet()), snapshot = false, mutableSetOf()))
     }
+
+    /** 객체 멤버 [name]의 몸체 글자(초기화식·게터·함수의 식이나 블록 안). 그런 멤버가 없으면 null. */
+    fun memberBody(name: String): String? = membersByName[name]?.body?.text?.trim()
 
     /** 문자열·문자 리터럴을 뺀 **코드**에 [pattern]이 있는가. */
     fun containsCode(pattern: Regex): Boolean = pattern.containsMatchIn(mask)
