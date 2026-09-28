@@ -139,6 +139,7 @@ internal fun wireAutoAiTurnController(
         cancelTrackedTurn = context.lifecycleController::cancelInFlightAutoAiTurn,
         applyAutoAiTurnTimedOut = { timeout: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().markTimedOut(timeout)) },
         clearAutoAiTurnTimedOut = { context.setAutoAiTurnUiState(context.autoAiTurnUiState().clearTimedOut()) },
+        recordAutoAiTurnFailure = { position: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().recordFailure(position)) },
     )
 
 internal fun wireHumanMoveController(

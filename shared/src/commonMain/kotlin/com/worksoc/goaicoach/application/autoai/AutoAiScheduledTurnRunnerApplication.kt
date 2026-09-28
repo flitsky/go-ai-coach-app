@@ -54,6 +54,8 @@ internal data class AutoAiScheduledTurnRunRequest(
     val applyTurnFailureDisplay: (Throwable) -> Unit,
     /** 이번 차례의 탐색이 시간 초과로 끝났다 — 선택을 기다리며 조용한 재시도를 막는 표시를 남긴다(refactor backlog #74). */
     val applyTurnTimedOut: (AutoAiTurnTimeout) -> Unit,
+    /** 이번 차례가 진짜로 실패했다 — 그 국면에서 센다. 잇달아 나면 위와 같은 표시가 붙는다(refactor backlog #109). */
+    val applyTurnFailed: (AutoAiTurnTimeout) -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
     val completeAutoAiTurnRun: () -> Unit,
     val requestFollowUpAnalysis: (AutoAiTurnFollowUpRequest) -> Unit,
@@ -136,6 +138,11 @@ internal fun runScheduledAutoAiTurnApplication(
             )
             request.markEngineOperationStarted(turnOperationToken.operation.operationId)
             startedOperationId = turnOperationToken.operation.operationId
+            // 시간 초과·진짜 실패의 표시가 묶이는 국면 — 이 차례를 요청한 세대·수순 길이(#74, #109).
+            val turnPosition = AutoAiTurnTimeout(
+                sessionGeneration = turnOperationToken.operation.sessionGeneration,
+                moveCount = turnContext.turnState.moves.size,
+            )
             val turnCompletion = runAutoAiTurnEngineCompletion(
                 request = request,
                 turnRunPlan = turnRunPlan,
@@ -154,14 +161,8 @@ internal fun runScheduledAutoAiTurnApplication(
                     applyTurnDisplay = request.applyTurnDisplay,
                     resolveEndgame = request.resolveEndgame,
                     applyTurnFailureDisplay = request.applyTurnFailureDisplay,
-                    markTurnTimedOut = {
-                        request.applyTurnTimedOut(
-                            AutoAiTurnTimeout(
-                                sessionGeneration = turnOperationToken.operation.sessionGeneration,
-                                moveCount = turnContext.turnState.moves.size,
-                            ),
-                        )
-                    },
+                    markTurnTimedOut = { request.applyTurnTimedOut(turnPosition) },
+                    markTurnFailed = { request.applyTurnFailed(turnPosition) },
                     appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
                 ),
             )

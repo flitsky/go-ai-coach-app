@@ -97,11 +97,14 @@ class AutoAiCompletionApplierTest {
         assertEquals(display.profile, resolved?.profile)
     }
 
+    /** 진짜 실패는 실패 문구를 띄우고, 그 국면의 실패를 센다(refactor backlog #109 — 잇달아 나면 선택 팝업). */
     @Test
-    fun failureLogsAndAppliesFailureDisplay() {
+    fun failureLogsAppliesFailureDisplayAndCountsTheFailure() {
         val failure = IllegalStateException("AI failed")
         val runtimeLog = RecordingRuntimeEventLog()
         var appliedFailure: Throwable? = null
+        var failureMarks = 0
+        var timeoutMarks = 0
 
         val followUp = runBlocking {
             applyAutoAiTurnCompletionApplication(
@@ -109,11 +112,15 @@ class AutoAiCompletionApplierTest {
                     completion = AutoAiTurnCompletionPlan.ApplyFailure(failure),
                     runtimeLog = runtimeLog,
                     applyTurnFailureDisplay = { appliedFailure = it },
+                    markTurnTimedOut = { timeoutMarks += 1 },
+                    markTurnFailed = { failureMarks += 1 },
                 ),
             )
         }
 
         assertSame(failure, appliedFailure)
+        assertEquals(1, failureMarks)
+        assertEquals(0, timeoutMarks, "진짜 실패는 시간 초과가 아니다")
         assertEquals(AutoAiTurnFollowUpPlan.None, followUp)
         assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_failure") })
     }
@@ -124,6 +131,7 @@ class AutoAiCompletionApplierTest {
         val runtimeLog = RecordingRuntimeEventLog()
         var appliedFailure: Throwable? = null
         var marks = 0
+        var failureMarks = 0
 
         val followUp = runBlocking {
             applyAutoAiTurnCompletionApplication(
@@ -132,12 +140,14 @@ class AutoAiCompletionApplierTest {
                     runtimeLog = runtimeLog,
                     applyTurnFailureDisplay = { appliedFailure = it },
                     markTurnTimedOut = { marks += 1 },
+                    markTurnFailed = { failureMarks += 1 },
                 ),
             )
         }
 
         assertEquals(null, appliedFailure)
         assertEquals(1, marks)
+        assertEquals(0, failureMarks, "시간 초과는 진짜 실패로 세지 않는다")
         assertEquals(AutoAiTurnFollowUpPlan.None, followUp)
         assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_timeout") })
     }
@@ -169,6 +179,7 @@ class AutoAiCompletionApplierTest {
         resolveEndgame: suspend (AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},
         markTurnTimedOut: () -> Unit = {},
+        markTurnFailed: () -> Unit = {},
         appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit = {},
     ): AutoAiTurnCompletionApplyRunRequest =
         AutoAiTurnCompletionApplyRunRequest(
@@ -195,6 +206,7 @@ class AutoAiCompletionApplierTest {
             resolveEndgame = resolveEndgame,
             applyTurnFailureDisplay = applyTurnFailureDisplay,
             markTurnTimedOut = markTurnTimedOut,
+            markTurnFailed = markTurnFailed,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
         )
 

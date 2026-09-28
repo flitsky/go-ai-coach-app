@@ -27,6 +27,8 @@ internal data class AutoAiTurnCompletionApplyRunRequest(
     val applyTurnFailureDisplay: (Throwable) -> Unit,
     /** 시간 초과 표시를 남긴다(refactor backlog #74) — 세대·수순 길이는 러너가 채운다. */
     val markTurnTimedOut: () -> Unit,
+    /** 이 국면의 진짜 실패를 센다(refactor backlog #109) — 잇달아 나면 선택 팝업으로 넘긴다. 국면은 러너가 채운다. */
+    val markTurnFailed: () -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
 )
 
@@ -115,4 +117,5 @@ private fun applyAutoAiTurnFailureCompletionApplication(
         ),
     )
     request.applyTurnFailureDisplay(completion.error)
+    request.markTurnFailed()
 }

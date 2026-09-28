@@ -30,6 +30,8 @@ import com.worksoc.goaicoach.application.engine.localScoreSnapshot
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
+import com.worksoc.goaicoach.application.session.AutoAiTurnFailureChoiceThreshold
+import com.worksoc.goaicoach.application.session.AutoAiTurnFailureStreak
 import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
@@ -66,6 +68,7 @@ import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -400,6 +403,71 @@ class AutoAiScheduledTurnRunnerTest {
     }
 
     /**
+     * refactor backlog #109 ⓐ — 진짜 실패는 **그 국면(세대·수순 길이)에서 센다**. 첫 실패 뒤에는 조용한 재시도가 그대로
+     * 예약되고(스스로 낫는 길), 같은 국면에서 [AutoAiTurnFailureChoiceThreshold]번째 실패면 시간 초과와 같은 표시가 붙어
+     * 재시도를 막는다(선택 팝업). 사용자가 고른 뒤 또 실패하면 곧바로 다시 막는다. 국면이 바뀌면 처음부터 센다.
+     */
+    @Test
+    fun aRealFailureRepeatedOnTheSamePositionMarksItLikeATimeoutAndBlocksTheSilentRetry() {
+        val state = GameState.empty()
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+        var autoAiState = AutoAiTurnUiState()
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 3L,
+        )
+        val failures = mutableListOf<Throwable>()
+        fun runFailingTurn() {
+            runScheduledAutoAiTurnApplication(
+                baseRequest(
+                    schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                    stateProvider = { state },
+                    controllerStateProvider = {
+                        controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                    },
+                    client = SuspendingRunnerFakeEngineClient { error("KataGo process died") },
+                    runtimeState = runtimeState,
+                    runtimeLog = RecordingRuntimeEventLog(),
+                    applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                    applyTurnFailureDisplay = { failures += it },
+                    applyTurnTimedOut = { error("진짜 실패는 시간 초과가 아니다") },
+                    applyTurnFailed = { position -> autoAiState = autoAiState.recordFailure(position) },
+                    completeRun = { autoAiState = autoAiState.completeAutoAiTurnRun() },
+                ),
+            )
+        }
+        fun requestPlan(uiState: AutoAiTurnUiState = autoAiState, moves: GameState = state) =
+            controllerState(state = moves, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = uiState)
+                .toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false)
+        val position = AutoAiTurnTimeout(sessionGeneration = 3L, moveCount = 0)
+        assertEquals(2, AutoAiTurnFailureChoiceThreshold, "이 시나리오는 두 번째 실패에서 묻는다고 둔다")
+
+        runFailingTurn()
+        assertEquals(1, failures.size, "실패 문구는 그대로 적힌다")
+        assertEquals(AutoAiTurnFailureStreak(position, count = 1), autoAiState.failureStreak)
+        assertNull(autoAiState.timedOut)
+        assertEquals(AutoAiTurnRequestPlan.Schedule(delayMillis = 0L), requestPlan(), "첫 실패 뒤에는 조용히 한 번 더 시도한다")
+
+        runFailingTurn()
+        assertEquals(position, autoAiState.timedOut, "같은 국면의 두 번째 실패면 선택 팝업의 표시가 붙는다")
+        assertEquals(AutoAiTurnRequestPlan.Skip, requestPlan(), "선택을 기다리는 동안 조용히 다시 시도하면 안 된다")
+
+        autoAiState = autoAiState.clearTimedOut() // 사용자가 「한 번 더 기다리기」·「엔진 다시 시작하기」를 골랐다.
+        assertEquals(AutoAiTurnRequestPlan.Schedule(delayMillis = 0L), requestPlan(), "고른 뒤에는 같은 국면을 다시 요청한다")
+        runFailingTurn()
+        assertEquals(position, autoAiState.timedOut, "사용자가 이미 본 문제는 다시 조용히 돌리지 않는다 — 곧바로 다시 묻는다")
+
+        val afterAMove = autoAiState.clearTimedOut().recordFailure(position.copy(moveCount = 1))
+        assertEquals(1, afterAMove.failureStreak?.count, "국면이 바뀌면 처음부터 센다")
+        assertNull(afterAMove.timedOut)
+    }
+
+    /**
      * T8(러너 쪽, refactor backlog #74) — 러너는 띄운 Job을 **돌려준다**(예전에는 버렸다, 설계 F3). 그리고 본문이
      * 한 번도 돌기 전에 취소되면(예약 직후 곧바로 무르기) 본문의 `finally`도 없으므로, 예약 표시는 Job의
      * 완료 콜백이 푼다.
@@ -478,6 +546,7 @@ class AutoAiScheduledTurnRunnerTest {
         resolveEndgame: suspend (com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan.Resolve) -> Unit = {},
         applyTurnFailureDisplay: (Throwable) -> Unit = {},
         applyTurnTimedOut: (AutoAiTurnTimeout) -> Unit = {},
+        applyTurnFailed: (AutoAiTurnTimeout) -> Unit = {},
         appendEngineOperationDiscardLog: (
             com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard.Discard,
         ) -> Unit = {},
@@ -516,6 +585,7 @@ class AutoAiScheduledTurnRunnerTest {
             resolveEndgame = resolveEndgame,
             applyTurnFailureDisplay = applyTurnFailureDisplay,
             applyTurnTimedOut = applyTurnTimedOut,
+            applyTurnFailed = applyTurnFailed,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
             completeAutoAiTurnRun = completeRun,
             requestFollowUpAnalysis = requestFollowUp,

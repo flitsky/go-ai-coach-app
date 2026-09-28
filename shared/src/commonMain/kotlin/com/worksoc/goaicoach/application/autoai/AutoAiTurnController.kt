@@ -64,6 +64,11 @@ class AutoAiTurnController(
     private val applyAutoAiTurnTimedOut: (AutoAiTurnTimeout) -> Unit,
     /** 그 표시를 지운다 — 사용자가 팝업에서 고른 뒤. */
     private val clearAutoAiTurnTimedOut: () -> Unit,
+    /**
+     * 진짜 실패(시간 초과도 취소도 아니다)가 난 국면을 센다(refactor backlog #109). 같은 국면에서 잇달아 나면 위의 시간 초과
+     * 표시가 붙어 [requestAiTurn]이 건너뛰고 선택 팝업이 뜬다 — 예전에는 화면에 아무것도 없이 조용히 계속 돌았다.
+     */
+    private val recordAutoAiTurnFailure: (AutoAiTurnTimeout) -> Unit,
 ) {
     /**
      * 시간 초과 뒤 「한 번 더 기다리기」(refactor backlog #74, 설계 C-10 상태 B). 표시를 지우고 같은 국면을 같은
@@ -153,6 +158,7 @@ class AutoAiTurnController(
                         resolveEndgame = ::applyEndgamePlan,
                         applyTurnFailureDisplay = applyTurnFailureDisplay,
                         applyTurnTimedOut = applyAutoAiTurnTimedOut,
+                        applyTurnFailed = recordAutoAiTurnFailure,
                         appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
                         completeAutoAiTurnRun = completeAutoAiTurnRun,
                         requestFollowUpAnalysis = requestFollowUpAnalysis,
