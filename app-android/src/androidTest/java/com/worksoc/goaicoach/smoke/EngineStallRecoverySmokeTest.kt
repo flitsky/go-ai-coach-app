@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.smoke
 
+import android.os.Process
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -57,6 +58,13 @@ import org.junit.runner.RunWith
  * 반상 터치를 먹지 않게.
  *
  * 에뮬레이터는 느리다(KataGo 재기동·모델 적재가 수십 초 걸릴 수 있다). 기다림의 상한은 넉넉히 둔다.
+ *
+ * ## ⚠️ 앞뒤로 남은 KataGo 프로세스를 내린다(2026-09-28 실측)
+ * 계기 테스트는 한 프로세스에서 [MainActivity]를 **여러 번** 띄운다. 앱은 액티비티가 닫혀도 KataGo 자식 프로세스를
+ * 내리지 않으므로(실사용에서는 프로세스 하나 = 액티비티 하나라 문제가 없다) 테스트마다 KataGo가 하나씩 쌓인다.
+ * 2GB 에뮬레이터에서 `make test-device`로 넷을 함께 돌리면 `AppLaunchSmokeTest`가 남긴 것까지 셋이 겹쳐
+ * **lowmemorykiller가 앱 프로세스를 죽였다**(빈 실패 메시지 + 뒤의 테스트가 아예 안 돈다). 그래서 이 테스트는
+ * 시작 전과 끝난 뒤에 같은 uid의 KataGo를 내린다([stopLeftoverKataGoProcesses]) — 앱 코드는 건드리지 않는다.
  */
 @RunWith(AndroidJUnit4::class)
 class EngineStallRecoverySmokeTest {
@@ -77,6 +85,7 @@ class EngineStallRecoverySmokeTest {
 
     @Before
     fun freshAppWithTheShortestSearchOnNineByNine() {
+        stopLeftoverKataGoProcesses()
         resetToFreshInstallState()
         armFile.delete()
         runtimeLogFile.delete()
@@ -98,6 +107,7 @@ class EngineStallRecoverySmokeTest {
     fun closeTheApp() {
         scenario?.close()
         armFile.delete()
+        stopLeftoverKataGoProcesses()
     }
 
     @Test
@@ -229,10 +239,27 @@ class EngineStallRecoverySmokeTest {
 
     private fun File.readTextOrEmpty(): String = if (isFile) readText() else ""
 
+    /**
+     * 이 앱(같은 uid)이 띄운 KataGo 프로세스를 전부 내리고, 사라질 때까지 잠깐 기다린다. 앱은 같은 uid의 프로세스만
+     * `/proc`에서 볼 수 있고 [Process.killProcess]도 같은 uid에만 닿는다 — 남의 프로세스는 건드릴 수 없다.
+     */
+    private fun stopLeftoverKataGoProcesses(): Int {
+        val pids = File("/proc").listFiles().orEmpty().mapNotNull { dir ->
+            val pid = dir.name.toIntOrNull() ?: return@mapNotNull null
+            val commandLine = runCatching { File(dir, "cmdline").readText() }.getOrNull() ?: return@mapNotNull null
+            pid.takeIf { KataGoExecutableName in commandLine }
+        }
+        pids.forEach(Process::killProcess)
+        val deadline = System.currentTimeMillis() + 5_000L
+        while (pids.any { File("/proc/$it").exists() } && System.currentTimeMillis() < deadline) Thread.sleep(100L)
+        return pids.size
+    }
+
     private companion object {
         const val StartupTimeoutMillis = 30_000L
         const val EngineTimeoutMillis = 120_000L
         const val PopupTimeoutMillis = 15_000L
         const val RetryIntervalMillis = 1_000L
+        const val KataGoExecutableName = "libkatago.so"
     }
 }
