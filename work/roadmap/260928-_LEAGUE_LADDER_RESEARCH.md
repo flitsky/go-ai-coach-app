@@ -241,7 +241,7 @@ v1 초안에 비평을 반영한 개정본이다. 비평이 다툰 사실은 202
 | NN 버퍼 | `maxBoardXSizeForNNBuffer`가 주석 처리돼 있다 → 기본값인 19x19 버퍼를 쓴다 | `analysis_learning.cfg:99-103` |
 | 릴리즈 AAB | 109MB | `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md:13` |
 | 지원 기기 | minSdk 26, arm64-v8a만 | `app-android/build.gradle.kts:106`(minSdk), `:201, :270`(abiFilters) |
-| 기본 판·규칙 | 13x13, 일본룰, 덤 6.5. 덤 선택지는 0.5/6.5/7.5뿐 | `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/preferences/UserPreferencesSnapshot.kt:21`, `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt:3, 11` |
+| 기본 판·규칙 | 13x13, 일본룰, 덤 6.5. 덤 선택지는 0.5/6.5/7.5뿐 | `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/preferences/UserPreferencesSnapshot.kt:21`, `core/domain/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt:3, 11` |
 | 시간 상한 | 전역 설정 하나: 끔 / 1초 / 3초 / 5초 / 10초. 기본은 10초 | `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/SearchTimeSettings.kt:32-36, 71` |
 | 와치독 | 상한 × 1.2 + 3초 + 5초(10초면 20초). 상한이 꺼져 있으면 60 + 5초, 종국 처리 중이면 20 + 5초 | `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/safety/EngineTurnWatchdog.kt:26-68` |
 | 대국 시계 | 없다(초읽기·제한 시간 개념이 앱에 없다) | – |
@@ -1463,7 +1463,7 @@ djma 봇 (id 2028892/2028889/2025391/2028891)
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/botcharacter/BotCharacterCatalog.kt`, `BotCharacter.kt`, `BotCollectionState.kt`
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/analysis/PositionAnalysisCache.kt`, `PositionAnalysisCacheOptimization.kt`
 - `shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/preferences/UserPreferencesSnapshot.kt`
-- `shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt`
+- `core/domain/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt`
 - `docs/engine/measurements/engine-benchmark/search-mode-phone-20260613/summary.md`, `docs/ENGINE.md`
 - `docs/engine/ENGINE_STRENGTH_RESEARCH.md`, `docs/engine/SCORE_AND_ENDGAME_DECISION.md`
 - `docs/spec/FAST_BEGINNER_TIER_DESIGN.md`, `docs/spec/FEATURE_ACCESS_PRINCIPLES.md`, `docs/spec/PITFALLS.md`(2, 37)
