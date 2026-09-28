@@ -25,6 +25,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // 바둑 규칙 커널(`shared.domain`)은 `:core:domain`에 있다(refactor backlog #49). `api`인 이유: 이 모듈의
+            // 공개 시그니처가 도메인 타입을 그대로 쓰므로, 이 모듈을 쓰는 쪽도 그 타입을 봐야 한다.
+            api(project(":core:domain"))
             implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
@@ -43,6 +46,8 @@ kotlin {
         //     (게이트가 열리면) iOS까지 컴파일되므로 안드로이드 전용 아티팩트에 의존할 수 없다.
         //     즉 `testFixtures`로는 **정작 지금 픽스처를 제일 많이 쓰는 commonTest가 빠진다.**
         commonTest.get().kotlin.srcDir("src/commonTestSupport/kotlin")
+        // 도메인 골든 판 파서 등 `:core:domain`의 모듈 사이 픽스처 — 같은 수단(srcDir)으로 함께 컴파일한다.
+        commonTest.get().kotlin.srcDir("../core/domain/src/commonTestFixtures/kotlin")
     }
 }
 

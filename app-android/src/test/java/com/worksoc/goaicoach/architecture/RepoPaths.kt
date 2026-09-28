@@ -42,6 +42,7 @@ internal object RepoPaths {
      * 모두 이 목록 하나를 본다. 목록의 루트는 **전부 실재해야 한다**([strictRoots]).
      */
     private val KMP_COMMON_MAIN_KOTLIN = listOf(
+        "core/domain/src/commonMain/kotlin",
         "$SHARED_COMMON_SOURCE_SET/kotlin",
     )
 
@@ -50,6 +51,8 @@ internal object RepoPaths {
      * 모듈 사이에 나눠 쓰는 픽스처 트리도 여기 둔다(옮겨 오기 전엔 commonTest 안이라 이미 훑이던 파일이다).
      */
     private val KMP_COMMON_TEST = listOf(
+        "core/domain/src/commonTest",
+        "core/domain/src/commonTestFixtures",
         "shared/src/commonTest",
     )
 

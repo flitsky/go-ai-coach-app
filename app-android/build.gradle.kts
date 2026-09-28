@@ -501,6 +501,7 @@ tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle
 val architectureContractScannedTrees = listOf(
     "app-android/src/main/java",
     "engine-android/src/main/java",
+    "core/domain/src",
     "shared/src",
 ).map { path -> rootDir.resolve(path).also { dir -> check(dir.isDirectory) { "아키텍처 계약 스캔 트리가 없다: $dir" } } }
 
