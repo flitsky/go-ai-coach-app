@@ -10,7 +10,8 @@ package com.worksoc.goaicoach.application.engine
  * 오퍼레이션 락 KDoc에 있다.
  *
  * 받는 쪽이 이것을 **실패로 보이면 안 된다** — 실패 문구("Top Moves analysis failed.")를 띄우거나 지난 결과를 지우면
- * 사용자에게는 오늘 없던 오류가 생긴 것이다. 기존의 미루기·바쁨 경로로 보낸다.
+ * 사용자에게는 오늘 없던 오류가 생긴 것이다. 기존의 미루기·바쁨 경로로 보낸다. 대국 밖에서 부르는 보드 스캔 화면은
+ * 미룰 곳이 없어 잠시 뒤 다시 누르라는 문구를 보인다(`boardScanAnalysisErrorMessage`).
  *
  * ⚠️ **`CancellationException`으로 만들지 말 것.** 취소는 "호출자가 그만뒀다"는 뜻이라 여러 자리가 결과 없이 흘려보낸다
  * — `launch`는 조용히 끝난 것으로 삼키고, 5계층의 AI 차례(#74)는 호출자가 살아 있는데 올라온 취소를 시간 초과로

@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
@@ -205,7 +206,7 @@ internal fun BoardScanScreen(
                                         scoreEstimate = estimate
                                         analysisResult = analysis
                                     } catch (e: Exception) {
-                                        errorMessage = "AI 분석에 실패했습니다: ${e.localizedMessage ?: "알 수 없는 오류"}"
+                                        errorMessage = boardScanAnalysisErrorMessage(e)
                                     } finally {
                                         isAnalyzing = false
                                     }
@@ -248,6 +249,21 @@ internal fun BoardScanScreen(
         }
     }
 }
+
+/**
+ * 스캔한 국면의 AI 분석이 끝나지 못했을 때 보일 문구.
+ *
+ * 엔진이 다른 오퍼레이션(대국의 AI 차례, 첫 실행의 엔진 기동·설치 등)을 하고 있으면 형세 추정·분석은 기다리지 않고
+ * [EngineOperationBusy]로 포기한다(refactor backlog #15 — `LocalEngineSessionClient`의 오퍼레이션 락). 실패가 아니므로
+ * "실패했습니다"와 예외 원문(영어)을 보이지 않고, 잠시 뒤 다시 누르라고 알린다. 예전에는 두 오퍼레이션이 한 엔진에서
+ * 섞여 돌아 남의 판을 분석할 수 있었다.
+ */
+internal fun boardScanAnalysisErrorMessage(error: Throwable): String =
+    if (error is EngineOperationBusy) {
+        "엔진이 다른 작업을 하고 있습니다. 잠시 뒤 다시 분석해 주세요."
+    } else {
+        "AI 분석에 실패했습니다: ${error.localizedMessage ?: "알 수 없는 오류"}"
+    }
 
 /**
  * [DetectedBoard] 비전 검출 모델을 게임 상태 [GameState]로 변환.
