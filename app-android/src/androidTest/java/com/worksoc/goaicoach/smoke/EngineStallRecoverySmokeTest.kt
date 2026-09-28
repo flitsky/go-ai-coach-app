@@ -44,6 +44,8 @@ import org.junit.runner.RunWith
  *   같은 국면을 정상 분석으로 다시 요청하고, AI의 돌이 놓인다.
  * - 「엔진 다시 시작하기」 — `wedge`: 분석이 forceReset까지 **절대 돌아오지 않는다**(상태 A — 와치독 한도를 넘겨
  *   팝업이 뜬다). 다시 시작을 누르면 KataGo 프로세스가 내려가고, 새 프로세스를 다시 맞춘 뒤 정상 분석으로 AI가 둔다.
+ * - 「엔진 다시 시작하기」 — `fail:2`(refactor backlog #109): 같은 국면에서 AI 차례가 **두 번 진짜로 실패**한다(분석도
+ *   genMove 폴백도). 첫 실패는 조용히 한 번 더 시도하고, 두 번째면 선택 팝업(상태 B)이 뜬다. 다시 시작하면 AI가 둔다.
  *
  * ## ⚠️ 진짜 KataGo가 있어야 한다
  * 멈춤 스위치는 **로컬 KataGo에만** 감긴다(`EngineBootstrap` — 모델이 없으면 스텁 엔진으로 떨어지고 스위치도 없다).
@@ -169,6 +171,37 @@ class EngineStallRecoverySmokeTest {
         )
         assertEquals(1, runtimeEvents("ai_turn_success"))
         assertEquals("닫힌 파이프의 예외가 「AI turn failed」로 새지 않았다", 0, runtimeEvents("ai_turn_failure"))
+    }
+
+    @Test
+    fun aRealFailureRepeatedOnTheSamePositionAsksTheUserAndRestartRecovers() {
+        startNineByNineGameAgainstTheAi()
+
+        // 사람이 둔 뒤의 AI 차례가 두 번 잇달아 진짜로 실패한다. 예전에는 두 번째 실패 뒤에도 팝업 없이 조용히 다시
+        // 돌았고(세 번째 시도는 스위치가 다해 그대로 둔다), 같은 실패가 되풀이되면 화면에 아무것도 없이 계속 돌았다.
+        arm("fail:2")
+        playHumanMoveAtTheCenter()
+
+        waitForTheEngineStuckPopup()
+        assertFalse("스위치는 AI의 분석이 먹었다", armFile.exists())
+        waitUntilDoing(PopupTimeoutMillis, "두 번의 실패 기록") { runtimeEvents("ai_turn_failure") >= 2 }
+        assertEquals("같은 국면에서 두 번 실패한 뒤에 묻는다", 2, runtimeEvents("ai_turn_failure"))
+        assertEquals("시간 초과가 아니다", 0, runtimeEvents("ai_turn_timeout"))
+        assertEquals("AI는 아직 두지 않았다", 0, runtimeEvents("ai_turn_success"))
+        composeRule.onNodeWithText(moveCountText(1)).assertExists()
+
+        composeRule.onNodeWithText(strings.engineStuckDialogResetAction).performClick()
+
+        waitForMoveCount(2, "「엔진 다시 시작하기」 뒤 새 프로세스에서 AI의 돌")
+        waitUntilThePopupIsGone()
+        assertTrue("다시 시작이 기록됐다", diagnosticLogFile.readTextOrEmpty().contains("engine_force_reset_requested"))
+        assertEquals(1, runtimeEvents("ai_turn_success"))
+        assertEquals("다시 시작 뒤에는 실패가 없다", 2, runtimeEvents("ai_turn_failure"))
+        assertEquals(
+            "AI의 돌은 genMove 폴백(「AI replied with …」)이 아니라 정상 분석에서 왔다",
+            0,
+            runtimeLogFile.readTextOrEmpty().lines().count { it.contains("summary=AI replied with") },
+        )
     }
 
     // ── 앱을 움직이는 손잡이 ──────────────────────────────────────────────────────────────────
