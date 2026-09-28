@@ -363,7 +363,7 @@ _(없음 — 실기 일감은 사용자가 번호를 골라 개별 세션으로 
     · `KataGoProcessRuntime`을 실제 타입으로: `interface EngineProcessRuntime` + `LocalKataGoProcessRuntime`.
       어댑터는 핸들의 writer/reader만 쓰고 프로세스를 직접 만들지 않는다.
     · 실측 근거: `ensureProcessStarted()`가 non-suspend이고 **12개 호출부 전부 뮤텍스 밖**, `@Volatile` 없음.
-    · 💡 **검수 방식 제안(2026-09-28, 사용자 확인 대기)**: `#74`처럼 자체 검수로 합친다 — 가짜 프로세스(`FakeEngineProcessRuntime`)·진짜 셸 가짜의 멈춤 테스트 +
+    · ✅ **사용자 결정(2026-09-28) — `#14`·`#15`도 자체 검수로 합친다**(토큰은 아껴서): `#74`처럼 — 가짜 프로세스(`FakeEngineProcessRuntime`)·진짜 셸 가짜의 멈춤 테스트 +
       에뮬레이터에서 AI 대 AI 수십 수를 자동으로 두는 **평소 대국 회귀 계기 테스트**. 사용자 실기는 실제 발생 시.
     · 🔴 **범위에 넣는다(2026-09-28 사용자 멈춤 로그 분석)**: **시한이 막힌 읽기를 못 끊는다** — `withTimeout { runInterruptible { readLine() } }`
       (`KataGoProcessEngineAdapter.sendCommand`)는 파이프 읽기가 인터럽트를 무시해, 30초 시한이 지나도 **늦은 답이 올 때까지** 기다린다
