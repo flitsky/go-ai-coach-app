@@ -14,13 +14,13 @@ import org.junit.Test
  * 바로 그 판정)과 주간 반복 회차가 캐릭터 회차를 건너뛰는지를 지키는 것이 들어 있었다.
  * 되살려 보니 여덟 다 통과했으므로 **숨은 회귀는 없었지만, 그동안의 초록은 근거가 없었다.**
  *
- * 검사 대상은 `shared`의 공용 테스트와 `app-android`의 단위 테스트 소스 전부다.
+ * 검사 대상은 KMP 모듈의 공용 테스트(`RepoPaths.kmpCommonTestRoots`)와 `app-android`의 단위 테스트 소스 전부다.
  *
  * ⚠️ **사각지대였던 것 — Gradle의 up-to-date 판정.** 이 테스트는 소스 파일을 **실행 중에** 읽으므로
  * Gradle이 그것을 입력으로 알아야 한다. 몰랐을 때는 `shared`의 테스트 소스만 바뀐 빌드에서
  * `:app-android:testDebugUnitTest`가 통째로 건너뛰어져 **이 그물도 함께 쉬었다.**
  * 지금은 `app-android/build.gradle.kts`의 `tasks.withType<Test>`가 스캔 트리
- * (`shared/src/commonTest` 포함)를 `inputs.files`로 선언해 그 구멍을 막는다.
+ * (KMP 모듈의 `src` 트리 포함)를 `inputs.files`로 선언해 그 구멍을 막는다.
  *
  * ⚠️ **헬퍼와 테스트를 이름이 아니라 모양으로 가른다** — 클래스 본문에 있고, 인자가 없고,
  * 반환형을 적지 않은(`Unit`) 함수만 테스트 후보로 본다. `checkInAt(...)`/`grant(...)`처럼 인자나
@@ -30,14 +30,16 @@ class TestAnnotationContractTest {
 
     @Test
     fun everyTestShapedFunctionCarriesTheTestAnnotation() {
-        val roots = listOf(
-            RepoPaths.root.resolve("shared/src/commonTest"),
-            RepoPaths.root.resolve("app-android/src/test"),
-        ).filter { it.exists() }
-        check(roots.isNotEmpty()) { "테스트 소스 루트를 하나도 찾지 못했다 — 이 그물이 아무것도 안 보고 있다." }
+        // ⚠️ `filter { exists }`로 없는 루트를 빼지 않는다(refactor backlog #49) — 그러면 KMP 모듈을 옮기는
+        // 순간 그 모듈의 테스트만 이 그물에서 조용히 빠진다. 목록은 RepoPaths 한 곳이 갖고, 없으면 거기서 터진다.
+        val roots = RepoPaths.kmpCommonTestRoots + RepoPaths.root.resolve("app-android/src/test")
+        check(roots.all { it.isDirectory }) { "테스트 소스 루트가 없다 — 이 그물이 아무것도 안 보고 있다: $roots" }
 
-        val offenders = roots
-            .flatMap { root -> root.walkTopDown().filter { it.isFile && it.extension == "kt" } }
+        val files = roots.associateWith { root -> root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() }
+        val emptyRoots = files.filterValues { it.isEmpty() }.keys
+        check(emptyRoots.isEmpty()) { "테스트 소스 루트에 .kt가 하나도 없다 — 옮겨졌다면 RepoPaths.kt를 갱신하라: $emptyRoots" }
+
+        val offenders = files.values.flatten()
             .flatMap { file -> unannotatedTestFunctions(file) }
 
         assertEquals(

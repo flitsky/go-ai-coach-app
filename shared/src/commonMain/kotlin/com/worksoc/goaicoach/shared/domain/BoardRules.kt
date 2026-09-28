@@ -224,7 +224,13 @@ private fun Map<BoardCoordinate, StoneColor>.groupAt(
     return BoardGroup(stones = groupStones, liberties = liberties)
 }
 
-internal fun BoardCoordinate.neighbors(boardSize: BoardSize): List<BoardCoordinate> =
+/**
+ * 상하좌우 이웃 좌표(판 밖은 뺀다).
+ *
+ * `internal`이 아니다(refactor backlog #49) — 계가기(`shared.scoring`)가 다른 Gradle 모듈로 떨어져도
+ * 영역 분석(`BoardRegionAnalyzer`)이 같은 이웃 정의를 써야 하기 때문이다.
+ */
+fun BoardCoordinate.neighbors(boardSize: BoardSize): List<BoardCoordinate> =
     buildList {
         if (row > 0) {
             add(copy(row = row - 1))

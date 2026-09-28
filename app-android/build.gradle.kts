@@ -492,19 +492,21 @@ tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle
 //    :shared 소스만 바꾼 빌드에서는 `:app-android:testDebugUnitTest`가 통째로 UP-TO-DATE로
 //    건너뛰어져 **이 그물들이 함께 쉰다**(TestAnnotationContractTest의 KDoc이 경고하던 사각지대).
 //    스캔 트리를 입력으로 선언해 그 구멍을 막는다.
+//
+// ⚠️ 스캔 트리는 **아래 한 목록**이다(refactor backlog #49). KMP 모듈은 `src`를 통째로 넣는다 — 소스셋을
+//    하나씩 적던 동안 androidMain·iosMain이 빠져 있었고(#103), 모듈을 늘릴 때마다 소스셋 넷을 또 적어야 했다.
+//    `RepoPaths`가 훑는 commonMain·androidMain·iosMain과 `TestAnnotationContractTest`가 훑는 commonTest(와
+//    모듈 사이 픽스처 트리)가 모두 이 `src` 아래다. 모듈을 떼어 내면 **여기 한 줄**을 더한다.
+//    목록의 폴더는 실재해야 한다 — 없는 폴더의 fileTree는 조용히 비어 입력에서 빠지기 때문이다.
+val architectureContractScannedTrees = listOf(
+    "app-android/src/main/java",
+    "engine-android/src/main/java",
+    "shared/src",
+).map { path -> rootDir.resolve(path).also { dir -> check(dir.isDirectory) { "아키텍처 계약 스캔 트리가 없다: $dir" } } }
+
 tasks.withType<Test>().configureEach {
     systemProperty("repo.root", rootDir.absolutePath)
-    inputs.files(
-        fileTree(rootDir.resolve("app-android/src/main/java")),
-        fileTree(rootDir.resolve("shared/src/commonMain/kotlin")),
-        fileTree(rootDir.resolve("engine-android/src/main/java")),
-        // TestAnnotationContractTest가 :shared의 공용 테스트 소스까지 훑는다.
-        fileTree(rootDir.resolve("shared/src/commonTest")),
-        // RepoPaths.productionSourceRoots가 androidMain·iosMain도 5계층 대상으로 훑는다
-        // (refactor backlog #103) — 빠지면 이 두 소스셋만 바뀐 빌드가 UP-TO-DATE로 건너뛰어진다.
-        fileTree(rootDir.resolve("shared/src/androidMain")),
-        fileTree(rootDir.resolve("shared/src/iosMain")),
-    )
+    inputs.files(architectureContractScannedTrees.map { dir -> fileTree(dir) })
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)
     // 번들 기보 골든(GameReplayCoordinateGoldenTest, refactor backlog #36)이 이 에셋을 **실행 중에** 읽는다.

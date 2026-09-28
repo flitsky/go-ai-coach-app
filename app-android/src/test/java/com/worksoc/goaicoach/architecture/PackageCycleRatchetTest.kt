@@ -149,7 +149,7 @@ class PackageCycleRatchetTest {
 
         /** 한 번만 훑는다 — 테스트 넷이 같은 그래프를 본다. */
         val graph: PackageImportGraph by lazy {
-            PackageImportGraph.scan(RepoPaths.sharedCommonMainKotlin, ROOT_PACKAGE)
+            PackageImportGraph.scan(RepoPaths.kmpCommonMainKotlinRoots, ROOT_PACKAGE)
         }
     }
 }

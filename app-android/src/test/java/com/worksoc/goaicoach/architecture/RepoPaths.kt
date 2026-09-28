@@ -37,6 +37,23 @@ internal object RepoPaths {
     private const val ENGINE_ANDROID = "engine-android/src/main/java/com/worksoc/goaicoach/engine/android"
 
     /**
+     * KMP 모듈의 commonMain **코틀린 소스 루트** 전부(refactor backlog #49). `:shared`에서 하위 패키지를
+     * 별도 모듈로 떼어 내면 **여기 한 줄**을 더한다 — 패키지 사이클 래칫·계층 배정·JVM 전용 API 금지가
+     * 모두 이 목록 하나를 본다. 목록의 루트는 **전부 실재해야 한다**([strictRoots]).
+     */
+    private val KMP_COMMON_MAIN_KOTLIN = listOf(
+        "$SHARED_COMMON_SOURCE_SET/kotlin",
+    )
+
+    /**
+     * KMP 모듈의 공용 **테스트** 소스 루트 전부 — `@Test` 누락 그물([TestAnnotationContractTest])이 본다.
+     * 모듈 사이에 나눠 쓰는 픽스처 트리도 여기 둔다(옮겨 오기 전엔 commonTest 안이라 이미 훑이던 파일이다).
+     */
+    private val KMP_COMMON_TEST = listOf(
+        "shared/src/commonTest",
+    )
+
+    /**
      * 저장소 루트.
      *
      * ⚠️ **`File(".")` 상향 탐색만으로는 부족하다** — 이 저장소는 워크트리를 여러 개 두고 세션이
@@ -57,29 +74,38 @@ internal object RepoPaths {
      *
      * ⚠️ 하나도 못 찾으면 색인이 통째로 비어 "심볼이 없다"가 아니라 "아무것도 안 봤다"가 된다.
      * 그 조용한 사망이 이 백로그 항목이 막으려는 것 자체이므로, 비면 그 자리에서 터뜨린다.
+     *
+     * ⚠️ **하나라도 없으면 터뜨린다**(refactor backlog #49). 전에는 `filter { exists }`로 없는 루트를
+     * 조용히 뺐다 — app-android가 남아 있는 한 목록이 비지 않으므로, 모듈을 옮겨 루트 하나가 사라져도
+     * 그 모듈만 색인에서 빠진 채 초록이었다.
      */
     val productionSourceRoots: List<File>
-        get() {
-            val roots = listOf(
-                "app-android/src/main",
-                SHARED_COMMON_SOURCE_SET,
-                "shared/src/androidMain",
-                "shared/src/iosMain",
-                "engine-android/src/main",
-            ).map { root.resolve(it) }.filter { it.exists() }
-            check(roots.isNotEmpty()) {
-                "프로덕션 소스 루트를 하나도 찾지 못했다 — RepoPaths.productionSourceRoots가 낡았다."
-            }
-            return roots
-        }
+        get() = strictRoots(
+            "프로덕션 소스 루트",
+            listOf("app-android/src/main") +
+                KMP_COMMON_MAIN_KOTLIN.map { it.removeSuffix("/kotlin") } +
+                listOf(
+                    "shared/src/androidMain",
+                    "shared/src/iosMain",
+                    "engine-android/src/main",
+                ),
+        )
 
     /**
-     * :shared commonMain의 **코틀린 소스 루트**(`.../commonMain/kotlin`) — [shared]와 달리 패키지
-     * 루트가 아니다. 패키지 사이클 래칫(refactor backlog #33)이 이 아래 `.kt` 전부를 훑어 파일의
-     * `package` 선언으로 노드를 만든다. 사이클은 commonMain 안에서만 생길 수 있다 — app-android는
+     * KMP 모듈 commonMain의 **코틀린 소스 루트** 전부(`.../commonMain/kotlin`) — [shared]와 달리 패키지
+     * 루트가 아니다. 패키지 사이클 래칫(refactor backlog #33)이 이 아래 `.kt` 전부를 **한 그래프로** 훑어
+     * 파일의 `package` 선언으로 노드를 만든다. 사이클은 commonMain 안에서만 생길 수 있다 — app-android는
      * Gradle상 :shared가 역참조할 수 없고, androidMain·iosMain에는 application 패키지 import가 없다.
+     *
+     * ⚠️ 루트 하나만 보면 안 된다(refactor backlog #49) — 패키지를 다른 모듈로 떼어 내는 순간 그 패키지가
+     * 그래프에서 사라져, 그 패키지를 지나는 사이클도 함께 안 보인다.
      */
-    val sharedCommonMainKotlin: File get() = root.resolve("$SHARED_COMMON_SOURCE_SET/kotlin")
+    val kmpCommonMainKotlinRoots: List<File>
+        get() = strictRoots("KMP commonMain 코틀린 루트", KMP_COMMON_MAIN_KOTLIN)
+
+    /** KMP 모듈의 공용 테스트 소스 루트 전부([KMP_COMMON_TEST]). 하나라도 없으면 터뜨린다. */
+    val kmpCommonTestRoots: List<File>
+        get() = strictRoots("KMP 공용 테스트 루트", KMP_COMMON_TEST)
 
     /**
      * 셸 조립 파일 `GoCoachApp.kt` — `ui/` 아래 어느 하위 패키지에 있든 [uiFile]이 이름으로 찾는다.
@@ -204,6 +230,20 @@ internal object RepoPaths {
         val sharedPath = shared(tail)
         if (sharedPath.exists()) return sharedPath
         return appAndroid(tail)
+    }
+
+    /**
+     * [paths]를 루트 기준으로 풀되 **전부 실재해야** 한다 — 하나라도 없으면 [label]과 그 경로를 말하며 터진다.
+     * 목록에서 조용히 빠지는 루트가 이 파일이 막으려는 "아무것도 안 보고 초록" 그 자체이기 때문이다.
+     */
+    private fun strictRoots(label: String, paths: List<String>): List<File> {
+        val roots = paths.map { root.resolve(it) }
+        val missing = roots.filterNot { it.isDirectory }
+        check(roots.isNotEmpty() && missing.isEmpty()) {
+            "$label 중 실재하지 않는 것이 있다(모듈을 옮겼다면 RepoPaths.kt를 갱신하라): " +
+                missing.joinToString { it.absolutePath }
+        }
+        return roots
     }
 
     private fun resolveUnder(base: String, relativePath: String): File =

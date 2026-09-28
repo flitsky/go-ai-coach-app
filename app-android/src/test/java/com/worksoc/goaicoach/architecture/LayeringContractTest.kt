@@ -1288,6 +1288,11 @@ class LayeringContractTest {
             .walkTopDown()
             .filter { file -> file.extension == "kt" }
             .toList()
+        // 비면 이 검사는 아무것도 안 보고 초록이다 — 디렉터리가 옮겨졌다는 뜻이다(refactor backlog #49).
+        check(portableCandidates.size > 100) {
+            "application 소스를 거의 못 찾았다(${portableCandidates.size}개): ${sharedApplicationRoot.absolutePath}. " +
+                "옮겨졌다면 RepoPaths.kt를 갱신하라."
+        }
         val forbiddenImports = listOf(
             "import android.",
             "import androidx.",
@@ -1325,7 +1330,8 @@ class LayeringContractTest {
         // 이 테스트는 그 "import 없이 새는" 부류만 이름으로 직접 막는다. 대안(시간을 읽는 지점)은
         // application/time/AppClock.kt의 currentEpochMillis(), 경과 시간은
         // kotlin.time.TimeSource.Monotonic, 잠금은 application/concurrency/SharedLock.kt.
-        val commonMainRoot = RepoPaths.shared()
+        // KMP 모듈 commonMain **전부**(refactor backlog #49) — `:shared`에서 떼어 낸 모듈도 iOS로 컴파일된다.
+        val commonMainRoots = RepoPaths.kmpCommonMainKotlinRoots
         val forbiddenBareReferences = listOf(
             "System.",
             "System::",
@@ -1334,9 +1340,12 @@ class LayeringContractTest {
             "synchronized(",
         )
 
-        val offenders = commonMainRoot
-            .walkTopDown()
-            .filter { file -> file.extension == "kt" }
+        val commonMainFiles = commonMainRoots.flatMap { root ->
+            root.walkTopDown().filter { file -> file.extension == "kt" }.toList().also { files ->
+                check(files.isNotEmpty()) { "commonMain 소스가 하나도 없다: ${root.absolutePath}. 옮겨졌다면 RepoPaths.kt를 갱신하라." }
+            }
+        }
+        val offenders = commonMainFiles
             .flatMap { file ->
                 val scanLines = file.readLines()
                     .filterNot { raw ->
@@ -1906,16 +1915,16 @@ class LayeringContractTest {
         ContractSymbols.LAYER_6_PACKAGES.map { packageName -> importOf("$packageName.") }
 
     /**
-     * 계층을 배정받아야 하는 패키지(refactor backlog #84) — :shared commonMain이 선언한 패키지 전부와,
+     * 계층을 배정받아야 하는 패키지(refactor backlog #84) — KMP 모듈 commonMain이 선언한 패키지 전부와,
      * 어느 소스 루트에서든 `application.*`로 선언된 패키지다. androidMain·iosMain은 commonMain의
      * `expect`와 같은 패키지라 따로 세지 않아도 들어오고, app-android의 `application.diagnostic`(영구
      * 예외 하나)은 뒤쪽 조건이 잡는다.
      */
     private fun layerAssignablePackages(): Set<String> {
-        val commonMain = RepoPaths.sharedCommonMainKotlin
+        val commonMainRoots = RepoPaths.kmpCommonMainKotlinRoots
         val packages = SourceSymbolIndex.knownPackages.filter { packageName ->
             packageName.startsWith(APPLICATION_PACKAGE) ||
-                SourceSymbolIndex.filesDeclaring(packageName).any { file -> file.startsWith(commonMain) }
+                SourceSymbolIndex.filesDeclaring(packageName).any { file -> commonMainRoots.any { file.startsWith(it) } }
         }.toSet()
         require(packages.size > 20) {
             "계층을 배정할 패키지를 거의 못 찾았다(${packages.size}개) — 색인이나 경로가 낡았다."

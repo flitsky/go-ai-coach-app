@@ -97,13 +97,34 @@ internal class PackageImportGraph private constructor(
         private val CHAR_LITERAL = Regex("""'(\\.|[^'\\])*'""").toPattern()
 
         /** [sourceRoot] 아래의 `.kt` 전부로 그래프를 만든다. */
-        fun scan(sourceRoot: File, rootPackage: String): PackageImportGraph {
-            check(sourceRoot.isDirectory) {
-                "사이클 래칫이 훑을 소스 루트가 없다: ${sourceRoot.absolutePath}. 옮겨졌다면 RepoPaths.kt를 갱신하라."
+        fun scan(sourceRoot: File, rootPackage: String): PackageImportGraph = scan(listOf(sourceRoot), rootPackage)
+
+        /**
+         * [sourceRoots] **전부** 아래의 `.kt`로 **한** 그래프를 만든다(refactor backlog #49) — 패키지가 여러
+         * Gradle 모듈에 나뉘어 있어도 사이클은 모듈을 가로질러 생기므로 한 그래프로 봐야 한다.
+         *
+         * ⚠️ 루트마다 **실재하고 `.kt`가 하나 이상** 있어야 한다 — 모듈을 옮겨 루트 하나가 비면, 그 모듈의
+         * 패키지만 그래프에서 조용히 빠진 채 초록이 된다. 라벨은 각 루트 기준 상대 경로이고, 두 루트에 같은
+         * 상대 경로가 있으면(같은 파일이 두 모듈에 있다는 뜻) 그 자리에서 터뜨린다.
+         */
+        fun scan(sourceRoots: List<File>, rootPackage: String): PackageImportGraph {
+            check(sourceRoots.isNotEmpty()) { "사이클 래칫이 훑을 소스 루트 목록이 비었다 — RepoPaths.kt를 갱신하라." }
+            val sources = linkedMapOf<String, String>()
+            for (sourceRoot in sourceRoots) {
+                check(sourceRoot.isDirectory) {
+                    "사이클 래칫이 훑을 소스 루트가 없다: ${sourceRoot.absolutePath}. 옮겨졌다면 RepoPaths.kt를 갱신하라."
+                }
+                val files = sourceRoot.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+                check(files.isNotEmpty()) {
+                    "사이클 래칫이 훑을 소스 루트에 .kt가 하나도 없다: ${sourceRoot.absolutePath}. 옮겨졌다면 RepoPaths.kt를 갱신하라."
+                }
+                for (file in files) {
+                    val label = file.relativeTo(sourceRoot).path
+                    check(sources.put(label, file.readContractSource()) == null) {
+                        "같은 상대 경로 `$label`이 두 소스 루트에 있다 — 한 파일이 두 모듈에 복제됐다."
+                    }
+                }
             }
-            val sources = sourceRoot.walkTopDown()
-                .filter { it.isFile && it.extension == "kt" }
-                .associate { it.relativeTo(sourceRoot).path to it.readContractSource() }
             return of(sources, rootPackage)
         }
 
