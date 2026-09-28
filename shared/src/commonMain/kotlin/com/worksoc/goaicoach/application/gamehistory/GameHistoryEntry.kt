@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.application.gamehistory
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -30,14 +32,15 @@ enum class GameHistoryResult {
  * 수십 MB를 매번 파싱**하게 된다. 본문은 다시보기가 열릴 때 그 한 판만 읽는다.
  *
  * [humanColor]는 **사람이 정확히 한 명일 때만** 값이 있다(사람:사람·AI:AI는 `null`).
+ *
+ * 판 정체성 네 값은 [setup] 하나로 들고 있고(refactor backlog #22), [boardSize]·[ruleset]·[komi]·[handicapCount]는
+ * 그것의 **파생**이다 — 목록·다시보기 화면이 읽던 모양 그대로다. 저장 코덱은 [setup]만 왕복한다. 네 값을 따로
+ * 받는 생성자도 남겨 두었다(아래) — 기존 호출부가 그대로 컴파일되도록.
  */
 data class GameHistoryEntry(
     val id: String,
     val playedAtMillis: Long,
-    val boardSize: Int,
-    val ruleset: Ruleset,
-    val komi: Double,
-    val handicapCount: Int,
+    val setup: GameSetup,
     val playerSetup: PlayerSetup,
     val moveCount: Int,
     val humanColor: StoneColor?,
@@ -58,7 +61,46 @@ data class GameHistoryEntry(
      * 있고 수정할 수 없다 — 그 판별은 화면이 [GameHistoryEntry.id]로 한다.
      */
     val note: String? = null,
-)
+) {
+    /**
+     * 네 값을 따로 받는 옛 모양 — [boardSize]는 지원하는 판 크기여야 한다(`BoardSize`가 검사한다). 저장된 기록은
+     * 전부 실제로 둔 판에서 왔으므로 늘 그렇다.
+     */
+    constructor(
+        id: String,
+        playedAtMillis: Long,
+        boardSize: Int,
+        ruleset: Ruleset,
+        komi: Double,
+        handicapCount: Int,
+        playerSetup: PlayerSetup,
+        moveCount: Int,
+        humanColor: StoneColor?,
+        winner: StoneColor?,
+        isResign: Boolean = false,
+        margin: Double? = null,
+        hasReplay: Boolean = false,
+        note: String? = null,
+    ) : this(
+        id = id,
+        playedAtMillis = playedAtMillis,
+        setup = GameSetup(boardSize = BoardSize(boardSize), ruleset = ruleset, handicapCount = handicapCount, komi = komi),
+        playerSetup = playerSetup,
+        moveCount = moveCount,
+        humanColor = humanColor,
+        winner = winner,
+        isResign = isResign,
+        margin = margin,
+        hasReplay = hasReplay,
+        note = note,
+    )
+
+    /** 판 크기(줄 수). */
+    val boardSize: Int get() = setup.boardSize.value
+    val ruleset: Ruleset get() = setup.ruleset
+    val komi: Double get() = setup.komi
+    val handicapCount: Int get() = setup.handicapCount
+}
 
 /**
  * 다시보기가 **엔진 재탐색 없이** 한 판을 재생하는 데 필요한 전부(백로그 #151).

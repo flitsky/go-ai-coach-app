@@ -261,6 +261,16 @@ data class GameState(
     val handicapCount: Int = 0,
     val komi: Double = DefaultKomi,
 ) {
+    /**
+     * 이 판의 정체성 네 값([boardSize]·[ruleset]·[handicapCount]·[komi])을 한 값으로(refactor backlog #22).
+     * 저장·원격 코덱은 네 값을 따로 고르지 않고 이것 하나를 싣는다 — 되살릴 때는 [GameStateReplayer.replay]에 그대로 준다.
+     *
+     * 네 값은 생성자 프로퍼티로 그대로 둔다 — `copy(komi = …)`·판 규칙의 상태 갱신·`equals`/`toString`이 전부
+     * 지금 모양을 쓰고 있어서, 이것을 저장 필드로 바꾸면 호출부가 전부 흔들린다. 이것은 **파생**이라 따로 어긋날 수 없다.
+     */
+    val setup: GameSetup
+        get() = GameSetup(boardSize = boardSize, ruleset = ruleset, handicapCount = handicapCount, komi = komi)
+
     fun stoneAt(coordinate: BoardCoordinate): StoneColor? = stones[coordinate]
 
     fun isBoardFull(): Boolean = stones.size >= boardSize.value * boardSize.value
@@ -293,6 +303,15 @@ data class GameState(
                 moves = emptyList(),
                 handicapCount = 0,
                 komi = komi,
+            )
+
+        /** [setup]의 첫 국면 — 접바둑이면 흑돌을 화점에 놓고 백부터, 아니면 빈 판에 흑부터(refactor backlog #22). */
+        fun withHandicap(setup: GameSetup): GameState =
+            withHandicap(
+                boardSize = setup.boardSize,
+                ruleset = setup.ruleset,
+                handicapCount = setup.handicapCount,
+                komi = setup.komi,
             )
 
         /**

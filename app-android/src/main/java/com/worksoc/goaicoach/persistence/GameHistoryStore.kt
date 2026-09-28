@@ -11,7 +11,6 @@ import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
-import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import java.io.File
 import java.io.FileOutputStream
@@ -274,10 +273,7 @@ internal object GameHistoryIndexCodec {
         JSONObject()
             .put("id", entry.id)
             .put("playedAtMillis", entry.playedAtMillis)
-            .put("boardSize", entry.boardSize)
-            .put("ruleset", entry.ruleset.name)
-            .put("komi", entry.komi)
-            .put("handicapCount", entry.handicapCount)
+            .also { json -> GameSetupJsonCodec.write(json, entry.setup, GameSetupJsonCodec.Order.KomiThenHandicap) }
             .put("playerSetup", encodePlayerSetup(entry.playerSetup))
             .put("moveCount", entry.moveCount)
             .put("humanColor", entry.humanColor?.name ?: JSONObject.NULL)
@@ -298,15 +294,12 @@ internal object GameHistoryIndexCodec {
             GameHistoryEntry(
                 id = json.getString("id"),
                 playedAtMillis = json.optLong("playedAtMillis", 0L),
-                boardSize = json.optInt("boardSize", 9),
-                ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
-                // ⚠️ 백로그 #23 — 기본값은 [DefaultKomi]다, `GameSessionStore`/`UserPreferencesStore`와
-                // 맞춘다. `encodeEntry`는 이 파일이 생긴 첫 커밋(cc84f13d, backlog #6)부터 계속
-                // `komi`를 실어 왔으므로 이 폴백은 사실 **도달 불가**다 — komi 키가 없는 기록이
-                // 저장된 적이 없다. 그래도 `0.0`으로 두면 "폴백이 실제로 쓰인다면 무슨 값이어야
-                // 하는가"를 읽는 사람이 다른 스토어와 다르게 오해하게 만들어, 정합성을 위해 맞춘다.
-                komi = json.optDouble("komi", DefaultKomi),
-                handicapCount = json.optInt("handicapCount", 0),
+                // 판 정체성 네 키는 이어하기와 같은 한 곳이 읽는다(refactor backlog #22) — 기본값도 같다(판 크기 9·일본·
+                // 호선·덤 [DefaultKomi], 백로그 #23이 맞춘 것). `encodeEntry`는 이 파일이 생긴 첫 커밋(cc84f13d)부터 네 키를
+                // 전부 실어 왔으므로 기본값은 사실 도달 불가다. ⚠️ 지원하지 않는 판 크기의 줄은 이제 버려진다(`BoardSize`
+                // 검사) — 기록은 전부 실제로 둔 판에서 왔으므로 그런 줄은 저장된 적이 없고, 있었다면 다시보기(`loadReplay`의
+                // `BoardSize(entry.boardSize)`)가 이미 던졌다.
+                setup = GameSetupJsonCodec.read(json),
                 playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
                 moveCount = json.optInt("moveCount", 0),
                 humanColor = humanColor,

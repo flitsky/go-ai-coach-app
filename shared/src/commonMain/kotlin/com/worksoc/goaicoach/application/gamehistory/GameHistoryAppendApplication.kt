@@ -81,10 +81,8 @@ fun runGameHistoryAppendIfCompleted(
     val entry = GameHistoryEntry(
         id = "$nowMillis-${Random.nextInt(0, 1_000_000)}",
         playedAtMillis = nowMillis,
-        boardSize = gameState.boardSize.value,
-        ruleset = finalScoreJudgement?.ruleset ?: gameState.ruleset,
-        komi = gameState.komi,
-        handicapCount = gameState.handicapCount,
+        // 판 정체성은 그 판의 것을 통째로 싣는다(refactor backlog #22) — 룰만 계가 판정의 것이 앞선다(판정이 계가한 룰).
+        setup = gameState.setup.copy(ruleset = finalScoreJudgement?.ruleset ?: gameState.ruleset),
         playerSetup = playerSetup,
         moveCount = moveCount,
         humanColor = singleHumanColorOrNull(playerSetup),
