@@ -249,6 +249,56 @@ class EngineStallRecoveryWiringTest {
         assertCancelledTurnLeftNoTrace(context)
     }
 
+    /**
+     * B1 — **진짜 실패가 같은 국면에서 되풀이된다**(refactor backlog #109 ⓐ). 시간 초과도 취소도 아닌 실패(분석도,
+     * 그 차례의 `genMove` 폴백도 실패 — 프로세스가 죽었다 등)는 예전에는 완료 순번이 팝업을 닫고 **조용히 다시**
+     * 시도했다. 같은 실패가 되풀이되면 화면에 아무것도 안 보인 채 계속 돌았다(실패 사유는 대국 화면이 그리지 않는
+     * `engineMessage`에만 남는다).
+     *
+     * 첫 실패는 지금처럼 조용히 한 번 더 시도한다 — 죽은 프로세스는 다음 차례의 기동이 거두고 새로 띄운다(#14).
+     * **같은 국면에서 두 번째 실패**면 시간 초과와 같은 선택 팝업(상태 B)으로 넘어가 조용한 재시도를 멈추고,
+     * 「엔진 다시 시작하기」를 고르면 새 프로세스에서 정상 분석이 둔다.
+     */
+    @Test
+    fun aRealFailureRepeatedOnTheSamePositionStopsTheSilentRetryAndAsksTheUser() {
+        val context = newContext(inGameSession(playerSetup = AiBlackHumanWhite, boardSize = BoardSize.Nine))
+        engine.failNextTurns(2)
+
+        // ── 첫 시도: 진짜 실패 → 조용히 한 번 더(스스로 낫는 길).
+        runAiTurnToItsEnd(context, "첫 시도의 실패")
+        assertEquals(1, events(context, "ai_turn_failure"))
+        assertEquals("분석이 실패하면 genMove로 떨어진다 — 그것도 실패했다", 1, engine.count("genMove:failed"))
+        assertTrue("판은 그대로다", context.gameState().moves.isEmpty())
+        assertFalse("첫 실패는 아직 묻지 않는다", screenOf(context).isAwaitingEngineTimeoutChoice)
+
+        runTurnAutomationEffect(context)
+        assertEquals("첫 실패 뒤에는 조용히 한 번 더 시도한다", 2, events(context, "ai_turn_schedule"))
+
+        // ── 두 번째 시도: 같은 국면에서 또 실패 → 선택 팝업(상태 B).
+        runAiTurnToItsEnd(context, "두 번째 시도의 실패")
+        assertEquals(2, events(context, "ai_turn_failure"))
+        assertTrue("판은 그대로다", context.gameState().moves.isEmpty())
+        assertTrue(
+            "같은 국면에서 두 번째 진짜 실패면 선택 팝업이 떠야 한다 — 안 뜨면 화면에 아무것도 없이 계속 돈다",
+            screenOf(context).isAwaitingEngineTimeoutChoice,
+        )
+        assertTrue("차례 대기가 끝났어도 팝업은 남는다", popupVisible(context, elapsedSinceWatchdogBaseMillis = 0L, turnWaitEnded = true))
+
+        runTurnAutomationEffect(context)
+        assertEquals("선택을 기다리는 동안 조용한 재시도는 없다", 0, context.dispatcher.queuedCount)
+        assertEquals(2, events(context, "ai_turn_schedule"))
+
+        // ── 사용자가 「엔진 다시 시작하기」를 고른다 → 새 프로세스를 맞춘 뒤 정상 분석이 둔다.
+        dispatch(context, GameUiEvent.ForceResetEngine)
+        pumpUntil(context, "다시 시작한 뒤의 AI 차례") { context.gameState().moves.size == 1 && !context.holder.current.autoAiTurn.isPending }
+        drainQueue(context)
+
+        assertAiStoneLandedOnce(context, aiColor = StoneColor.Black, failedGenMoves = 2)
+        assertFreshProcessWasSyncedBeforeAnalysis(engine.calls)
+        assertFalse(screenOf(context).isAwaitingEngineTimeoutChoice)
+        assertEquals(1, events(context, "ai_turn_success"))
+    }
+
     // ── 시나리오 뼈대 ──────────────────────────────────────────────────────────────────────────
 
     /**
@@ -278,6 +328,14 @@ class EngineStallRecoveryWiringTest {
         assertFreshProcessWasSyncedBeforeAnalysis(engine.calls)
         assertNull(context.holder.current.autoAiTurn.timedOut)
         assertFalse("사람 차례에는 팝업이 없다", popupVisible(context, watchdogThresholdMillis * 10, turnWaitEnded = false))
+    }
+
+    /** 예약된(또는 지금 예약하는) AI 차례 하나를 끝까지 돌린다 — 예약·busy가 풀리고 꼬리까지. */
+    private fun runAiTurnToItsEnd(context: FakeGoCoachAppWiringContext, what: String) {
+        if (context.dispatcher.queuedCount == 0) runTurnAutomationEffect(context)
+        assertTrue("$what — 예약된 차례의 본문이 돈다", context.dispatcher.runNext())
+        pumpUntil(context, what) { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
     }
 
     /** 차례 자동화 효과가 AI 차례를 예약하고, 그 차례가 엔진 안에서 [hang]에 걸릴 때까지 돌린다. */
@@ -374,6 +432,7 @@ class EngineStallRecoveryWiringTest {
                     isReady = context.engineIsReady,
                     isBusy = context.engineIsBusy,
                     isBlockingBusy = context.engineIsBlockingBusy,
+                    engineTurnWaitCompletionSeq = context.engineTurnWaitCompletionSeq,
                     hasCompletedStartup = true,
                 ),
                 displayRuntime = GoCoachScreenStateAssembler.DisplayRuntime(
@@ -439,8 +498,11 @@ class EngineStallRecoveryWiringTest {
         return ran
     }
 
-    /** 수가 **정확히 하나** 늘었고, 그것이 정상 분석의 후보 자리에 놓인 AI의 돌이다. */
-    private fun assertAiStoneLandedOnce(context: FakeGoCoachAppWiringContext, aiColor: StoneColor) {
+    /**
+     * 수가 **정확히 하나** 늘었고, 그것이 정상 분석의 후보 자리에 놓인 AI의 돌이다.
+     * @param failedGenMoves 앞선 진짜 실패들의 `genMove` 폴백(전부 실패했다, #109) — 그 밖의 `genMove`는 없어야 한다.
+     */
+    private fun assertAiStoneLandedOnce(context: FakeGoCoachAppWiringContext, aiColor: StoneColor, failedGenMoves: Int = 0) {
         val state = context.gameState()
         assertEquals("AI의 돌은 정확히 하나 — 수순: ${state.moves}", 1, state.moves.size)
         val move = state.moves.single()
@@ -448,7 +510,8 @@ class EngineStallRecoveryWiringTest {
         val point = (move as Move.Play).coordinate
         assertTrue("정상 분석의 후보 자리여야 한다: $point", point in StallScriptedEngine.freshCandidates)
         assertEquals("판에 그 돌이 보인다", aiColor, state.stoneAt(point))
-        assertEquals("genMove로 몰래 두지 않았다", 0, engine.count("genMove"))
+        assertEquals("genMove로 몰래 두지 않았다", failedGenMoves, engine.count("genMove"))
+        assertEquals(failedGenMoves, engine.count("genMove:failed"))
         assertNoStaleStone(context)
     }
 

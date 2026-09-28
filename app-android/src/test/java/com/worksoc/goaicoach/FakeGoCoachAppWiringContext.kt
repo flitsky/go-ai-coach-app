@@ -136,6 +136,9 @@ internal class FakeGoCoachAppWiringContext(
     var engineIsReady = false
     var engineIsBusy = false
     var engineIsBlockingBusy = false
+
+    /** 차례 대기 작업의 완료 순번 — 앱의 `engineTurnWaitCompletionSeq`(와치독이 시도마다 다시 거는 신호, #109). */
+    var engineTurnWaitCompletionSeq = 0
     var moveReviewEnabled = false
     var quietUntil = 0L
     var undoSyncIsPending = false
@@ -263,9 +266,10 @@ internal class FakeGoCoachAppWiringContext(
         currentRuntimeLogContext = { currentRuntimeLogContext() },
         currentState = { gameState() },
         currentSessionGeneration = { runtimeState().sessionGeneration },
-        onBusyChanged = { busy, blocking, _, _ ->
+        onBusyChanged = { busy, blocking, _, completionSeq ->
             engineIsBusy = busy
             engineIsBlockingBusy = blocking
+            engineTurnWaitCompletionSeq = completionSeq
         },
     )
 
