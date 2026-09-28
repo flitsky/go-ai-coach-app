@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.startgame.NewGameController
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
+import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -80,6 +81,9 @@ internal interface GoCoachAppWiringContext {
     val analysisCache: AnalysisResultCache
     val undoAnalysisRestoreCache: UndoAnalysisRestoreCache
     val deferredTopMoveAnalysis: TopMoveAnalysisDeferral
+
+    /** 무르기 뒤 대기 중인 재동기화의 자리 — 컨트롤러 재배선보다 오래 산다(refactor backlog #107). */
+    val postUndoSync: PostUndoSyncSlot
 
     // 디버그 리포트에만 싣는 저장 원문(refactor backlog #86). 포트가 아니라 어댑터가 낸다 —
     // 저장 형식(JSON 원문)은 저장 포트 위로 올라가지 않는다(`docs/ARCHITECTURE.md` ⓐ).

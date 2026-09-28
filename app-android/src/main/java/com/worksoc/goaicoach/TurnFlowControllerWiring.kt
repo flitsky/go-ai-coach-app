@@ -64,6 +64,8 @@ internal fun wireUndoController(
 ): UndoController =
     UndoController(
         scope = context.scope,
+        // 무르기 직후 이 컨트롤러는 새로 만들어진다 — 대기 중인 재동기화는 한 번만 만든 자리에 둔다(#107).
+        pendingSync = context.postUndoSync,
         engineClient = context.engineClient,
         diagnosticEventLog = context.diagnosticEventLog,
         currentGameState = { context.gameState() },

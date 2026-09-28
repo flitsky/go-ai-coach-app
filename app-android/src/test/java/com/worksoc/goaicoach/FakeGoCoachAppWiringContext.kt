@@ -36,6 +36,7 @@ import com.worksoc.goaicoach.application.session.GameSessionStateHolder
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.toRuntimeLogContext
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
+import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
@@ -119,7 +120,7 @@ import kotlinx.coroutines.SupervisorJob
  *
  * ## 같은 페이크로 다시 배선하면 앱의 재배선과 같다
  * 앱은 `wiringContext`의 키가 바뀔 때마다 **새 컨텍스트 객체**와 컨트롤러 12개를 만들지만, 그 객체는 한 번만
- * `remember`한 것들(수명 컨트롤러·캐시·유예 자리)과 컴포즈 상태를 그대로 넘긴다. 이 페이크의
+ * `remember`한 것들(수명 컨트롤러·캐시·유예 자리·[postUndoSync])과 컴포즈 상태를 그대로 넘긴다. 이 페이크의
  * 멤버는 전부 한 번 만들어지므로, 같은 페이크로 `wireGoCoachControllers`를 다시 부르는 것이 곧 그 재배선이다 —
  * 컨트롤러 인스턴스에만 있던 상태는 거기서 사라진다(#107).
  */
@@ -278,6 +279,9 @@ internal class FakeGoCoachAppWiringContext(
     override val analysisCache: AnalysisResultCache = AnalysisResultCache(maxEntries = 96)
     override val undoAnalysisRestoreCache: UndoAnalysisRestoreCache = UndoAnalysisRestoreCache(maxEntries = 96)
     override val deferredTopMoveAnalysis: TopMoveAnalysisDeferral = TopMoveAnalysisDeferral()
+
+    // 앱의 `remember { PostUndoSyncSlot() }`(키 없음)와 같은 자리 — 이 페이크로 다시 배선하면 새 컨트롤러가 같은 자리를 본다(#107).
+    override val postUndoSync: PostUndoSyncSlot = PostUndoSyncSlot()
 
     private fun <T> read(getter: String, value: () -> T): T {
         getterReads += getter

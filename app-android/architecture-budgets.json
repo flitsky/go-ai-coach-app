@@ -57,6 +57,7 @@
         "GoCoachScreen.LaunchedEffect(preferencesStore)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "설정 오토세이브(함정 2)" },
         "GoCoachScreen.LaunchedEffect(savedSessionUiState)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "대국 저장 + 히스토리 적재(#6·#151)" },
         "GoCoachScreen.deferredTopMoveAnalysis": { "kind": "WIRING", "since": "#46", "why": "추천 수 분석 미루기 도우미" },
+        "GoCoachScreen.postUndoSync": { "kind": "WIRING", "since": "#107", "why": "무르기 뒤 대기 중인 재동기화 한 건 — 무르기가 wiringContext 키를 바꿔 UndoController가 새로 만들어져도 살아남아야 새 인스턴스가 취소한다(키 없는 remember)" },
         "GoCoachScreen.wiringContext": { "kind": "WIRING", "since": "#46", "why": "컨트롤러 배선 컨텍스트 — ⚠️ remember 키 7개는 WiringContextFreezeContractTest가 지킨다(함정 67). 이 원장은 키를 보지 않는다" },
         "GoCoachScreen.controllers": { "kind": "WIRING", "since": "#46", "why": "컨트롤러 그래프 — remember(wiringContext)로 재배선(#43)" },
         "GoCoachScreen.LaunchedEffect(isEngineReady)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "AI 차례·추천 수 자동 트리거" },

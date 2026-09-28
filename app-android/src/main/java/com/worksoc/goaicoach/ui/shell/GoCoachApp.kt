@@ -73,6 +73,7 @@ import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.runTurnAutomationTriggerEffect
 import com.worksoc.goaicoach.application.session.toRuntimeLogContext
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
+import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
 import com.worksoc.goaicoach.match.MatchMode
@@ -504,6 +505,8 @@ private fun GoCoachScreen(
         )
     }
     val deferredTopMoveAnalysis = remember { TopMoveAnalysisDeferral() }
+    // 키 없이 한 번 — 무르기가 아래 키를 바꿔 UndoController가 새로 만들어져도 대기 중인 재동기화가 남는다(#107).
+    val postUndoSync = remember { PostUndoSyncSlot() }
     // gameState/settingsState/scoreState/moveReviewState/runtimeState/autoAiTurnUiState/
     // positionCacheOptimizationState/benchmarkUiState/savedSessionUiState/turnTimeState/
     // isGameEnded are all HolderBackedState reads of sessionSnapshot (see their declarations
@@ -535,6 +538,7 @@ private fun GoCoachScreen(
             override val analysisCache: AnalysisResultCache = analysisCache
             override val undoAnalysisRestoreCache: UndoAnalysisRestoreCache = undoAnalysisRestoreCache
             override val deferredTopMoveAnalysis: TopMoveAnalysisDeferral = deferredTopMoveAnalysis
+            override val postUndoSync: PostUndoSyncSlot = postUndoSync
 
             override fun savedSessionRawJson(): String? = sessionStore.readRawJson()
             override fun storedBenchmarkText(): String = benchmarkStore.loadText()

@@ -314,7 +314,7 @@ class WiringContextFreezeContractTest {
          * 것 — playerSetup·matchMode·topMovesEnabled·shouldShowResumePrompt. 지역 함수로 위임된
          * currentRuntimeLogContext와 engineName·engineDiagnostic은 #108에서 latestEngineIdentity 지연 읽기가 됐다)를
          * 람다/지연 읽기로 바꾸고 ⓑ `GoCoachAppWiringContext`
-         * 멤버를 전수 감사해(함정 67은 64개라 적었고 지금 65개다) 값을 붙잡는 멤버가 0건임을 확인하고
+         * 멤버를 전수 감사해(함정 67은 64개라 적었고 지금 66개다 — #107이 `postUndoSync`를 더했다) 값을 붙잡는 멤버가 0건임을 확인하고
          * ⓒ 그다음에만 키를 지운다. 파서의 목록([FreezeProneMembers])이 비었다는 것만으로는 ⓑ가 아니다 —
          * 파서는 근사이고, 이 목록은 그래서 파서와 떨어져 있다.
          */

@@ -16,16 +16,16 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationRequest
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-
-private data class PendingPostUndoEngineSync(
-    val targetState: GameState,
-    val quietUntilMillis: Long,
-)
 
 class UndoController(
     private val scope: CoroutineScope,
+    /**
+     * 대기 중인 재동기화의 자리 — 이 인스턴스보다 **오래 산다**(refactor backlog #107). 이 컨트롤러는 무르기 직후
+     * `wiringContext`와 함께 새로 만들어지므로, 예약한 인스턴스와 취소하는 인스턴스가 다르다. 배선은 `GoCoachApp`이
+     * 키 없는 `remember`로 한 번 만든 것을 넘긴다([PostUndoSyncSlot]).
+     */
+    private val pendingSync: PostUndoSyncSlot,
     private val engineClient: EngineScoringClient,
     private val diagnosticEventLog: DiagnosticEventLogPort,
     private val currentGameState: () -> GameState,
@@ -46,9 +46,6 @@ class UndoController(
     private val applyScoreSyncCompletion: (ScoreSyncCompletionApplyPlan) -> GameState?,
     private val requestFollowUpAnalysis: (GameState) -> Unit,
 ) {
-    private var pendingSync: PendingPostUndoEngineSync? = null
-    private var pendingSyncJob: Job? = null
-
     fun markQuiet(): Long {
         val quietUntil = undoEngineInterventionQuietUntilMillis(currentEpochMillis())
         onQuietUntil(quietUntil)
@@ -56,10 +53,10 @@ class UndoController(
     }
 
     fun cancelPendingSync() {
-        pendingSyncJob?.cancel()
-        pendingSyncJob = null
-        if (pendingSync != null) {
-            pendingSync = null
+        pendingSync.job?.cancel()
+        pendingSync.job = null
+        if (pendingSync.pending != null) {
+            pendingSync.pending = null
             onPendingSyncChanged(false)
         }
     }
@@ -74,10 +71,10 @@ class UndoController(
             targetState = targetState,
             quietUntilMillis = quietUntilMillis,
         )
-        pendingSync = pending
+        pendingSync.pending = pending
         onPendingSyncChanged(true)
-        pendingSyncJob?.cancel()
-        pendingSyncJob = launchUiEffect(scope) {
+        pendingSync.job?.cancel()
+        pendingSync.job = launchUiEffect(scope) {
             val delayMillis = undoEngineInterventionRemainingDelayMillis(
                 nowMillis = currentEpochMillis(),
                 quietUntilMillis = pending.quietUntilMillis,
@@ -85,16 +82,16 @@ class UndoController(
             if (delayMillis > 0L) {
                 delay(delayMillis)
             }
-            while (pendingSync == pending && currentGameState() == pending.targetState && isEngineBusy()) {
+            while (pendingSync.pending == pending && currentGameState() == pending.targetState && isEngineBusy()) {
                 delay(UndoEngineBusyPollIntervalMillis)
             }
             if (
-                pendingSync != pending ||
+                pendingSync.pending != pending ||
                 currentGameState() != pending.targetState ||
                 !isEngineReady()
             ) {
-                if (pendingSync == pending) {
-                    pendingSync = null
+                if (pendingSync.pending == pending) {
+                    pendingSync.pending = null
                     onPendingSyncChanged(false)
                 }
                 return@launchUiEffect
@@ -116,8 +113,8 @@ class UndoController(
                     requestFollowUpAnalysis = requestFollowUpAnalysis,
                 ),
             )
-            if (pendingSync == pending) {
-                pendingSync = null
+            if (pendingSync.pending == pending) {
+                pendingSync.pending = null
                 onPendingSyncChanged(false)
             }
         }
