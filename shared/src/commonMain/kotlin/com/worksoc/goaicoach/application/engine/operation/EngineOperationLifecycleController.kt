@@ -221,9 +221,12 @@ class EngineOperationLifecycleController(
      * 도는 AI 차례를 **취소**한다(refactor backlog #74) — 무르기·나가기·새 대국·이어하기(분기 포함)·「엔진 다시
      * 시작하기」가 부른다. Android 홈(일시정지)은 부르지 않는다 — 돌아오면 그 수가 그대로 둬져 있어야 한다.
      *
-     * ⚠️ 취소는 표시만 한다. 막힌 GTP 읽기는 인터럽트에 반응하지 않으므로(설계 F4) Job은 그 명령이 돌아올 때
-     * (보통 탐색 시간 제한 안, 또는 forceReset으로 파이프가 닫힐 때) 끝나고, 정리(busy·예약 해제)는 러너의
-     * `finally`가 그때 한다. 취소된 차례는 수를 두지 않고, genMove·형세 추정도 더 부르지 않는다.
+     * 취소된 Job은 **곧바로** 끝난다(refactor backlog #15) — 막힌 GTP 읽기에 매달린 호출자도 답을 기다리지 않고
+     * 취소로 돌아가고, 그 답 받기는 2계층 배수(`KataGoProcessEngineAdapter`의 `drainThenUnlock`)가 그 핸들의 왕복
+     * 락과 함께 맡는다(원래 마감까지 기다리고, 안 오면 그 프로세스를 내린다. forceReset의 EOF도 배수를 끝낸다).
+     * 그래서 정리(busy·예약 해제)는 러너의 `finally`가 곧바로 하고 오퍼레이션 락도 곧바로 풀린다 — 같은 프로세스로
+     * 가는 다음 명령만 배수가 끝날 때까지 왕복 락에 줄 선다. 취소된 차례는 수를 두지 않고, genMove·형세 추정도 더
+     * 부르지 않는다.
      */
     fun cancelInFlightAutoAiTurn() {
         val job = activeJobsLock.withLock { inFlightAutoAiTurnJob } ?: return

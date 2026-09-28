@@ -26,7 +26,6 @@ import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -207,6 +206,40 @@ class LocalEngineSessionClientSerializationTest {
         assertEquals(BlackAtD4Analysis + AiTurnGtpCommands + TwoMovesAnalysis, engine.calls)
     }
 
+    /**
+     * T13(표) — 오퍼레이션 하나가 락을 쥔 채 멈춘 동안 **공개 오퍼레이션 하나하나**를 부른다. 기다리는 것은 풀릴 때까지
+     * 엔진에 한 명령도 보내지 않고 풀린 뒤에 돈다. 추천 수·형세는 곧바로 [EngineOperationBusy]로 포기한다.
+     * 어느 메서드 하나에서 `serialized(...)`·`serializedOrBusy(...)`를 빼도(또는 서로 바꿔도) 그 줄이 빨개진다 —
+     * 다른 테스트는 대표 몇 개만 본다. ⚠️ 공개 오퍼레이션을 새로 만들면 [EveryPublicOperation]에 한 줄을 더할 것.
+     */
+    @Test
+    fun everyPublicOperationWaitsForOrGivesUpOnAHeldOperationLock() = runBlocking {
+        EveryPublicOperation.forEach { case ->
+            val engine = ParkingCoreApi()
+            val client = LocalEngineSessionClient(coreApi = engine, currentSessionGeneration = { 0L })
+            engine.parkAt("estimate")
+            val holder = async { runCatching { client.syncAndEstimateGraphScore(TwoMoves, Profile) } }
+            engine.awaitParked()
+            val callsWhileHolding = engine.calls
+
+            if (case.waits) {
+                val waiter = async { runCatching { case.call(client) } }
+                settle()
+                assertEquals(callsWhileHolding, engine.calls, "${case.name} must send nothing while another operation holds the lock")
+                engine.release()
+                holder.await().getOrThrow()
+                assertNotNull(withTimeoutOrNull(RefusalBudgetMillis) { waiter.await() }, "${case.name} must run once the lock is free")
+                assertTrue(engine.calls.size > callsWhileHolding.size, "${case.name} must reach the engine after the release: ${engine.calls}")
+            } else {
+                val outcome = withTimeoutOrNull(RefusalBudgetMillis) { runCatching { case.call(client) } }
+                assertGaveUpAtOnce(outcome, case.name)
+                assertEquals(callsWhileHolding, engine.calls, "${case.name} must send nothing when it gives up")
+                engine.release()
+                holder.await().getOrThrow()
+            }
+        }
+    }
+
     // ── 도우미 ─────────────────────────────────────────────────────────────────
 
     /** 한 스레드 이벤트 루프에서 다른 코루틴이 멈출 수 있는 데까지 돌게 둔다. */
@@ -214,12 +247,19 @@ class LocalEngineSessionClientSerializationTest {
         repeat(50) { yield() }
     }
 
-    /** 기다리지 않고(시간 안에) [EngineOperationBusy]로 끝났다 — 결과를 내지 않았고, 취소도 아니다. */
-    private fun assertGaveUpAtOnce(outcome: Result<Any>?, what: String) {
+    /** 기다리지 않고(시간 안에) [EngineOperationBusy]로 끝났다 — 결과를 내지 않았다. (취소가 아니라는 것은 그 타입이 지킨다.) */
+    private fun assertGaveUpAtOnce(outcome: Result<Any?>?, what: String) {
         assertNotNull(outcome, "$what must give up at once instead of waiting for the running operation")
         val failure = outcome.exceptionOrNull()
-        assertTrue(failure is EngineOperationBusy && failure !is CancellationException, "$what must give up with EngineOperationBusy: $outcome")
+        assertTrue(failure is EngineOperationBusy, "$what must give up with EngineOperationBusy: $outcome")
     }
+
+    /** [everyPublicOperationWaitsForOrGivesUpOnAHeldOperationLock]의 한 줄 — [waits]가 거짓이면 곧바로 포기해야 한다. */
+    private class OperationCase(
+        val name: String,
+        val waits: Boolean,
+        val call: suspend (LocalEngineSessionClient) -> Any?,
+    )
 
     private companion object {
         /** 곧바로 포기해야 하는 호출이 이 안에 돌아오지 않으면 기다린 것이다. 한 스레드라 실제로는 0에 가깝다. */
@@ -258,6 +298,25 @@ class LocalEngineSessionClientSerializationTest {
                     executionLimit = limit.copy(timeMillis = null),
                 )
             },
+        )
+
+        /** `EngineSessionClient`의 엔진을 쓰는 공개 suspend 오퍼레이션 전부(`forceResetEngine`은 락을 잡지 않는다 — 함정 71). */
+        val EveryPublicOperation = listOf(
+            OperationCase("startSession", waits = true) { it.startSession(Profile, TwoMoves) },
+            OperationCase("startNewGame", waits = true) { it.startNewGame(Profile, BoardSize.Nine, Ruleset.Japanese, 0, 6.5) },
+            OperationCase("analyzePosition", waits = false) { it.analyzePosition(BlackAtD4, SmallLimit) },
+            OperationCase("optimizePositionAnalysisCache", waits = true) { it.optimizePositionAnalysisCache(TwoTargetPlan) },
+            OperationCase("syncAndEstimateGraphScore", waits = true) { it.syncAndEstimateGraphScore(BlackAtD4, Profile) },
+            OperationCase("configureSyncAndEstimateGraphScore", waits = true) { it.configureSyncAndEstimateGraphScore(BlackAtD4, Profile) },
+            OperationCase("runAutoAiTurn", waits = true) {
+                it.runAutoAiTurn(EmptyBoard, PlayLevelSetting(), Profile, SearchTimeSettings(), EngineSearchMode.GtpStatefulFast, isolateSearchCache = false)
+            },
+            OperationCase("syncAfterHumanMove", waits = true) {
+                it.syncAfterHumanMove(BlackAtD4, Profile, BlackAtD4.moves.last(), previousReviewCandidates = emptyList())
+            },
+            OperationCase("estimateScoreForState", waits = false) { it.estimateScoreForState(BlackAtD4, Profile, syncFirst = true) },
+            OperationCase("resolveEndgameForState", waits = true) { it.resolveEndgameForState(TwoMoves, Profile, prePassCandidates = emptyList()) },
+            OperationCase("runStartupBenchmark", waits = true) { it.runStartupBenchmark(restoreState = BlackAtD4, nowMillis = 1L, onProgress = {}) },
         )
     }
 }

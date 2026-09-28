@@ -16,6 +16,8 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +74,8 @@ class OperationSerializationOnProcessAdapterTest {
         assertTrue(runtime.gtp(1).awaitReceived("kata-raw-nn"))
         val queued = call { client.syncAndEstimateGraphScore(BlackAtD4, Profile) }
         Thread.sleep(50) // 줄을 서게 둔다
-        val resetMillis = measureMillis { client.forceResetEngine() }
+        // 따로 돈 스레드에서 부른다 — forceReset이 락을 기다리는 회귀(함정 71)가 JVM을 매달지 않고 빨개진다.
+        val resetMillis = millisOnASeparateThread(within = 2_000, what = "forceReset") { client.forceResetEngine() }
 
         assertTrue("forceReset must not wait for the stuck operation (${resetMillis}ms)", resetMillis < 100)
         val stuckOutcome = stuck.outcomeWithin(1_000, "the stuck operation")
@@ -141,10 +144,25 @@ class OperationSerializationOnProcessAdapterTest {
             runCatching { await() }
         }
 
-    private fun measureMillis(block: () -> Unit): Long {
-        val start = System.nanoTime()
-        block()
-        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)
+    /**
+     * [block]을 따로 돈 스레드에서 돌려 걸린 시간을 잰다. [within] 안에 돌아오지 않으면 매달리지 않고 실패한다 —
+     * 그 스레드는 데몬이라 `tearDown`의 `releaseAll`이 풀어 주지 못해도 JVM을 붙잡지 않는다.
+     */
+    private fun millisOnASeparateThread(within: Long, what: String, block: () -> Unit): Long {
+        val elapsed = AtomicLong(-1)
+        val failure = AtomicReference<Throwable?>(null)
+        val thread = Thread({
+            val start = System.nanoTime()
+            runCatching(block).onFailure(failure::set)
+            elapsed.set(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start))
+        }, what).apply {
+            isDaemon = true
+            start()
+        }
+        thread.join(within)
+        if (thread.isAlive) fail("$what did not return within ${within}ms — it is waiting for the stuck operation")
+        failure.get()?.let { throw it }
+        return elapsed.get()
     }
 
     private companion object {
