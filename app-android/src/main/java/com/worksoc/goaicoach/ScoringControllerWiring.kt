@@ -59,6 +59,7 @@ internal fun wireScoringRuleController(
         applyScoringRuleChangePlan = { ruleChange: ScoringRuleChangePlan ->
             context.applyCoreSessionState(context.sessionSnapshot().core.applyScoringRuleChangePlan(ruleChange))
         },
+        applySettingsRuleset = { ruleset -> context.setSettingsState(context.settingsState().applyRuleset(ruleset)) },
         applyScoreSyncCompletionApplyPlan = context.displayStateApplier::applyScoreSyncCompletion,
         requestFollowUpAnalysis = { state -> topMovesController.requestAnalysis(state, automatic = true) },
         launchEngineOperation = { operation, block -> context.lifecycleController.launchTracked(operation) { block() } },

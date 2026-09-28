@@ -35,6 +35,8 @@ class ScoringRuleController(
     private val timeoutPolicy: (EngineProfile) -> EngineTimeoutPolicy,
     private val onEngineMessage: (String) -> Unit,
     private val applyScoringRuleChangePlan: (ScoringRuleChangePlan) -> Unit,
+    /** 다음 대국의 룰(설정 상태)을 바꾼다 — 로비·새 대국·자동저장이 읽는 칸이다(refactor backlog #22). */
+    private val applySettingsRuleset: (Ruleset) -> Unit,
     private val applyScoreSyncCompletionApplyPlan: (ScoreSyncCompletionApplyPlan) -> GameState?,
     private val requestFollowUpAnalysis: (GameState) -> Unit,
     private val launchEngineOperation: (EngineOperationRequest, suspend () -> Unit) -> Unit,
@@ -50,12 +52,20 @@ class ScoringRuleController(
             )
         ) {
             EngineOperationGate.Allow -> Unit
-            EngineOperationGate.NoOp -> return
+            // ⚠️ 지금 판이 이미 그 룰이어도 **설정에는 적는다**(refactor backlog #22) — 끝난 이어하기 판(일본)이 화면에
+            // 남은 채 로비에서 일본을 고르면 이 게이트는 NoOp인데, 설정(다음 대국)은 중국일 수 있다.
+            EngineOperationGate.NoOp -> {
+                applySettingsRuleset(nextRuleset)
+                return
+            }
             is EngineOperationGate.Block -> {
                 onEngineMessage(gate.message)
                 return
             }
         }
+        // 덤처럼(`GameSettingsController.changeKomi`) 고른 룰은 다음 대국의 룰도 된다 — 로비에서 고르든 대국 중 메뉴에서
+        // 고르든 같다. 엔진이 바빠 거절된(Block) 변경만 아무 데도 적지 않는다.
+        applySettingsRuleset(nextRuleset)
 
         val profile = currentEngineProfile()
         val ruleChange = buildScoringRuleChangePlan(

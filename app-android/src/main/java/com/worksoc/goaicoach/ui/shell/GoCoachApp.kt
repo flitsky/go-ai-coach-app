@@ -451,13 +451,11 @@ private fun GoCoachScreen(
         preferencesStore,
         settingsState,
         uxOptions,
-        gameState.ruleset,
     ) {
-        // 덤은 `settingsState`에 실려 간다 — 지금 판의 덤을 적으면 이어한 판의 덤이 설정이 된다(#94).
+        // 덤·룰은 `settingsState`에 실려 간다 — 지금 판의 것을 적으면 이어한 판의 덤·룰이 설정이 된다(#94·#22).
         runUserPreferencesAutosave(
             request = UserPreferencesAutosaveRequest(
                 settingsState = settingsState,
-                ruleset = gameState.ruleset,
                 showCoordinates = uxOptions.showCoordinates,
                 showMoveNumbers = uxOptions.showMoveNumbers,
                 showLastMoveRing = uxOptions.showLastMoveRing,

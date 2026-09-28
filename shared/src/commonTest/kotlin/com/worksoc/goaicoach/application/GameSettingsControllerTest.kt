@@ -676,16 +676,15 @@ private class LiveSettingsWiring(plan: InitialUserPreferencesPlan) {
 }
 
 /**
- * `GoCoachApp`의 자동저장 `LaunchedEffect`와 같은 요청 — 대국 설정(덤 포함, #94)은 설정 상태, 계가 규칙만
- * 지금 판이다. 요청에 덤 칸이 없어 앱과 이 도우미가 덤의 출처로 갈라질 수 없다. 표시 옵션은 이 테스트와
- * 무관해 스냅샷 기본값을 넘긴다.
+ * `GoCoachApp`의 자동저장 `LaunchedEffect`와 같은 요청 — 대국 설정(덤 #94·계가 규칙 #22 포함)은 전부 설정 상태다.
+ * 요청에 덤·룰 칸이 없어 앱과 이 도우미가 그 출처로 갈라질 수 없다. 표시 옵션은 이 테스트와 무관해 스냅샷
+ * 기본값을 넘긴다.
  */
 private fun autosaveLikeTheApp(live: LiveSettingsWiring, store: UserPreferencesStorePort) {
     val defaults = UserPreferencesSnapshot()
     runUserPreferencesAutosave(
         request = UserPreferencesAutosaveRequest(
             settingsState = live.settings,
-            ruleset = live.core.gameState.ruleset,
             showCoordinates = defaults.showCoordinates,
             showMoveNumbers = defaults.showMoveNumbers,
             showLastMoveRing = defaults.showLastMoveRing,

@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.buildNewLocalGameSessionPlan
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -28,9 +29,8 @@ class NewGameController(
     private val currentPlayerSetup: () -> PlayerSetup,
     private val currentEngineProfile: () -> EngineProfile,
     private val currentSearchTimeSettings: () -> SearchTimeSettings,
-    private val currentBoardSize: () -> BoardSize,
-    private val currentHandicapCount: () -> Int,
-    private val currentKomi: () -> Double,
+    /** 다음 대국의 판 정체성 네 값 — 설정 상태의 `nextGameSetup`(refactor backlog #22). */
+    private val currentNextGameSetup: () -> GameSetup,
     private val currentSessionGeneration: () -> Long,
     private val currentScoreState: () -> GameSessionScoreState,
     private val currentRuntimeLogContext: () -> RuntimeLogContext,
@@ -84,16 +84,11 @@ class NewGameController(
         // 있으면, 그게 늦게 끝나는 동안 새 대국의 isEngineBusy가 계속 true로 잡혀 AI 턴 예약이
         // 조용히 취소되는 경쟁 상태가 생긴다 — 새 대국을 실제로 시작하기 전에 먼저 비운다.
         cancelStaleOperations()
-        // 판 크기·접바둑·덤은 **설정 한 곳**에서 읽는다(refactor backlog #94). 지금 판(`gameState`)은
-        // 이어하기·기록 분기·앱 시작 때 되살린 끝난 판이면 로비를 거치지 않은 판이라, 거기서 덤을 읽으면
-        // 「재 대국」·로비 시작이 *"설정의 3점 + 앞 판의 6.5"* 로 시작한다.
-        // ⚠️ 계가 규칙만 아직 지금 판에서 읽는다 — 설정 상태에 그 칸이 없다(#22).
-        val targetState = GameState.withHandicap(
-            boardSize = currentBoardSize(),
-            ruleset = currentGameState().ruleset,
-            handicapCount = currentHandicapCount(),
-            komi = currentKomi(),
-        )
+        // 판 크기·룰·접바둑·덤은 **설정 한 곳**에서 **한 값으로** 읽는다(refactor backlog #94 덤, #22 룰). 지금 판
+        // (`gameState`)은 이어하기·기록 분기·앱 시작 때 되살린 끝난 판이면 로비를 거치지 않은 판이라, 거기서 한 값이라도
+        // 읽으면 「재 대국」·로비 시작이 *"설정의 3점 + 앞 판의 6.5"*, *"설정의 판 + 앞 판의 룰"* 로 시작한다.
+        // 네 값을 따로 받던 때 그렇게 룰 하나가 새 출처로 남았다 — 한 값이면 섞을 자리가 없다.
+        val targetState = GameState.withHandicap(currentNextGameSetup())
         when (
             val plan = buildStartConfiguredGamePlan(
                 setup = currentPlayerSetup(),

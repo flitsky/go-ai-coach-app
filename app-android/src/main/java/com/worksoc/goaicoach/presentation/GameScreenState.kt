@@ -17,6 +17,7 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.turnStatusText
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
@@ -49,13 +50,14 @@ internal data class GameScreenState(
     val endgameLog: String,
     val finalScoreJudgement: FinalScoreJudgement?,
     /**
-     * **다음 대국**의 접바둑·판 크기·덤 — 셋 다 설정 상태에서 온다(refactor backlog #94). 로비와 설정 화면이
+     * **다음 대국**의 접바둑·판 크기·덤·계가 규칙 — 넷 다 설정 상태에서 온다(refactor backlog #94, 룰은 #22). 로비와 설정 화면이
      * 그린다. **지금 판**의 값은 [gameState]에 있고, 이어하기·분기 대국이면 둘이 다르다 — 한 패널에서 둘을
      * 섞어 읽으면 어느 판에도 없는 조합이 보인다(`MatchSetupSourceContractTest`).
      */
     val handicapCount: Int = 0,
     val setupBoardSize: BoardSize,
     val setupKomi: Double,
+    val setupRuleset: Ruleset,
     /**
      * 이 국면의 AI 탐색이 시간 초과로 끝나 사용자의 선택(「한 번 더 기다리기」/「엔진 다시 시작하기」)을 기다리는
      * 중인가(refactor backlog #74, 설계 C-8 상태 B). `GamePlaySection`의 「엔진 응답 지연」 팝업이 이것으로도 뜬다 —
@@ -108,6 +110,7 @@ internal data class GameScreenStateInput(
     val handicapCount: Int = 0,
     val setupBoardSize: BoardSize,
     val setupKomi: Double,
+    val setupRuleset: Ruleset,
     val isEngineBlockingBusy: Boolean = false,
     val engineActivityIndicator: EngineActivityIndicator? = null,
     val engineTurnWaitCompletionSeq: Int = 0,
@@ -174,6 +177,7 @@ internal fun buildGameScreenStateInput(
         handicapCount = controller.settings.handicapCount,
         setupBoardSize = controller.settings.boardSize,
         setupKomi = controller.settings.komi,
+        setupRuleset = controller.settings.ruleset,
         isEngineBlockingBusy = isEngineBlockingBusy,
         engineActivityIndicator = engineActivityIndicator,
         engineTurnWaitCompletionSeq = engineTurnWaitCompletionSeq,
@@ -245,6 +249,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         handicapCount = input.handicapCount,
         setupBoardSize = input.setupBoardSize,
         setupKomi = input.setupKomi,
+        setupRuleset = input.setupRuleset,
         isAwaitingEngineTimeoutChoice = input.isAwaitingEngineTimeoutChoice,
     )
 }

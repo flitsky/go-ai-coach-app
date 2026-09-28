@@ -192,14 +192,8 @@ class GameSettingsController(
      * GoCoachApp when leaving an ended game back to Home.
      */
     fun refreshNewGamePreview() {
-        val settings = currentSettingsState()
-        applyCoreSessionState(
-            currentCoreSessionState().applyGameSetupPreview(
-                ruleset = currentGameState().ruleset,
-                boardSize = settings.boardSize,
-                handicapCount = settings.handicapCount,
-                komi = settings.komi,
-            ),
-        )
+        // 네 값 전부 설정에서 한 값으로(refactor backlog #22) — 룰만 지금 판에서 읽던 때, 끝난 이어하기 판의 룰이 미리보기로
+        // 새어 로비에 보이고 새 대국으로 갔다.
+        applyCoreSessionState(currentCoreSessionState().applyGameSetupPreview(currentSettingsState().nextGameSetup))
     }
 }

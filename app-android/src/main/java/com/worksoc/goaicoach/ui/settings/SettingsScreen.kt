@@ -283,9 +283,9 @@ internal fun SettingsScreen(
             // 사용자 판단이다. 그래서 여기서만 잠그고 로비는 그대로 둔다.
             // ⚠️ 조건을 여기서 인라인으로 쓰지 말 것 — `isGameEnded` 하나로 보면 **대국을 한 번도
             // 하지 않은 사용자에게도 잠긴다**(시작한 적이 없으면 끝난 적도 없다).
-            // ⚠️ 판 크기·접바둑·덤은 **설정 상태**(다음 대국의 기본값)에서 읽는다 — 로비와 같은 출처다(#94).
+            // ⚠️ 판 크기·룰·접바둑·덤은 **설정 상태**(다음 대국의 기본값)에서 읽는다 — 로비와 같은 출처다(#94, 룰은 #22).
             CompactScoringAndBoardSettingsPanel(
-                ruleset = screenState.gameState.ruleset,
+                ruleset = screenState.setupRuleset,
                 boardSize = screenState.setupBoardSize,
                 handicapCount = screenState.handicapCount,
                 komi = screenState.setupKomi,

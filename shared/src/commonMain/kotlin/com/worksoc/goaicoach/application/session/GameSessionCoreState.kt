@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.application.score.ScoringRuleChangePlan
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.undo.UndoLocalStatePlan
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
@@ -127,6 +128,14 @@ data class GameSessionCoreState(
      * `advanceMatchGeneration = false` — 아직 실제로 대국을 시작한 것이 아니므로 매치
      * 제너레이션은 그대로 둔다(위 [applyGameSessionResetPlan] 문서 참고).
      */
+    fun applyGameSetupPreview(setup: GameSetup): GameSessionCoreState =
+        applyGameSetupPreview(
+            ruleset = setup.ruleset,
+            boardSize = setup.boardSize,
+            handicapCount = setup.handicapCount,
+            komi = setup.komi,
+        )
+
     fun applyGameSetupPreview(
         ruleset: Ruleset,
         boardSize: BoardSize,

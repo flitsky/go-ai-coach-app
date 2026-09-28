@@ -1,19 +1,15 @@
 package com.worksoc.goaicoach.application.preferences
 
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
-import com.worksoc.goaicoach.shared.domain.Ruleset
 
 /**
- * 자동저장 요청. ⚠️ **덤은 따로 받지 않는다** — [settingsState]의 덤이 곧 저장할 덤이다(refactor backlog #94).
- * 따로 받던 때는 셸이 지금 판의 `gameState.komi`를 넘겼고, 이어하기·분기 대국 도중에는 **그 판의** 덤이
- * 설정의 판 크기·접바둑과 함께 저장됐다(앱이 죽으면 다음 실행의 설정이 *"3점 + 6.5"* 가 된다). 칸이 없으니
- * 그 둘째 출처를 다시 넘길 수 없다.
- *
- * ⚠️ [ruleset]은 아직 따로 받는다 — 설정 상태에 계가 규칙 칸이 없어서다(#22).
+ * 자동저장 요청. ⚠️ **덤과 계가 규칙은 따로 받지 않는다** — [settingsState]의 값이 곧 저장할 값이다(refactor backlog
+ * #94 덤, #22 룰). 따로 받던 때는 셸이 지금 판의 `gameState.komi`·`gameState.ruleset`을 넘겼고, 이어하기·분기 대국
+ * 도중에는 **그 판의** 덤·룰이 설정의 판 크기·접바둑과 함께 저장됐다(앱이 죽으면 다음 실행의 설정이 *"3점 + 6.5"*,
+ * 또는 앞 판의 룰이 된다). 칸이 없으니 그 둘째 출처를 다시 넘길 수 없다.
  */
 data class UserPreferencesAutosaveRequest(
     val settingsState: GameSessionSettingsState,
-    val ruleset: Ruleset,
     val showCoordinates: Boolean,
     val showMoveNumbers: Boolean,
     val showLastMoveRing: Boolean,
@@ -44,7 +40,7 @@ internal fun buildUserPreferencesAutosaveSnapshot(
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         settingsState = request.settingsState,
-        ruleset = request.ruleset,
+        ruleset = request.settingsState.ruleset,
         komi = request.settingsState.komi,
         showCoordinates = request.showCoordinates,
         showMoveNumbers = request.showMoveNumbers,

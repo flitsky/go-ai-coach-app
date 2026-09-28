@@ -86,6 +86,19 @@ class UserPreferencesApplicationTest {
         assertEquals(7.5, plan.toGameSessionSettingsState().komi, "설정 상태가 저장된 덤 대신 기본값을 들고 시작했다")
     }
 
+    /** 룰도 같다(refactor backlog #22) — 새 대국·로비·자동저장이 설정 상태의 룰을 읽으므로, 빠지면 재시작 뒤 첫 판이 일본이다. */
+    @Test
+    fun initialSettingsStateCarriesTheSavedRuleset() {
+        val plan = buildInitialUserPreferencesPlan(
+            preferences = UserPreferencesSnapshot(ruleset = Ruleset.Chinese),
+            defaultPlayLevel = PlayLevelSetting(),
+            currentProfile = EngineProfile(),
+        )
+
+        assertEquals(Ruleset.Chinese, plan.toGameSessionSettingsState().ruleset, "설정 상태가 저장된 룰 대신 기본값을 들고 시작했다")
+        assertEquals(Ruleset.Chinese, plan.toGameSessionSettingsState().nextGameSetup.ruleset)
+    }
+
     @Test
     fun buildsSnapshotFromCurrentUiSettings() {
         val setup = PlayerSetup()
@@ -181,7 +194,6 @@ class UserPreferencesApplicationTest {
         runUserPreferencesAutosave(
             request = UserPreferencesAutosaveRequest(
                 settingsState = settingsState,
-                ruleset = Ruleset.Japanese,
                 showCoordinates = true,
                 showMoveNumbers = false,
                 showLastMoveRing = true,
@@ -233,8 +245,9 @@ class UserPreferencesApplicationTest {
                     boardSize = BoardSize.Nine,
                     handicapCount = 0,
                     komi = 7.5,
+                    // 룰도 설정 상태에 실려 간다(refactor backlog #22) — 요청에 따로 받는 칸이 없다.
+                    ruleset = Ruleset.Chinese,
                 ),
-                ruleset = Ruleset.Chinese,
                 // 아래는 전부 UserPreferencesSnapshot 기본값의 **반대**다.
                 // ⚠️ showOwnershipOverlay는 2026-09-20에 기본값이 true→false로 바뀌었다 —
                 // 반대값도 함께 뒤집는다(안 그러면 "저장값 == 기본값"이 우연히 참이 돼 이
@@ -305,8 +318,8 @@ class UserPreferencesApplicationTest {
                     topMovesEnabled = false,
                     boardSize = BoardSize.Thirteen,
                     handicapCount = 0,
+                    ruleset = Ruleset.Japanese,
                 ),
-                ruleset = Ruleset.Japanese,
                 showCoordinates = false,
                 showMoveNumbers = false,
                 showLastMoveRing = true,

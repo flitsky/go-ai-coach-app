@@ -441,6 +441,7 @@ class GameScreenStateTest {
                 boardSize = BoardSize.Nineteen,
                 handicapCount = 3,
                 komi = 0.5,
+                ruleset = Ruleset.Chinese,
             ),
             benchmark = EngineBenchmarkUiState(benchmarkText = "bench"),
             savedSession = SavedSessionUiState(),
@@ -467,6 +468,7 @@ class GameScreenStateTest {
         assertEquals("로비·설정 화면의 판 크기가 설정이 아니다(#94)", BoardSize.Nineteen, screenState.setupBoardSize)
         assertEquals("로비·설정 화면의 접바둑이 설정이 아니다", 3, screenState.handicapCount)
         assertEquals("로비·설정 화면의 덤이 설정이 아니다(#94)", 0.5, screenState.setupKomi, 0.0)
+        assertEquals("로비·설정 화면의 룰이 설정이 아니다(#22)", Ruleset.Chinese, screenState.setupRuleset)
         assertEquals("대국 화면이 그리는 지금 판이 바뀌었다", resumed, screenState.gameState)
     }
 
@@ -590,6 +592,7 @@ class GameScreenStateTest {
             endgameLog = "No endgame result recorded.",
             setupBoardSize = gameState.boardSize,
             setupKomi = gameState.komi,
+            setupRuleset = gameState.ruleset,
             isEngineBlockingBusy = isEngineBlockingBusy,
         )
 }

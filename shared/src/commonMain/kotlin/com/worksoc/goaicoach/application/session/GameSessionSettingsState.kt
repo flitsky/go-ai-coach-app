@@ -4,14 +4,15 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
 /**
- * **다음 대국**의 조건. 판 크기·접바둑·덤은 여기가 유일한 출처다(refactor backlog #94) — 로비·설정 화면이
- * 그리고, 새 대국(`NewGameController.startConfiguredGame`)이 시작하고, 자동저장이 적는다.
+ * **다음 대국**의 조건. 판 크기·계가 규칙·접바둑·덤은 여기가 유일한 출처다(refactor backlog #94, 룰은 #22) — 로비·설정
+ * 화면이 그리고, 새 대국(`NewGameController.startConfiguredGame`)이 [nextGameSetup] 하나로 시작하고, 자동저장이 적는다.
  * **지금 판**의 조건은 `GameState`에 있고, 이어하기·기록 분기·되살린 끝난 판이면 둘이 다르다
  * ([applySavedGameRestore]는 이쪽의 판 조건을 건드리지 않는다).
- * ⚠️ 계가 규칙은 아직 칸이 없어 `GameState.ruleset` 하나가 출처다(#22).
  */
 data class GameSessionSettingsState(
     val boardSize: BoardSize,
@@ -21,9 +22,18 @@ data class GameSessionSettingsState(
     val topMovesEnabled: Boolean,
     val handicapCount: Int = 0,
     val komi: Double = com.worksoc.goaicoach.shared.domain.DefaultKomi,
+    /**
+     * 다음 대국의 계가 규칙(refactor backlog #22). 저장된 설정(`UserPreferencesSnapshot.ruleset`)으로 채워진다.
+     * 예전에는 이 칸이 없어 로비·새 대국·자동저장이 지금 판의 룰을 읽었고, 이어한 판의 룰이 다음 대국과 설정으로 샜다.
+     */
+    val ruleset: Ruleset = Ruleset.Japanese,
 ) {
     val matchMode: MatchMode
         get() = playerSetup.matchMode()
+
+    /** 다음 대국의 정체성 네 값 — 새 대국과 로비 미리보기가 이것 **하나**로 판을 만든다(refactor backlog #22). */
+    val nextGameSetup: GameSetup
+        get() = GameSetup(boardSize = boardSize, ruleset = ruleset, handicapCount = handicapCount, komi = komi)
 
     fun applyPlayerSetup(nextSetup: PlayerSetup): GameSessionSettingsState =
         copy(playerSetup = nextSetup)
@@ -55,6 +65,9 @@ data class GameSessionSettingsState(
 
     fun applyKomi(nextKomi: Double): GameSessionSettingsState =
         copy(komi = nextKomi)
+
+    fun applyRuleset(nextRuleset: Ruleset): GameSessionSettingsState =
+        copy(ruleset = nextRuleset)
 
     fun applySavedGameRestore(
         restoredSetup: PlayerSetup,

@@ -73,6 +73,9 @@ fun InitialUserPreferencesPlan.toGameSessionSettingsState(): GameSessionSettings
         // `GameSettingsController.refreshNewGamePreview`가 **이쪽**을 읽으므로, 재시작 뒤 판 크기나
         // 접바둑을 한 번 바꾸면 덤이 소리 없이 6.5로 돌아갔다.
         komi = gameState.komi,
+        // ⚠️ 룰도 저장값으로 채운다(refactor backlog #22) — 새 대국·로비·자동저장이 이 칸을 읽는다. 빠지면 저장된
+        // 룰이 무엇이든 재시작 뒤 첫 새 대국이 기본값(일본)으로 시작한다.
+        ruleset = settings.ruleset,
     )
 
 fun buildUserPreferencesSnapshot(

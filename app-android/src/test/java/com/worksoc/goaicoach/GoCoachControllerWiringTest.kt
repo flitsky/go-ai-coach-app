@@ -71,11 +71,11 @@ import org.junit.Test
  * - undo: `playerSetup`, `matchMode`, `isEngineReady`
  * - autoAi: `sessionSnapshot`(currentControllerState), `isEngineReady`, `currentRuntimeLogContext`(예약 로그 → 취소 로그)
  * - humanMove: `playerSetup`, `isEngineBlockingBusy`, `isEngineReady`, `gameState`(앞 수가 쓴 판 위에 다음 수)
- * - newGame: `playerSetup`, `settingsState`(currentBoardSize·currentKomi), `sessionSnapshot`(currentSearchTimeSettings), `isEngineReady`
+ * - newGame: `playerSetup`, `settingsState`(currentNextGameSetup — 판 크기·덤·룰, #22), `sessionSnapshot`(currentSearchTimeSettings), `isEngineReady`
  * - savedSession: `isEngineBusy`, `isEngineReady`, `settingsState`(복원 람다)
  * - cacheOpt: `playerSetup`(accept), `gameState`(dismiss)
  * - scoreEstimate: `matchMode`, `isEngineReady`
- * - scoringRule: `matchMode`, `gameState`, `isEngineReady`
+ * - scoringRule: `matchMode`, `gameState`, `isEngineReady`, `settingsState`(applySettingsRuleset, #22)
  * - settings: `playerSetup`, `isGameEnded`
  * - debugReport: `sessionSnapshot`(copy()마다의 읽기 횟수·currentControllerState), `androidContext`(copy()마다),
  *   `engineName`·`engineDiagnostic`(배선 람다·copy()마다의 읽기 횟수, #108),
@@ -90,7 +90,7 @@ import org.junit.Test
  *     (바꿔 보는 곳은 savedSession·benchmark·debugReport뿐이고, humanMove는 `isEngineBlockingBusy`를 읽는다).
  *   - `searchTimeSettings`(`sessionSnapshot().settings`) — autoAi·cacheOpt·savedSession·settings(바꿔 보는 곳은 newGame뿐).
  *   - autoAi의 `shouldShowResumePrompt` — 유일한 읽기(취소 로그)가 값을 바꾼 **뒤**라 첫 읽기가 곧 새 값이다.
- *   - newGame의 `settingsState`(currentHandicapCount), 위 목록에 그 게터가 없는 컨트롤러의 `isGameEnded`·
+ *   - 위 목록에 그 게터가 없는 컨트롤러의 `isGameEnded`·
  *     `runtimeState`(세대·엔진 프로필)·`analysisState`·`scoreState`·`moveReviewState`·`turnTimeState`·
  *     `isPendingUndoSync`·`showMoveReviewEnabled`·`positionCacheOptimizationState` 등(settings의 `isGameEnded`와
  *     debugReport의 `turnTimeState`는 위 목록에 있다).
@@ -574,6 +574,28 @@ class GoCoachControllerWiringTest {
     }
 
     /**
+     * 새 대국 — 설정 상태의 **룰**(refactor backlog #22, `currentNextGameSetup`). 배선 뒤 설정의 룰만 바꿔 다시 시작하면
+     * 그 룰로 시작해야 한다. 룰을 지금 판에서 읽던 때는 첫 대국의 룰로 또 시작했다(이어한 판의 룰이 다음 대국에 새던 모양).
+     */
+    @Test
+    fun newGameSeesRulesetChangedAfterWiring() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = TwoHumans, ruleset = Ruleset.Japanese))
+        val controllers = wireGoCoachControllers(context)
+
+        controllers.newGameController.startConfiguredGame()
+        assertEquals("첫 대국은 설정의 룰로 시작한다(첫 호출).", Ruleset.Japanese, context.coreWrites.single().gameState.ruleset)
+
+        context.changeSettings { it.applyRuleset(Ruleset.Chinese) }
+        controllers.newGameController.startConfiguredGame()
+
+        assertEquals(
+            "배선 뒤 바꾼 설정의 룰을 새 대국이 못 봤다 — 첫 대국의 룰(일본)로 또 시작했다(#22).",
+            Ruleset.Chinese,
+            context.coreWrites.last().gameState.ruleset,
+        )
+    }
+
+    /**
      * 이어하기 — `isEngineBusy()`와 복원 람다 안의 `settingsState()`. 이 컨트롤러는 playerSetup을
      * **읽지 않는다**(복원할 설정은 저장본이 가져온다). 바쁠 때 한 번 거절되고, 풀린 뒤에는 그 순간의
      * 설정 위에 저장본을 덮는다 — 13줄 설정에서 한 번(설정의 첫 읽기), 19줄로 바꾼 뒤 한 번. 복원은 매번
@@ -793,6 +815,26 @@ class GoCoachControllerWiringTest {
             listOf(Ruleset.Chinese),
             context.coreWrites.map { it.gameState.ruleset },
         )
+    }
+
+    /**
+     * 채점 규칙 — 고른 룰을 **설정 상태**(다음 대국)에도 적는다(refactor backlog #22). 그 람다는 적는 순간의 설정을 읽어야
+     * 한다 — 배선 때의 설정을 붙잡으면 그 뒤 바꾼 덤이 룰을 적을 때 되돌아간다.
+     */
+    @Test
+    fun scoringRuleSeesSettingsChangedAfterWiring() {
+        val context = FakeGoCoachAppWiringContext(inGameSession(playerSetup = HumanBlackAiWhite, ruleset = Ruleset.Chinese))
+        val controllers = wireGoCoachControllers(context)
+
+        controllers.scoringRuleController.change(Ruleset.Japanese)
+        assertEquals("고른 룰이 설정에 적히지 않았다(첫 호출, #22).", Ruleset.Japanese, context.settingsWrites.last().ruleset)
+
+        context.changeSettings { it.applyKomi(0.5) }
+        controllers.scoringRuleController.change(Ruleset.Chinese)
+
+        val written = context.settingsWrites.last()
+        assertEquals(Ruleset.Chinese, written.ruleset)
+        assertEquals("룰을 적으며 배선 뒤 바꾼 덤을 되돌렸다 — 첫 호출 때의 설정을 붙잡았다(함정 67).", 0.5, written.komi, 0.0)
     }
 
     /**
@@ -1225,6 +1267,7 @@ class GoCoachControllerWiringTest {
                 "newGameSeesSearchTimeChangedAfterWiringAndHandsItsFollowUpToTopMoves",
                 "newGameSeesEngineReadyRaisedAfterWiring",
                 "newGameSeesKomiChangedAfterWiring",
+                "newGameSeesRulesetChangedAfterWiring",
             ),
             "savedSessionController" to listOf(
                 "savedSessionSeesEngineBusyAndSettingsChangedAfterWiring",
@@ -1236,6 +1279,7 @@ class GoCoachControllerWiringTest {
             "scoringRuleController" to listOf(
                 "scoringRuleSeesMatchModeChangedAfterWiring",
                 "scoringRuleSeesGameStateChangedAfterWiring",
+                "scoringRuleSeesSettingsChangedAfterWiring",
                 "scoringRuleSeesEngineReadyRaisedAfterWiring",
                 "scoringRuleSyncsWithAReadyEngineAndHandsItsFollowUpToTopMoves",
             ),
