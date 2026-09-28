@@ -38,8 +38,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.buildBranchedGameSnapshot
@@ -49,6 +47,8 @@ import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
 import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
 import com.worksoc.goaicoach.persistence.referenceGameHistoryEntry
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
@@ -256,7 +256,7 @@ internal fun GameHistoryScreen(
                 // 뒤로가기가 상태 표시줄(시계·배터리) 아래에 깔린다(#25). 설정·학습 화면이
                 // 쓰는 것과 같은 자리·같은 방식이다.
                 .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackClick) {
@@ -268,10 +268,10 @@ internal fun GameHistoryScreen(
             }
             Text(
                 text = strings.gameHistoryTitle,
-                fontSize = 20.sp,
+                fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 8.dp),
+                modifier = Modifier.padding(start = AppSpacing.Space8),
             )
         }
 
@@ -420,10 +420,10 @@ private fun GameHistoryRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .padding(bottom = 4.dp),
+                .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12)
+                .padding(bottom = AppSpacing.Space4),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             Text(
                 text = summaryText,
@@ -453,8 +453,8 @@ private fun GameHistoryRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(if (onNoteClick != null) Modifier.clickable(onClick = onNoteClick) else Modifier)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 12.dp),
+                .padding(horizontal = AppSpacing.Space16)
+                .padding(bottom = AppSpacing.Space12),
         )
     }
 }

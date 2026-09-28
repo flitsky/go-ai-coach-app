@@ -28,8 +28,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.R
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.StudyVideoEntry
@@ -106,8 +108,8 @@ internal fun StudyVideoListScreen(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .navigationBarsPadding()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = AppSpacing.Space16),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
             ) {
                 studyVideoEntries.forEach { entry ->
                     StudyVideoRow(
@@ -128,12 +130,12 @@ private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(AppRadius.Corner10))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(AppSpacing.Space12),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
         Image(
             painter = painterResource(entry.thumbnailRes),
@@ -141,12 +143,12 @@ private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(width = 96.dp, height = 54.dp)
-                .clip(RoundedCornerShape(6.dp)),
+                .clip(RoundedCornerShape(AppRadius.Corner6)),
         )
 
         Text(
             text = description,
-            fontSize = 14.sp,
+            fontSize = AppTextSize.Text14,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             // ⚠️ **줄 수를 제한하지 않는다**(백로그 #107). `maxLines = 2` + 말줄임이었는데
             // 1.3배에서 세 편이 **전부** 잘렸다(`… for a…`). 소개가 잘리면 그 강좌가 무엇을

@@ -44,6 +44,11 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.GameStatusPalette
+import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlin.math.abs
@@ -71,7 +76,7 @@ internal fun GameStatusPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
+                .padding(vertical = AppSpacing.Space4),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -81,7 +86,7 @@ internal fun GameStatusPanel(
                 modifier = Modifier.weight(1f),
                 isActiveTurn = currentTurnPlayer == StoneColor.Black && !screenState.isGameEnded,
                 stoneGlyph = "●",
-                stoneGlyphColor = Color.Black,
+                stoneGlyphColor = StonePalette.BlackGlyph,
                 label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
                 elapsedMillisText = formatMillis(blackTotalMillis),
                 capturedCount = capturedByBlack,
@@ -102,14 +107,14 @@ internal fun GameStatusPanel(
                 // 문구 길이의 문제다**(사용자 판단). 한쪽을 고치면 다른 쪽이 깨지는 자리다.
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = AppSpacing.Space4),
             )
 
             PlayerSeatCard(
                 modifier = Modifier.weight(1f),
                 isActiveTurn = currentTurnPlayer == StoneColor.White && !screenState.isGameEnded,
                 stoneGlyph = "○",
-                stoneGlyphColor = Color.Gray,
+                stoneGlyphColor = StonePalette.WhiteGlyph,
                 label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
                 elapsedMillisText = formatMillis(whiteTotalMillis),
                 capturedCount = capturedByWhite,
@@ -186,12 +191,12 @@ internal fun PlaySlot(
                     .heightIn(min = PlayButtonHeight),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color(0xFFECEFF1),
-                    disabledContentColor = Color(0xFFB0BEC5),
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = GameStatusPalette.PlayButtonDisabledContainer,
+                    disabledContentColor = GameStatusPalette.PlayButtonDisabledContent,
                 ),
-                shape = RoundedCornerShape(24.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(AppRadius.Corner24),
+                contentPadding = PaddingValues(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space8),
             ) {
                 Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
@@ -202,7 +207,7 @@ internal fun PlaySlot(
         // 가로: **폭**을 맞바꾼다. 주인공이 넓게(1.5), 쉬는 쪽이 좁게(0.5 — 점선 자리표시).
         Row(
             modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             switch(Modifier.weight(if (isDirectPlay) PlaySlotLeadWeight else PlaySlotRestWeight))
@@ -212,7 +217,7 @@ internal fun PlaySlot(
         Column(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
         ) {
             switch(Modifier)
             playButton(Modifier)
@@ -250,20 +255,20 @@ internal fun CompactSeatCard(
         modifier = modifier.heightIn(min = CompactSeatCardMinHeight),
         color = if (isActiveTurn) ActiveStateContainerColor else InactiveStateContainerColor,
         border = if (isActiveTurn) ActiveStateBorder else InactiveStateBorder,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(AppRadius.Corner8),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.Space10, vertical = AppSpacing.Space5),
             verticalArrangement = Arrangement.Center,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stoneGlyph, style = MaterialTheme.typography.titleSmall, color = stoneGlyphColor)
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(AppSpacing.Space4))
                 Text(
                     text = label,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1F1F1F),
+                    color = GameStatusPalette.SeatLabel,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -315,10 +320,10 @@ private fun PlayerSeatCard(
         modifier = modifier,
         color = bg,
         border = border,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(AppRadius.Corner8)
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space6),
             horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start
         ) {
             // 상단: 진영 표시와 대국 시간을 분리해 좁은 카드에서도 읽기 쉽게 유지한다.
@@ -329,16 +334,16 @@ private fun PlayerSeatCard(
             ) {
                 if (!alignEnd) {
                     Text(stoneGlyph, style = MaterialTheme.typography.titleMedium, color = stoneGlyphColor)
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(AppSpacing.Space4))
                 }
                 Text(
                     text = label,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1F1F1F),
+                    color = GameStatusPalette.SeatLabel,
                 )
                 if (alignEnd) {
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(AppSpacing.Space4))
                     Text(stoneGlyph, style = MaterialTheme.typography.titleMedium, color = stoneGlyphColor)
                 }
             }
@@ -349,7 +354,7 @@ private fun PlayerSeatCard(
                 color = timeColor,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space4))
 
             Text(
                 text = "$capturesLabel: $capturedCount",
@@ -432,7 +437,7 @@ private fun PlayModeSwitch(
                 }
             }
             .clickable(enabled = enabled, onClick = onToggle),
-        shape = RoundedCornerShape(if (prominent) 24.dp else 14.dp),
+        shape = RoundedCornerShape(if (prominent) AppRadius.Corner24 else AppRadius.Corner14),
         color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = if (prominent) 2.dp else 1.dp,
     ) {
@@ -441,7 +446,7 @@ private fun PlayModeSwitch(
                 // ⚠️ **고정 높이가 아니라 바닥값이다**(함정 9번, #107). 고정이면 두 줄로 접힌
                 // 라벨의 아랫줄이 잘린다 — 출석판이 같은 이유로 `heightIn(min = …)`으로 갔다.
                 .then(if (prominent) Modifier.heightIn(min = PlayButtonHeight) else Modifier)
-                .padding(horizontal = 6.dp, vertical = 5.dp)
+                .padding(horizontal = AppSpacing.Space6, vertical = AppSpacing.Space5)
                 // 뒷면을 다시 세운다.
                 .graphicsLayer { rotationX = if (showingConfirmSide) 180f else 0f },
             horizontalArrangement = Arrangement.Center,
@@ -452,7 +457,7 @@ private fun PlayModeSwitch(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary,
             )
-            Spacer(modifier = Modifier.width(3.dp))
+            Spacer(modifier = Modifier.width(AppSpacing.Space3))
             // ⚠️ **라벨은 현재 상태가 아니라 "누르면 무엇이 되는가"다**(2026-08-30 사용자 지적).
             // 착수 확인 모드에서 `착수 확인`이라고 쓰면 이미 그 상태인데 또 그 말을 하는 셈이라,
             // 눌렀을 때 무엇이 될지 알 수 없다. 그래서 **반대편 모드 이름**을 보여준다.
@@ -532,12 +537,12 @@ internal val ActiveStateContainerColor: Color
     @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
 
 internal val ActiveStateBorder: BorderStroke
-    @Composable get() = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+    @Composable get() = BorderStroke(AppBorderWidth.Emphasis, MaterialTheme.colorScheme.primary)
 
 internal val InactiveStateContainerColor: Color
     @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 
 internal val InactiveStateBorder: BorderStroke
-    @Composable get() = BorderStroke(1.dp, InactiveStateBorderColor)
+    @Composable get() = BorderStroke(AppBorderWidth.Hairline, InactiveStateBorderColor)
 
-private val InactiveStateBorderColor = Color(0xFFCFD8DC)
+private val InactiveStateBorderColor = GameStatusPalette.InactiveStateBorder

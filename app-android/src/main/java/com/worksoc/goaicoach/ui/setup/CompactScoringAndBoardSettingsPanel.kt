@@ -25,11 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.KomiOptions
 import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -79,13 +80,13 @@ internal fun CompactScoringAndBoardSettingsPanel(
     val strings = LocalUiStrings.current
     val handicapOptions = listOf(0) + (2..boardSize.maxHandicapCount).toList()
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10)) {
         // 1행: 바둑판 크기 / 접바둑
         Row(
             // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
             // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
         ) {
             CompactSettingDropdownCell(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -109,7 +110,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
             // ⚠️ **`IntrinsicSize.Min`으로 묶는다**(백로그 #107). 아래 칸 글자가 두 줄로 접히면
             // 그 칸만 높아져 짝이 어긋난다 — 출석판이 같은 처방으로 고쳤다(#64 ⓐ, 함정 9번).
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
         ) {
             CompactSettingDropdownCell(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -133,7 +134,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
         if (!canChangeMatchSetup) {
             Text(
                 text = strings.matchSetupLockedDuringGame,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.secondary,
             )
         }
@@ -161,16 +162,16 @@ private fun <T> CompactSettingDropdownCell(
                 .fillMaxWidth()
                 // 행이 `IntrinsicSize.Min`이므로 배경도 그 높이를 채워야 짝이 나란히 보인다.
                 .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(AppRadius.Corner12))
                 // ⚠️ `clickable(enabled = false)`로 둔다 — 아예 빼면 **잠긴 칸이 부모의 클릭을
                 // 대신 받는다.** 여기서는 부모가 스크롤이라 잠긴 칸을 눌렀을 때 엉뚱하게 반응한다.
                 .clickable(enabled = enabled) { expanded = true }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = AppSpacing.Space14, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = valueText,
-                fontSize = 16.sp,
+                fontSize = AppTextSize.Text16,
                 fontWeight = FontWeight.Bold,
                 color = if (enabled) {
                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -187,7 +188,7 @@ private fun <T> CompactSettingDropdownCell(
             )
             Text(
                 text = "▾",
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = if (enabled) {
                     MaterialTheme.colorScheme.secondary
                 } else {

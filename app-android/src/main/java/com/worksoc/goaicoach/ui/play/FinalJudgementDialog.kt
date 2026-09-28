@@ -6,8 +6,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
@@ -46,7 +46,7 @@ internal fun FinalJudgementDialog(
         onDismissRequest = onDismiss,
         title = { Text(strings.finalJudgementTitle) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
                 Text(judgement.resultText(strings))
                 Text(judgement.gameModeLine(strings))
                 Text(judgement.scoringRuleLine(strings))

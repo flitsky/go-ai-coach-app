@@ -15,9 +15,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.platform.AdsConsentManager
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import kotlinx.coroutines.launch
 
@@ -44,10 +44,10 @@ internal fun AdPrivacyOptionsRow(strings: UiStrings) {
     var required by remember { mutableStateOf(AdsConsentManager.isPrivacyOptionsRequired(context)) }
     if (!required) return
 
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(AppSpacing.Space8))
     Text(
         text = strings.settingsAdPrivacyOptionsLabel,
-        fontSize = 12.sp,
+        fontSize = AppTextSize.Text12,
         color = MaterialTheme.colorScheme.primary,
         textDecoration = TextDecoration.Underline,
         modifier = Modifier.clickable {

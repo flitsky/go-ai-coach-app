@@ -39,6 +39,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.ScoreGraphPalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.blackLeadLabel
@@ -85,12 +90,12 @@ internal fun WideScoreSummary(
         modifier = modifier
             .heightIn(min = 48.dp)
             .clickable { onGraphExpandedChange(!isGraphExpanded) },
-        color = Color(0xFFF8FAFC),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        color = ScoreGraphPalette.Background,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        border = BorderStroke(AppBorderWidth.Hairline, ScoreGraphPalette.Border),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space5),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -98,7 +103,7 @@ internal fun WideScoreSummary(
                 text = "$moveCountText · $lead ${if (isGraphExpanded) "\u25B4" else "\u25BE"}",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF475569),
+                color = ScoreGraphPalette.Title,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -107,7 +112,7 @@ internal fun WideScoreSummary(
                 Text(
                     text = winRateLabelFor(rate, strings),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF64748B),
+                    color = ScoreGraphPalette.Label,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -142,13 +147,13 @@ internal fun ScoreTimelineGraph(
     )
     
     // 밝고 연한 프리미엄 슬레이트/스카이 블루 톤 구성
-    val backgroundLight = Color(0xFFF8FAFC) // 연한 그레이빛 화이트
-    val borderLightColor = Color(0xFFE2E8F0) // 연한 보더
-    val gridLineColor = Color(0xFFE2E8F0) // 연한 가이드선 그레이
-    val textBlueColor = Color(0xFF64748B) // 차분한 슬레이트 블루그레이 텍스트
-    val scoreLineColor = Color(0xFF3B82F6) // 선명하고 시원한 꺾은선 블루
-    val activeDotColor = Color(0xFFEF4444) // 화사한 붉은색 끝 점
-    val jigoLineColor = Color(0xFF94A3B8) // 명확한 비김 기준선 그레이
+    val backgroundLight = ScoreGraphPalette.Background // 연한 그레이빛 화이트
+    val borderLightColor = ScoreGraphPalette.Border // 연한 보더
+    val gridLineColor = ScoreGraphPalette.GridLine // 연한 가이드선 그레이
+    val textBlueColor = ScoreGraphPalette.Label // 차분한 슬레이트 블루그레이 텍스트
+    val scoreLineColor = ScoreGraphPalette.ScoreLine // 선명하고 시원한 꺾은선 블루
+    val activeDotColor = ScoreGraphPalette.ActiveDot // 화사한 붉은색 끝 점
+    val jigoLineColor = ScoreGraphPalette.JigoLine // 명확한 비김 기준선 그레이
 
     // 데이터 가공 및 캐싱: Composable 레벨에서 계산하여 Canvas 프레임 오버헤드 방지
     val points = androidx.compose.runtime.remember(snapshots) { blackLeadPoints(snapshots) }
@@ -182,10 +187,10 @@ internal fun ScoreTimelineGraph(
             .then(if (isCollapsedLayout) Modifier.heightIn(min = heightDp) else Modifier.height(heightDp))
             .clickable { onExpandedChange(!isExpanded) },
         color = backgroundLight,
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, borderLightColor),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        border = BorderStroke(AppBorderWidth.Hairline, borderLightColor),
+        tonalElevation = AppElevation.Level0,
+        shadowElevation = AppElevation.Level0,
     ) {
         if (isCollapsedLayout) {
             // 접힌 상태: 흑/백 사석 수 + 현재 스코어차 + 승률을 한눈에 보여준다.
@@ -196,8 +201,8 @@ internal fun ScoreTimelineGraph(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space4),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -251,7 +256,7 @@ internal fun ScoreTimelineGraph(
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = AppSpacing.Space8)
                 ) {
                     val chartLeft = 16.dp.toPx()
                     val chartRight = size.width - 60.dp.toPx()
@@ -359,7 +364,7 @@ internal fun ScoreTimelineGraph(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = 12.dp, top = 8.dp)
+                        .padding(start = AppSpacing.Space12, top = AppSpacing.Space8)
                 ) {
                     Text(
                         text = "✕",

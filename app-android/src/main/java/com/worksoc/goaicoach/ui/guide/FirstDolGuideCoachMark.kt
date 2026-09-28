@@ -39,8 +39,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.guide.GuideTarget
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlin.math.roundToInt
 
@@ -208,21 +211,21 @@ internal fun GuideCoachMark(
                     )
                 }
                 .onSizeChanged { bubbleHeight = it.height }
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = AppSpacing.Space12)
                 .widthIn(max = 320.dp)
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(14.dp))
-                .border(1.dp, markerColor.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(AppRadius.Corner14))
+                .border(AppBorderWidth.Hairline, markerColor.copy(alpha = 0.5f), RoundedCornerShape(AppRadius.Corner14))
+                .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space10),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
         ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 verticalAlignment = Alignment.Top,
             ) {
                 FirstDolAvatar(size = 30.dp)
                 Text(
                     text = text,
-                    fontSize = 13.sp,
+                    fontSize = AppTextSize.Text13,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -230,7 +233,7 @@ internal fun GuideCoachMark(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(onClick = onNext) { Text(strings.guideAckAction, fontSize = 13.sp) }
+                TextButton(onClick = onNext) { Text(strings.guideAckAction, fontSize = AppTextSize.Text13) }
             }
         }
     }

@@ -60,6 +60,9 @@ import com.worksoc.goaicoach.performBotCharacterPurchase
 import com.worksoc.goaicoach.performBotCharacterPurchaseRestore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.showRewardedAdOnce
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
@@ -344,7 +347,7 @@ internal fun BotCharacterPickerDialog(
                             },
                         )
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(AppSpacing.Space12))
                     // ⓑ 완화책: 점 다섯 개로 "어디쯤인지"와 "전부 몇 종인지"를 같이 알린다.
                     PagerDots(count = roster.size, current = pagerState.currentPage)
                 }
@@ -386,7 +389,7 @@ private fun BotCharacterCard(
     viaSubscription: Boolean = false,
 ) {
     val strings = LocalUiStrings.current
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(AppRadius.Corner16)
     val cardModifier = Modifier
         .fillMaxWidth()
         .height(botCharacterCardHeight())
@@ -396,7 +399,7 @@ private fun BotCharacterCard(
             // 고른 카드만 테두리로 표시한다 — 캐러셀은 가운데 카드가 곧 초점이라 "지금 이게
             // 선택된 것인지"가 목록보다 헷갈리기 쉽다.
             border = BorderStroke(
-                width = if (isSelected) 2.dp else 1.dp,
+                width = if (isSelected) AppBorderWidth.Strong else AppBorderWidth.Hairline,
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -408,12 +411,12 @@ private fun BotCharacterCard(
         .clickable(onClick = onClick)
         // 잠긴 카드는 흐리게 두되, 지금 열 수 있는 카드(광고·구매)는 "누를 수 있다"는 신호를 남긴다.
         .let { if (isAvailable) it else it.alpha(if (canWatchAd || canPurchase) 0.85f else 0.55f) }
-        .padding(horizontal = 12.dp, vertical = 16.dp)
+        .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space16)
 
     Column(
         modifier = cardModifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
     ) {
         BotCharacterAvatar(
             character = character,
@@ -498,7 +501,7 @@ private val BotCharacterCardBaseHeight = 232.dp
 /** 현재 위치와 전체 개수를 같이 알리는 점 인디케이터(#49의 ⓑ 완화책). */
 @Composable
 private fun PagerDots(count: Int, current: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
         repeat(count) { index ->
             val isCurrent = index == current
             Box(

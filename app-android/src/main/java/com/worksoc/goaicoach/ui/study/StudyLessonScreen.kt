@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.content.StudyLesson
@@ -33,6 +32,8 @@ import com.worksoc.goaicoach.shared.content.StudyLessonId
 import com.worksoc.goaicoach.shared.content.StudyLessonTrack
 import com.worksoc.goaicoach.shared.content.studyLessonsFor
 import com.worksoc.goaicoach.ui.board.GoBoard
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.studyCategoryTitleFor
@@ -98,8 +99,8 @@ internal fun StudyLessonTrackScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = AppSpacing.Space16),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             lessons.forEach { lesson ->
                 // ⚠️ 허브와 **같은 줄 컴포넌트**를 쓴다 — 한 칸 들어왔을 뿐인데 행의 생김새가
@@ -165,7 +166,7 @@ private fun StudyLessonScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(BoardShare)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = AppSpacing.Space12),
             contentAlignment = Alignment.Center,
         ) {
             GoBoard(
@@ -202,11 +203,11 @@ private fun StudyLessonScreen(
             Column(
                 modifier = Modifier
                     .verticalScroll(bodyScroll)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = AppSpacing.Space20, vertical = AppSpacing.Space12),
             ) {
                 Text(
                     text = studyLessonBodyFor(strings.language, step.id),
-                    fontSize = 16.sp,
+                    fontSize = AppTextSize.Text16,
                     lineHeight = 25.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -269,9 +270,9 @@ private fun StudyLessonControls(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
         Button(
             onClick = onPrevious ?: {},
@@ -284,7 +285,7 @@ private fun StudyLessonControls(
         // 진행 표시는 숫자뿐이라 번역이 필요 없다 — 네 언어 어디서도 같은 폭이다(함정 21).
         Text(
             text = "$stepNumber / $stepCount",
-            fontSize = 14.sp,
+            fontSize = AppTextSize.Text14,
             color = MaterialTheme.colorScheme.secondary,
         )
 

@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.attendance.AttendanceBoard
 import com.worksoc.goaicoach.application.attendance.AttendanceCheckInRequest
@@ -37,6 +36,7 @@ import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -239,7 +239,7 @@ private fun AttendanceRewardClaimDialogContent(
             GuideBlockingOverlays.TrackWhileShown()
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
             ) {
                 // ② 첫돌이가 거드는 한 줄. ⚠️ 보상 표 **밖**·작게 둔다 — 판 안의 5·6·7·28일차
                 // 그림들과 같은 크기로 두면 *"받는 캐릭터"* 로 오해된다.
@@ -270,7 +270,7 @@ private fun AttendanceRewardClaimDialogContent(
 @Composable
 private fun ClaimDetail(tiers: List<AttendanceRewardTier>, inventory: ConsumableInventory) {
     val strings = LocalUiStrings.current
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4)) {
         tiers.forEach { tier ->
             Text(
                 text = strings.attendanceRewardDayLabel(tier.tier),

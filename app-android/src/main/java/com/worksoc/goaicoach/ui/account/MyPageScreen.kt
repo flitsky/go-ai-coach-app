@@ -32,13 +32,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
 import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.guide.GuideLine
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
@@ -105,7 +107,7 @@ internal fun MyPageScreen(
                 // 뒤로가기가 상태 표시줄(시계·배터리) 아래에 깔린다(#25). 설정·학습 화면이
                 // 쓰는 것과 같은 자리·같은 방식이다.
                 .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackClick) {
@@ -117,7 +119,7 @@ internal fun MyPageScreen(
             }
             Text(
                 text = strings.myPageTitle,
-                fontSize = 20.sp,
+                fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -128,8 +130,8 @@ internal fun MyPageScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space16),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             // **프리미엄 구독 카드가 맨 위다**(백로그 #159, 2026-09-18 사용자 확정).
             //
@@ -197,11 +199,11 @@ internal fun MyPageScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = ActionButtonShape,
-                tonalElevation = 1.dp,
+                tonalElevation = AppElevation.Level1,
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
                 ) {
                     // 재고가 0인 것도 **숨기지 않는다.** 대국 화면의 옛 재고 바는 0을 감췄지만
                     // (`ConsumableInventoryBar`), 여기서는 "무엇을 가질 수 있는가"를 보여주는 것도
@@ -217,7 +219,7 @@ internal fun MyPageScreen(
                             // 보였다. 표는 `consumableGlyphRes` 하나를 공유한다.
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                             ) {
                                 consumableGlyphRes(item)?.let { glyph ->
                                     Icon(
@@ -262,11 +264,11 @@ internal fun MyPageScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = ActionButtonShape,
-                tonalElevation = 1.dp,
+                tonalElevation = AppElevation.Level1,
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
                 ) {
                     Text(
                         text = strings.localOnlyDataNoticeTitle,
@@ -275,7 +277,7 @@ internal fun MyPageScreen(
                     )
                     Text(
                         text = strings.localOnlyDataNoticeBody,
-                        fontSize = 13.sp,
+                        fontSize = AppTextSize.Text13,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     // ⚠️ **문자열을 이어 붙이지 않고 `Text`를 하나 더 둔다.** 붙이면 한국어·영어는
@@ -294,7 +296,7 @@ internal fun MyPageScreen(
                     // 「구독하면 이것도 해결된다」는 정보다. 상태로 가리면 후자가 영영 못 본다.
                     Text(
                         text = strings.localOnlyDataNoticePaidRestoreLine,
-                        fontSize = 13.sp,
+                        fontSize = AppTextSize.Text13,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -344,7 +346,7 @@ private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Uni
     // 인사가 두 줄로 늘어날 수 있으므로 제목을 가운데 정렬해 둔다.
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         // ⚠️ **위쪽 정렬**이다 — 인사가 두세 줄로 접히면(영어·큰 글꼴) 가운데 정렬은 제목을
         // 문단 중간에 띄워 놓는다. 위로 맞추면 제목과 인사 **첫 줄**이 한 줄로 읽힌다.
         verticalAlignment = Alignment.Top,
@@ -359,16 +361,16 @@ private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Uni
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = ActionButtonShape,
-        tonalElevation = 1.dp,
+        tonalElevation = AppElevation.Level1,
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space12),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             AttendanceStampBoard(board, collection)
             Text(
                 text = attendanceBoardBeyondNoticeFor(strings.language),
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -395,13 +397,13 @@ private fun UserProfileRow(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = ActionButtonShape,
-        tonalElevation = 1.dp,
+        tonalElevation = AppElevation.Level1,
         onClick = onEditClick,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             UserAvatar(
                 nickname = nickname,

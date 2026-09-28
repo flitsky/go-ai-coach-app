@@ -31,6 +31,9 @@ import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -70,13 +73,13 @@ internal fun KaTrainUxMenuPanel(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        tonalElevation = AppElevation.Level1,
+        shadowElevation = AppElevation.Level0,
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(AppSpacing.Space12),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
         ) {
             // **메뉴 순서는 사용자가 정한 것이다**(2026-09-12). 위에서부터 판 자체 → 착수하는 동작 →
             // 착수 뒤의 표시 → 프리미엄 순으로 내려간다. ⚠️ 순서를 바꾸려거든 사용자에게 물을 것 —

@@ -15,8 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.nicknameDialogHintFor
@@ -52,7 +52,7 @@ internal fun UserNicknameDialog(
         onDismissRequest = onDismiss,
         title = { Text(nicknameDialogTitleFor(strings.language)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
                 OutlinedTextField(
                     value = text,
                     // ⚠️ **자르는 규칙을 화면이 따로 만들지 않는다** — 저장소가 부르는 것과 같은 규칙

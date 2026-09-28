@@ -69,7 +69,12 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.GoBoardColors
+import com.worksoc.goaicoach.ui.designsystem.GoBoardPalette
+import com.worksoc.goaicoach.ui.designsystem.MoveReviewPalette
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
@@ -196,9 +201,9 @@ internal fun GoBoard(
         Box(
             modifier = Modifier
                 .size(boardSide)
-                .background(if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive, RoundedCornerShape(8.dp))
-                .border(1.dp, colors.boardBorder, RoundedCornerShape(8.dp))
-                .padding(3.dp),
+                .background(if (isGameEnded) colors.boardBackgroundEnded else colors.boardBackgroundActive, RoundedCornerShape(AppRadius.Corner8))
+                .border(AppBorderWidth.Hairline, colors.boardBorder, RoundedCornerShape(AppRadius.Corner8))
+                .padding(AppSpacing.Space3),
             contentAlignment = Alignment.Center,
         ) {
             Canvas(
@@ -506,7 +511,7 @@ internal fun GoBoard(
                     text = label + ActivityIndicatorDots[activityFrame.mod(ActivityIndicatorDots.size)],
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 2.dp),
+                        .padding(top = AppSpacing.Space2),
                     color = colors.engineActivityText,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -516,7 +521,7 @@ internal fun GoBoard(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
+                        .background(GoBoardPalette.LabelScrim.copy(alpha = 0.35f), RoundedCornerShape(AppRadius.Corner8)),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -524,22 +529,22 @@ internal fun GoBoard(
                         verticalArrangement = Arrangement.Center
                     ) {
                         CircularProgressIndicator(
-                            color = Color.White.copy(alpha = textAlpha),
+                            color = GoBoardPalette.OnLabelScrim.copy(alpha = textAlpha),
                             strokeWidth = 3.dp,
                             modifier = Modifier.size(36.dp)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(AppSpacing.Space12))
                         Text(
                             text = strings.enginePreparingTitle,
-                            color = Color.White.copy(alpha = textAlpha),
+                            color = GoBoardPalette.OnLabelScrim.copy(alpha = textAlpha),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = strings.enginePreparingSubtitle,
-                            color = Color.White.copy(alpha = textAlpha * 0.8f),
+                            color = GoBoardPalette.OnLabelScrim.copy(alpha = textAlpha * 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = AppSpacing.Space4)
                         )
                     }
                 }
@@ -563,7 +568,7 @@ internal fun GoBoard(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
+                        .background(GoBoardPalette.LabelScrim.copy(alpha = 0.35f), RoundedCornerShape(AppRadius.Corner8)),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
@@ -571,22 +576,22 @@ internal fun GoBoard(
                         verticalArrangement = Arrangement.Center
                     ) {
                         CircularProgressIndicator(
-                            color = Color.White.copy(alpha = textAlpha),
+                            color = GoBoardPalette.OnLabelScrim.copy(alpha = textAlpha),
                             strokeWidth = 3.dp,
                             modifier = Modifier.size(36.dp)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(AppSpacing.Space12))
                         Text(
                             text = strings.scoringPreparingTitle,
-                            color = Color.White.copy(alpha = textAlpha),
+                            color = GoBoardPalette.OnLabelScrim.copy(alpha = textAlpha),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = strings.enginePreparingSubtitle,
-                            color = Color.White.copy(alpha = textAlpha * 0.8f),
+                            color = GoBoardPalette.OnLabelScrim.copy(alpha = textAlpha * 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = AppSpacing.Space4)
                         )
                     }
                 }
@@ -610,9 +615,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverla
         }
         val center = geometry.pointFor(point.coordinate)
         val baseColor = if (point.value < 0.0) {
-            Color(0xFF1F2327)
+            GoBoardPalette.OwnershipBlack
         } else {
-            Color(0xFFFFFFFF)
+            GoBoardPalette.OwnershipWhite
         }
         val radius = geometry.spacing * (0.68f + strength * 0.42f)
         val centerAlpha = 0.22f + strength * 0.38f
@@ -744,7 +749,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpotLabel(
 ) {
     drawIntoCanvas { canvas ->
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.BLACK
+            color = GoBoardPalette.SpotLabelArgb
             textAlign = Paint.Align.CENTER
             this.textSize = textSize
             typeface = Typeface.DEFAULT_BOLD
@@ -765,7 +770,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardLabel(
 ) {
     drawIntoCanvas { canvas ->
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = android.graphics.Color.rgb(74, 47, 23)
+            color = GoBoardPalette.CoordinateLabelArgb
             textAlign = Paint.Align.CENTER
             this.textSize = textSize
             typeface = Typeface.DEFAULT_BOLD
@@ -788,8 +793,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel
     drawIntoCanvas { canvas ->
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = when (stone) {
-                StoneColor.Black -> android.graphics.Color.WHITE
-                StoneColor.White -> android.graphics.Color.rgb(24, 24, 24)
+                StoneColor.Black -> GoBoardPalette.MoveNumberOnBlackArgb
+                StoneColor.White -> GoBoardPalette.MoveNumberOnWhiteArgb
             }
             textAlign = Paint.Align.CENTER
             this.textSize = textSize
@@ -799,8 +804,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel
             style = Paint.Style.STROKE
             strokeWidth = textSize * 0.11f
             color = when (stone) {
-                StoneColor.Black -> android.graphics.Color.rgb(18, 18, 18)
-                StoneColor.White -> android.graphics.Color.WHITE
+                StoneColor.Black -> GoBoardPalette.MoveNumberOutlineOnBlackArgb
+                StoneColor.White -> GoBoardPalette.MoveNumberOutlineOnWhiteArgb
             }
         }
         val baseline = center.y - (paint.descent() + paint.ascent()) / 2f
@@ -811,12 +816,12 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel
 
 internal fun candidateToneColor(tone: MoveReviewTone): Color =
     when (tone) {
-        MoveReviewTone.Excellent -> Color(0xFF2E7D32)
-        MoveReviewTone.Good -> Color(0xFF8BC34A)
-        MoveReviewTone.Inaccuracy -> Color(0xFFFDD835)
-        MoveReviewTone.Mistake -> Color(0xFFEF6C00)
-        MoveReviewTone.Blunder -> Color(0xFFC62828)
-        MoveReviewTone.Unknown -> Color(0xFF607D8B)
+        MoveReviewTone.Excellent -> MoveReviewPalette.Excellent
+        MoveReviewTone.Good -> MoveReviewPalette.Good
+        MoveReviewTone.Inaccuracy -> MoveReviewPalette.Inaccuracy
+        MoveReviewTone.Mistake -> MoveReviewPalette.Mistake
+        MoveReviewTone.Blunder -> MoveReviewPalette.Blunder
+        MoveReviewTone.Unknown -> MoveReviewPalette.Unknown
     }
 
 private fun Color.darken(): Color =
@@ -909,7 +914,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
     isGameEnded: Boolean,
 ) {
     drawCircle(
-        color = Color(0x33000000),
+        color = GoBoardPalette.StoneShadow,
         radius = radius * 1.03f,
         center = Offset(center.x + radius * 0.05f, center.y + radius * 0.07f),
     )
@@ -930,19 +935,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
 // alpha만 낮춰 재사용한다. 색을 바꿀 땐 두 곳이 아니라 여기 한 곳만 고치면 된다.
 private fun activeStoneGradientColors(stone: StoneColor): List<Color> =
     when (stone) {
-        StoneColor.Black -> listOf(
-            Color(0xFF646464),
-            Color(0xFF303030),
-            Color(0xFF101010),
-            Color(0xFF030303),
-        )
+        StoneColor.Black -> GoBoardPalette.BlackStoneGradient
 
-        StoneColor.White -> listOf(
-            Color(0xFFFFFFFF),
-            Color(0xFFF3F1EA),
-            Color(0xFFE0DDD3),
-            Color(0xFFC7C2B6),
-        )
+        StoneColor.White -> GoBoardPalette.WhiteStoneGradient
     }
 
 private fun stoneBrush(
@@ -953,23 +948,13 @@ private fun stoneBrush(
 ): Brush {
     val colors = when (stone) {
         StoneColor.Black -> if (isGameEnded) {
-            listOf(
-                Color(0xFF787878),
-                Color(0xFF393939),
-                Color(0xFF131313),
-                Color(0xFF030303),
-            )
+            GoBoardPalette.BlackStoneEndedGradient
         } else {
             activeStoneGradientColors(stone)
         }
 
         StoneColor.White -> if (isGameEnded) {
-            listOf(
-                Color(0xFFCCCCCC),
-                Color(0xFFC2C0BB),
-                Color(0xFFB3B0A8),
-                Color(0xFF9F9B91),
-            )
+            GoBoardPalette.WhiteStoneEndedGradient
         } else {
             activeStoneGradientColors(stone)
         }
@@ -983,8 +968,8 @@ private fun stoneBrush(
 
 private fun stoneEdgeColor(stone: StoneColor, isGameEnded: Boolean): Color =
     when (stone) {
-        StoneColor.Black -> if (isGameEnded) Color(0xFF707070) else Color(0xFF5E5E5E)
-        StoneColor.White -> if (isGameEnded) Color(0xFF726E63) else Color(0xFF8F8A7C)
+        StoneColor.Black -> if (isGameEnded) GoBoardPalette.BlackStoneEndedEdge else GoBoardPalette.BlackStoneEdge
+        StoneColor.White -> if (isGameEnded) GoBoardPalette.WhiteStoneEndedEdge else GoBoardPalette.WhiteStoneEdge
     }
 
 
@@ -995,7 +980,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
     alpha: Float,
 ) {
     drawCircle(
-        color = Color(0x11000000).copy(alpha = 0.11f * (alpha / 0.65f)),
+        color = GoBoardPalette.GhostStoneShadow.copy(alpha = 0.11f * (alpha / 0.65f)),
         radius = radius * 1.03f,
         center = Offset(center.x + radius * 0.05f, center.y + radius * 0.07f),
     )

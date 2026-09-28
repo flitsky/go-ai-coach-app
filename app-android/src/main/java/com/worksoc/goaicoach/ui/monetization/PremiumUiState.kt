@@ -53,6 +53,9 @@ import com.worksoc.goaicoach.performPremiumAdGrant
 import com.worksoc.goaicoach.performPremiumPurchase
 import com.worksoc.goaicoach.performPremiumPurchaseRestore
 import com.worksoc.goaicoach.simulatePremiumAdGrant
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -241,15 +244,15 @@ internal fun PremiumUpsellDialog(
         ),
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 3.dp,
+            shape = RoundedCornerShape(AppRadius.Corner16),
+            tonalElevation = AppElevation.Level2,
         ) {
             // ⚠️ **본문을 스크롤 가능하게 둔다**(#159). 선택지가 최대 넷인 팝업에 구독 고지
             // 세 줄이 더해졌다 — 글꼴 배율 1.3에 긴 언어(영어)가 겹치면 작은 화면에서 아래
             // 버튼이 밀려 나간다. 고정 높이를 주는 대신 넘칠 때만 스크롤되게 한다(함정 9).
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
+                    .padding(AppSpacing.Space24)
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
@@ -260,21 +263,21 @@ internal fun PremiumUpsellDialog(
                 Text(
                     text = strings.premiumUpsellMessage,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 20.dp),
+                    modifier = Modifier.padding(top = AppSpacing.Space8, bottom = AppSpacing.Space20),
                 )
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(bottom = 12.dp),
+                        modifier = Modifier.padding(bottom = AppSpacing.Space12),
                     )
                 }
                 if (onSelectAdSkipTicket != null && adSkipTicketCount > 0) {
                     Button(
                         onClick = onSelectAdSkipTicket,
                         enabled = !isAnyInProgress,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = AppSpacing.Space8),
                     ) {
                         Text(strings.premiumUpsellUseTicketLabel(adSkipTicketCount))
                     }
@@ -301,12 +304,12 @@ internal fun PremiumUpsellDialog(
                     // 두 곳에 각각 문장을 쓰면 언젠가 한쪽만 고쳐져 어긋난다.
                     PremiumSubscriptionNoticeBlock(
                         productInfo = productInfo,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                        modifier = Modifier.padding(top = AppSpacing.Space16, bottom = AppSpacing.Space8),
                     )
                     OutlinedButton(
                         onClick = onSelectPurchase,
                         enabled = !isAnyInProgress,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = AppSpacing.Space8),
                     ) {
                         if (isPurchaseInProgress) {
                             CircularProgressIndicator(
@@ -322,7 +325,7 @@ internal fun PremiumUpsellDialog(
                 TextButton(
                     onClick = onDismiss,
                     enabled = !isAnyInProgress,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = AppSpacing.Space4),
                 ) {
                     Text(strings.no)
                 }

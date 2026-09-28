@@ -20,10 +20,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.guide.GuideStep
@@ -33,6 +31,11 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
 import com.worksoc.goaicoach.ui.home.GamePlayPreviewIcon
@@ -90,18 +93,18 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         FirstDolAvatar(size = 32.dp)
                         Text(
                             text = strings.guideReplayAction,
-                            fontSize = 18.sp,
+                            fontSize = AppTextSize.Text18,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -114,8 +117,8 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                        .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space16),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space20),
                 ) {
                     // 화면별로 묶는다 — 사용자가 *"그 화면에서 본 것"* 으로 찾는다.
                     ReplaySection(title = strings.myPageTitle) {
@@ -133,8 +136,8 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                             title = strings.startMatch,
                             subtitle = strings.homeStartMatchSubtitle,
                             containerColor = MaterialTheme.colorScheme.primary,
-                            titleColor = Color.White,
-                            subtitleColor = Color.White.copy(alpha = 0.85f),
+                            titleColor = MaterialTheme.colorScheme.onPrimary,
+                            subtitleColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             onClick = {},
                             // ⚠️ **마지막 선택이 아니라 항상 기본값이다**(백로그 #181). 이 다시보기는
                             // 진행도 저장소를 열지 않는다는 계약이 있는데(위 KDoc), 실제 선택을 보여
@@ -181,12 +184,12 @@ private fun ReplayControlCard(step: GuideStep, text: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(AppRadius.Corner12))
+            .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space10),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FirstDolAvatar(size = 26.dp, seamColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -194,7 +197,7 @@ private fun ReplayControlCard(step: GuideStep, text: String) {
         }
         Text(
             text = text,
-            fontSize = 13.sp,
+            fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -242,7 +245,7 @@ private fun ReplayActionButtonSample(role: GameActionButtonRole, label: String) 
 
 @Composable
 private fun ReplaySection(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
         Text(
             text = title,
             fontWeight = FontWeight.SemiBold,
@@ -257,15 +260,15 @@ private fun ReplayLine(text: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(AppRadius.Corner12))
+            .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space10),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         verticalAlignment = Alignment.Top,
     ) {
         FirstDolAvatar(size = 26.dp, seamColor = MaterialTheme.colorScheme.surfaceVariant)
         Text(
             text = text,
-            fontSize = 13.sp,
+            fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -277,20 +280,20 @@ internal fun GuideReplayRow(onClick: () -> Unit) {
     val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        tonalElevation = 1.dp,
+        shape = RoundedCornerShape(AppRadius.Corner12),
+        tonalElevation = AppElevation.Level1,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
                 .border(
-                    width = 1.dp,
+                    width = AppBorderWidth.Hairline,
                     color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(AppRadius.Corner12),
                 )
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space12),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FirstDolAvatar(size = 26.dp)

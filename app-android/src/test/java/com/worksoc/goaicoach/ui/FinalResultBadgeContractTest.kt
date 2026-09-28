@@ -27,6 +27,7 @@ class FinalResultBadgeContractTest {
 
     private val panel = source(RepoPaths.uiFile("GameStatusPanel.kt").path)
     private val badge = source(RepoPaths.uiFile("FinalResultBadge.kt").path)
+    private val palette = source(RepoPaths.uiFile("AppPalette.kt").path)
 
     /**
      * ⚠️ **대국 중에는 절대 뜨면 안 된다** — 좌석 카드 가운데를 가리는데 거기에 시계와 사석이 있다.
@@ -154,16 +155,23 @@ class FinalResultBadgeContractTest {
      * ⚠️ **백은 `Color.White`가 아니라 `Color.Gray`다** — 배지 바탕이 밝은 `surfaceVariant`라
      * 흰 테두리는 **있으나 마나**가 된다. 좌석 카드(`PlayerSeatCard`)가 백을 회색으로 그리는
      * 그 규칙과 같은 값이어야 하고, **한쪽만 고치면 같은 화면에서 백이 두 색이 된다.**
+     *
+     * 2026-09-28(refactor backlog #51)부터 둘은 리터럴 대신 **같은 토큰** `StonePalette.WhiteGlyph`를
+     * 쓴다 — 그래서 셋을 본다: 배지와 좌석 카드가 그 토큰을 쓰는가, 그 토큰이 회색인가.
      */
     @Test
     fun theWinnerBorderDrawsWhiteAsGreyJustLikeTheSeatCardDoes() {
         assertTrue(
-            "배지가 백 승자를 회색으로 그리지 않는다 — 밝은 바탕에서 테두리가 사라진다(#190).",
-            badge.contains("StoneColor.White -> Color.Gray"),
+            "배지가 백 승자를 좌석 카드와 같은 글리프 색으로 그리지 않는다 — 밝은 바탕에서 테두리가 사라진다(#190).",
+            badge.contains("StoneColor.White -> StonePalette.WhiteGlyph"),
         )
         assertTrue(
-            "좌석 카드가 백을 회색으로 그리지 않는다 — 배지와 진영색이 갈라진다.",
-            panel.contains("stoneGlyphColor = Color.Gray"),
+            "좌석 카드가 백을 배지와 같은 글리프 색으로 그리지 않는다 — 배지와 진영색이 갈라진다.",
+            panel.contains("stoneGlyphColor = StonePalette.WhiteGlyph"),
+        )
+        assertTrue(
+            "백 글리프 토큰이 회색이 아니다 — 밝은 바탕에서 흰 테두리·글리프는 보이지 않는다(#190).",
+            palette.contains("val WhiteGlyph = Color.Gray"),
         )
     }
 

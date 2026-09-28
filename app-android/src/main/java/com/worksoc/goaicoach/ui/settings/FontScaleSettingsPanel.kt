@@ -15,9 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.preferences.AppFontScales
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -46,15 +48,15 @@ internal fun FontScaleSettingsPanel(modifier: Modifier = Modifier) {
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        tonalElevation = AppElevation.Level1,
+        shadowElevation = AppElevation.Level0,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(AppSpacing.Space12),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             // 라벨과 컨트롤을 한 행에 — 바로 위 언어 설정과 결을 맞춘다.
             Row(
@@ -67,7 +69,7 @@ internal fun FontScaleSettingsPanel(modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
                     // ⚠️ 라벨은 **배율 값이 아니라 뜻**이다("×1.3"이 아니라 "크게"). 그래서
                     // 선택지 수가 `AppFontScales`와 어긋나면 조용히 하나가 사라진다 —
                     // `FontScaleSettingChoiceTest`가 그 어긋남을 잡는다.

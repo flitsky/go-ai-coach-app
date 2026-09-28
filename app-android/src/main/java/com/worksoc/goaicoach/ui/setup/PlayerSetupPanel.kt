@@ -27,12 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.clampToOwnedBotCharacter
 import com.worksoc.goaicoach.match.PlayerSetup
@@ -45,6 +43,10 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.foundation.TestTags
@@ -65,13 +67,13 @@ internal fun PlayerSetupPanel(
     val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        tonalElevation = AppElevation.Level1,
+        shadowElevation = AppElevation.Level0,
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(AppSpacing.Space12),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
         ) {
             Text(strings.playerSetup, fontWeight = FontWeight.SemiBold)
             PlayerSetupSideRow(
@@ -102,13 +104,13 @@ internal fun SearchTimeSettingsPanel(
     val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        tonalElevation = AppElevation.Level1,
+        shadowElevation = AppElevation.Level0,
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(AppSpacing.Space12),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
         ) {
             MaximumSearchTimeLimitRow(
                 selected = settings.limit,
@@ -128,7 +130,7 @@ private fun MaximumSearchTimeLimitRow(
     val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -156,10 +158,10 @@ private fun PlayerSetupSideRow(
 ) {
     val strings = LocalUiStrings.current
     val side = state.side
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -276,7 +278,7 @@ private fun PlayerSetupSideRow(
                     // (미보유는 `clampToOwnedBotCharacter`가 걸러낸다) 흑백 처리가 필요 없다.
                     current?.let { character ->
                         BotCharacterAvatar(character = character, size = 22.dp)
-                        Spacer(Modifier.width(6.dp))
+                        Spacer(Modifier.width(AppSpacing.Space6))
                     }
                     Text(
                         text = current?.let(strings::botCharacterName)
@@ -338,17 +340,17 @@ private fun SeatControllerPill(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(AppRadius.Corner18))
             .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = 10.dp),
+            .padding(vertical = AppSpacing.Space10),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
-            color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
+            fontSize = AppTextSize.Text13,
         )
     }
 }

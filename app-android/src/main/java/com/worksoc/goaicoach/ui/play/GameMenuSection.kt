@@ -26,12 +26,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.exitGameActionFor
@@ -73,7 +76,7 @@ internal fun GameHeaderSection(
     val strings = LocalUiStrings.current
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -160,7 +163,7 @@ internal fun ExpandedGameMenuSection(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
     ) {
         // ⚠️ **#76이 지웠던 대국 설정이 2026-09-10에 돌아왔다** — 이번에는 사문이 아니다.
         // 그때 지운 것은 `showSettings`라는 **한 번도 true가 된 적 없는 게이트** 뒤의 죽은
@@ -268,15 +271,15 @@ internal fun LanguageSettingsPanel(
     val strings = LocalUiStrings.current
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner8),
+        tonalElevation = AppElevation.Level1,
+        shadowElevation = AppElevation.Level0,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(AppSpacing.Space12),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             // 나열형(당시의 `SettingChoiceRow`, #76이 삭제)이 아니라 드롭다운이다(#34) — 언어가 늘어도 한 줄이
             // 무너지지 않는다. 라벨과 컨트롤을 한 행에 놓아 다른 설정 항목과 결을 맞춘다.
@@ -318,23 +321,23 @@ internal fun LanguageDropdownChip(
     Box {
         Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(18.dp))
+                .clip(RoundedCornerShape(AppRadius.Corner18))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .clickable { expanded = true }
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+                .padding(horizontal = AppSpacing.Space14, vertical = AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
         ) {
             Text(
                 text = "🌐 ${selectedLanguage.menuLabel}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "▾",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 fontWeight = FontWeight.Bold,
             )
         }

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.ui.designsystem.AvatarPalette
 
 /**
  * 내 아바타(백로그 #165) — **닉네임 첫 글자 + 색**(U-20, 2026-09-22 사용자 결정).
@@ -57,7 +58,7 @@ internal fun UserAvatar(
             // 글자가 원 밖으로 자란다(함정 9가 "원 안 글자는 dp로"라고 적은 그대로).
             fontSize = (size.value * InitialSizeRatio).sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = AvatarPalette.Initial,
         )
     }
 }
@@ -102,17 +103,10 @@ internal fun avatarColorOf(nickname: String?): Color {
 private const val EmptyInitial = "·"
 
 /** 이름이 없을 때의 회색 — "아직 안 정했다"가 색으로도 보이게 한다. */
-private val EmptyAvatarColor = Color(0xFF9E9E9E)
+private val EmptyAvatarColor = AvatarPalette.Empty
 
 /**
  * 바탕색 후보. ⚠️ **전부 흰 글자가 읽히는 어두운 색이다** — 밝은 색을 더하면 원 안 글자가
  * 사라진다. 색을 더할 때는 흰 글자와의 대비를 눈으로 확인할 것.
  */
-private val AvatarColors: List<Color> = listOf(
-    Color(0xFF1B7F5A),
-    Color(0xFF2E6DB4),
-    Color(0xFF8A4FBE),
-    Color(0xFFB4542E),
-    Color(0xFF3F6B2B),
-    Color(0xFFA83E5B),
-)
+private val AvatarColors: List<Color> = AvatarPalette.Backgrounds

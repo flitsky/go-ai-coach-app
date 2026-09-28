@@ -38,13 +38,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.queryPremiumProductInfo
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
@@ -142,7 +146,7 @@ internal fun PremiumSubscriptionNoticeBlock(
     val strings = LocalUiStrings.current
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
     ) {
         Text(
             text = when (productInfo) {
@@ -160,7 +164,7 @@ internal fun PremiumSubscriptionNoticeBlock(
         )
         Text(
             text = premiumSubscriptionAutoRenewNoticeFor(strings.language),
-            fontSize = 13.sp,
+            fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // ⚠️ **문자열을 이어 붙이지 않고 `Text`를 하나 더 둔다** — 마이페이지의 소실 고지가
@@ -168,7 +172,7 @@ internal fun PremiumSubscriptionNoticeBlock(
         // 이어야 하는 함정이 생긴다).
         Text(
             text = premiumSubscriptionCancelNoticeFor(strings.language),
-            fontSize = 13.sp,
+            fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -223,13 +227,13 @@ internal fun PremiumSubscriptionCard(modifier: Modifier = Modifier) {
                 onClick = { openSubscriptionManagement(context) },
                 // 기본 여백(가로 24dp)이 좁은 폭에서 라벨 몫을 가져간다 — 해지 경로 문구를
                 // 줄이지 않기 위해 여백 쪽을 줄인다.
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space4),
             ) {
                 Text(
                     text = premiumSubscriptionManageActionFor(strings.language),
                     color = PremiumGoldDeep,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
+                    fontSize = AppTextSize.Text13,
                 )
             }
         } else {
@@ -238,11 +242,11 @@ internal fun PremiumSubscriptionCard(modifier: Modifier = Modifier) {
                 colors = ButtonDefaults.buttonColors(containerColor = PremiumGold),
                 // 해지 버튼과 같은 이유로 기본 여백을 줄인다 — 영어 `Subscribe`는 한국어
                 // `구독하기`보다 픽셀 폭이 넓어, 기본 여백이면 왼쪽 문구 몫을 그만큼 빼앗는다.
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                contentPadding = PaddingValues(horizontal = AppSpacing.Space14, vertical = AppSpacing.Space6),
             ) {
                 Text(
                     text = premiumSubscriptionSubscribeActionFor(strings.language),
-                    fontSize = 13.sp,
+                    fontSize = AppTextSize.Text13,
                 )
             }
         }
@@ -272,14 +276,14 @@ private fun PremiumSubscriptionCardFrame(
         modifier = modifier
             .fillMaxWidth()
             .background(PremiumGoldLight.copy(alpha = 0.18f), PremiumCardShape)
-            .border(1.5.dp, PremiumGoldGradient, PremiumCardShape)
+            .border(AppBorderWidth.Emphasis, PremiumGoldGradient, PremiumCardShape)
             .then(if (onCardClick != null) Modifier.clickable(onClick = onCardClick) else Modifier)
-            .padding(start = 18.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = AppSpacing.Space18, end = AppSpacing.Space10, top = AppSpacing.Space8, bottom = AppSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 👑은 로비의 구독자 표식과 같은 글리프다(`PremiumTheme.kt`의 금색 규칙 참고).
-        Text(text = "👑", fontSize = 20.sp)
-        Spacer(modifier = Modifier.width(10.dp))
+        Text(text = "👑", fontSize = AppTextSize.Text20)
+        Spacer(modifier = Modifier.width(AppSpacing.Space10))
         Column(modifier = Modifier.weight(1f)) {
             // ⚠️ **라벨은 잘리는 대신 접힌다**(함정 9). 2026-09-18 실기에서 배율 1.3의
             // *"프리미엄 구독 이용 중"* 이 말줄임으로 사라졌다 — 상태를 말하는 문구가 잘리면
@@ -288,19 +292,19 @@ private fun PremiumSubscriptionCardFrame(
             Text(
                 text = label,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 15.sp,
+                fontSize = AppTextSize.Text15,
                 color = PremiumGoldDeep,
                 maxLines = 2,
             )
             Text(
                 text = tagline,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(AppSpacing.Space8))
         trailing()
     }
 }
@@ -333,7 +337,7 @@ internal fun PremiumSubscriptionNoticeSection(
     productInfo: PremiumProductInfoState,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
         PremiumSubscriptionNoticeBlock(productInfo)
         content()
     }
@@ -351,20 +355,20 @@ internal fun PremiumSubscriptionNoticeSection(
  */
 @Composable
 private fun PremiumBenefitsList(language: UiLanguage) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
         Text(
             text = premiumSubscriptionBenefitsTitleFor(language),
             fontWeight = FontWeight.Bold,
             color = PremiumGoldDeep,
         )
         PremiumBenefitRow(premiumSubscriptionBenefitRosterFor(language))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2)) {
             PremiumBenefitRow(premiumSubscriptionBenefitFeaturesFor(language))
             Text(
                 text = "(${premiumSubscriptionBenefitFeatureNamesFor(language)})",
-                fontSize = 13.sp,
+                fontSize = AppTextSize.Text13,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 20.dp),
+                modifier = Modifier.padding(start = AppSpacing.Space20),
             )
         }
     }
@@ -373,7 +377,7 @@ private fun PremiumBenefitsList(language: UiLanguage) {
 @Composable
 private fun PremiumBenefitRow(text: String) {
     Row {
-        Text(text = "•", modifier = Modifier.padding(end = 6.dp))
+        Text(text = "•", modifier = Modifier.padding(end = AppSpacing.Space6))
         Text(text = text)
     }
 }
@@ -409,10 +413,10 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
             dismissOnClickOutside = !isPurchaseInProgress,
         ),
     ) {
-        Surface(shape = RoundedCornerShape(16.dp), tonalElevation = 3.dp) {
+        Surface(shape = RoundedCornerShape(AppRadius.Corner16), tonalElevation = AppElevation.Level2) {
             Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(AppSpacing.Space24),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
             ) {
                 Text(
                     text = premiumSubscriptionInactiveLabelFor(strings.language),

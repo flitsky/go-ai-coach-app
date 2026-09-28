@@ -17,9 +17,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -49,12 +50,12 @@ internal fun SplashCandidateRow() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = strings.settingsDevSplashTitle,
-            fontSize = 14.sp,
+            fontSize = AppTextSize.Text14,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
             text = strings.settingsDevSplashSubtitle,
-            fontSize = 12.sp,
+            fontSize = AppTextSize.Text12,
             color = MaterialTheme.colorScheme.secondary,
         )
         // ⚠️ **버튼 라벨은 숫자만 쓴다** — 후보 이름 9개를 4개 언어에 넣으면 `UiStrings`에 36줄이
@@ -62,15 +63,15 @@ internal fun SplashCandidateRow() {
         // KDoc이 든다.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
         ) {
             SplashVariant.entries.forEach { candidate ->
                 TextButton(
                     onClick = { preview = candidate },
                     modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = AppSpacing.Space8),
                 ) {
-                    Text(candidate.number.toString(), fontSize = 14.sp)
+                    Text(candidate.number.toString(), fontSize = AppTextSize.Text14)
                 }
             }
         }

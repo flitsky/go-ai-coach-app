@@ -36,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -48,6 +47,10 @@ import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.PointF2D
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import kotlin.math.hypot
 
 enum class ActiveCorner {
@@ -77,8 +80,8 @@ internal fun CornerPinAdjustmentOverlay(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF121212))
-            .padding(16.dp),
+            .background(VisionPalette.EditorBackdrop)
+            .padding(AppSpacing.Space16),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 1. 헤더 안내
@@ -92,24 +95,24 @@ internal fun CornerPinAdjustmentOverlay(
                     text = "바둑판 영역 지정",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = VisionPalette.OnBackdrop,
                 )
                 Text(
                     text = "네 모서리(귀)의 교차점에 핀을 드래그해 맞추세요",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.LightGray,
+                    color = VisionPalette.OnBackdropMuted,
                 )
             }
 
             OutlinedButton(
                 onClick = onRetake,
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(AppRadius.Corner8),
             ) {
-                Text("재촬영", color = Color.White)
+                Text("재촬영", color = VisionPalette.OnBackdrop)
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
         // 2. 바둑판 크기 선택 칩
         Row(
@@ -117,19 +120,19 @@ internal fun CornerPinAdjustmentOverlay(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("판 크기: ", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            Spacer(modifier = Modifier.width(8.dp))
+            Text("판 크기: ", color = VisionPalette.OnBackdrop, fontSize = AppTextSize.Text14, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.width(AppSpacing.Space8))
             listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen).forEach { size ->
                 FilterChip(
                     selected = boardSize == size,
                     onClick = { boardSize = size },
                     label = { Text("${size.value}줄") },
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.padding(horizontal = AppSpacing.Space4),
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
         // 3. 사진 및 4점 핀 터치/드래그 캔버스 영역
         BoxWithConstraints(
@@ -245,7 +248,7 @@ internal fun CornerPinAdjustmentOverlay(
                     // 외곽 테두리 (골드/그린 하이라이트)
                     drawPath(
                         path = polyPath,
-                        color = Color(0xFF4CAF50),
+                        color = VisionPalette.Guide,
                         style = Stroke(width = 3.dp.toPx()),
                     )
 
@@ -259,16 +262,16 @@ internal fun CornerPinAdjustmentOverlay(
                     )
 
                     for ((pt, isActive) in pinPoints) {
-                        val color = if (isActive) Color(0xFFFFD700) else Color(0xFF4CAF50)
-                        drawCircle(color = Color.White, radius = handleRadius + 2.dp.toPx(), center = pt)
+                        val color = if (isActive) VisionPalette.GuideHighlight else VisionPalette.Guide
+                        drawCircle(color = VisionPalette.OnBackdrop, radius = handleRadius + 2.dp.toPx(), center = pt)
                         drawCircle(color = color, radius = handleRadius, center = pt)
-                        drawCircle(color = Color.Black, radius = 4.dp.toPx(), center = pt)
+                        drawCircle(color = VisionPalette.PinCenter, radius = 4.dp.toPx(), center = pt)
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
         // 4. 완료 CTA 버튼
         Button(
@@ -276,7 +279,7 @@ internal fun CornerPinAdjustmentOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(AppRadius.Corner12),
         ) {
             Text(
                 text = "바둑판 인식하기",

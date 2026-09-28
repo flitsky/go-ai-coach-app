@@ -40,10 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -55,6 +53,11 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.ui.board.GoBoard
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.StonePalette
 
 enum class BoardEditTool {
     Toggle, // 탭 시 빈칸 -> 흑 -> 백 -> 빈칸 순환
@@ -106,7 +109,7 @@ internal fun BoardCorrectionEditor(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -120,18 +123,18 @@ internal fun BoardCorrectionEditor(
                 OutlinedButton(
                     onClick = { stones = emptyMap() },
                     enabled = stones.isNotEmpty() && !isAnalyzing,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
-                    Text("초기화", fontSize = 13.sp)
+                    Text("초기화", fontSize = AppTextSize.Text13)
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(AppSpacing.Space8))
                 Button(
                     onClick = onRetake,
                     enabled = !isAnalyzing,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(AppRadius.Corner8),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                 ) {
-                    Text("재촬영", fontSize = 13.sp)
+                    Text("재촬영", fontSize = AppTextSize.Text13)
                 }
             }
         }
@@ -140,7 +143,7 @@ internal fun BoardCorrectionEditor(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = AppSpacing.Space8),
             contentAlignment = Alignment.Center,
         ) {
             GoBoard(
@@ -184,17 +187,17 @@ internal fun BoardCorrectionEditor(
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
         // 3. 편집 도구 선택 툴바
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = AppSpacing.Space16),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(AppRadius.Corner12),
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(AppSpacing.Space12)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -212,25 +215,25 @@ internal fun BoardCorrectionEditor(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
                 ) {
                     FilterChip(
                         selected = selectedTool == BoardEditTool.Toggle,
                         onClick = { selectedTool = BoardEditTool.Toggle },
-                        label = { Text("자동 순환", fontSize = 12.sp) },
+                        label = { Text("자동 순환", fontSize = AppTextSize.Text12) },
                     )
                     FilterChip(
                         selected = selectedTool == BoardEditTool.Black,
                         onClick = { selectedTool = BoardEditTool.Black },
                         label = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color.Black))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("흑돌", fontSize = 12.sp)
+                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(StonePalette.Black))
+                                Spacer(modifier = Modifier.width(AppSpacing.Space4))
+                                Text("흑돌", fontSize = AppTextSize.Text12)
                             }
                         },
                     )
@@ -239,32 +242,32 @@ internal fun BoardCorrectionEditor(
                         onClick = { selectedTool = BoardEditTool.White },
                         label = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color.White).border(1.dp, Color.Gray, CircleShape))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("백돌", fontSize = 12.sp)
+                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(StonePalette.White).border(AppBorderWidth.Hairline, StonePalette.WhiteOutline, CircleShape))
+                                Spacer(modifier = Modifier.width(AppSpacing.Space4))
+                                Text("백돌", fontSize = AppTextSize.Text12)
                             }
                         },
                     )
                     FilterChip(
                         selected = selectedTool == BoardEditTool.Eraser,
                         onClick = { selectedTool = BoardEditTool.Eraser },
-                        label = { Text("지우개", fontSize = 12.sp) },
+                        label = { Text("지우개", fontSize = AppTextSize.Text12) },
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
         // 4. 대국 조건 설정 (차례, 덤, 룰)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = AppSpacing.Space16),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(AppRadius.Corner12),
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
+            Column(modifier = Modifier.padding(AppSpacing.Space12)) {
                 // 다음 차례 선택
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -272,7 +275,7 @@ internal fun BoardCorrectionEditor(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("다음 착수 차례", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
                         FilterChip(
                             selected = nextPlayer == StoneColor.Black,
                             onClick = { nextPlayer = StoneColor.Black },
@@ -286,7 +289,7 @@ internal fun BoardCorrectionEditor(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
                 // 덤 선택
                 Row(
@@ -295,12 +298,12 @@ internal fun BoardCorrectionEditor(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("덤 (Komi)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
                         KomiOptions.forEach { komiOption ->
                             FilterChip(
                                 selected = komi == komiOption,
                                 onClick = { komi = komiOption },
-                                label = { Text("${komiOption}집", fontSize = 12.sp) },
+                                label = { Text("${komiOption}집", fontSize = AppTextSize.Text12) },
                             )
                         }
                     }
@@ -310,22 +313,22 @@ internal fun BoardCorrectionEditor(
 
         // 5. 분석 결과 영역 (결과가 있을 때 표시)
         if (analysisResult != null || scoreEstimate != null) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space12))
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = AppSpacing.Space16),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AppRadius.Corner12),
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
+                Column(modifier = Modifier.padding(AppSpacing.Space14)) {
                     Text(
                         text = "AI 분석 결과",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space6))
 
                     scoreEstimate?.let { estimate ->
                         estimate.whiteWinRate?.let { whiteWin ->
@@ -348,7 +351,7 @@ internal fun BoardCorrectionEditor(
 
                     analysisResult?.let { result ->
                         if (result.candidates.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(AppSpacing.Space4))
                             Text(
                                 text = "AI 추천수 ${result.candidates.size}개 탐색 완료 (판 위의 마커 확인)",
                                 style = MaterialTheme.typography.bodySmall,
@@ -360,14 +363,14 @@ internal fun BoardCorrectionEditor(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
         // 6. 하단 CTA 액션 버튼들
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = AppSpacing.Space16),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             Button(
                 onClick = { onStartAnalysis(currentGameState) },
@@ -375,7 +378,7 @@ internal fun BoardCorrectionEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AppRadius.Corner12),
             ) {
                 if (isAnalyzing) {
                     CircularProgressIndicator(
@@ -383,10 +386,10 @@ internal fun BoardCorrectionEditor(
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp,
                     )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text("AI가 국면을 분석하고 있습니다...", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(AppSpacing.Space10))
+                    Text("AI가 국면을 분석하고 있습니다...", fontSize = AppTextSize.Text16, fontWeight = FontWeight.Bold)
                 } else {
-                    Text("AI 추천수 및 형세 분석하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("AI 추천수 및 형세 분석하기", fontSize = AppTextSize.Text16, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -396,12 +399,12 @@ internal fun BoardCorrectionEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AppRadius.Corner12),
             ) {
-                Text("이 국면부터 AI와 대국하기", fontSize = 15.sp)
+                Text("이 국면부터 AI와 대국하기", fontSize = AppTextSize.Text15)
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space24))
     }
 }

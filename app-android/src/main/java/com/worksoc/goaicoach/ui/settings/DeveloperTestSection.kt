@@ -24,8 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.attendance.isRewardedTier
 import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
@@ -42,6 +40,8 @@ import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.runReleaseResetAgain
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.monetization.AttendanceClaimReplaySignal
@@ -118,11 +118,11 @@ internal fun DeveloperTestSection(
     Column(
         modifier = modifier.fillMaxWidth(),
         // ⚠️ 위 머리말 참고 — 원래 부모가 주던 간격이다. 지우면 섹션이 통째로 붙는다.
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
         HorizontalDivider()
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space4))
 
         // 제목 행에 **[개발자 모드 끄기]** 를 함께 둔다(백로그 #99 ⓑ). 켠 자리(버전 10탭)는
         // 숨겨져 있어도 **끄는 자리는 보여야 한다** — 실수로 켠 사람이 되돌릴 길이 있어야 한다.
@@ -137,7 +137,7 @@ internal fun DeveloperTestSection(
                 // 다 가져가고 버튼이 남은 자리에 눌려, 영어 1.3배에서 `Turn off develope / r mode`
                 // 로 **단어 중간이 잘렸다.** 제목은 띄어쓰기가 있어 접혀도 읽힌다.
                 modifier = Modifier.weight(1f),
-                fontSize = 14.sp,
+                fontSize = AppTextSize.Text14,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -171,7 +171,7 @@ internal fun DeveloperTestSection(
             },
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
         // 1회권 한 장 지급 — 출석 1일차가 30장을 주므로 한 장은 경제에 영향이 없다.
         // ⚠️ **`consumables.refresh()`를 반드시 함께 부른다.** `runConsumableGrant`는
@@ -185,12 +185,12 @@ internal fun DeveloperTestSection(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = strings.settingsDevGrantTicketTitle,
-                    fontSize = 14.sp,
+                    fontSize = AppTextSize.Text14,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text = strings.settingsDevGrantTicketSubtitle,
-                    fontSize = 12.sp,
+                    fontSize = AppTextSize.Text12,
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
@@ -215,7 +215,7 @@ internal fun DeveloperTestSection(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
         // 읽기 전용 ③ — **진단 로그를 앱 안에서 본다**(백로그 #79). `DiagnosticEventLog`가
         // 계속 쌓고 있는데 앱에서 볼 길이 없어, 폰만 손에 있으면 확인이 불가능했다.
@@ -228,12 +228,12 @@ internal fun DeveloperTestSection(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = strings.settingsDevDiagnosticLogTitle,
-                    fontSize = 14.sp,
+                    fontSize = AppTextSize.Text14,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text = strings.settingsDevDiagnosticLogSubtitle,
-                    fontSize = 12.sp,
+                    fontSize = AppTextSize.Text12,
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
@@ -253,7 +253,7 @@ internal fun DeveloperTestSection(
 
         DeveloperEngineBenchmarkControl(onBenchmark = onBenchmark)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
         // 읽기 전용 ④ — **시작 화면 후보 9종을 눌러 본다**(백로그 #126). 말로 조율하는 대신
         // 다 그려 놓고 눈으로 고르기 위한 도구다.
@@ -274,13 +274,13 @@ internal fun DeveloperTestSection(
         //   앞의 것뿐이고, APK를 뜯으면 2차의 존재는 드러난다. 그것으로 충분하다는 것이
         //   이 설계의 전제다(길게 누르기는 애초에 은닉이지 경계가 아니다).
         if (BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
             HorizontalDivider()
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space4))
 
             Text(
                 text = strings.settingsDevTierAdvancedTitle,
-                fontSize = 14.sp,
+                fontSize = AppTextSize.Text14,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -302,12 +302,12 @@ internal fun DeveloperTestSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = strings.settingsDevAdGrantTitle,
-                        fontSize = 14.sp,
+                        fontSize = AppTextSize.Text14,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = strings.settingsDevAdGrantSubtitle(premiumRemainingMinutes),
-                        fontSize = 12.sp,
+                        fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
@@ -316,7 +316,7 @@ internal fun DeveloperTestSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // 동의 폼(UMP) 상태 초기화 — 백로그 #89.
             // ⚠️ **이것 없이는 폼을 한 번밖에 못 본다.** 한 번 동의하면 SDK가 자기 prefs
@@ -334,14 +334,14 @@ internal fun DeveloperTestSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = strings.settingsDevConsentResetTitle,
-                        fontSize = 14.sp,
+                        fontSize = AppTextSize.Text14,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = strings.settingsDevConsentResetSubtitle(
                             BuildConfig.FORCE_EEA_CONSENT_DEBUG,
                         ),
-                        fontSize = 12.sp,
+                        fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
@@ -350,7 +350,7 @@ internal fun DeveloperTestSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // ⚠️ **2차인 이유**: 조각은 **광고 시청분**이다(#11) — 여기서 채워 주는 것은
             // 곧 광고를 건너뛰고 캐릭터를 얻는 무료 경로다. 1차(release에 실림)에 두면
@@ -369,7 +369,7 @@ internal fun DeveloperTestSection(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "${strings.settingsDevShardTitle} · ${strings.botCharacterName(character)}",
-                            fontSize = 14.sp,
+                            fontSize = AppTextSize.Text14,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
@@ -378,7 +378,7 @@ internal fun DeveloperTestSection(
                             } else {
                                 "${bots.shardsFor(character)} / $required"
                             },
-                            fontSize = 12.sp,
+                            fontSize = AppTextSize.Text12,
                             color = MaterialTheme.colorScheme.secondary,
                         )
                     }
@@ -401,7 +401,7 @@ internal fun DeveloperTestSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // ⚠️ **2차인 이유**: 이 버튼은 누를 때마다 1회권·캐릭터·무르기 영구 해금을
             // 실질적으로 **무료로 찍어낸다.** 기존 프리미엄 토글보다 악용 가치가 크다.
@@ -417,7 +417,7 @@ internal fun DeveloperTestSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = strings.settingsDevAttendanceTitle,
-                        fontSize = 14.sp,
+                        fontSize = AppTextSize.Text14,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
@@ -426,7 +426,7 @@ internal fun DeveloperTestSection(
                             next = attendanceDay + 1,
                             nextIsRewarded = isRewardedTier(attendanceDay + 1),
                         ),
-                        fontSize = 12.sp,
+                        fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
@@ -442,7 +442,7 @@ internal fun DeveloperTestSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // **정식 출시 초기화(#63)를 손으로 다시 돌린다**(백로그 #80).
             // ⚠️ **지울 목록을 여기서 따로 쓰지 않는다** — 마커를 되감고
@@ -460,12 +460,12 @@ internal fun DeveloperTestSection(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = strings.settingsDevReleaseResetTitle,
-                        fontSize = 14.sp,
+                        fontSize = AppTextSize.Text14,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = strings.settingsDevReleaseResetSubtitle,
-                        fontSize = 12.sp,
+                        fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
@@ -501,7 +501,7 @@ internal fun DeveloperTestSection(
             DeveloperFreshInstallControl()
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space24))
     }
 }
 
@@ -560,10 +560,10 @@ private fun DeveloperInfoRow(title: String, value: String, onTap: () -> Unit = {
                 onClick = onTap,
             ),
     ) {
-        Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = title, fontSize = AppTextSize.Text14, fontWeight = FontWeight.SemiBold)
         Text(
             text = value,
-            fontSize = 12.sp,
+            fontSize = AppTextSize.Text12,
             color = MaterialTheme.colorScheme.secondary,
         )
     }

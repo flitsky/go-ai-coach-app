@@ -24,9 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -49,24 +52,24 @@ internal fun ExperimentalFeaturesSettingsPanel(modifier: Modifier = Modifier) {
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(AppRadius.Corner12),
+        tonalElevation = AppElevation.Level1,
+        shadowElevation = AppElevation.Level0,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(AppSpacing.Space16),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
         ) {
             // 헤더: "🧪 실험실" + 설명
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
             ) {
                 Text(
                     text = "🧪",
-                    fontSize = 18.sp,
+                    fontSize = AppTextSize.Text18,
                 )
                 Text(
                     text = strings.labsTitle(),
@@ -83,7 +86,7 @@ internal fun ExperimentalFeaturesSettingsPanel(modifier: Modifier = Modifier) {
             )
 
             HorizontalDivider(
-                modifier = Modifier.padding(vertical = 4.dp),
+                modifier = Modifier.padding(vertical = AppSpacing.Space4),
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
             )
 
@@ -93,14 +96,14 @@ internal fun ExperimentalFeaturesSettingsPanel(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                Column(modifier = Modifier.weight(1f).padding(end = AppSpacing.Space12)) {
                     Text(
                         text = strings.cameraBoardScanToggleTitle(),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space2))
                     Text(
                         text = strings.cameraBoardScanToggleDescription(),
                         style = MaterialTheme.typography.bodySmall,

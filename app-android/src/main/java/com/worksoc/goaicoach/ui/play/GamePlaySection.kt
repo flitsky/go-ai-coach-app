@@ -39,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +73,9 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.board.candidateToneColor
 import com.worksoc.goaicoach.ui.designsystem.ActionButton
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
+import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.guideTarget
@@ -344,7 +345,7 @@ internal fun GamePlaySection(
                 // 엔진이 멀쩡하면 아무것도 그리지 않으므로 정상 대국의 레이아웃은 그대로다.
                 EngineUnavailableBadge(
                     availability = screenState.engine.availability,
-                    modifier = Modifier.padding(bottom = 6.dp),
+                    modifier = Modifier.padding(bottom = AppSpacing.Space6),
                 )
                 // ⚠️ 폭을 **GoBoard 바깥에서** 바꾼다. 안에서 바꾸면 탭 좌표 변환·좌표 라벨·형세
                 // 오버레이가 저마다 다른 폭을 볼 위험이 있는데, 밖에서 주면 그 안의 모든 계산이
@@ -362,7 +363,7 @@ internal fun GamePlaySection(
             }
 
             if (showMoveQualityLegend) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space4))
                 MoveQualityLegend()
             }
 
@@ -456,20 +457,20 @@ private fun WidePlayArrangement(
     val turn = currentTurnPlayer.takeIf { !screenState.isGameEnded }
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             menuButton()
             CompactSeatCard(
                 isActiveTurn = turn == StoneColor.Black,
                 stoneGlyph = "●",
-                stoneGlyphColor = Color.Black,
+                stoneGlyphColor = StonePalette.BlackGlyph,
                 label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
                 elapsedMillis = blackTotalMillis,
                 capturedCount = screenState.gameState.capturedBy(StoneColor.Black),
@@ -490,7 +491,7 @@ private fun WidePlayArrangement(
             CompactSeatCard(
                 isActiveTurn = turn == StoneColor.White,
                 stoneGlyph = "○",
-                stoneGlyphColor = Color.Gray,
+                stoneGlyphColor = StonePalette.WhiteGlyph,
                 label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
                 elapsedMillis = whiteTotalMillis,
                 capturedCount = screenState.gameState.capturedBy(StoneColor.White),
@@ -511,7 +512,7 @@ private fun WidePlayArrangement(
             ) {
                 EngineUnavailableBadge(
                     availability = screenState.engine.availability,
-                    modifier = Modifier.padding(bottom = 6.dp),
+                    modifier = Modifier.padding(bottom = AppSpacing.Space6),
                 )
                 board(
                     Modifier
@@ -520,7 +521,7 @@ private fun WidePlayArrangement(
                         .then(if (isBoardMaxSize) Modifier else Modifier.padding(WideBoardInset)),
                 )
                 if (showMoveQualityLegend) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
                     MoveQualityLegend()
                 }
             }
@@ -550,7 +551,7 @@ private fun WidePlayArrangement(
         ) { slots ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 확인 모드를 되살리면(플래그) 여섯 칸이 된다 — 그때는 칸당 100dp 남짓으로 좁아지지만
@@ -614,13 +615,13 @@ private fun WideColumnsArrangement(
     ) { slots ->
         Column(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 menuButton()
@@ -640,16 +641,16 @@ private fun WideColumnsArrangement(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             ) {
                 Column(
                     modifier = Modifier.width(WideColumnWidth),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 ) {
                     CompactSeatCard(
                         isActiveTurn = turn == StoneColor.Black,
                         stoneGlyph = "●",
-                        stoneGlyphColor = Color.Black,
+                        stoneGlyphColor = StonePalette.BlackGlyph,
                         label = strings.sideLabel(screenState.playerSetup.black, StoneColor.Black),
                         elapsedMillis = blackTotalMillis,
                         capturedCount = screenState.gameState.capturedBy(StoneColor.Black),
@@ -668,7 +669,7 @@ private fun WideColumnsArrangement(
                     ) {
                         EngineUnavailableBadge(
                             availability = screenState.engine.availability,
-                            modifier = Modifier.padding(bottom = 6.dp),
+                            modifier = Modifier.padding(bottom = AppSpacing.Space6),
                         )
                         board(
                             Modifier
@@ -677,7 +678,7 @@ private fun WideColumnsArrangement(
                                 .then(if (isBoardMaxSize) Modifier else Modifier.padding(WideBoardInset)),
                         )
                         if (showMoveQualityLegend) {
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(AppSpacing.Space4))
                             MoveQualityLegend()
                         }
                     }
@@ -698,12 +699,12 @@ private fun WideColumnsArrangement(
 
                 Column(
                     modifier = Modifier.width(WideColumnWidth),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 ) {
                     CompactSeatCard(
                         isActiveTurn = turn == StoneColor.White,
                         stoneGlyph = "○",
-                        stoneGlyphColor = Color.Gray,
+                        stoneGlyphColor = StonePalette.WhiteGlyph,
                         label = strings.sideLabel(screenState.playerSetup.white, StoneColor.White),
                         elapsedMillis = whiteTotalMillis,
                         capturedCount = screenState.gameState.capturedBy(StoneColor.White),
@@ -769,7 +770,7 @@ private fun MoveQualityLegend() {
         items.forEach { (tone, label) ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
             ) {
                 Box(
                     modifier = Modifier
@@ -1140,7 +1141,7 @@ private fun GameActionButtons(
     ) { slots ->
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
             // 재고 바를 여기 두지 않는다(#24, 2026-08-30). #17이 "차감이 눈앞에서 보이게" 상시
             // 띄웠지만, 대국 내내 필요한 정보가 아닌 데다 바로 아래 버튼과 같은 말을 두 번 했다.
@@ -1150,7 +1151,7 @@ private fun GameActionButtons(
             // [1행] 형세보기(Eval), 추천수(Top Moves) — 프리미엄 전용 온/오프 토글, 2열로 크게 배치
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             ) {
                 firstRowLeading?.invoke(this)
                 slots.eval(Modifier.weight(1f))
@@ -1160,7 +1161,7 @@ private fun GameActionButtons(
             // [2행] 기권(Resign/New Game), 통과(Pass), 무르기(Undo) — 기본 기능 버튼 3열
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 secondRowLeading?.invoke(this)

@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -45,10 +45,10 @@ internal fun DeveloperEngineBenchmarkControl(onBenchmark: () -> Unit) {
     ) {
         // ⚠️ 고정 높이를 주지 않는다(함정 9번) — 주변 행들과 같은 골격이라 배율을 따라간다.
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = strings.benchmark, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = strings.benchmark, fontSize = AppTextSize.Text14, fontWeight = FontWeight.SemiBold)
             Text(
                 text = strings.settingsDevBenchmarkSubtitle,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.secondary,
             )
         }

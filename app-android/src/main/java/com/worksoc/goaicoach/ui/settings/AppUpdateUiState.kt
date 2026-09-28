@@ -21,10 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.appUpToDateLabelFor
 import com.worksoc.goaicoach.ui.l10n.appUpdateActionLabelFor
@@ -154,25 +154,25 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(AppSpacing.Space10))
         when (status) {
             AppUpdateStatus.Available -> {
                 Text(
                     text = appUpdateAvailableLabelFor(language),
-                    fontSize = 12.sp,
+                    fontSize = AppTextSize.Text12,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(AppSpacing.Space6))
                 // 새 버전이 있을 때만 버튼을 쓴다 — 나머지 상태는 알림이지 할 일이 아니다.
                 Button(onClick = { openStoreListing(context) }) {
-                    Text(appUpdateActionLabelFor(language), fontSize = 13.sp)
+                    Text(appUpdateActionLabelFor(language), fontSize = AppTextSize.Text13)
                 }
             }
 
             AppUpdateStatus.UpToDate -> Text(
                 text = appUpToDateLabelFor(language),
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             )
 
@@ -180,7 +180,7 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
             // "누를 수 있는 것"임이 이 화면 안에서 이미 학습돼 있다.
             AppUpdateStatus.Unknown -> Text(
                 text = appUpdateCheckStoreLabelFor(language),
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier.clickable { openStoreListing(context) },

@@ -45,6 +45,9 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -77,7 +80,7 @@ internal fun AttendanceStampBoard(
     collection: BotCollectionState,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
         StampRow(cells = board.daily, collection = collection, compact = true)
         StampRow(cells = board.weekly, collection = collection, compact = false)
     }
@@ -103,7 +106,7 @@ private fun StampRow(cells: List<AttendanceBoardCell>, collection: BotCollection
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) AppSpacing.Space4 else AppSpacing.Space6),
     ) {
         cells.forEach { cell ->
             StampCell(
@@ -128,7 +131,7 @@ private fun StampCell(
     val strings = LocalUiStrings.current
     val stamped = cell.state == AttendanceCellState.Stamped
     val claimable = cell.state == AttendanceCellState.Claimable
-    val shape = RoundedCornerShape(if (compact) 10.dp else 14.dp)
+    val shape = RoundedCornerShape(if (compact) AppRadius.Corner10 else AppRadius.Corner14)
     val background = when {
         stamped -> MaterialTheme.colorScheme.surfaceVariant
         claimable -> MaterialTheme.colorScheme.primaryContainer
@@ -146,7 +149,7 @@ private fun StampCell(
             .background(background)
             .border(
                 BorderStroke(
-                    width = if (claimable) 2.dp else 1.dp,
+                    width = if (claimable) AppBorderWidth.Strong else AppBorderWidth.Hairline,
                     color = if (claimable) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -155,7 +158,7 @@ private fun StampCell(
                 ),
                 shape,
             )
-            .padding(horizontal = 3.dp, vertical = 6.dp)
+            .padding(horizontal = AppSpacing.Space3, vertical = AppSpacing.Space6)
             // 칸 하나를 한 덩어리로 읽어 준다 — 글리프만으로는 뜻이 없으므로 여기서 말로 바꾼다.
             .clearAndSetSemantics { contentDescription = describeCell(strings, cell) },
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -217,7 +220,7 @@ private fun RewardFaces(
     }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space3),
     ) {
         rewards.forEach { reward ->
             RewardFace(reward, collection, compact = false, dimmed = dimmed, seamColor = seamColor)
@@ -240,7 +243,7 @@ private fun RewardFace(
     if (character != null) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
         ) {
             BotCharacterAvatar(
                 character = character,
@@ -288,7 +291,7 @@ private fun RewardFace(
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
     ) {
         Icon(painterResource(glyph), contentDescription = null, Modifier.size(WideGlyphSize), tint = tint)
         if (amount != null) {
@@ -335,7 +338,7 @@ private fun BoxScope.StampSeal(compact: Boolean) {
             .size(if (compact) CompactSealSize else WideSealSize)
             .clip(CircleShape)
             .background(seal.copy(alpha = SealFillAlpha))
-            .border(BorderStroke(1.5.dp, seal), CircleShape),
+            .border(BorderStroke(AppBorderWidth.Emphasis, seal), CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Text(

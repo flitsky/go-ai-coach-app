@@ -171,7 +171,11 @@ class GameReplayContractTest {
             "`ReplaySectionGap`이 최상위 `Column`의 `verticalArrangement`에 안 걸려 있다.",
             replay.contains("verticalArrangement = Arrangement.spacedBy(ReplaySectionGap)"),
         )
-        listOf("vertical = 12.dp", "vertical = 2.dp", "top = 12.dp", "bottom = 4.dp").forEach { needle ->
+        // 리터럴과 **토큰 형태** 둘 다 본다 — 간격 토큰(refactor backlog #51) 이후로는 되살아나도 `AppSpacing.Space12`로 온다.
+        listOf(
+            "vertical = 12.dp", "vertical = 2.dp", "top = 12.dp", "bottom = 4.dp",
+            "vertical = AppSpacing.Space12", "vertical = AppSpacing.Space2", "top = AppSpacing.Space12", "bottom = AppSpacing.Space4",
+        ).forEach { needle ->
             assertFalse(
                 "섹션 하나가 개별 세로 패딩(`$needle`)을 다시 들고 있다 — `ReplaySectionGap` " +
                     "하나로 통일하기로 했다(2026-09-19).",

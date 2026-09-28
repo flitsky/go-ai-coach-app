@@ -32,6 +32,9 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.device.DeviceIdentityStorePort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.GoogleBrandBlue
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import kotlinx.coroutines.launch
 
@@ -108,7 +111,7 @@ internal fun OnboardingScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .systemBarsPadding()
-            .padding(24.dp),
+            .padding(AppSpacing.Space24),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -120,7 +123,7 @@ internal fun OnboardingScreen(
             textAlign = TextAlign.Center,
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
         Text(
             text = strings.onboardingTitle,
@@ -129,7 +132,7 @@ internal fun OnboardingScreen(
             textAlign = TextAlign.Center,
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
         Text(
             text = strings.onboardingSubtitle,
@@ -152,7 +155,7 @@ internal fun OnboardingScreen(
             onClick = { signInWithGoogle() },
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space24))
 
         SocialLoginButton(
             label = strings.continueWithApple,
@@ -160,7 +163,7 @@ internal fun OnboardingScreen(
             onClick = { showNotImplemented() },
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space24))
 
         SocialLoginButton(
             label = strings.continueWithEmail,
@@ -168,9 +171,9 @@ internal fun OnboardingScreen(
             onClick = { showEmailDialog = true },
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space24))
         HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.outlineVariant)
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.Space20))
 
         // 버튼이 아니라 텍스트 링크로: Spotify/Duolingo류 온보딩에서 흔한 "건너뛰기" 패턴 —
         // 위 3개 로그인 수단은 테두리 있는 버튼으로 동등하게 제시하고, 그 대안(계정 없이)은
@@ -178,7 +181,7 @@ internal fun OnboardingScreen(
         // 확보(접근성 최소 권장 크기).
         Text(
             text = strings.continueWithoutAccount,
-            fontSize = 15.sp,
+            fontSize = AppTextSize.Text15,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier
@@ -189,7 +192,7 @@ internal fun OnboardingScreen(
                         onOnboardingComplete()
                     },
                 )
-                .padding(horizontal = 24.dp, vertical = 14.dp),
+                .padding(horizontal = AppSpacing.Space24, vertical = AppSpacing.Space14),
         )
     }
 

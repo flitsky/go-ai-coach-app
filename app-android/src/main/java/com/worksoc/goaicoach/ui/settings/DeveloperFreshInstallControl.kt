@@ -17,8 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.restartToFreshInstall
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -56,12 +56,12 @@ internal fun DeveloperFreshInstallControl() {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = strings.settingsDevFreshInstallTitle,
-                fontSize = 14.sp,
+                fontSize = AppTextSize.Text14,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
                 text = strings.settingsDevFreshInstallSubtitle,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.secondary,
             )
         }

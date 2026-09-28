@@ -36,7 +36,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +47,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.passNoticeTitleFor
@@ -194,10 +196,10 @@ private fun PassNoticeDialog(player: StoneColor, onDismiss: () -> Unit) {
     GuideBlockingOverlays.TrackWhileShown()
 
     val isBlack = player == StoneColor.Black
-    val boxColor = if (isBlack) Color.White else Color.Black
+    val boxColor = if (isBlack) StonePalette.White else StonePalette.Black
     // ⚠️ 글자 불투명도는 **낮추되 읽히는 선까지만** — 0.6 아래로 내리면 배율 1.0의 작은 화면에서
     //   획이 뭉개진다(#177 실기 조정).
-    val textColor = (if (isBlack) Color.Black else Color.White).copy(alpha = 0.82f)
+    val textColor = (if (isBlack) StonePalette.Black else StonePalette.White).copy(alpha = 0.82f)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -242,7 +244,7 @@ private fun PassNoticeDialog(player: StoneColor, onDismiss: () -> Unit) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = boxColor,
-                border = BorderStroke(1.5.dp, textColor.copy(alpha = 0.25f)),
+                border = BorderStroke(AppBorderWidth.Emphasis, textColor.copy(alpha = 0.25f)),
                 modifier = Modifier.graphicsLayer {
                     translationX = startX * (1f - fly.value)
                     translationY = startY * (1f - fly.value)
@@ -255,7 +257,7 @@ private fun PassNoticeDialog(player: StoneColor, onDismiss: () -> Unit) {
                     // ⚠️ 고정 높이를 쓰지 않는다(함정 9) — 글꼴 배율 1.3에서 상자가 글자를 자르면 안 된다.
                     modifier = Modifier.padding(horizontal = 36.dp, vertical = 22.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space18),
                 ) {
                     PassNoticeStone(isBlack = isBlack)
                     Text(
@@ -286,13 +288,13 @@ private fun PassNoticeDialog(player: StoneColor, onDismiss: () -> Unit) {
  */
 @Composable
 private fun PassNoticeStone(isBlack: Boolean) {
-    val stone = if (isBlack) Color.Black else Color.White
-    val ring = (if (isBlack) Color.White else Color.Black).copy(alpha = 0.30f)
+    val stone = if (isBlack) StonePalette.Black else StonePalette.White
+    val ring = (if (isBlack) StonePalette.White else StonePalette.Black).copy(alpha = 0.30f)
     Box(
         modifier = Modifier
             .size(38.dp)
             .background(stone, CircleShape)
-            .border(1.5.dp, ring, CircleShape),
+            .border(AppBorderWidth.Emphasis, ring, CircleShape),
     )
 }
 

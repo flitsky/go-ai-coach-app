@@ -22,9 +22,12 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
@@ -116,17 +119,17 @@ internal fun GuideBubble(text: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .widthIn(max = 260.dp)
-            .shadow(4.dp, RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(14.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .shadow(4.dp, RoundedCornerShape(AppRadius.Corner14))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(AppRadius.Corner14))
+            .border(AppBorderWidth.Hairline, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(AppRadius.Corner14))
+            .padding(horizontal = AppSpacing.Space10, vertical = AppSpacing.Space8),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FirstDolAvatar(size = 32.dp)
         Text(
             text = text,
-            fontSize = 13.sp,
+            fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurface,
         )
     }
@@ -150,13 +153,13 @@ internal fun GuideLine(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
         verticalAlignment = verticalAlignment,
     ) {
         FirstDolAvatar(size = 24.dp)
         Text(
             text = text,
-            fontSize = 12.sp,
+            fontSize = AppTextSize.Text12,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -189,13 +192,13 @@ internal fun GuideCard(
         onDismissRequest = onAck,
         title = {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FirstDolAvatar(size = 36.dp)
             }
         },
-        text = { Text(text = text, fontSize = 14.sp) },
+        text = { Text(text = text, fontSize = AppTextSize.Text14) },
         confirmButton = { TextButton(onClick = onAck) { Text(strings.guideAckAction) } },
     )
 }

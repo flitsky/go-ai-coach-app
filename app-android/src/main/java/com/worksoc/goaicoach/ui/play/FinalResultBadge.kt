@@ -20,6 +20,11 @@ import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.designsystem.AppElevation
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -71,19 +76,19 @@ internal fun FinalResultBadge(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(AppRadius.Corner12),
         color = MaterialTheme.colorScheme.surfaceVariant,
         // ⚠️ **무승부에는 테두리를 두르지 않는다** — 아무도 안 이겼다. 중립색으로라도 두르면
         // 「누군가 이겼는데 색을 못 읽겠다」로 보인다(없는 편이 정직하다).
         border = winnerBorderColor(winner)?.let { BorderStroke(WinnerBorderWidth, it) },
-        tonalElevation = 3.dp,
+        tonalElevation = AppElevation.Level2,
         shadowElevation = 2.dp,
     ) {
         Column(
             // ⚠️ **고정 높이를 주지 않는다**(함정 9) — 세 줄이고 글꼴 배율이 1.3까지 올라간다.
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space8),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
         ) {
             // ⚠️ **무승부에는 트로피를 달지 않는다** — 아무도 이기지 않았다.
             // (덤이 모두 반집이라 실제로는 나올 수 없지만, 「없는 경우」를 그리면 조용히 틀린다.)
@@ -98,7 +103,7 @@ internal fun FinalResultBadge(
                 text = winner
                     ?.let { strings.winnerWithoutMarginLabel(strings.colorLabel(it)) }
                     ?: strings.drawLabel,
-                fontSize = 14.sp,
+                fontSize = AppTextSize.Text14,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -106,7 +111,7 @@ internal fun FinalResultBadge(
             if (detail != null) {
                 Text(
                     text = detail,
-                    fontSize = 12.sp,
+                    fontSize = AppTextSize.Text12,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -130,8 +135,8 @@ private val WinnerBorderWidth = 2.5.dp
  * 고칠 것**(`FinalResultBadgeContractTest`가 이 규칙을 문자로 고정한다).
  */
 private fun winnerBorderColor(winner: StoneColor?): Color? = when (winner) {
-    StoneColor.Black -> Color.Black
-    StoneColor.White -> Color.Gray
+    StoneColor.Black -> StonePalette.BlackGlyph
+    StoneColor.White -> StonePalette.WhiteGlyph
     null -> null
 }
 

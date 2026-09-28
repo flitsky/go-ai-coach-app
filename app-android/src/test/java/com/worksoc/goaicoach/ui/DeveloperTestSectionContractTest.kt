@@ -24,12 +24,12 @@ class DeveloperTestSectionContractTest {
 
     @Test
     fun theSectionReproducesTheSpacingItsParentUsedToGiveIt() {
-        // ⚠️ 원래 이 자식들은 설정 화면 `Column(spacedBy(12.dp))`의 **직계**였다. 하나로 묶는
+        // ⚠️ 원래 이 자식들은 설정 화면 `Column(spacedBy(12.dp))`(지금은 `AppSpacing.Space12`, #51)의 **직계**였다. 하나로 묶는
         // 순간 그 간격이 사라지므로 안쪽에서 같은 값을 다시 준다. **이 줄이 없으면 섹션 전체가
         // 붙어 버린다** — 컴파일도 테스트도 통과하는 채로 화면만 망가지는 종류다.
         assertTrue(
             "개발자 섹션이 부모가 주던 간격을 재현하지 않는다 — 항목들이 붙어서 그려진다(#102).",
-            "verticalArrangement = Arrangement.spacedBy(12.dp)" in section,
+            "verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12)" in section,
         )
     }
 

@@ -21,13 +21,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-/**
- * Google 브랜드 블루 — 버튼 배경이 아니라 [SocialLoginButton]의 왼쪽 글리프 색으로만 쓴다.
- * (Google 로고 자체를 실제 에셋으로 그릴 수 있는 경우엔 [leadingIconRes]가 우선이라
- * 이 색은 안 쓰인다 — 벡터 에셋이 없는 다른 수단의 단색 placeholder용으로 남겨둔다.)
- */
-internal val GoogleBrandBlue = Color(0xFF4285F4)
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 
 /**
  * Google/Apple/이메일 등 외부 로그인 수단 버튼의 공통 스타일. [OnboardingScreen]과
@@ -80,8 +75,8 @@ internal fun SocialLoginButton(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(text = label, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Spacer(modifier = Modifier.width(AppSpacing.Space12))
+            Text(text = label, fontSize = AppTextSize.Text18, fontWeight = FontWeight.Medium)
         }
     }
 }

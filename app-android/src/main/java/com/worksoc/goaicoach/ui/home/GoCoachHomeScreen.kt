@@ -78,6 +78,11 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.ui.board.GoBoard
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.HomeLogoPalette
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
@@ -143,7 +148,7 @@ internal fun GoCoachHomeScreen(
                 // ⚠️ 아래 Spacer 전환과 **반드시 함께** 가야 한다. 이것만 넣으면 maxHeight가
                 // Infinity가 돼 가중치 자식이 0으로 붕괴하고 로고가 통째로 사라진다.
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(AppSpacing.Space24),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // 좌=마이 페이지, 우=설정(#34, 2026-08-30 사용자 지시). 언어 칩이 설정 안으로
@@ -193,12 +198,12 @@ internal fun GoCoachHomeScreen(
                                 .align(Alignment.TopEnd)
                                 .offset(x = 40.dp, y = (-2).dp)
                                 .clickable { showSubscribeDialog = true }
-                                .padding(horizontal = 7.dp, vertical = 2.dp),
+                                .padding(horizontal = 7.dp, vertical = AppSpacing.Space2),
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space20))
 
                 Text(
                     text = strings.appTitle,
@@ -210,11 +215,11 @@ internal fun GoCoachHomeScreen(
 
                 Text(
                     text = strings.homeTagline,
-                    fontSize = 14.sp,
+                    fontSize = AppTextSize.Text14,
                     fontWeight = FontWeight.Normal,
                     color = MaterialTheme.colorScheme.secondary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 6.dp),
+                    modifier = Modifier.padding(top = AppSpacing.Space6),
                 )
             }
 
@@ -235,17 +240,17 @@ internal fun GoCoachHomeScreen(
 
                 Box(
                     modifier = Modifier
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = AppSpacing.Space16)
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                         .clickable(onClick = onResumeClick)
-                        .padding(horizontal = 18.dp, vertical = 10.dp),
+                        .padding(horizontal = AppSpacing.Space18, vertical = AppSpacing.Space10),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "▶ " + strings.resumeTitle,
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 18.sp,
+                        fontSize = AppTextSize.Text18,
                         fontWeight = FontWeight.ExtraBold,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
@@ -266,8 +271,8 @@ internal fun GoCoachHomeScreen(
                     title = strings.startMatch,
                     subtitle = strings.homeStartMatchSubtitle,
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleColor = Color.White,
-                    subtitleColor = Color.White.copy(alpha = 0.85f),
+                    titleColor = MaterialTheme.colorScheme.onPrimary,
+                    subtitleColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                     onClick = {
                         if (hasResumableSession) {
                             showOverwriteWarningDialog = true
@@ -291,7 +296,7 @@ internal fun GoCoachHomeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // "대국 기록" (Game History) 카드 — 대국 하기 바로 아래다(백로그 #45, 2026-08-30
             // 사용자 지시). 두고 → 돌아보는 동선이 앱 안에서 이어지는데, 학습이 사이에 끼면
@@ -306,7 +311,7 @@ internal fun GoCoachHomeScreen(
                 icon = { GameHistoryBoardIcon() },
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // "학습 하기" (Study Mode) 카드
             MenuCard(
@@ -321,7 +326,7 @@ internal fun GoCoachHomeScreen(
 
             // 🧪 실험실 기능(#179): 설정 > 실험실에서 활성화한 경우에만 메뉴에 노출 (기본값: 비활성/숨김)
             if (isCameraBoardScanEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space16))
                 MenuCard(
                     title = strings.featureShortName(FeatureId.BoardScan),
                     subtitle = strings.boardScanSubtitle(),
@@ -380,17 +385,17 @@ internal fun GoCoachHomeScreen(
 private fun HomeTopChip(emoji: String, label: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(AppRadius.Corner18))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = AppSpacing.Space14, vertical = AppSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
     ) {
         Text(
             text = "$emoji $label",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
+            fontSize = AppTextSize.Text12,
             fontWeight = FontWeight.Bold,
         )
     }
@@ -412,7 +417,7 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
     val dashedStrokeWidthPx = with(LocalDensity.current) { 2.dp.toPx() }
 
     val borderModifier = when {
-        subscribed -> Modifier.border(2.dp, PremiumGoldGradient, CircleShape)
+        subscribed -> Modifier.border(AppBorderWidth.Strong, PremiumGoldGradient, CircleShape)
         showsPremiumPrompt -> Modifier.drawWithContent {
             drawContent()
             drawCircle(
@@ -424,14 +429,14 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
                 ),
             )
         }
-        else -> Modifier.border(1.dp, Color(0xFFE5DDD0), CircleShape)
+        else -> Modifier.border(AppBorderWidth.Hairline, HomeLogoPalette.RingBorder, CircleShape)
     }
 
     Box(
         modifier = Modifier
             .size(125.dp)
             .shadow(elevation = 8.dp, shape = CircleShape, clip = false)
-            .background(Color(0xFFF5F0E6), CircleShape)
+            .background(HomeLogoPalette.Backdrop, CircleShape)
             .then(borderModifier),
         contentAlignment = Alignment.Center,
     ) {
@@ -450,12 +455,7 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
                     .shadow(elevation = 4.dp, shape = CircleShape)
                     .background(
                         brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFF7A7A7A),
-                                Color(0xFF3D3D3D),
-                                Color(0xFF161616),
-                                Color(0xFF000000),
-                            ),
+                            colors = HomeLogoPalette.BlackStoneGradient,
                             center = highlightCenter,
                             radius = highlightRadius,
                         ),
@@ -468,14 +468,10 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
                 modifier = Modifier
                     .size(stoneSizeDp)
                     .shadow(elevation = 4.dp, shape = CircleShape)
-                    .border(1.dp, Color(0xFFD3C9B8), CircleShape)
+                    .border(AppBorderWidth.Hairline, HomeLogoPalette.WhiteStoneBorder, CircleShape)
                     .background(
                         brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFFFFFFF),
-                                Color(0xFFF7F3EB),
-                                Color(0xFFD6CCC0),
-                            ),
+                            colors = HomeLogoPalette.WhiteStoneGradient,
                             center = highlightCenter,
                             radius = highlightRadius,
                         ),
@@ -510,11 +506,11 @@ internal fun MenuCard(
     icon: (@Composable () -> Unit)? = null,
 ) {
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(AppRadius.Corner14),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(AppRadius.Corner14))
             .clickable(onClick = onClick),
     ) {
         Box(
@@ -545,10 +541,10 @@ internal fun MenuCard(
                 // 제목·부제 앞의 위·아래·오른쪽 여백(24dp)은 그대로 두고, 아이콘과 카드 왼쪽
                 // 테두리 사이만 좁혀 아이콘이 카드에 바짝 붙게 한다.
                 .padding(
-                    start = if (icon != null) MenuCardIconStartPadding else 24.dp,
-                    top = 24.dp,
-                    end = 24.dp,
-                    bottom = 24.dp,
+                    start = if (icon != null) MenuCardIconStartPadding else AppSpacing.Space24,
+                    top = AppSpacing.Space24,
+                    end = AppSpacing.Space24,
+                    bottom = AppSpacing.Space24,
                 ),
             // 카드가 최소 높이일 때 내용을 세로 가운데에 둔다. 예전에는 `fillMaxSize` 자식
             // Column의 `Arrangement.Center`가 하던 일인데, 높이가 내용에 따라 달라진 지금은
@@ -569,12 +565,12 @@ internal fun MenuCard(
                             // 2026-09-21 사용자 요청 — 좌측은 최소, 상·하·우측은 적당히.
                             // 카드 왼쪽 테두리와의 거리는 `MenuCardIconStartPadding`이 이미
                             // 맡고 있어 이 안쪽 여백까지 왼쪽에 더 주면 이중으로 벌어진다.
-                            .padding(start = 0.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
+                            .padding(start = 0.dp, top = AppSpacing.Space4, end = AppSpacing.Space4, bottom = AppSpacing.Space4),
                         contentAlignment = Alignment.Center,
                     ) {
                         icon()
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(AppSpacing.Space12))
                 }
                 Column(
                     modifier = Modifier.weight(1f),
@@ -582,16 +578,16 @@ internal fun MenuCard(
                     Text(
                         text = title,
                         color = titleColor,
-                        fontSize = 20.sp,
+                        fontSize = AppTextSize.Text20,
                         fontWeight = FontWeight.Bold,
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
 
                     Text(
                         text = subtitle,
                         color = subtitleColor,
-                        fontSize = 13.sp,
+                        fontSize = AppTextSize.Text13,
                         fontWeight = FontWeight.Normal,
                     )
                 }
@@ -947,7 +943,7 @@ private fun BoardScanPreviewIcon() {
         ) {
             Text(
                 text = "📷",
-                fontSize = 20.sp,
+                fontSize = AppTextSize.Text20,
                 textAlign = TextAlign.Center,
             )
         }

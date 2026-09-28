@@ -53,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +61,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import java.util.concurrent.Executors
 
 @Composable
@@ -115,7 +117,7 @@ internal fun CameraCaptureView(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(VisionPalette.Backdrop),
     ) {
         if (hasCameraPermission) {
             // CameraX 프리뷰
@@ -155,7 +157,7 @@ internal fun CameraCaptureView(
 
                 // 가이드라인 사각형 테두리
                 drawRect(
-                    color = Color(0xFF4CAF50),
+                    color = VisionPalette.Guide,
                     topLeft = Offset(left, top),
                     size = Size(boxWidth, boxWidth),
                     style = Stroke(width = 2.5.dp.toPx()),
@@ -164,7 +166,7 @@ internal fun CameraCaptureView(
                 // 4개 귀 화점/코너 강조 표시
                 val cornerLen = 24.dp.toPx()
                 val cornerStroke = 4.dp.toPx()
-                val goldColor = Color(0xFFFFD700)
+                val goldColor = VisionPalette.GuideHighlight
 
                 // 좌상
                 drawLine(goldColor, Offset(left, top), Offset(left + cornerLen, top), cornerStroke)
@@ -184,30 +186,30 @@ internal fun CameraCaptureView(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp),
+                    .padding(AppSpacing.Space24),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
                     text = "바둑판 촬영을 위해\n카메라 권한이 필요합니다",
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
+                    color = VisionPalette.OnBackdrop,
                     fontWeight = FontWeight.Bold,
                     lineHeight = 26.sp,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space16))
                 Button(
                     onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
                     Text("권한 허용하기")
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(AppSpacing.Space12))
                 OutlinedButton(
                     onClick = { galleryLauncher.launch("image/*") },
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
-                    Text("갤러리에서 사진 불러오기", color = Color.White)
+                    Text("갤러리에서 사진 불러오기", color = VisionPalette.OnBackdrop)
                 }
             }
         }
@@ -216,15 +218,15 @@ internal fun CameraCaptureView(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space20)
                 .align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedButton(
                 onClick = onClose,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                shape = RoundedCornerShape(AppRadius.Corner8),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VisionPalette.OnBackdrop),
             ) {
                 Text("닫기")
             }
@@ -232,7 +234,7 @@ internal fun CameraCaptureView(
             Text(
                 text = "바둑판이 초록 사각형에 꽉 차게 맞춰주세요",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.White,
+                color = VisionPalette.OnBackdrop,
                 fontWeight = FontWeight.Medium,
             )
         }
@@ -249,8 +251,8 @@ internal fun CameraCaptureView(
             // 갤러리 불러오기 버튼
             OutlinedButton(
                 onClick = { galleryLauncher.launch("image/*") },
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                shape = RoundedCornerShape(AppRadius.Corner8),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VisionPalette.OnBackdrop),
             ) {
                 Text("사진첩")
             }
@@ -260,10 +262,10 @@ internal fun CameraCaptureView(
                 modifier = Modifier
                     .size(76.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.3f))
-                    .padding(6.dp)
+                    .background(VisionPalette.OnBackdrop.copy(alpha = 0.3f))
+                    .padding(AppSpacing.Space6)
                     .clip(CircleShape)
-                    .background(if (isCapturing) Color.Gray else Color.White)
+                    .background(if (isCapturing) VisionPalette.ShutterBusy else VisionPalette.OnBackdrop)
                     .clickable(enabled = hasCameraPermission && !isCapturing) {
                         if (isCapturing) return@clickable
                         isCapturing = true
@@ -290,7 +292,7 @@ internal fun CameraCaptureView(
                 if (isCapturing) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(28.dp),
-                        color = Color.DarkGray,
+                        color = VisionPalette.ShutterProgress,
                         strokeWidth = 3.dp,
                     )
                 }

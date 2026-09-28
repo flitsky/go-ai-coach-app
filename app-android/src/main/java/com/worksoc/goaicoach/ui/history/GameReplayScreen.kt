@@ -38,7 +38,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.ScoreSwingHighlight
@@ -56,6 +55,8 @@ import com.worksoc.goaicoach.ui.designsystem.ActionButton
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonContentPadding
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonMinHeight
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
@@ -183,7 +184,7 @@ internal fun GameReplayScreen(
                 text = gameReplayTruncatedFor(strings.language, timeline.truncatedAtMoveNumber!!),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = AppSpacing.Space16),
             )
         }
 
@@ -229,7 +230,7 @@ internal fun GameReplayScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = AppSpacing.Space12),
             contentAlignment = Alignment.Center,
         ) {
             GoBoard(
@@ -288,8 +289,8 @@ private fun ReplayBranchSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(horizontal = AppSpacing.Space16),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
     ) {
         Button(
             onClick = onStartBranch,
@@ -330,7 +331,7 @@ private fun ReplayHeader(
             .fillMaxWidth()
             // 대국 기록 목록과 같은 자리·같은 방식(#25).
             .statusBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBackClick) {
@@ -340,10 +341,10 @@ private fun ReplayHeader(
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
-        Column(modifier = Modifier.padding(start = 8.dp)) {
+        Column(modifier = Modifier.padding(start = AppSpacing.Space8)) {
             Text(
                 text = title,
-                fontSize = 20.sp,
+                fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -369,8 +370,8 @@ private fun ReplayControls(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(horizontal = AppSpacing.Space16),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
     ) {
         // ⚠️ **타이틀은 "17수"가 아니라 "17"이다**(2026-09-19 사용자) — 접미사(한국어 "수",
         // 일본어·중국어 "手")를 뗐다. 언어마다 다르게 골라 떼면 넷 중 셋만 짧아지므로 넷 다
@@ -420,7 +421,7 @@ private fun ReplayControls(
         // 아래 4버튼과 실착 칩(그 수로 점프)만 남는다.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
         ) {
             ActionButton(
                 label = "⏮",
@@ -456,7 +457,7 @@ private fun ReplayControls(
         // 배선할 때 같은 기능은 같은 이름이어야 한다.
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
         ) {
             ActionButton(
                 label = strings.featureShortName(FeatureId.Eval),
@@ -495,7 +496,7 @@ private fun ReplayScoreSection(
     }
     val hasAnyScoreData = remember(replay) { replay.scoreSnapshots.any { it.hasScoreData } }
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.padding(horizontal = AppSpacing.Space16)) {
         if (!hasAnyScoreData) {
             Text(
                 text = gameReplayNoScoreDataFor(strings.language),
@@ -538,8 +539,8 @@ private fun ReplayScoreSwingSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+            .padding(horizontal = AppSpacing.Space16),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
     ) {
         Text(
             text = "${gameReplayScoreSwingSectionFor(language)} \u00B7 ${gameReplayScoreSwingCriterionFor(language)}",
@@ -559,7 +560,7 @@ private fun ReplayScoreSwingSection(
                 color = MaterialTheme.colorScheme.secondary,
             )
 
-            else -> LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            else -> LazyRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
                 items(swings, key = { it.moveNumber }) { highlight ->
                     ReplayToggleButton(
                         label = gameReplayScoreSwingChipLabelFor(
@@ -635,4 +636,4 @@ private fun ReplayToggleButton(
 private val ScoreSwingChipMinHeight: Dp = ActionButtonMinHeight * 0.8f
 
 /** 낮아진 칩에 맞춘 안쪽 여백 — 높이만 줄이고 패딩을 그대로 두면 글자가 상자에 낌다. */
-private val ScoreSwingChipContentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+private val ScoreSwingChipContentPadding = PaddingValues(horizontal = AppSpacing.Space10, vertical = AppSpacing.Space4)

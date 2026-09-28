@@ -41,6 +41,7 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.shouldCollapseMenuAfterEvent
 import com.worksoc.goaicoach.ui.board.MinFittedBoardSide
 import com.worksoc.goaicoach.ui.board.fittedBoardMaxHeightPx
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
@@ -195,7 +196,7 @@ internal fun GoCoachContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)
                 ) {
                     ExpandedGameMenuSection(
                         screenState = screenState,
@@ -232,7 +233,7 @@ internal fun GoCoachContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = GameScreenEdgePadding, vertical = 12.dp),
+                    .padding(horizontal = GameScreenEdgePadding, vertical = AppSpacing.Space12),
             ) {
                 GamePlaySection(
                     screenState = screenState,
@@ -262,7 +263,7 @@ internal fun GoCoachContent(
                     .wrapContentHeight(align = Alignment.Top)
                     .onSizeChanged { size -> contentHeightPx = size.height }
                     .padding(GameScreenEdgePadding),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
             ) {
                 GameHeaderSection(
                     screenState = screenState,

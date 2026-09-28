@@ -35,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,6 +45,11 @@ import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.ui.board.GoBoard
+import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppPalette
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
@@ -115,7 +119,7 @@ internal fun GameSetupLobby(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
@@ -128,10 +132,10 @@ internal fun GameSetupLobby(
             
             Text(
                 text = strings.matchSetup,
-                fontSize = 20.sp,
+                fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 8.dp)
+                modifier = Modifier.padding(start = AppSpacing.Space8)
             )
         }
 
@@ -139,8 +143,8 @@ internal fun GameSetupLobby(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = AppSpacing.Space16),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space16)
         ) {
             // [1] 플레이어 설정 패널
             PlayerSetupPanel(
@@ -208,7 +212,7 @@ internal fun GameSetupLobby(
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
         }
 
         // [4] 하단 고정 영역 — 프리미엄 모드 카드 + 대국 시작하기 버튼. 스크롤에 묻히지 않고
@@ -221,9 +225,9 @@ internal fun GameSetupLobby(
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 .navigationBarsPadding()
-                .padding(16.dp),
+                .padding(AppSpacing.Space16),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             // 프리미엄이 이미 활성 상태면 카드를 아예 없애고, 아래 "대국 시작하기" 버튼
             // 자체를 프리미엄 스타일로 표현하는 것으로 활성 상태를 알린다(중복 안내 방지).
@@ -267,7 +271,7 @@ internal fun GameSetupLobby(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (premium.isActive) PremiumGold else MaterialTheme.colorScheme.primary
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AppRadius.Corner12),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -275,9 +279,9 @@ internal fun GameSetupLobby(
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = if (premium.isActive) "👑 ${strings.startMatchAction}" else strings.startMatchAction,
-                        fontSize = 18.sp,
+                        fontSize = AppTextSize.Text18,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = AppPalette.OnAccent,
                         modifier = Modifier.align(Alignment.Center),
                     )
                     // 오른쪽 끝에 현재 프리미엄 상태를 보여준다 — 광고 시청(시간 기반)이면
@@ -286,16 +290,16 @@ internal fun GameSetupLobby(
                     // isActive 체크는 없다).
                     if (premium.isActive) {
                         Surface(
-                            color = Color.White.copy(alpha = 0.22f),
-                            shape = RoundedCornerShape(8.dp),
+                            color = AppPalette.OnAccent.copy(alpha = 0.22f),
+                            shape = RoundedCornerShape(AppRadius.Corner8),
                             modifier = Modifier.align(Alignment.CenterEnd),
                         ) {
                             Text(
                                 text = remainingAdGrantMillis?.let(::formatRemainingTime) ?: "∞",
-                                fontSize = 12.sp,
+                                fontSize = AppTextSize.Text12,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = AppPalette.OnAccent,
+                                modifier = Modifier.padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space4),
                             )
                         }
                     }
@@ -307,9 +311,9 @@ internal fun GameSetupLobby(
             if (!canStartMatch) {
                 Text(
                     text = strings.engineNotReadyToStart,
-                    fontSize = 12.sp,
+                    fontSize = AppTextSize.Text12,
                     color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(top = 6.dp),
+                    modifier = Modifier.padding(top = AppSpacing.Space6),
                 )
             }
         }
@@ -342,36 +346,36 @@ private fun PremiumModeCard(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(PremiumGoldLight.copy(alpha = 0.18f), PremiumCardShape)
-            .border(1.5.dp, PremiumGoldGradient, PremiumCardShape)
+            .border(AppBorderWidth.Emphasis, PremiumGoldGradient, PremiumCardShape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 14.dp),
+            .padding(horizontal = AppSpacing.Space18, vertical = AppSpacing.Space14),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = "👑", fontSize = 22.sp)
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(AppSpacing.Space10))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = strings.premiumModeTitle,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 15.sp,
+                fontSize = AppTextSize.Text15,
                 color = PremiumGoldDeep,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = strings.premiumModeFeatureList,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(AppSpacing.Space8))
         Text(
             text = "›",
             color = PremiumGold,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
+            fontSize = AppTextSize.Text20,
         )
     }
 }

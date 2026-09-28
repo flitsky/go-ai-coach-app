@@ -10,9 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
@@ -44,15 +44,15 @@ internal fun DeveloperAutoPlayDelayControl(
     val strings = LocalUiStrings.current
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // ⚠️ 고정 높이를 주지 않는다(함정 9번) — 주변 행들과 같은 골격이라 글꼴 배율을 따라간다.
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = strings.autoDelay, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = strings.autoDelay, fontSize = AppTextSize.Text14, fontWeight = FontWeight.SemiBold)
             Text(
                 text = strings.settingsDevAutoPlayDelaySubtitle,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.secondary,
             )
         }

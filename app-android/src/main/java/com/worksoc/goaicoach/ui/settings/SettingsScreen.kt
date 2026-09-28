@@ -41,8 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.BuildConfig
@@ -57,11 +55,14 @@ import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.ui.account.EmailSignInDialog
-import com.worksoc.goaicoach.ui.account.GoogleBrandBlue
 import com.worksoc.goaicoach.ui.account.SocialLoginButton
 import com.worksoc.goaicoach.ui.account.attemptAccountDeletion
 import com.worksoc.goaicoach.ui.account.attemptEmailSignIn
 import com.worksoc.goaicoach.ui.account.attemptGoogleSignIn
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.GoogleBrandBlue
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
@@ -220,7 +221,7 @@ internal fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBackClick) {
@@ -233,10 +234,10 @@ internal fun SettingsScreen(
 
             Text(
                 text = strings.settingsTitle,
-                fontSize = 20.sp,
+                fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 8.dp),
+                modifier = Modifier.padding(start = AppSpacing.Space8),
             )
         }
 
@@ -245,8 +246,8 @@ internal fun SettingsScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = AppSpacing.Space24),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             LanguageSettingsPanel(
                 selectedLanguage = selectedLanguage,
@@ -262,7 +263,7 @@ internal fun SettingsScreen(
 
             Text(
                 text = strings.matchSetup,
-                fontSize = 14.sp,
+                fontSize = AppTextSize.Text14,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -318,7 +319,7 @@ internal fun SettingsScreen(
                 onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space4))
             HorizontalDivider()
 
             // 로그인 기능 자체가 꺼져 있으면(FeatureFlags.isLoginEnabled = false) 계정 섹션을
@@ -327,7 +328,7 @@ internal fun SettingsScreen(
             if (FeatureFlags.isLoginEnabled) {
                 Text(
                     text = strings.settingsAccountSectionTitle,
-                    fontSize = 14.sp,
+                    fontSize = AppTextSize.Text14,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -338,7 +339,7 @@ internal fun SettingsScreen(
                         AuthProvider.Email -> strings.settingsEmailStatusMessage
                         else -> strings.settingsGuestStatusMessage
                     },
-                    fontSize = 13.sp,
+                    fontSize = AppTextSize.Text13,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
 
@@ -380,32 +381,32 @@ internal fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space4))
             HorizontalDivider()
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
             Card(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(AppRadius.Corner12),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp, horizontal = 12.dp),
+                        .padding(vertical = AppSpacing.Space16, horizontal = AppSpacing.Space12),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = strings.appTitle,
-                        fontSize = 14.sp,
+                        fontSize = AppTextSize.Text14,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
                     Text(
                         text = "${strings.settingsVersionLabel} ${BuildConfig.VERSION_NAME} · " +
                             "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
-                        fontSize = 12.sp,
+                        fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         // ⚠️ **다시 `clickable`이다 — 홀드 감지를 걷어냈다**(2026-09-04, #84).
                         // #77이 여기에 3초 홀드를 얹은 것은 2차 진입을 숨기기 위해서였는데,
@@ -436,10 +437,10 @@ internal fun SettingsScreen(
                             }
                         },
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space8))
                     Text(
                         text = strings.settingsPrivacyPolicyLabel,
-                        fontSize = 12.sp,
+                        fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.primary,
                         textDecoration = TextDecoration.Underline,
                         modifier = Modifier.clickable {
@@ -488,7 +489,7 @@ internal fun SettingsScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
         }
     }
 

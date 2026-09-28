@@ -28,8 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
+import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.studyLessonTrackFor
@@ -94,8 +95,8 @@ internal fun StudyScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = AppSpacing.Space16),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             StudyCategory.entries.forEach { category ->
                 StudyEntryRow(
@@ -120,7 +121,7 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+            .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBackClick) {
@@ -133,10 +134,10 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
 
         Text(
             text = title,
-            fontSize = 20.sp,
+            fontSize = AppTextSize.Text20,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 8.dp),
+            modifier = Modifier.padding(start = AppSpacing.Space8),
         )
     }
 }
@@ -172,26 +173,26 @@ internal fun StudyEntryRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(AppRadius.Corner10))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (enabled) 1f else 0.5f))
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space16),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
         ) {
             Text(
                 text = title,
-                fontSize = 16.sp,
+                fontSize = AppTextSize.Text16,
                 fontWeight = FontWeight.Bold,
                 color = titleColor,
             )
             Text(
                 text = subtitle,
-                fontSize = 13.sp,
+                fontSize = AppTextSize.Text13,
                 color = subtitleColor,
             )
         }
@@ -199,13 +200,13 @@ internal fun StudyEntryRow(
         if (comingSoonLabel != null) {
             Text(
                 text = comingSoonLabel,
-                fontSize = 12.sp,
+                fontSize = AppTextSize.Text12,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(AppRadius.Corner6))
                     .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                    .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space4),
             )
         }
     }
