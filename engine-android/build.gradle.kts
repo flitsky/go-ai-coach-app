@@ -23,9 +23,15 @@ kotlin {
 }
 
 dependencies {
-    api(project(":shared"))
+    // ⚠️ 본 코드는 **엔진 계약·계가기·도메인만** 본다(refactor backlog #49). 어댑터가 앱 계층(`application.*`·
+    //    `match`·`shared.policy` 등 `:shared`의 패키지)을 import하면 이제 컴파일 에러다 — 전에는 `api(":shared")`라
+    //    아무것도 그것을 막지 않았다. 앱 계층이 필요해 보이면 그 코드는 어댑터가 아니라 `:shared`에 속한다.
+    api(project(":core:enginecontract"))
     implementation(libs.kotlinx.coroutines.core)
 
+    // 테스트만 `:shared`를 본다 — 세션 클라이언트(`LocalEngineSessionClient`)와 `syncToGameState`로 어댑터를
+    // 실제 호출 경로 그대로 몰아 보는 테스트가 있다. `testImplementation`이라 본 코드의 경계는 그대로다.
+    testImplementation(project(":shared"))
     testImplementation(kotlin("test"))
     testImplementation("org.json:json:20240303")
 }
