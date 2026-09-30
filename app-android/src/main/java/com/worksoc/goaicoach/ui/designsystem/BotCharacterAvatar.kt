@@ -2,8 +2,10 @@ package com.worksoc.goaicoach.ui.designsystem
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +22,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -210,3 +213,28 @@ private const val SeamWidthRatio = 0.02f
 
 /** 채도 0 행렬. 매번 만들면 리컴포지션마다 새 객체가 생기므로 한 번만 만들어 둔다. */
 private val GreyscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+
+/**
+ * 캐릭터 원화를 정사각형 그대로 그린다. `BotCharacterAvatar`를
+ * 재사용하지 않는 이유는 그쪽이 원형 클립·잠금 회색조용이기 때문이다 — 여기서는 항상
+ * "보유·선택된" 캐릭터만 다루므로 그 상태들이 필요 없다. 원화가 이미 투명 배경이라(직접 확인)
+ * 정사각형으로 그대로 둬도 잘린 티가 나지 않는다.
+ * 2026-09-22 사용자 요청: 불투명도 90%(alpha = 0.9f)를 적용해 카드 배경과 부드럽게 어우러지도록 한다.
+ *
+ * ⚠️ **홈 카드(`ui.home`의 `currentAiCharacterOrDefault`·`GamePlayPreviewIcon`, #192)에서 여기로 내려왔다**(백로그 #200) —
+ * 대국 화면(`ui.play`)의 「복기 하기」 추천 말풍선도 같은 원화를 쓰는데, 대국 화면이 홈 화면 파일을 부르게 두지 않으려고
+ * 그림 해석([botAvatarRes])이 있는 이 층으로 옮겼다. 코드는 한 줄도 바꾸지 않았다.
+ */
+@Composable
+internal fun BotCharacterSquareIcon(character: BotCharacter, modifier: Modifier = Modifier) {
+    val res = botAvatarRes(character) ?: return
+    Image(
+        painter = painterResource(res),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        alpha = 0.9f,
+        // ⚠️ **기본값이 `fillMaxSize()`인 것은 이 자리가 원래 슬롯을 꽉 채우던 자리라서다.**
+        // 홈의 `GamePlayPreviewIcon`은 판 위에 70%로 얹으려고 이 구멍을 쓴다(백로그 #192).
+        modifier = modifier.then(Modifier.fillMaxSize()),
+    )
+}

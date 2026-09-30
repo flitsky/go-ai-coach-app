@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -54,10 +53,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -82,11 +79,11 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.BotCharacterSquareIcon
 import com.worksoc.goaicoach.ui.designsystem.HomeLogoPalette
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
-import com.worksoc.goaicoach.ui.designsystem.botAvatarRes
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
@@ -636,27 +633,6 @@ private fun defaultAiCharacter(): BotCharacter =
         PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = DefaultAiCharacterLevel),
     ) ?: BotCharacterCatalog.fastBeginnerRoster.getOrNull(2)
         ?: BotCharacterCatalog.fastBeginnerRoster.first()
-
-/**
- * [currentAiCharacterOrDefault]가 고른 캐릭터를 정사각형 그대로 그린다. `BotCharacterAvatar`를
- * 재사용하지 않는 이유는 그쪽이 원형 클립·잠금 회색조용이기 때문이다 — 여기서는 항상
- * "보유·선택된" 캐릭터만 다루므로 그 상태들이 필요 없다. 원화가 이미 투명 배경이라(직접 확인)
- * 정사각형으로 그대로 둬도 잘린 티가 나지 않는다.
- * 2026-09-22 사용자 요청: 불투명도 90%(alpha = 0.9f)를 적용해 카드 배경과 부드럽게 어우러지도록 한다.
- */
-@Composable
-internal fun BotCharacterSquareIcon(character: BotCharacter, modifier: Modifier = Modifier) {
-    val res = botAvatarRes(character) ?: return
-    Image(
-        painter = painterResource(res),
-        contentDescription = null,
-        contentScale = ContentScale.Fit,
-        alpha = 0.9f,
-        // ⚠️ **기본값이 `fillMaxSize()`인 것은 이 자리가 원래 슬롯을 꽉 채우던 자리라서다.**
-        // [GamePlayPreviewIcon]은 판 위에 70%로 얹으려고 이 구멍을 쓴다(백로그 #192).
-        modifier = modifier.then(Modifier.fillMaxSize()),
-    )
-}
 
 /**
  * "대국 하기" 카드의 정적 국면 — **두 점**만 놓는다(2026-09-22 사용자 지시). 「학습 하기」가
