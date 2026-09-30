@@ -20,4 +20,8 @@ internal data class KaTrainUxOptions(
      * 화면의 주인공이라 크게 보는 쪽을 기본으로 둔다. 끄면 화면 좌우 여백(16dp) 안쪽에 그린다.
      */
     val isBoardMaxSize: Boolean = true,
+    /**
+     * 길게 눌러 조준하는 동안 가늠돌을 키울지(백로그 #196·#197). **기본 켜짐**(2026-09-30 사용자 결정 「착수 돌 크게」).
+     */
+    val isLargeHeldStoneEnabled: Boolean = true,
 )

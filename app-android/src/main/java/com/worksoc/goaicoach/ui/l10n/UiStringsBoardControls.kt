@@ -57,3 +57,17 @@ internal fun boardSizeToggleLabelFor(language: UiLanguage, isMaxSize: Boolean): 
 
 internal fun boardSizeSubjectFor(language: UiLanguage): String =
     BoardSizeSubjects.getValue(language)
+
+/**
+ * 설정의 「착수 돌 크게」 토글(백로그 #197) — 길게 눌러 조준하는 동안 가늠돌을 키울지.
+ * ⚠️ `UiStrings` 필드 여유가 4개뿐이라(리팩토링 보류 `#48`) 위성 Map으로 둔다.
+ */
+private val LargeHeldStoneLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "착수 돌 크게",
+    UiLanguage.English to "Large aiming stone",
+    UiLanguage.Japanese to "着手の石を大きく",
+    UiLanguage.ChineseSimplified to "落子预览放大",
+)
+
+internal fun largeHeldStoneLabelFor(language: UiLanguage): String =
+    LargeHeldStoneLabels.getValue(language)

@@ -94,6 +94,7 @@ internal object UserPreferencesCodec {
         putIfChanged("isPlayHapticEnabled", snapshot.isPlayHapticEnabled, defaults.isPlayHapticEnabled)
         putIfChanged("isPlayEffectEnabled", snapshot.isPlayEffectEnabled, defaults.isPlayEffectEnabled)
         putIfChanged("isBoardMaxSize", snapshot.isBoardMaxSize, defaults.isBoardMaxSize)
+        putIfChanged("isLargeHeldStoneEnabled", snapshot.isLargeHeldStoneEnabled, defaults.isLargeHeldStoneEnabled)
 
         return json.toString()
     }
@@ -138,6 +139,7 @@ internal object UserPreferencesCodec {
                 isPlayHapticEnabled = json.optBoolean("isPlayHapticEnabled", defaults.isPlayHapticEnabled),
                 isPlayEffectEnabled = json.optBoolean("isPlayEffectEnabled", defaults.isPlayEffectEnabled),
                 isBoardMaxSize = json.optBoolean("isBoardMaxSize", defaults.isBoardMaxSize),
+                isLargeHeldStoneEnabled = json.optBoolean("isLargeHeldStoneEnabled", defaults.isLargeHeldStoneEnabled),
                 // ⚠️ **없으면 0이다** — 이 키가 생기기 전에 저장한 사용자가 그 경우이고,
                 // 바로 그 사람들에게 마이그레이션이 돌아야 한다. 기본값(현재 세대)을 쓰면
                 // **아무에게도 안 돈다.**

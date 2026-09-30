@@ -28,7 +28,7 @@ internal data class PlayDrag(
      */
     val finger: Offset = touch,
     /**
-     * **길게 눌러 임계를 넘겼는가**(제스처 ③, 백로그 #196) — 참이면 가늠돌을 [HeldGhostStoneRadiusRatio]로 키운다.
+     * **길게 눌러 임계를 넘겼는가**(제스처 ③, 백로그 #196) — 참이고 설정 「착수 돌 크게」가 켜져 있으면 가늠돌을 [HeldGhostStoneRadiusRatio]로 키운다.
      * 누르는 순간(①)과 임계 전(②)은 거짓이다 — 짧은 탭마다 큰 돌이 번쩍이지 않게.
      */
     val held: Boolean = false,
@@ -39,10 +39,10 @@ internal const val StoneRadiusRatio: Float = 0.42f
 
 /**
  * 길게 눌러 조준하는 동안(제스처 ③) 가늠돌의 반지름 — 칸 간격 대비(백로그 #196, 사용자 2026-09-30).
- * *"이웃 교차점을 덮지 않는 한계에 가깝게"* — 이웃 교차점은 1.0칸이라 0.2칸을 남긴다. 이웃 돌(0.42)과는 겹치지만
+ * *"이웃 교차점을 덮지 않는 한계에 가깝게"* 로 0.8이었다가 *"좀 크다"* 로 **0.7**(#197, 같은 날 사용자) — 이웃 교차점(1.0칸)까지 0.3칸을 남긴다. 이웃 돌(0.42)과는 겹치지만
  * 가늠돌은 반투명이라 아래 돌이 비친다. **떼고 난 뒤의 돌**(지연 착수 #144·착수 확인 #138·착수 이펙트 #145)은 전부 [StoneRadiusRatio]다.
  */
-internal const val HeldGhostStoneRadiusRatio: Float = 0.8f
+internal const val HeldGhostStoneRadiusRatio: Float = 0.7f
 
 /** ③에 들어설 때 가늠돌이 커지는 시간. */
 internal const val HeldGhostStoneGrowMillis: Int = 120

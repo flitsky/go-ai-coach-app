@@ -76,6 +76,7 @@ data class UserPreferencesSnapshot(
      */
     val isPlayEffectEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
+    val isLargeHeldStoneEnabled: Boolean = true,
     /**
      * 이 스냅샷이 **어느 설정 세대에 저장됐는가**(백로그 #188).
      *

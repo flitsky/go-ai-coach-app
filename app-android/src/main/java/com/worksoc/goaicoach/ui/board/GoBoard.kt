@@ -127,7 +127,10 @@ internal fun GoBoard(
     var activityFrame by remember { mutableStateOf(0) }
     // 길게 눌러 조준하는 동안(③) 가늠돌을 키운다(#196). `derivedStateOf`라 참/거짓이 바뀔 때만 리컴포즈되고,
     // 커지는 정도는 `playDrag`처럼 **그리기 람다 안에서만** 읽는다.
-    val isHoldingPlay by remember { derivedStateOf { playDrag?.held == true } }
+    // 설정 「착수 돌 크게」를 끄면 커지지 않는다(#197).
+    val isHoldingPlay by remember(uxOptions.isLargeHeldStoneEnabled) {
+        derivedStateOf { uxOptions.isLargeHeldStoneEnabled && playDrag?.held == true }
+    }
     val heldGhostGrowth = remember { Animatable(0f) }
     LaunchedEffect(isHoldingPlay) {
         if (isHoldingPlay) {
@@ -496,7 +499,7 @@ internal fun GoBoard(
                         gameState.boardSize,
                         uxOptions.showCoordinates,
                     )
-                    // ③(길게 눌러 임계를 넘김)이면 칸 간격 0.8배까지 커진다(#196) — 떼면 가늠돌이 사라지고 놓이는 돌은 일반 크기다.
+                    // ③(길게 눌러 임계를 넘김)이면 칸 간격 0.7배까지 커진다(#196·#197) — 떼면 가늠돌이 사라지고 놓이는 돌은 일반 크기다.
                     val stoneRadius = geometry.spacing * heldGhostStoneRadiusRatio(heldGhostGrowth.value)
                     // ⚠️ **1배 판의 가늠돌은 돋보기와 무관하게 항상 그린다**(2026-09-09).
                     // 이것이 손을 따라 움직이는 그 돌이다 — 확대창은 조준을 돕는 덤이고,

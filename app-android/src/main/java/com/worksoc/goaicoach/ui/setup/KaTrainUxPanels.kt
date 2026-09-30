@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
+import com.worksoc.goaicoach.ui.l10n.largeHeldStoneLabelFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 
@@ -181,7 +182,13 @@ internal fun KaTrainUxMenuPanel(
                         onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
                     )
                 } else {
-                    Spacer(modifier = Modifier.weight(1f))
+                    // 「착수 돌 크게」(백로그 #197) — 비어 있던 칸을 쓴다. 길게 눌러 조준하는 동안 가늠돌을 키울지.
+                    OptionSwitchCell(
+                        label = largeHeldStoneLabelFor(strings.language),
+                        checked = options.isLargeHeldStoneEnabled,
+                        modifier = Modifier.weight(1f),
+                        onCheckedChange = { onOptionsChange(options.copy(isLargeHeldStoneEnabled = it)) },
+                    )
                 }
             }
 

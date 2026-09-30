@@ -13,6 +13,7 @@ internal fun UserPreferencesSnapshot.toKaTrainUxOptions(): KaTrainUxOptions =
         isPlayHapticEnabled = isPlayHapticEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isLargeHeldStoneEnabled = isLargeHeldStoneEnabled,
     )
 
 /**

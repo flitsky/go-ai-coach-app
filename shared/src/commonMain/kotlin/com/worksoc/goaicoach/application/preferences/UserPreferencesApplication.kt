@@ -96,6 +96,7 @@ fun buildUserPreferencesSnapshot(
     isPlayHapticEnabled: Boolean = true,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
+    isLargeHeldStoneEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     buildGameSettings(
         boardSize = boardSize,
@@ -116,6 +117,7 @@ fun buildUserPreferencesSnapshot(
         isPlayHapticEnabled = isPlayHapticEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isLargeHeldStoneEnabled = isLargeHeldStoneEnabled,
     )
 
 fun buildUserPreferencesSnapshot(
@@ -131,6 +133,7 @@ fun buildUserPreferencesSnapshot(
     isPlayHapticEnabled: Boolean = true,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
+    isLargeHeldStoneEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     buildUserPreferencesSnapshot(
         playerSetup = settingsState.playerSetup,
@@ -150,6 +153,7 @@ fun buildUserPreferencesSnapshot(
         isPlayHapticEnabled = isPlayHapticEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isLargeHeldStoneEnabled = isLargeHeldStoneEnabled,
     )
 
 internal fun buildGameSettings(
@@ -191,6 +195,7 @@ private fun GameSettings.toUserPreferencesSnapshot(
     isPlayHapticEnabled: Boolean = true,
     isPlayEffectEnabled: Boolean = true,
     isBoardMaxSize: Boolean = true,
+    isLargeHeldStoneEnabled: Boolean = true,
 ): UserPreferencesSnapshot =
     UserPreferencesSnapshot(
         boardSize = boardSize,
@@ -210,4 +215,5 @@ private fun GameSettings.toUserPreferencesSnapshot(
         isPlayHapticEnabled = isPlayHapticEnabled,
         isPlayEffectEnabled = isPlayEffectEnabled,
         isBoardMaxSize = isBoardMaxSize,
+        isLargeHeldStoneEnabled = isLargeHeldStoneEnabled,
     )

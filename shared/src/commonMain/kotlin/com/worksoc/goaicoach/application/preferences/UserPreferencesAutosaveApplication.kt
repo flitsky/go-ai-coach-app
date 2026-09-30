@@ -19,6 +19,7 @@ data class UserPreferencesAutosaveRequest(
     val isPlayHapticEnabled: Boolean = true,
     val isPlayEffectEnabled: Boolean = true,
     val isBoardMaxSize: Boolean = true,
+    val isLargeHeldStoneEnabled: Boolean = true,
 )
 
 /**
@@ -51,6 +52,7 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         isPlayHapticEnabled = request.isPlayHapticEnabled,
         isPlayEffectEnabled = request.isPlayEffectEnabled,
         isBoardMaxSize = request.isBoardMaxSize,
+        isLargeHeldStoneEnabled = request.isLargeHeldStoneEnabled,
     ).copy(
         hasSeenOnboarding = current.hasSeenOnboarding,
         // ⚠️ 글꼴 배율도 이 오토세이브가 관리하지 않는다(백로그 #81) — 빼면 사용자가 배율을
