@@ -47,6 +47,15 @@ internal object KataGoAnalysisParser {
             .toList()
     }
 
+    /**
+     * GTP 탐색 답에서 **루트 방문 수**를 추정한다 — 수마다 마지막 `info move … visits`를 더하고, 루트 자신의
+     * 1방문을 더한다(backlog #203).
+     *
+     * 루트의 첫 방문(루트 노드를 펼치는 평가)은 어느 자식에도 붙지 않는다 — 자식 방문의 합은 **루트 방문 − 1**이다.
+     * 예전에는 그 합을 그대로 돌려줘, 16방문을 다 채워도 `root=15`로 `fill=SHORT`·`engine.visit_fill_short`가
+     * **매 수** 떴고 진짜로 모자란 경우를 가렸다. JSON 분석의 `rootInfo.visits`(진짜 루트)와 같은 뜻이 되게 한다 —
+     * 채움 판정·위치 분석 캐시의 채움 비율·진단이 이 값을 같이 쓴다.
+     */
     fun parseRootVisitsEstimate(response: String): Int? {
         val visitsByMove = linkedMapOf<String, Int>()
         response
@@ -76,7 +85,11 @@ internal object KataGoAnalysisParser {
             .values
             .takeIf { it.isNotEmpty() }
             ?.sum()
+            ?.plus(RootOwnVisit)
     }
+
+    /** 루트 노드를 펼치는 첫 방문 — 어느 자식에도 붙지 않는다([parseRootVisitsEstimate]). */
+    private const val RootOwnVisit = 1
 
     fun attachPointLoss(
         candidates: List<CandidateMove>,

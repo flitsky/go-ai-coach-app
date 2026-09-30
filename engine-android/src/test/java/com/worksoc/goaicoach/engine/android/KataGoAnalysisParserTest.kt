@@ -78,7 +78,27 @@ class KataGoAnalysisParserTest {
             play E5
         """.trimIndent()
 
-        assertEquals(13, KataGoAnalysisParser.parseRootVisitsEstimate(response))
+        assertEquals(14, KataGoAnalysisParser.parseRootVisitsEstimate(response), "자식 합 13 + 루트 자신의 1방문(backlog #203)")
+    }
+
+    /**
+     * backlog #203 — 16방문을 다 채운 탐색은 자식 방문의 합이 15다. 예전엔 그 합을 그대로 돌려줘 매 수
+     * `fill=SHORT`·`engine.visit_fill_short`가 떴다.
+     */
+    @Test
+    fun aFullyFilledSearchReportsTheRequestedRootVisits() {
+        val response = """
+            info move G4 visits 13 winrate 0.51 scoreLead -0.1 prior 0.30 order 0 pv G4
+            info move G5 visits 1 winrate 0.30 scoreLead -0.4 prior 0.10 order 1 pv G5
+            info move F6 visits 1 winrate 0.29 scoreLead -0.5 prior 0.05 order 2 pv F6
+        """.trimIndent()
+
+        assertEquals(16, KataGoAnalysisParser.parseRootVisitsEstimate(response))
+    }
+
+    @Test
+    fun noMoveInfosMeansTheRootVisitsAreUnknown() {
+        assertEquals(null, KataGoAnalysisParser.parseRootVisitsEstimate("= play E5"))
     }
 
     @Test
