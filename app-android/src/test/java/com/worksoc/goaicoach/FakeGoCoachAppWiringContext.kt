@@ -17,6 +17,8 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitPauseMeasurement
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitPauseProbe
 import com.worksoc.goaicoach.application.orchestration.GameSessionDisplayStateApplier
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
@@ -258,7 +260,13 @@ internal class FakeGoCoachAppWiringContext(
         override fun showShort(message: String) = Unit
     }
 
-    // 앱(GoCoachApp.kt)의 `remember { EngineOperationLifecycleController(...) }`와 같은 인자.
+    /**
+     * 엔진을 기다리는 사이 이 프로세스가 멈췄던 것으로 할 수 있는 멈춤 측정(backlog #204) — 앱의 박동(`Dispatchers.Default`에서
+     * 1초마다) 대신이다. 가만두면 멈춤 0(지금까지의 모든 시나리오).
+     */
+    val engineWaitPauses = ScriptedEngineWaitPauseProbe()
+
+    // 앱(GoCoachApp.kt)의 `remember { EngineOperationLifecycleController(...) }`와 같은 인자 — 멈춤 박동만 [engineWaitPauses]로 바꾼다.
     override val lifecycleController: EngineOperationLifecycleController = EngineOperationLifecycleController(
         scope = scope,
         runtimeEventLog = runtimeLog,
@@ -271,6 +279,7 @@ internal class FakeGoCoachAppWiringContext(
             engineIsBlockingBusy = blocking
             engineTurnWaitCompletionSeq = completionSeq
         },
+        engineWaitPauseProbe = engineWaitPauses,
     )
 
     // 앱의 `remember { GameSessionDisplayStateApplier(...) }`와 같은 인자.
@@ -525,6 +534,35 @@ internal class QueueOnlyDispatcher : CoroutineDispatcher(), Delay {
         val next = queue.pollFirst(timeoutMillis, TimeUnit.MILLISECONDS) ?: return false
         next.run()
         return true
+    }
+}
+
+/**
+ * 엔진을 기다리는 사이의 멈춤을 **테스트가 적는** 측정(backlog #204). 앱의 박동은 실제 시간과 스레드에 기대므로 여기서는
+ * 「지금 열린 기다림 동안 이 프로세스가 N ms 멈췄다」를 [pauseProcess]로 직접 적는다 — 동결·VM 정지를 흉내 낸다.
+ * 박동 자체(틈을 재는 규칙)는 `:shared`의 `EngineWaitWatchTest`가 잰다.
+ */
+internal class ScriptedEngineWaitPauseProbe : EngineWaitPauseProbe {
+    private val open = CopyOnWriteArrayList<Measurement>()
+
+    /** 열린 기다림의 수 — 기다림이 끝나면(성공·실패·시간 초과·취소) 줄어야 한다. */
+    val openCount: Int get() = open.size
+
+    /** 지금 엔진을 기다리는 모든 차례가 [millis]만큼 못 돈 것으로 한다. 열린 기다림이 없으면 터진다. */
+    fun pauseProcess(millis: Long) {
+        check(open.isNotEmpty()) { "엔진을 기다리는 차례가 없는데 멈춤을 적으려 했다." }
+        open.forEach { measurement -> measurement.pauseMillis = maxOf(measurement.pauseMillis, millis) }
+    }
+
+    override fun start(): EngineWaitPauseMeasurement = Measurement().also(open::add)
+
+    private inner class Measurement : EngineWaitPauseMeasurement {
+        var pauseMillis = 0L
+
+        override fun finish(): Long {
+            open.remove(this)
+            return pauseMillis
+        }
     }
 }
 

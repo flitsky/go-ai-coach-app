@@ -143,6 +143,9 @@ internal fun wireAutoAiTurnController(
         // 재배선보다 오래 사는 수명 컨트롤러에 둔다 — Job과 같은 이유(#202).
         isAppInForeground = { context.lifecycleController.isAppInForeground },
         markAppInForeground = context.lifecycleController::markAppInForeground,
+        // 기다리는 사이 앱이 멈췄는지 재는 것도 포그라운드 세대가 사는 수명 컨트롤러가 한다(#204).
+        startEngineWaitWatch = context.lifecycleController::startEngineWaitWatch,
+        markAutoAiTurnInterruptedRetry = { position: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().markInterruptedRetry(position)) },
     )
 
 internal fun wireHumanMoveController(

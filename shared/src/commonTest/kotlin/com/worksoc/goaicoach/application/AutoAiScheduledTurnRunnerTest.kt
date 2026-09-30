@@ -27,6 +27,9 @@ import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.EngineStartupResult
 import com.worksoc.goaicoach.application.engine.LocalEngineMoveResult
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitPauseMeasurement
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitProcessPauseThresholdMillis
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitWatch
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
@@ -68,6 +71,7 @@ import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
@@ -468,6 +472,226 @@ class AutoAiScheduledTurnRunnerTest {
     }
 
     /**
+     * backlog #204 (a)·(b)·(e) — 엔진을 기다리는 사이 **포그라운드 세대가 바뀐**(앱이 화면을 떠났다 돌아온) 차례의 시간
+     * 초과는 「엔진 응답 지연」이 아니다. 그 마감은 앱이 화면에 없던 시간까지 쟀다. 그래서 표시(선택 팝업)를 남기지 않고
+     * 그 국면의 조용한 재시도 한 번을 쓴다 — busy가 풀리면 트리거 효과가 **같은 국면**을 다시 요청한다. 다시 요청한 차례가
+     * 또 시간 초과면(또 멈췄더라도) 지금처럼 팝업이다 — 조용한 반복은 없다. 두 줄 다 로그에 멈춤의 신호를 적는다.
+     */
+    @Test
+    fun aTimeoutWhileTheAppLeftTheForegroundRetriesTheSamePositionOnceThenAsks() {
+        val scenario = InterruptedWaitScenario()
+
+        // ── 첫 시도: 기다리는 사이 앱이 화면을 떠났다 돌아왔고(세대 +2), 그 기다림이 시간 초과로 끝났다.
+        scenario.runTimingOutTurn(onWait = { scenario.foregroundGeneration += 2 })
+
+        assertEquals(listOf(scenario.position), scenario.interruptedMarks, "그 국면의 조용한 재시도 한 번을 쓴다")
+        assertEquals(emptyList(), scenario.timedOutMarks, "멈춘 기다림의 시간 초과로 선택 팝업을 띄우면 오탐이다")
+        assertNull(scenario.autoAiState.timedOut)
+        assertEquals(
+            AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+            scenario.requestPlan(),
+            "busy가 풀리면 같은 국면을 다시 요청한다 — 표시가 없으니 건너뛰지 않는다",
+        )
+        val first = scenario.runtimeLog.events.single { it.contains("event=ai_turn_timeout") }
+        assertTrue(first.contains("backgroundedDuringWait=true"), first)
+        assertTrue(first.contains("processPauseMs=0"), first)
+        assertTrue(first.contains("transition=\"keep_current_board_retry_same_position\""), first)
+
+        // ── 다시 요청한 차례도 멈춘 채 시간 초과 → 이번엔 팝업(조용한 재시도는 국면마다 한 번).
+        scenario.runTimingOutTurn(onWait = { scenario.foregroundGeneration += 2 })
+
+        assertEquals(listOf(scenario.position), scenario.interruptedMarks, "두 번째는 조용히 넘기지 않는다")
+        assertEquals(listOf(scenario.position), scenario.timedOutMarks)
+        assertEquals(scenario.position, scenario.autoAiState.timedOut, "두 번째 시간 초과는 지금처럼 선택 팝업이다")
+        assertEquals(AutoAiTurnRequestPlan.Skip, scenario.requestPlan(), "선택을 기다리는 동안 조용히 다시 돌리면 안 된다")
+        val second = scenario.runtimeLog.events.filter { it.contains("event=ai_turn_timeout") }.last()
+        assertTrue(second.contains("backgroundedDuringWait=true"), second)
+        assertTrue(second.contains("transition=\"keep_current_board_await_choice\""), second)
+    }
+
+    /**
+     * backlog #204 — 수명 콜백 없이 **프로세스가 멈췄던**(동결이 `ON_STOP`보다 먼저·VM 정지) 기다림도 같다. 박동이
+     * [EngineWaitProcessPauseThresholdMillis] 이상 늦었으면 세대가 그대로여도 조용히 한 번 다시 요청한다. 그보다 짧은
+     * 멈춤은 마감을 넘기게 할 수 없으므로 지금처럼 팝업이다.
+     */
+    @Test
+    fun aTimeoutAfterTheProcessWasPausedWithoutALifecycleCallbackAlsoRetriesOnce() {
+        val shortPause = InterruptedWaitScenario(processPauseMillis = EngineWaitProcessPauseThresholdMillis - 1)
+        shortPause.runTimingOutTurn()
+        assertEquals(listOf(shortPause.position), shortPause.timedOutMarks, "짧은 멈춤은 오탐 팝업을 만들지 못한다 — 진짜 시간 초과다")
+        assertEquals(emptyList(), shortPause.interruptedMarks)
+
+        val frozen = InterruptedWaitScenario(processPauseMillis = 69_000L)
+        frozen.runTimingOutTurn()
+        assertEquals(listOf(frozen.position), frozen.interruptedMarks)
+        assertEquals(emptyList(), frozen.timedOutMarks)
+        val line = frozen.runtimeLog.events.single { it.contains("event=ai_turn_timeout") }
+        assertTrue(line.contains("backgroundedDuringWait=false"), line)
+        assertTrue(line.contains("processPauseMs=69000"), line)
+        assertTrue(line.contains("transition=\"keep_current_board_retry_same_position\""), line)
+    }
+
+    /** backlog #204 (c)·(e) — 앱이 멈추지 않은 기다림의 시간 초과는 지금처럼(refactor backlog #74) 선택 팝업이다. */
+    @Test
+    fun aTimeoutWithoutAnyInterruptionStillAsksTheUser() {
+        val scenario = InterruptedWaitScenario()
+
+        scenario.runTimingOutTurn()
+
+        assertEquals(listOf(scenario.position), scenario.timedOutMarks)
+        assertEquals(emptyList(), scenario.interruptedMarks)
+        assertEquals(AutoAiTurnRequestPlan.Skip, scenario.requestPlan())
+        val line = scenario.runtimeLog.events.single { it.contains("event=ai_turn_timeout") }
+        assertTrue(line.contains("backgroundedDuringWait=false"), line)
+        assertTrue(line.contains("processPauseMs=0"), line)
+        assertTrue(line.contains("transition=\"keep_current_board_await_choice\""), line)
+    }
+
+    /**
+     * backlog #204 (d) — 조용한 재시도는 **국면마다** 한 번이다. 국면(세대·수순 길이)이 바뀌면 다시 쓸 수 있고, 사용자가
+     * 팝업에서 고르면(「한 번 더 기다리기」·「엔진 다시 시작하기」 = `clearTimedOut`) 그 국면에서도 다시 쓸 수 있다.
+     * 기다림이 **끝난 뒤**의 세대 변화는 그 기다림의 일이 아니다(판정은 엔진 호출이 돌아온 순간에 굳는다).
+     */
+    @Test
+    fun theSilentRetryIsOncePerPositionAndResetsOnANewPositionOrTheUsersChoice() {
+        val scenario = InterruptedWaitScenario()
+        scenario.runTimingOutTurn(onWait = { scenario.foregroundGeneration += 2 })
+        assertTrue(scenario.autoAiState.hasSpentInterruptedRetry(scenario.position))
+
+        val nextMove = scenario.position.copy(moveCount = scenario.position.moveCount + 2)
+        val undone = scenario.position.copy(sessionGeneration = scenario.position.sessionGeneration + 1)
+        assertFalse(scenario.autoAiState.hasSpentInterruptedRetry(nextMove), "AI가 두고 다음 차례가 오면 다시 쓸 수 있다")
+        assertFalse(scenario.autoAiState.hasSpentInterruptedRetry(undone), "무르기·새 대국(세대가 오른다)도 다시 쓸 수 있다")
+
+        scenario.runTimingOutTurn(onWait = { scenario.foregroundGeneration += 2 })
+        assertEquals(scenario.position, scenario.autoAiState.timedOut)
+        val afterChoice = scenario.autoAiState.clearTimedOut()
+        assertNull(afterChoice.timedOut)
+        assertFalse(afterChoice.hasSpentInterruptedRetry(scenario.position), "사용자가 고르면 그 국면에서도 다시 쓸 수 있다")
+
+        var generation = 0L
+        val watch = EngineWaitWatch(
+            foregroundGenerationAtStart = generation,
+            currentForegroundGeneration = { generation },
+            pause = EngineWaitPauseMeasurement { 0L },
+        )
+        assertFalse(watch.finish().backgroundedDuringWait)
+        generation += 2
+        assertFalse(watch.finish().isInterrupted, "굳힌 판정은 뒤의 전환으로 바뀌지 않는다")
+    }
+
+    /**
+     * backlog #204 — 기다림이 취소로 끝나도(#202의 백그라운드 취소·무르기) 관찰은 닫힌다(박동을 끈다). 취소는 시간 초과가
+     * 아니므로 조용한 재시도도 쓰지 않는다.
+     */
+    @Test
+    fun aCancelledWaitClosesTheWatchAndSpendsNothing() {
+        val scenario = InterruptedWaitScenario()
+        val entered = CompletableDeferred<Unit>()
+        var finished = 0
+        val scope = CoroutineScope(Job())
+        val job = runScheduledAutoAiTurnApplication(
+            scenario.request(
+                client = SuspendingRunnerFakeEngineClient {
+                    scenario.foregroundGeneration += 1
+                    entered.complete(Unit)
+                    awaitCancellation()
+                },
+                startEngineWaitWatch = {
+                    EngineWaitWatch(
+                        foregroundGenerationAtStart = scenario.foregroundGeneration,
+                        currentForegroundGeneration = { scenario.foregroundGeneration },
+                        pause = EngineWaitPauseMeasurement {
+                            finished += 1
+                            0L
+                        },
+                    )
+                },
+            ).copy(launchAutoAiEffect = { block -> scope.launch { block() } }),
+        )
+        runBlocking {
+            withTimeout(5_000L) { entered.await() }
+            job.cancel()
+            job.join()
+        }
+
+        assertEquals(1, finished, "취소돼도 멈춤 측정을 닫는다")
+        assertEquals(emptyList(), scenario.interruptedMarks)
+        assertEquals(emptyList(), scenario.timedOutMarks)
+        assertTrue(scenario.runtimeLog.events.none { it.contains("event=ai_turn_timeout") })
+    }
+
+    /** backlog #204 시나리오의 뼈대 — AI(흑)가 빈 판에서 두는 차례를 시간 초과로 끝낸다. */
+    private inner class InterruptedWaitScenario(private val processPauseMillis: Long = 0L) {
+        val state = GameState.empty()
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Human),
+        )
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = PlayLevelSetting(),
+            engineProfile = EngineProfile(),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 7L,
+        )
+        val position = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 0)
+        var autoAiState = AutoAiTurnUiState()
+        var foregroundGeneration = 0L
+        val runtimeLog = RecordingRuntimeEventLog()
+        val interruptedMarks = mutableListOf<AutoAiTurnTimeout>()
+        val timedOutMarks = mutableListOf<AutoAiTurnTimeout>()
+
+        fun request(
+            client: EngineSessionClient,
+            startEngineWaitWatch: () -> EngineWaitWatch = {
+                EngineWaitWatch(
+                    foregroundGenerationAtStart = foregroundGeneration,
+                    currentForegroundGeneration = { foregroundGeneration },
+                    pause = EngineWaitPauseMeasurement { processPauseMillis },
+                )
+            },
+        ): AutoAiScheduledTurnRunRequest =
+            baseRequest(
+                schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                stateProvider = { state },
+                controllerStateProvider = {
+                    controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                },
+                client = client,
+                runtimeState = runtimeState,
+                runtimeLog = runtimeLog,
+                applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                applyTurnTimedOut = { timeout ->
+                    timedOutMarks += timeout
+                    autoAiState = autoAiState.markTimedOut(timeout)
+                },
+                applyTurnFailed = { error("시간 초과는 진짜 실패가 아니다") },
+                completeRun = { autoAiState = autoAiState.completeAutoAiTurnRun() },
+                startEngineWaitWatch = startEngineWaitWatch,
+                applyTurnInterrupted = { interrupted ->
+                    interruptedMarks += interrupted
+                    autoAiState = autoAiState.markInterruptedRetry(interrupted)
+                },
+            )
+
+        /** 엔진이 [onWait]를 부른 뒤(기다리는 사이 일어난 일) 안쪽 `withTimeout`으로 끊긴다. */
+        fun runTimingOutTurn(onWait: () -> Unit = {}) {
+            runScheduledAutoAiTurnApplication(
+                request(
+                    client = SuspendingRunnerFakeEngineClient {
+                        onWait()
+                        withTimeout(1L) { awaitCancellation() }
+                    },
+                ),
+            )
+        }
+
+        fun requestPlan(): AutoAiTurnRequestPlan =
+            controllerState(state = state, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                .toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false)
+    }
+
+    /**
      * T8(러너 쪽, refactor backlog #74) — 러너는 띄운 Job을 **돌려준다**(예전에는 버렸다, 설계 F3). 그리고 본문이
      * 한 번도 돌기 전에 취소되면(예약 직후 곧바로 무르기) 본문의 `finally`도 없으므로, 예약 표시는 Job의
      * 완료 콜백이 푼다.
@@ -552,6 +776,8 @@ class AutoAiScheduledTurnRunnerTest {
         ) -> Unit = {},
         completeRun: () -> Unit = {},
         requestFollowUp: (AutoAiTurnFollowUpRequest) -> Unit = {},
+        startEngineWaitWatch: () -> EngineWaitWatch = { EngineWaitWatch.unobserved() },
+        applyTurnInterrupted: (AutoAiTurnTimeout) -> Unit = { error("이 시나리오의 기다림은 멈추지 않는다") },
     ): AutoAiScheduledTurnRunRequest =
         AutoAiScheduledTurnRunRequest(
             schedule = schedule,
@@ -586,6 +812,8 @@ class AutoAiScheduledTurnRunnerTest {
             applyTurnFailureDisplay = applyTurnFailureDisplay,
             applyTurnTimedOut = applyTurnTimedOut,
             applyTurnFailed = applyTurnFailed,
+            startEngineWaitWatch = startEngineWaitWatch,
+            applyTurnInterrupted = applyTurnInterrupted,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
             completeAutoAiTurnRun = completeRun,
             requestFollowUpAnalysis = requestFollowUp,

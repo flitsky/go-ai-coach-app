@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitWatch
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -56,6 +57,16 @@ internal data class AutoAiScheduledTurnRunRequest(
     val applyTurnTimedOut: (AutoAiTurnTimeout) -> Unit,
     /** 이번 차례가 진짜로 실패했다 — 그 국면에서 센다. 잇달아 나면 위와 같은 표시가 붙는다(refactor backlog #109). */
     val applyTurnFailed: (AutoAiTurnTimeout) -> Unit,
+    /**
+     * 엔진을 기다리기 시작한다 — 그 사이 앱이 멈췄는지(포그라운드 세대·멈춤 박동) 재는 관찰을 연다(backlog #204).
+     * 배선은 `EngineOperationLifecycleController::startEngineWaitWatch`.
+     */
+    val startEngineWaitWatch: () -> EngineWaitWatch,
+    /**
+     * 이번 차례의 시간 초과가 기다리는 사이의 멈춤 때문이라 팝업 대신 같은 국면을 조용히 한 번 다시 요청한다 — 그 국면에서
+     * 그 한 번을 쓴다(backlog #204). 표시는 [applyTurnTimedOut]과 **둘 중 하나만** 붙는다.
+     */
+    val applyTurnInterrupted: (AutoAiTurnTimeout) -> Unit,
     val appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit,
     val completeAutoAiTurnRun: () -> Unit,
     val requestFollowUpAnalysis: (AutoAiTurnFollowUpRequest) -> Unit,
@@ -143,11 +154,18 @@ internal fun runScheduledAutoAiTurnApplication(
                 sessionGeneration = turnOperationToken.operation.sessionGeneration,
                 moveCount = turnContext.turnState.moves.size,
             )
-            val turnCompletion = runAutoAiTurnEngineCompletion(
-                request = request,
-                turnRunPlan = turnRunPlan,
-                operation = turnOperationToken.operation,
-            )
+            // 기다리는 사이 앱이 멈췄는지 잰다(backlog #204) — 엔진 호출이 어떻게 끝나든(취소 포함) 박동을 끈다. 판정은
+            // 엔진 호출이 돌아온 **바로 그때**로 굳힌다 — 그 뒤의 전환은 이 기다림의 일이 아니다.
+            val waitWatch = request.startEngineWaitWatch()
+            val turnCompletion = try {
+                runAutoAiTurnEngineCompletion(
+                    request = request,
+                    turnRunPlan = turnRunPlan,
+                    operation = turnOperationToken.operation,
+                )
+            } finally {
+                waitWatch.finish()
+            }
             applyAutoAiTurnCompletionApplication(
                 AutoAiTurnCompletionApplyRunRequest(
                     completion = turnCompletion,
@@ -164,6 +182,11 @@ internal fun runScheduledAutoAiTurnApplication(
                     markTurnTimedOut = { request.applyTurnTimedOut(turnPosition) },
                     markTurnFailed = { request.applyTurnFailed(turnPosition) },
                     appendEngineOperationDiscardLog = request.appendEngineOperationDiscardLog,
+                    waitInterruption = waitWatch.finish(),
+                    isInterruptedRetrySpent = {
+                        request.controllerStateProvider().autoAiTurn.hasSpentInterruptedRetry(turnPosition)
+                    },
+                    markTurnInterrupted = { request.applyTurnInterrupted(turnPosition) },
                 ),
             )
         } finally {

@@ -36,6 +36,12 @@ data class AutoAiTurnUiState(
     val isPending: Boolean = false,
     val timedOut: AutoAiTurnTimeout? = null,
     val failureStreak: AutoAiTurnFailureStreak? = null,
+    /**
+     * 기다리는 사이 앱이 멈춰(백그라운드·동결) 끊긴 시간 초과를 **팝업 없이 한 번 다시 요청한** 국면(backlog #204).
+     * 같은 국면에서 또 시간 초과가 나면 이유와 상관없이 지금처럼 선택 팝업이다 — 조용한 재시도는 국면마다 한 번뿐이다.
+     * 국면(세대·수순 길이)이 바뀌면 저절로 효력을 잃고, 사용자가 팝업에서 고르면([clearTimedOut]) 지운다.
+     */
+    val interruptedRetry: AutoAiTurnTimeout? = null,
 ) {
     fun markScheduled(): AutoAiTurnUiState =
         copy(isPending = true)
@@ -46,8 +52,17 @@ data class AutoAiTurnUiState(
     fun markTimedOut(timeout: AutoAiTurnTimeout): AutoAiTurnUiState =
         copy(timedOut = timeout)
 
+    /** 사용자가 팝업에서 골랐다 — 표시를 지우고, 그 국면의 조용한 재시도(backlog #204)도 다시 쓸 수 있게 한다. */
     fun clearTimedOut(): AutoAiTurnUiState =
-        copy(timedOut = null)
+        copy(timedOut = null, interruptedRetry = null)
+
+    /** [position]의 시간 초과가 기다리는 사이의 멈춤 때문이라 조용히 한 번 다시 요청한다(backlog #204) — 그 한 번을 쓴다. */
+    fun markInterruptedRetry(position: AutoAiTurnTimeout): AutoAiTurnUiState =
+        copy(interruptedRetry = position)
+
+    /** [position]에서 조용한 재시도(backlog #204)를 이미 썼는가. */
+    fun hasSpentInterruptedRetry(position: AutoAiTurnTimeout): Boolean =
+        interruptedRetry == position
 
     /**
      * [position]에서 AI 차례가 진짜로 실패했다(refactor backlog #109). 같은 국면에서 [AutoAiTurnFailureChoiceThreshold]번째면

@@ -91,6 +91,10 @@ class EngineStallRecoveryWiringTest {
         assertEquals("시간 초과는 genMove로 덮지 않는다", 0, engine.count("genMove"))
         assertTrue(engine.calls.contains("analyze:deadline"))
         assertEquals(1, events(context, "ai_turn_timeout"))
+        // 앱이 멈추지 않은 기다림의 시간 초과는 지금처럼 선택을 기다린다 — 멈춤의 두 신호도 적는다(backlog #204 (c)·(e)).
+        val timeoutLine = context.runtimeLog.lines.single { it.contains("event=ai_turn_timeout") }
+        assertTrue(timeoutLine, timeoutLine.contains("transition=\"keep_current_board_await_choice\""))
+        assertTrue(timeoutLine, timeoutLine.contains("backgroundedDuringWait=false processPauseMs=0 "))
         assertEquals(0, events(context, "ai_turn_failure"))
         assertTrue("시간 초과에 「AI turn failed」 문구를 띄우지 않는다", context.engineMessages.none { it.contains("AI turn failed") })
         assertTrue("판은 그대로다", context.gameState().moves.isEmpty())
@@ -353,6 +357,172 @@ class EngineStallRecoveryWiringTest {
         assertAiStoneLandedOnce(context, aiColor = StoneColor.Black, failedGenMoves = 1)
         assertFreshProcessWasSyncedBeforeAnalysis(engine.calls)
         assertEquals("닫힌 파이프의 예외는 실패로 세지 않는다", 1, events(context, "ai_turn_failure"))
+    }
+
+    // ── C: 기다리는 사이 앱이 멈췄다(backlog #204) ─────────────────────────────────────────────
+
+    /**
+     * C1 — backlog #204 (a)·(e): 엔진을 기다리는 사이 **앱이 얼었다가** 풀리는 순간 마감이 터졌다(동결이 `ON_STOP`보다
+     * 먼저 — #202의 취소가 닿지 못하는 경합, 또는 VM 정지). 엔진은 멎지 않았다 — 그 마감은 언 시간을 쟀다. 그래서 팝업
+     * 없이(표시·선택 대기 없음) **같은 국면**을 한 번 다시 요청하고, 그 차례가 정상 분석으로 둔다. 로그의
+     * `ai_turn_timeout`이 멈춤과 처리를 적는다.
+     */
+    @Test
+    fun aTimeoutAfterTheAppWasFrozenMidWaitRetriesTheSamePositionOnceWithoutThePopup() {
+        val context = newContext(inGameSession(playerSetup = AiBlackHumanWhite, boardSize = BoardSize.Nine))
+        val hang = engine.hangNextAnalysis()
+        startAiTurnUntilTheEngineIsStuck(context, hang)
+
+        // ── 앱이 69초 얼었다 — 풀리는 순간 마감이 이미 지나 있다.
+        context.engineWaitPauses.pauseProcess(69_000L)
+        hang.passDeadline()
+        pumpUntil(context, "시간 초과로 끝난 차례의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+
+        // ── 팝업 없음: 표시도 선택 대기도 없다. 그 국면의 조용한 재시도 한 번을 썼다.
+        val timeoutLine = context.runtimeLog.lines.single { it.contains("event=ai_turn_timeout") }
+        assertTrue(timeoutLine, timeoutLine.contains("transition=\"keep_current_board_retry_same_position\""))
+        assertTrue(timeoutLine, timeoutLine.contains("backgroundedDuringWait=false"))
+        assertTrue(timeoutLine, timeoutLine.contains("processPauseMs=69000"))
+        assertNull("멈춘 기다림의 시간 초과에 선택 팝업의 표시를 남기면 오탐이다", context.holder.current.autoAiTurn.timedOut)
+        assertFalse(screenOf(context).isAwaitingEngineTimeoutChoice)
+        assertFalse("「엔진 응답 지연」이 뜨면 안 된다", popupVisible(context, elapsedSinceWatchdogBaseMillis = 0L, turnWaitEnded = true))
+        assertEquals(positionOf(context, moveCount = 0), context.holder.current.autoAiTurn.interruptedRetry)
+        assertEquals("멈춤 측정은 기다림이 끝나면 닫힌다(박동을 끈다)", 0, context.engineWaitPauses.openCount)
+        assertEquals("시간 초과는 genMove로 덮지 않는다", 0, engine.count("genMove"))
+
+        // ── busy가 풀려 차례 자동화 효과가 돈다 → **같은 국면**을 다시 요청 → 정상 분석이 둔다.
+        runTurnAutomationEffect(context)
+        assertEquals("같은 국면을 한 번 다시 요청한다", 2, events(context, "ai_turn_schedule"))
+        pumpUntil(context, "다시 요청한 AI 차례") { context.gameState().moves.size == 1 && !context.holder.current.autoAiTurn.isPending }
+        drainQueue(context)
+
+        assertAiStoneLandedOnce(context, aiColor = StoneColor.Black)
+        assertEquals("같은 국면을 한 번 더 분석했다", 2, engine.count("analyze"))
+        assertEquals(1, events(context, "ai_turn_success"))
+        assertEquals(1, events(context, "ai_turn_timeout"))
+        assertFalse(screenOf(context).isAwaitingEngineTimeoutChoice)
+    }
+
+    /**
+     * C2 — backlog #204 (a): **포그라운드 세대**가 판정까지 닿는다(배선). 기다리는 사이 앱이 화면을 떠났다 돌아온 것으로
+     * 수명 컨트롤러의 세대만 올린다. ⚠️ 앱의 `onAppBackgrounded`는 같은 메인 스레드에서 도는 차례를 먼저 **취소**하므로(#202 —
+     * `AppBackgroundAiTurnWiringTest`) 앱 경로로는 이 순서가 나오지 않는다. 여기서는 세대라는 신호가 끊기지 않고 판정에
+     * 닿는지만 본다 — 실제 경합은 C1(멈춤 박동)이 잡는다.
+     */
+    @Test
+    fun aForegroundGenerationChangeDuringTheWaitReachesTheTimeoutClassification() {
+        val context = newContext(inGameSession(playerSetup = AiBlackHumanWhite, boardSize = BoardSize.Nine))
+        val hang = engine.hangNextAnalysis()
+        startAiTurnUntilTheEngineIsStuck(context, hang)
+
+        context.lifecycleController.markAppInForeground(false)
+        context.lifecycleController.markAppInForeground(true)
+        hang.passDeadline()
+        pumpUntil(context, "시간 초과로 끝난 차례의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+
+        val timeoutLine = context.runtimeLog.lines.single { it.contains("event=ai_turn_timeout") }
+        assertTrue(timeoutLine, timeoutLine.contains("backgroundedDuringWait=true"))
+        assertTrue(timeoutLine, timeoutLine.contains("processPauseMs=0"))
+        assertTrue(timeoutLine, timeoutLine.contains("transition=\"keep_current_board_retry_same_position\""))
+        assertFalse(screenOf(context).isAwaitingEngineTimeoutChoice)
+
+        runTurnAutomationEffect(context)
+        pumpUntil(context, "다시 요청한 AI 차례") { context.gameState().moves.size == 1 && !context.holder.current.autoAiTurn.isPending }
+        drainQueue(context)
+        assertAiStoneLandedOnce(context, aiColor = StoneColor.Black)
+    }
+
+    /**
+     * C3 — backlog #204 (b): 조용한 재시도는 **국면마다 한 번**이다. 다시 요청한 차례가 또 시간 초과면 — 또 얼었더라도 —
+     * 지금처럼 「엔진 응답 지연」(상태 B)이고, 조용히 세 번째를 돌리지 않는다. 사용자가 「한 번 더 기다리기」를 고르면 그
+     * 국면의 조용한 재시도도 다시 쓸 수 있게 되고, 정상 분석이 둔다.
+     */
+    @Test
+    fun aSecondTimeoutOnTheSamePositionShowsThePopupEvenIfTheAppWasFrozenAgain() {
+        val context = newContext(inGameSession(playerSetup = AiBlackHumanWhite, boardSize = BoardSize.Nine))
+        val first = engine.hangNextAnalysis()
+        startAiTurnUntilTheEngineIsStuck(context, first)
+        val retry = engine.hangNextAnalysis()
+
+        // ── 첫 시도: 얼었다 → 조용한 재시도.
+        context.engineWaitPauses.pauseProcess(69_000L)
+        first.passDeadline()
+        pumpUntil(context, "첫 시도의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+        assertFalse(screenOf(context).isAwaitingEngineTimeoutChoice)
+        runTurnAutomationEffect(context)
+        assertEquals(2, events(context, "ai_turn_schedule"))
+        assertTrue("재시도의 본문이 돈다", context.dispatcher.runNext())
+        assertTrue("재시도가 분석에서 멎어야 한다 — 호출: ${engine.calls}", retry.awaitEntered())
+
+        // ── 재시도도 얼었다가 마감 → 이번엔 팝업.
+        context.engineWaitPauses.pauseProcess(69_000L)
+        retry.passDeadline()
+        pumpUntil(context, "재시도의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+
+        val timeoutLines = context.runtimeLog.lines.filter { it.contains("event=ai_turn_timeout") }
+        assertEquals(2, timeoutLines.size)
+        assertTrue(timeoutLines.last(), timeoutLines.last().contains("transition=\"keep_current_board_await_choice\""))
+        assertTrue(timeoutLines.last(), timeoutLines.last().contains("processPauseMs=69000"))
+        assertEquals(positionOf(context, moveCount = 0), context.holder.current.autoAiTurn.timedOut)
+        assertTrue("두 번째 시간 초과는 지금처럼 선택 팝업이다", screenOf(context).isAwaitingEngineTimeoutChoice)
+        assertTrue(popupVisible(context, elapsedSinceWatchdogBaseMillis = 0L, turnWaitEnded = true))
+        runTurnAutomationEffect(context)
+        assertEquals("선택을 기다리는 동안 조용한 세 번째는 없다", 0, context.dispatcher.queuedCount)
+        assertEquals(2, events(context, "ai_turn_schedule"))
+
+        // ── 사용자가 「한 번 더 기다리기」 → 그 국면의 조용한 재시도도 다시 쓸 수 있다 → 정상 분석이 둔다.
+        dispatch(context, GameUiEvent.RetryTimedOutAiTurn)
+        assertNull("고르면 그 국면의 조용한 재시도를 다시 쓸 수 있다", context.holder.current.autoAiTurn.interruptedRetry)
+        pumpUntil(context, "다시 요청한 AI 차례") { context.gameState().moves.size == 1 && !context.holder.current.autoAiTurn.isPending }
+        drainQueue(context)
+        assertAiStoneLandedOnce(context, aiColor = StoneColor.Black)
+        assertEquals(3, engine.count("analyze"))
+    }
+
+    /**
+     * C4 — backlog #204 (d): 조용한 재시도는 국면에 묶여 있어 **국면이 바뀌면 다시 쓸 수 있다**. 한 국면에서 쓴 뒤 세대가
+     * 오르면(무르기·새 대국·이어하기 — 판은 같은 빈 판이어도 다른 국면이다) 그 국면의 시간 초과도 얼었던 것이면 다시 조용히
+     * 한 번 넘긴다.
+     */
+    @Test
+    fun theSilentRetryIsAvailableAgainOnceThePositionChanges() {
+        val context = newContext(inGameSession(playerSetup = AiBlackHumanWhite, boardSize = BoardSize.Nine))
+        val first = engine.hangNextAnalysis()
+        startAiTurnUntilTheEngineIsStuck(context, first)
+        context.engineWaitPauses.pauseProcess(69_000L)
+        first.passDeadline()
+        pumpUntil(context, "첫 시도의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+        val spentAt = positionOf(context, moveCount = 0)
+        assertEquals(spentAt, context.holder.current.autoAiTurn.interruptedRetry)
+
+        // ── 국면이 바뀐다 — 세대가 오른다(무르기·새 대국이 하는 일).
+        context.changeCore { core -> core.copy(runtimeState = core.runtimeState.copy(sessionGeneration = core.runtimeState.sessionGeneration + 1)) }
+        val next = engine.hangNextAnalysis()
+        runTurnAutomationEffect(context)
+        assertTrue("새 국면의 차례 본문이 돈다", context.dispatcher.runNext())
+        assertTrue("새 국면의 차례가 분석에서 멎어야 한다 — 호출: ${engine.calls}", next.awaitEntered())
+        context.engineWaitPauses.pauseProcess(69_000L)
+        next.passDeadline()
+        pumpUntil(context, "새 국면 차례의 정리") { !context.holder.current.autoAiTurn.isPending && !context.engineIsBusy }
+        drainQueue(context)
+
+        val timeoutLines = context.runtimeLog.lines.filter { it.contains("event=ai_turn_timeout") }
+        assertEquals(2, timeoutLines.size)
+        assertTrue(timeoutLines.last(), timeoutLines.last().contains("transition=\"keep_current_board_retry_same_position\""))
+        assertNull("새 국면에서는 다시 조용히 한 번 넘긴다 — 팝업 없음", context.holder.current.autoAiTurn.timedOut)
+        assertFalse(screenOf(context).isAwaitingEngineTimeoutChoice)
+        assertTrue(positionOf(context, moveCount = 0) != spentAt)
+        assertEquals(positionOf(context, moveCount = 0), context.holder.current.autoAiTurn.interruptedRetry)
+
+        runTurnAutomationEffect(context)
+        pumpUntil(context, "다시 요청한 AI 차례") { context.gameState().moves.size == 1 && !context.holder.current.autoAiTurn.isPending }
+        drainQueue(context)
+        assertAiStoneLandedOnce(context, aiColor = StoneColor.Black)
     }
 
     // ── 시나리오 뼈대 ──────────────────────────────────────────────────────────────────────────
@@ -638,6 +808,10 @@ class EngineStallRecoveryWiringTest {
     }
 
     private fun generationOf(context: FakeGoCoachAppWiringContext): Long = context.holder.current.core.runtimeState.sessionGeneration
+
+    /** 지금 세대에서 수순 길이 [moveCount]인 국면 — 시간 초과 표시·조용한 재시도(backlog #204)가 묶이는 열쇠. */
+    private fun positionOf(context: FakeGoCoachAppWiringContext, moveCount: Int): AutoAiTurnTimeout =
+        AutoAiTurnTimeout(sessionGeneration = generationOf(context), moveCount = moveCount)
 
     private companion object {
         const val PumpCapMillis = 10_000L

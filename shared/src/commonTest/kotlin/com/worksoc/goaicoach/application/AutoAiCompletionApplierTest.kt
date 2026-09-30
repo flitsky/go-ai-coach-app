@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.application.contract.AutoAiTurnEndgamePlan
 import com.worksoc.goaicoach.application.contract.AutoAiTurnExecutionContext
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.contract.ScoreEstimateDisplayPlan
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitInterruption
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -152,6 +153,45 @@ class AutoAiCompletionApplierTest {
         assertTrue(runtimeLog.events.any { it.contains("event=ai_turn_timeout") })
     }
 
+    /**
+     * backlog #204 — 기다리는 사이 앱이 멈췄던 시간 초과는 표시(선택 팝업) 대신 그 국면의 조용한 재시도 한 번을 쓴다.
+     * 이미 썼으면 지금처럼 표시를 남긴다. 어느 쪽이든 실패 문구·진짜 실패 셈은 없다.
+     */
+    @Test
+    fun anInterruptedTimeoutSpendsTheSilentRetryOnceAndOtherwiseMarksTheTurn() {
+        fun apply(isSpent: Boolean): Triple<Int, Int, String> {
+            val runtimeLog = RecordingRuntimeEventLog()
+            var timedOutMarks = 0
+            var interruptedMarks = 0
+            runBlocking {
+                applyAutoAiTurnCompletionApplication(
+                    baseRequest(
+                        completion = AutoAiTurnCompletionPlan.ApplyTimedOut(IllegalStateException("timed out")),
+                        runtimeLog = runtimeLog,
+                        applyTurnFailureDisplay = { error("시간 초과에 실패 문구를 띄우면 안 된다") },
+                        markTurnTimedOut = { timedOutMarks += 1 },
+                        markTurnFailed = { error("시간 초과는 진짜 실패가 아니다") },
+                        waitInterruption = EngineWaitInterruption(backgroundedDuringWait = true, processPauseMillis = 0L),
+                        isInterruptedRetrySpent = { isSpent },
+                        markTurnInterrupted = { interruptedMarks += 1 },
+                    ),
+                )
+            }
+            return Triple(timedOutMarks, interruptedMarks, runtimeLog.events.single { it.contains("event=ai_turn_timeout") })
+        }
+
+        val (firstTimedOut, firstInterrupted, firstLine) = apply(isSpent = false)
+        assertEquals(0, firstTimedOut, "멈춘 기다림의 첫 시간 초과는 팝업이 아니다")
+        assertEquals(1, firstInterrupted)
+        assertTrue(firstLine.contains("transition=\"keep_current_board_retry_same_position\""), firstLine)
+
+        val (secondTimedOut, secondInterrupted, secondLine) = apply(isSpent = true)
+        assertEquals(1, secondTimedOut, "그 국면에서 이미 썼으면 지금처럼 팝업이다")
+        assertEquals(0, secondInterrupted)
+        assertTrue(secondLine.contains("transition=\"keep_current_board_await_choice\""), secondLine)
+        assertTrue(secondLine.contains("backgroundedDuringWait=true"), secondLine)
+    }
+
     @Test
     fun discardOnlyAppendsDiscardLog() {
         val discard = EngineOperationResultGuard.Discard(reason = "stale")
@@ -181,6 +221,9 @@ class AutoAiCompletionApplierTest {
         markTurnTimedOut: () -> Unit = {},
         markTurnFailed: () -> Unit = {},
         appendEngineOperationDiscardLog: (EngineOperationResultGuard.Discard) -> Unit = {},
+        waitInterruption: EngineWaitInterruption = EngineWaitInterruption.None,
+        isInterruptedRetrySpent: () -> Boolean = { false },
+        markTurnInterrupted: () -> Unit = { error("이 시나리오의 기다림은 멈추지 않는다") },
     ): AutoAiTurnCompletionApplyRunRequest =
         AutoAiTurnCompletionApplyRunRequest(
             completion = completion,
@@ -208,6 +251,9 @@ class AutoAiCompletionApplierTest {
             markTurnTimedOut = markTurnTimedOut,
             markTurnFailed = markTurnFailed,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
+            waitInterruption = waitInterruption,
+            isInterruptedRetrySpent = isInterruptedRetrySpent,
+            markTurnInterrupted = markTurnInterrupted,
         )
 
     private fun runtimeContext(state: GameState): RuntimeLogContext =

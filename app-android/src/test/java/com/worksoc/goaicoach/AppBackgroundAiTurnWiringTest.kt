@@ -39,6 +39,11 @@ class AppBackgroundAiTurnWiringTest {
         assertTrue(context.diagnosticLog.events.any { it.code == "engine_operation_cancelled" })
         assertTrue("취소는 시간 초과가 아니다", context.runtimeLog.lines.none { it.contains("event=ai_turn_timeout") })
         assertEquals(null, context.autoAiTurnWrites.last().timedOut)
+        // backlog #204 — 떠나는 전환이 포그라운드 세대를 올리고, 취소된 기다림도 멈춤 측정을 닫는다. 취소는 시간 초과가
+        // 아니므로 그 국면의 조용한 재시도도 쓰지 않는다.
+        assertEquals(1L, context.lifecycleController.foregroundGeneration)
+        assertEquals("취소된 기다림도 멈춤 측정(박동)을 닫는다", 0, context.engineWaitPauses.openCount)
+        assertEquals(null, context.autoAiTurnWrites.last().interruptedRetry)
         assertTrue(
             "리포트만으로 동결을 가를 수 있게 전환을 적는다",
             context.runtimeLog.lines.any { it.contains("event=app_background") && it.contains("cancelled=true") },
@@ -58,6 +63,7 @@ class AppBackgroundAiTurnWiringTest {
 
         wireGoCoachControllers(context).autoAiTurnController.onAppForegrounded()
 
+        assertEquals("떠날 때 한 번, 돌아올 때 한 번 — 포그라운드 세대(#204)", 2L, context.lifecycleController.foregroundGeneration)
         assertEquals("돌아오면 같은 국면을 다시 요청한다", listOf(true), context.autoAiTurnWrites.map { it.isPending })
         assertEquals(1, context.dispatcher.queuedCount)
         assertTrue(context.runtimeLog.lines.any { it.contains("event=app_foreground") })

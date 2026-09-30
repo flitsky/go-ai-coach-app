@@ -37,6 +37,11 @@ class EngineOperationLifecycleController(
     private val currentState: () -> GameState,
     private val currentSessionGeneration: () -> Long,
     private val onBusyChanged: (Boolean, Boolean, EngineActivityIndicator?, Int) -> Unit,
+    /**
+     * AI 차례가 엔진을 기다리는 사이 이 프로세스가 멈췄는지 재는 박동(backlog #204) — [startEngineWaitWatch]가 기다림마다
+     * 하나를 연다. 테스트는 시계를 쥔 것을 넣는다.
+     */
+    private val engineWaitPauseProbe: EngineWaitPauseProbe = HeartbeatEngineWaitPauseProbe(scope),
 ) {
     private var lifecycleState = EngineOperationLifecycleState()
     private val activeJobs = mutableMapOf<String, Job>()
@@ -58,9 +63,35 @@ class EngineOperationLifecycleController(
     var isAppInForeground: Boolean = true
         private set
 
+    /**
+     * 포그라운드 세대(backlog #204) — 앱 프로세스가 화면을 떠나고 돌아올 때마다 하나씩 오른다. AI 차례가 엔진을 기다리기
+     * 시작할 때 이 값을 들고([startEngineWaitWatch]), 그 차례가 시간 초과로 끝났을 때 바뀌어 있으면 그 마감은 앱이 화면에
+     * 없던 시간까지 잰 것이다 — 팝업 대신 같은 국면을 조용히 한 번 다시 요청한다. 올리는 곳은 [markAppInForeground]
+     * 하나다(부르는 쪽이 전환에서만 부른다 — `ObserveAppForegroundLifecycle`).
+     *
+     * ⚠️ 이것 **혼자서는** 그 경합을 거의 못 잡는다. `onAppBackgrounded`가 같은 메인 스레드에서 도는 차례를 먼저 취소하므로
+     * (#202 — 취소된 차례는 `runEngineIo`의 복귀 경계에서 끝나 시간 초과로 분류되지 않는다), 세대가 바뀐 채 시간 초과로
+     * 끝나는 차례는 그 취소가 닿지 못한 경우뿐이다. 남는 경합의 본체 — 해동 순간 마감이 `ON_STOP`보다 먼저 처리되거나
+     * 콜백이 아예 없는 멈춤 — 는 세대가 **그대로인 채** 끝난다. 그것은 멈춤 박동([engineWaitPauseProbe])이 잡는다.
+     */
+    var foregroundGeneration: Long = 0L
+        private set
+
     fun markAppInForeground(inForeground: Boolean) {
         isAppInForeground = inForeground
+        foregroundGeneration += 1
     }
+
+    /**
+     * AI 차례가 엔진을 기다리기 시작한다(backlog #204) — 지금의 포그라운드 세대를 들고 멈춤 박동을 켠다. 러너가 엔진 호출
+     * 바로 뒤에 [EngineWaitWatch.finish]로 끝낸다.
+     */
+    fun startEngineWaitWatch(): EngineWaitWatch =
+        EngineWaitWatch(
+            foregroundGenerationAtStart = foregroundGeneration,
+            currentForegroundGeneration = { foregroundGeneration },
+            pause = engineWaitPauseProbe.start(),
+        )
 
     val isEngineBusy: Boolean get() = lifecycleState.isEngineBusy(currentSessionGeneration())
     val isBlockingBusy: Boolean get() = lifecycleState.isBlockingBusy(currentSessionGeneration())

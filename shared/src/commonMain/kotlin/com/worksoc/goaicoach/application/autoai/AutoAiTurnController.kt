@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.engine.EngineGamePlayClient
 import com.worksoc.goaicoach.application.engine.launchAutoAiEffect
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitWatch
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.score.EndgameFailureDisplayPlan
@@ -78,6 +79,17 @@ class AutoAiTurnController(
     private val isAppInForeground: () -> Boolean = { true },
     /** 그 표시를 바꾼다 — 배선은 `EngineOperationLifecycleController::markAppInForeground`. */
     private val markAppInForeground: (Boolean) -> Unit = {},
+    /**
+     * AI 차례가 엔진을 기다리는 사이 앱이 멈췄는지(포그라운드 세대·멈춤 박동) 재는 관찰을 연다(backlog #204). 위의
+     * 포그라운드 표시와 같은 이유로 컨트롤러 밖(수명 컨트롤러)에 둔다 — 배선은
+     * `EngineOperationLifecycleController::startEngineWaitWatch`.
+     */
+    private val startEngineWaitWatch: () -> EngineWaitWatch,
+    /**
+     * 기다리는 사이의 멈춤 때문에 끊긴 시간 초과를 팝업 없이 한 번 다시 요청한다 — 그 국면에서 그 한 번을 쓴다(backlog #204).
+     * ⚠️ 기본값을 두지 않는다 — 이것이 빠지면 멈춘 차례가 국면마다 **끝없이** 조용히 다시 돈다.
+     */
+    private val markAutoAiTurnInterruptedRetry: (AutoAiTurnTimeout) -> Unit,
 ) {
     /**
      * 시간 초과 뒤 「한 번 더 기다리기」(refactor backlog #74, 설계 C-10 상태 B). 표시를 지우고 같은 국면을 같은
@@ -209,6 +221,8 @@ class AutoAiTurnController(
                         applyTurnFailureDisplay = applyTurnFailureDisplay,
                         applyTurnTimedOut = applyAutoAiTurnTimedOut,
                         applyTurnFailed = recordAutoAiTurnFailure,
+                        startEngineWaitWatch = startEngineWaitWatch,
+                        applyTurnInterrupted = markAutoAiTurnInterruptedRetry,
                         appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
                         completeAutoAiTurnRun = completeAutoAiTurnRun,
                         requestFollowUpAnalysis = requestFollowUpAnalysis,

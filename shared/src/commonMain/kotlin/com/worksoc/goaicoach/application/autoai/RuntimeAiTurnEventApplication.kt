@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.application.autoai
 
 import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.endgame.AiEndgameResolution
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitInterruption
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.contextTransitionAfter
 import com.worksoc.goaicoach.application.runtime.runtimeBoardSummary
@@ -172,20 +173,32 @@ internal fun runtimeAppForegroundLog(context: RuntimeLogContext): String =
         detail = "resume=ai_turn_request",
     )
 
-/** 탐색이 시간 초과로 끝났다(refactor backlog #74) — 판은 그대로이고 사용자의 선택(팝업)을 기다린다. */
+/**
+ * 탐색이 시간 초과로 끝났다(refactor backlog #74) — 판은 그대로이고 사용자의 선택(팝업)을 기다린다.
+ *
+ * 기다리는 사이 앱이 멈췄으면(backlog #204) 팝업 대신 같은 국면을 조용히 한 번 다시 요청한다 — `transition`이
+ * `keep_current_board_retry_same_position`이 된다. 어느 쪽이든 멈춤의 두 신호를 적는다: `backgroundedDuringWait`
+ * (포그라운드 세대가 바뀌었다 — 화면을 떠났다 돌아왔다)와 `processPauseMs`(이 프로세스가 가장 오래 못 돈 시간 — 수명
+ * 콜백 없는 동결·VM 정지). 리포트만으로 팝업이 오탐이었는지 가를 수 있게. ⚠️ 새 필드는 `error=` **앞**에 둔다 —
+ * 오류 문구는 공백을 담는 자유 글이라 맨 끝이어야 한다.
+ */
 internal fun runtimeAiTurnTimeoutLog(
     context: RuntimeLogContext,
     turnState: GameState,
     aiPlayer: StoneColor,
     turnElapsedMs: Long,
     error: Throwable,
+    waitInterruption: EngineWaitInterruption,
+    retriesSilently: Boolean,
 ): String =
     context.event(
         name = "ai_turn_timeout",
         phase = "ai_turn",
-        transition = "keep_current_board_await_choice",
+        transition = if (retriesSilently) "keep_current_board_retry_same_position" else "keep_current_board_await_choice",
         detail = "move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
-            "turnElapsedMs=$turnElapsedMs fp=${turnState.runtimeShortFingerprint()} error=${error.runtimeErrorText(300)}",
+            "turnElapsedMs=$turnElapsedMs backgroundedDuringWait=${waitInterruption.backgroundedDuringWait} " +
+            "processPauseMs=${waitInterruption.processPauseMillis} " +
+            "fp=${turnState.runtimeShortFingerprint()} error=${error.runtimeErrorText(300)}",
     )
 
 internal fun runtimeAiTurnCompleteLog(
