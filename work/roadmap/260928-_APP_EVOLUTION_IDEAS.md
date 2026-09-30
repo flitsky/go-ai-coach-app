@@ -7,7 +7,7 @@
 >
 > - 재방문(DAU) 장치만 다루는 아이디어 풀은 따로 있다: `260823-_DAU_GROWTH_IDEAS.md`. 그쪽은 그대로 두고,
 >   **재방문 장치가 아닌 고도화 방향**(새 모드·엔진·콘텐츠·구조)은 여기에 적는다. 겹치면 한쪽에만 적고 다른 쪽은 가리킨다.
-> - 기능 일감의 정본은 `260923-_ACTIVE_BACKLOG.md`, 리팩토링 일감은 `261001-_REFACTORING_BACKLOG.md`다(1세대는 🔒 `260923-260928_REFACTORING_BACKLOG.md`).
+> - 기능 일감의 정본은 `260923-_ACTIVE_BACKLOG.md`, 리팩토링 일감은 `2610_REFACTORING_BACKLOG_ON_HOLD.md`다(1세대는 🔒 `260923-260928_REFACTORING_BACKLOG.md`).
 
 ---
 

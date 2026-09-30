@@ -319,7 +319,7 @@ v1 초안에 비평을 반영한 개정본이다. 비평이 다툰 사실은 202
 - 셋 다 주 모델 후보의 백분위 구간에서 고른다(`PlayLevel.kt:110-130`).
   - 예: 초급 1단계는 32방문 후보 16개 가운데 하위 30% 구간(`PercentileRange(70,100)`)에서 고른다. 대략 16개 중 12~16번째 후보다.
   - 이것은 16방문 후보 8개 중 8번째를 두는 초보보다 **약할 수도 있다.**
-- "대국장" 로드맵에서 쓸 자리로 남겨 둔 것이다(`docs/spec/FAST_BEGINNER_TIER_DESIGN.md:184`, 백로그 `work/roadmap/261001-_REFACTORING_BACKLOG.md` #56 카드와 「사용자 결정 대기」 표의 #56 행).
+- "대국장" 로드맵에서 쓸 자리로 남겨 둔 것이다(`docs/spec/FAST_BEGINNER_TIER_DESIGN.md:184`, 백로그 `work/roadmap/2610_REFACTORING_BACKLOG_ON_HOLD.md` #56 카드와 「사용자 결정 대기」 표의 #56 행).
 - ⚠️ **보정된 적이 없다.** 18급에 닿는다는 근거도 없고, 순위가 낮은 후보를 고르는 방식은 부자연스러운 실수를 만든다. 사람 모델이 준비되기 전에 쓰는 "보정 안 된 임시 상대" 정도로만 쓸 수 있다.
 
 ### 2.4 원격 엔진
@@ -1139,7 +1139,7 @@ djma 봇 (id 2028892/2028889/2025391/2028891)
 **백로그 #57과의 관계 — 서로 다른 두 일이다**
 - **#57**은 **주 모델(93MB)을 기본 모듈 밖으로 옮기는 일**이다.
   - 백로그 #57 카드에 "단독 브랜치·단독 인터널 검증", "다른 작업과 절대 병행하지 마라"가 적혀 있다.
-  - 「사용자 결정 대기」 표의 #57 행 질문은 "109MB를 줄일 필요가 실제로 생겼는가(설치 이탈 관측 등)"이고, 기본값은 "안 한다"다(`work/roadmap/261001-_REFACTORING_BACKLOG.md`).
+  - 「사용자 결정 대기」 표의 #57 행 질문은 "109MB를 줄일 필요가 실제로 생겼는가(설치 이탈 관측 등)"이고, 기본값은 "안 한다"다(`work/roadmap/2610_REFACTORING_BACKLOG_ON_HOLD.md`).
 - **리그에 필요한 것**은 사람 모델을 담은 **주문형 팩 하나를 더하는 일**뿐이다. 주 모델의 설치 경로는 바뀌지 않는다.
 - ⇒ **새 항목으로 만든다.**
   - 앱의 첫 PAD 통합이므로 #57의 격리 규칙(단독 브랜치, 단독 인터널 검증)은 빌려 온다.
@@ -1468,7 +1468,7 @@ djma 봇 (id 2028892/2028889/2025391/2028891)
 - `docs/engine/ENGINE_STRENGTH_RESEARCH.md`, `docs/engine/SCORE_AND_ENDGAME_DECISION.md`
 - `docs/spec/FAST_BEGINNER_TIER_DESIGN.md`, `docs/spec/FEATURE_ACCESS_PRINCIPLES.md`, `docs/spec/PITFALLS.md`(2, 37)
 - `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md`, `work/plans/PLAY_CONSOLE_PRIVACY_ANSWERS.md`
-- `work/roadmap/261001-_REFACTORING_BACKLOG.md`(#56·#57 카드, 「사용자 결정 대기」 표), `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`, `work/roadmap/260928-_APP_EVOLUTION_IDEAS.md`
+- `work/roadmap/2610_REFACTORING_BACKLOG_ON_HOLD.md`(#56·#57 카드, 「사용자 결정 대기」 표), `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`, `work/roadmap/260928-_APP_EVOLUTION_IDEAS.md`
 - `work/roadmap/260917-260919_SUBSCRIPTION_LAUNCH_AND_GAMEPLAY_FLOW.md`, `work/roadmap/260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md`(#151·#170 행), `work/roadmap/260906-260911_RELEASE_AND_EARLY_FEEDBACK.md:694`
 
 ---

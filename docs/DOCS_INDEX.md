@@ -172,7 +172,7 @@
 | `PREMIUM_MODE.md` | 프리미엄/수익화 모드 마스터플랜(광고 1시간 활성화, 영구 결제). Step별 진행 로그가 계속 append됨 |
 | `LOGIN_AND_ACCOUNT_SYSTEM.md` | 최초 실행 온보딩 + 계정 시스템(Firebase 익명/Google/이메일 인증) 마스터플랜. [ARCHITECTURE.md](./ARCHITECTURE.md) 6계층(세션/연속성)의 실행 문서 |
 | `UX_IMPROVEMENT.md` | UX 개편(보드 스케일링, 패널, 직접 착수 흐름) 마스터플랜 **v1.0.0 와이어프레임은 이 문서 부록 A**로 합쳐졌다(2026-09-06) |
-| `REMOTE_ENGINE_AND_LAYERING.md` | 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵. 2026-09-23에 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`에서 **개명·이동**했다 — Stage F-2가 사용자 승인 대기라 **완결일을 적을 수 없어** 기능축이 맞다. ⚠️ 계층 정렬 축(Stage A~C)의 실측 정본은 `work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다. Stage F 전용 킥오프는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` |
+| `REMOTE_ENGINE_AND_LAYERING.md` | 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵. 2026-09-23에 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`에서 **개명·이동**했다 — Stage F-2가 사용자 승인 대기라 **완결일을 적을 수 없어** 기능축이 맞다. ⚠️ 계층 정렬 축(Stage A~C)의 실측 정본은 `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다. Stage F 전용 킥오프는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` |
 
 ⚠️ **`PREMIUM_MODE.md`·`LOGIN_AND_ACCOUNT_SYSTEM.md`·`UX_IMPROVEMENT.md` 셋은 2026-09-06 조사에서
 **사실상 완결(갱신 정지)** 로 확인됐고, `UX_IMPROVEMENT.md`는 본문이 현재 화면과 어긋난다
@@ -415,7 +415,7 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 2026-08-29에 완료돼 `main`에 들어와 있고(`scripts/remote-engine-mq-prototype/`), 남은 것은
 **앱 이식**(개발자 토글 UI, `EngineCoreApiFactory`에 새 transport 추가)뿐이며 그것이 별도 승인
 대기다. 계층 정렬 축(Stage A~C)의 실측 정본은
-`work/roadmap/260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다.
+`work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다.
 
 ## 엔진 딥다이브·검증 (`docs/engine/`)
 

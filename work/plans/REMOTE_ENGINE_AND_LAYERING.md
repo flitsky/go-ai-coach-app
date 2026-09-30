@@ -10,7 +10,7 @@
 
 이 문서 하나로 전체 리팩토링이 끝나지 않는다 — 특히 마지막 Stage(물리적 분산, 다른 기기에서 연산)는 그 자체로 별도 킥오프 문서가 필요한 대형 신규 기능이다. 이 문서는 "지금부터 거기까지 가는 순서와, 각 지점에서 무엇을 확인해야 하는가"를 정의하는 상위 로드맵이다.
 
-⚠️ **계층 정렬(Stage A~C)의 현행 정본은 이 문서가 아니다.** 2026-09-23에 실측 기반 진단서 `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`가 세워지면서, "계층을 어떻게 강제할 것인가"의 처방과 일감은 그쪽(과 `260923-_ACTIVE_BACKLOG.md`)으로 넘어갔다. 이 문서에 남은 살아 있는 축은 **원격 엔진(Stage D~F)** 이다.
+⚠️ **계층 정렬(Stage A~C)의 현행 정본은 이 문서가 아니다.** 2026-09-23에 실측 기반 진단서 `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`가 세워지면서, "계층을 어떻게 강제할 것인가"의 처방과 일감은 그쪽(과 `260923-_ACTIVE_BACKLOG.md`)으로 넘어갔다. 이 문서에 남은 살아 있는 축은 **원격 엔진(Stage D~F)** 이다.
 
 ## 1. 배경과 목표
 
@@ -20,9 +20,9 @@
 
 > ⚠️ 아래 체크 상태는 **2026-09-23 기준**이다. 낡으면 코드를 열어 다시 판정할 것.
 
-- [ ] `LayeringContractTest.kt`가 2026-07-30판 7계층 경계(2/3계층 재편, 4/6계층 신설, 5/7번호 이동)를 기계적으로 강제한다 — **2026-09-23 재판정: 강제하지 못한다.** 진단서(`260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §1.2)가 import 규칙 10개 중 4개가 **0개 파일을 검사하며 무조건 통과**하고 있었음을 실측했고, 같은 날 P0에서 되살렸다(커밋 `0c33d32c`). 다만 되살린 뒤에도 강제 수단은 여전히 문자열 스캔이라, "컴파일러가 알아볼 수 있는 형태로 다시 적는다"는 처방 자체는 그 진단서가 이어받았다 — 이 항목의 정본은 이제 그쪽이다.
+- [ ] `LayeringContractTest.kt`가 2026-07-30판 7계층 경계(2/3계층 재편, 4/6계층 신설, 5/7번호 이동)를 기계적으로 강제한다 — **2026-09-23 재판정: 강제하지 못한다.** 진단서(`260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §1.2)가 import 규칙 10개 중 4개가 **0개 파일을 검사하며 무조건 통과**하고 있었음을 실측했고, 같은 날 P0에서 되살렸다(커밋 `0c33d32c`). 다만 되살린 뒤에도 강제 수단은 여전히 문자열 스캔이라, "컴파일러가 알아볼 수 있는 형태로 다시 적는다"는 처방 자체는 그 진단서가 이어받았다 — 이 항목의 정본은 이제 그쪽이다.
 - [x] 로컬 구현체(`KataGoProcessEngineAdapter`)와 원격 구현체가 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다 — `RemoteEngineCoreApiAdapter`(260803, Stage D-1/D-2). 단, 아직 실제 배선은 하지 않음(Stage E)
-  - 🔴 **2026-09-23 발견 — 대등하지 않은 구멍이 하나 있다.** 원격 코덱의 `encodeState`가 **덤(komi)과 접바둑 돌 수를 전송하지 않는다**(`HttpRemotePositionAnalysisTransport.kt`의 `encodeState`, 그리고 같은 코덱을 쓰는 `RemoteEngineCoreApiAdapter`). 오늘은 터지지 않는다 — `MainActivity.kt`가 `BuildConfig.DEBUG`이면서 `local.properties`에 키가 있을 때만 원격을 타기 때문이다. 그러나 **Stage F로 원격/DePIN을 출하하는 순간 원격 엔진은 덤과 접바둑을 모르는 채로 분석한다.** Stage F 착수 전 선결 조건으로 둔다. 상세는 `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`의 "P0에서 새로 드러난 것".
+  - 🔴 **2026-09-23 발견 — 대등하지 않은 구멍이 하나 있다.** 원격 코덱의 `encodeState`가 **덤(komi)과 접바둑 돌 수를 전송하지 않는다**(`HttpRemotePositionAnalysisTransport.kt`의 `encodeState`, 그리고 같은 코덱을 쓰는 `RemoteEngineCoreApiAdapter`). 오늘은 터지지 않는다 — `MainActivity.kt`가 `BuildConfig.DEBUG`이면서 `local.properties`에 키가 있을 때만 원격을 타기 때문이다. 그러나 **Stage F로 원격/DePIN을 출하하는 순간 원격 엔진은 덤과 접바둑을 모르는 채로 분석한다.** Stage F 착수 전 선결 조건으로 둔다. 상세는 `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`의 "P0에서 새로 드러난 것".
 - [x] `RemoteEngineSessionClient`가 존재하고, 여러 원격 후보 중 선택·신뢰도 판단을 수행한다 — `selectRemoteEngineCandidate`+`createRemoteEngineSessionClient`(260804, Stage E-1/E-2). 후보 1개 기준의 최소 판단(활성화+엔드포인트 유효성)만 있고, 여러 후보 비교 신뢰도 판단은 실제 후보가 2개 이상 생길 때 확장. **260818: 실제 컴포지션(MainActivity)에 `BuildConfig.DEBUG` 한정으로 배선 완료**(Stage E-3) — 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)를 가리키게 하면 실제로 쓰인다.
 - [x] 4계층(외부 연동) 중 최소 1개(결제 또는 로그인)가 실제 SDK로 연동 완료된다 — 결제(Google Play Billing, premium Step 4)와 로그인(Google/Email, auth Step 2/3) 둘 다 실 SDK 연동 완료. 결제는 260809에 Play Console 상품 등록·라이선스 테스터 설정까지 포함해 실기 e2e(구매+복원) 검증까지 마침(아래 진행 로그 참고)
 - [ ] 6계층(세션/연속성)에 기기 식별자 기반 다중 기기 정책이 존재한다 — 부분 완료: 식별자 인프라(`DeviceIdentity`)는 존재(260803, Stage C-2). 정책 자체는 미착수(연결할 실제 소비자, 즉 계정 기반 교차 기기 상태가 아직 없음 — auth Step 4/premium Step 4 대기)
@@ -101,12 +101,12 @@
 
 - 260829 — **Stage F 파이썬 프로토타입이 `main`에 들어왔다(이 계획서 밖에서 진행됨).** `260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` 6절의 1~4번(세션 토픽 흉내내기, 정합성 체크, 타임아웃+병행 폴백, 토픽 TTL 정책)이 전부 수행돼 실측 결과가 그 문서 7절에 있다. 코드는 `scripts/remote-engine-mq-prototype/`다. 가장 중요한 결론 하나: 같은 국면이라도 KataGo의 비결정성 때문에 **정합성 비교는 "정확히 같음"이 아니라 허용 오차 기반이어야 한다**(로컬 반복 편차와 로컬-원격 편차가 같은 자릿수였다). ⚠️ 이 작업은 260818에 미병합 브랜치에서 만들어져 260829까지 `main`에서 보이지 않았다 — 그래서 이 계획서의 진행 로그도 그동안 260818에서 멈춰 있었다.
 
-- 260923 — **이 문서를 `work/roadmap/`에서 `work/plans/`로 옮기고 날짜 없는 이름으로 바꿨다**(0절 참고). 같은 날 옛 서술 셋을 정정했다: ⓐ 260803 B-1 로그의 익명 로그인 재시도(폐기로 소멸), ⓑ Stage C-1의 "익명→실계정 승격, Firestore 동기화"(익명은 폐기, Firestore 코드는 저장소에 없음 — 게스트→실계정으로 재정의), ⓒ Stage D의 "대등한 계약"에 남아 있던 구멍(원격 코덱이 덤·접바둑을 전송하지 않는다). 계층 정렬 축의 정본이 `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어간 것도 이때다. **코드 변경 없음**(참조 주석 5곳의 문서 이름 갱신뿐).
+- 260923 — **이 문서를 `work/roadmap/`에서 `work/plans/`로 옮기고 날짜 없는 이름으로 바꿨다**(0절 참고). 같은 날 옛 서술 셋을 정정했다: ⓐ 260803 B-1 로그의 익명 로그인 재시도(폐기로 소멸), ⓑ Stage C-1의 "익명→실계정 승격, Firestore 동기화"(익명은 폐기, Firestore 코드는 저장소에 없음 — 게스트→실계정으로 재정의), ⓒ Stage D의 "대등한 계약"에 남아 있던 구멍(원격 코덱이 덤·접바둑을 전송하지 않는다). 계층 정렬 축의 정본이 `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어간 것도 이때다. **코드 변경 없음**(참조 주석 5곳의 문서 이름 갱신뿐).
 
 ## 6. 관련 문서
 
 - `ARCHITECTURE.md` — 레이어 원칙(앱 비종속)
 - `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 현재 매핑, 알려진 갭
-- `260923-_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **계층 정렬 축의 현행 정본**(실측 진단 + 처방 + 함정 A~J). 이 계획서의 Stage A~C를 이어받았다
+- `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **계층 정렬 축의 현행 정본**(실측 진단 + 처방 + 함정 A~J). 이 계획서의 Stage A~C를 이어받았다
 - `PREMIUM_MODE.md`, `LOGIN_AND_ACCOUNT_SYSTEM.md` — Stage B/C의 1차 소스 문서
 - `260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` — Stage F 전용 킥오프(2026-09-23 **개명** — 옛 이름 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`). 파이썬 프로토타입 완료, 앱 이식만 남음
