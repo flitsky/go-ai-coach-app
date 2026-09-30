@@ -228,4 +228,23 @@ class GameReplayTimelineTest {
 
         assertEquals(emptyList(), deriveScoreSwingHighlights(snapshots))
     }
+
+    /**
+     * ⚠️ **앞뒤가 둘 다 신경망 평가일 때만 잰다**(백로그 #200). 엔진 평가가 끊긴 수의 로컬 영역 계산·종국 점수는
+     * 척도가 달라 섞어 빼면 **가짜 변곡점**이 생긴다 — 아래 2·3·5수는 전부 수십 집이 "흔들린" 것처럼 보이지만
+     * 한쪽이 신경망 평가가 아니라 후보가 아니다.
+     */
+    @Test
+    fun swingsAcrossALocalOrFinalSnapshotAreIgnored() {
+        val snapshots = listOf(
+            snapshot(0, 0.0),
+            snapshot(1, -8.0), // 엔진→엔진, |8| — 진짜 변곡점
+            ScoreSnapshot(moveNumber = 2, whiteScoreLead = 30.0, source = ScoreSnapshotSource.LocalAreaEstimate),
+            snapshot(3, -6.0),
+            snapshot(4, -5.0),
+            ScoreSnapshot(moveNumber = 5, whiteScoreLead = -40.0, source = ScoreSnapshotSource.FinalScore),
+        )
+
+        assertEquals(listOf(1), deriveScoreSwingHighlights(snapshots).map { it.moveNumber })
+    }
 }

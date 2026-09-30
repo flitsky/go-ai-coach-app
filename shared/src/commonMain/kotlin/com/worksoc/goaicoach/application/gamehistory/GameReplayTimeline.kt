@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import kotlin.math.abs
 
 /**
@@ -100,15 +101,18 @@ const val ScoreSwingMaxCount: Int = 5
  * 반환하는 [ScoreSwingHighlight.swing]은 방향(어느 쪽이 유리해졌는지)까지 화면에 보여 줄 수 있게
  * 부호를 지운 적이 없다. 앞뒤 스냅샷이 둘 다 있는 수순에만 매기고(`moveNumber-1`·`moveNumber`),
  * 없으면 그 수는 후보에서 빠진다.
+ *
+ * ⚠️ **앞뒤 둘 다 신경망 평가([ScoreSnapshotSource.EngineEstimate])일 때만 잰다**(백로그 #200, 2026-09-30).
+ * 엔진 평가가 실패·시간 초과·미준비인 수에는 로컬 영역 계산(`LocalAreaEstimate`)이, 종국에는 `FinalScore`가
+ * 기록되는데 둘은 신경망 우세와 **척도가 달라** 섞어 빼면 가짜 변곡점이 생긴다 — 그런 수는 후보에서 빠진다.
+ * 「복기 하기」 추천([countReviewRecommendationMistakes])과 **같은 거름망**이다.
  */
 fun deriveScoreSwingHighlights(
     scoreSnapshots: List<ScoreSnapshot>,
     thresholdPoints: Double = ScoreSwingThreshold,
     maxCount: Int = ScoreSwingMaxCount,
 ): List<ScoreSwingHighlight> {
-    val leadByMoveNumber = scoreSnapshots
-        .mapNotNull { snapshot -> snapshot.whiteScoreLead?.let { snapshot.moveNumber to it } }
-        .toMap()
+    val leadByMoveNumber = engineEstimateWhiteLeadByMoveNumber(scoreSnapshots)
 
     return leadByMoveNumber.keys
         .filter { moveNumber -> moveNumber > 0 }
