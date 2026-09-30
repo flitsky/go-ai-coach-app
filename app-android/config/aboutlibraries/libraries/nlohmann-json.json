@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:nlohmann-json",
+  "artifactVersion": "3.8.0",
+  "name": "JSON for Modern C++ (nlohmann/json)",
+  "description": "Compiled into the KataGo engine.",
+  "website": "https://github.com/nlohmann/json",
+  "developers": [
+    {
+      "name": "Niels Lohmann"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "nlohmann-json-mit"
+  ]
+}

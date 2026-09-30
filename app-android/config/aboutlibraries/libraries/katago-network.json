@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:katago-network",
+  "artifactVersion": "",
+  "name": "KataGo neural network kata1-b18c384nbt-s9996604416-d4316597426",
+  "description": "Neural network weights used by the bundled KataGo engine.",
+  "website": "https://katagotraining.org/networks/",
+  "developers": [
+    {
+      "name": "David J Wu (\"lightvector\")"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "katago-network"
+  ]
+}

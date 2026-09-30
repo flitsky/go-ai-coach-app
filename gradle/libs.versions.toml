@@ -22,6 +22,11 @@ spotless = "8.4.0"
 # 1.8.0 = spotless 8.4.0(spotless-lib 4.5.0)의 기본값. 내장 파서는 kotlin-compiler-embeddable 2.2.21이지만
 # Kotlin 2.3.20 코드 624파일을 파싱 오류 0으로 읽었다(2026-09-25). 올릴 때는 spotlessCheck의 lint 0을 확인한다.
 ktlint = "1.8.0"
+# 오픈소스 라이선스 화면(백로그 #195). ⚠️ **13.2.1에 멈춘다** — 14.x부터 `-core`가 Java 21 바이트코드(클래스 65)라
+# JDK 17에서 도는 JVM 단위 테스트가 `UnsupportedClassVersionError`로 터진다(2026-09-30 실측). 13.2.1은 Java 17(61)·
+# kotlin-stdlib 2.3.0이라 Kotlin 2.3.20과 맞는다. 15.x는 Kotlin 2.4·AGP 9 전제. JDK를 21로 올리는 날 함께 올릴 것.
+# 앱은 `-core`(JSON 파서)만 쓰고 화면은 직접 그린다 — `-compose-m3`는 Compose를 BOM(1.8)보다 위로 끌어올린다.
+aboutLibraries = "13.2.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -52,6 +57,7 @@ androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.r
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -61,3 +67,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }

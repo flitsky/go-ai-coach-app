@@ -68,6 +68,7 @@
         "SettingsScreen.versionTapCount": { "kind": "GESTURE_COUNTER", "since": "#46", "why": "10탭 개발자 진입 카운터" },
         "SettingsScreen.showDeveloperModeOptIn": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "개발자 모드 진입 확인(#99)" },
         "SettingsScreen.showDeveloperModeOptOut": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "개발자 모드 해제 확인(#99)" },
+        "SettingsScreen.showOpenSourceLicenses": { "kind": "VISIBILITY_GATE", "since": "#195", "why": "설정의 하위 화면「오픈소스 라이선스」을 여닫는다 — 목적지로 올리면 셸이 커지고 뒤로가기가 홈으로 튄다(선례 #163)" },
         "SettingsScreen.updateStatus": { "kind": "HOSTED_ROLE_STATE", "since": "#46", "why": "rememberAppUpdateStatus()가 AppUpdateUiState.kt에서 소유하는 조회 상태(#53) — 셸은 읽기만" },
         "SettingsScreen.authState": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(1/5) — AccountSettingsSection으로 뗄 빚" },
         "SettingsScreen.showEmailDialog": { "kind": "FOREIGN_ROLE_STATE", "since": "#46", "why": "계정 역할 묶음(2/5)" },

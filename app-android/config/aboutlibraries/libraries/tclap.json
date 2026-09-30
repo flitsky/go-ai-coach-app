@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:tclap",
+  "artifactVersion": "1.2.2",
+  "name": "TCLAP (Templatized C++ Command Line Parser)",
+  "description": "Compiled into the KataGo engine.",
+  "website": "https://sourceforge.net/projects/tclap/",
+  "developers": [
+    {
+      "name": "Michael E. Smoot, Daniel Aarno, Google Inc."
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "tclap-mit"
+  ]
+}

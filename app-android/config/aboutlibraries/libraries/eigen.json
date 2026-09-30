@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:eigen",
+  "artifactVersion": "3.4.0",
+  "name": "Eigen",
+  "description": "C++ linear algebra library compiled into the KataGo engine (Eigen backend). Source code: https://gitlab.com/libeigen/eigen",
+  "website": "https://eigen.tuxfamily.org/",
+  "developers": [
+    {
+      "name": "Eigen authors"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "eigen-mpl-2.0"
+  ]
+}

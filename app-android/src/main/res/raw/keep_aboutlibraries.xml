@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  백로그 #195 — 오픈소스 라이선스 목록(`R.raw.aboutlibraries`, AboutLibraries 플러그인이 빌드마다 생성)을
+  리소스 축소가 지우지 못하게 한다. gradle.properties가 `android.r8.optimizedResourceShrinking=true`라
+  AboutLibraries 문서가 이 파일을 요구한다. 빠지면 릴리스 빌드에서만 목록이 빈다.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/aboutlibraries" />

@@ -66,6 +66,7 @@ import com.worksoc.goaicoach.ui.designsystem.GoogleBrandBlue
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.openSourceLicensesTitleFor
 import com.worksoc.goaicoach.ui.monetization.AdPrivacyOptionsRow
 import com.worksoc.goaicoach.ui.play.LanguageSettingsPanel
 import com.worksoc.goaicoach.ui.setup.CompactScoringAndBoardSettingsPanel
@@ -144,6 +145,11 @@ internal fun SettingsScreen(
     // 개발자 모드 진입/해제 확인 팝업(백로그 #99). 저장하지 않는다 — 화면을 벗어나면 닫힌다.
     var showDeveloperModeOptIn by remember { mutableStateOf(false) }
     var showDeveloperModeOptOut by remember { mutableStateOf(false) }
+    // 백로그 #195 — 「오픈소스 라이선스」 하위 화면. 저장하지 않는다(화면을 벗어나면 닫힌다).
+    var showOpenSourceLicenses by remember { mutableStateOf(false) }
+    // ⚠️ 스크롤을 여기로 끌어올린 이유: 라이선스 화면을 여는 동안 아래 `Column`이 컴포지션을 떠나므로,
+    // 안에서 만들면 돌아왔을 때 맨 위로 튄다(그 링크는 화면 맨 아래에 있다).
+    val scrollState = rememberScrollState()
     // 백로그 #53 — 화면이 열릴 때 한 번만 묻고, 결과가 오면 그때 아래 줄이 나타난다.
     // 실패는 조용히 넘어간다(`AppUpdateRow`의 폴백 경로).
     val updateStatus = rememberAppUpdateStatus()
@@ -212,6 +218,11 @@ internal fun SettingsScreen(
         }
     }
 
+    if (showOpenSourceLicenses) {
+        OpenSourceLicensesScreen(onBackClick = { showOpenSourceLicenses = false }, modifier = modifier)
+        return
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -244,7 +255,7 @@ internal fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .navigationBarsPadding()
                 .padding(horizontal = AppSpacing.Space24),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
@@ -437,6 +448,16 @@ internal fun SettingsScreen(
                                 ).show()
                             }
                         },
+                    )
+                    // 백로그 #195 — 버전 줄 **바로 아래**(2026-09-30 사용자 결정). 버전 텍스트의 10탭과 겹치지
+                    // 않게 간격을 두고, 누르면 같은 화면 안의 하위 화면이 열린다(외부 브라우저가 아니다).
+                    Spacer(modifier = Modifier.height(AppSpacing.Space8))
+                    Text(
+                        text = openSourceLicensesTitleFor(strings.language),
+                        fontSize = AppTextSize.Text12,
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable { showOpenSourceLicenses = true },
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.Space8))
                     Text(

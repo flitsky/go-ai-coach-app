@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:sha2",
+  "artifactVersion": "",
+  "name": "SHA-2 (sha2.cpp)",
+  "description": "Compiled into the KataGo engine; modified by David J Wu (\"lightvector\").",
+  "website": "https://github.com/lightvector/KataGo/blob/v1.16.4/cpp/core/sha2.cpp",
+  "developers": [
+    {
+      "name": "Aaron D. Gifford"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "sha2-bsd-3-clause"
+  ]
+}

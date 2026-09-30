@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.spotless)
+    // 오픈소스 라이선스 화면(백로그 #195) — 빌드마다 의존성 목록을 모아 `R.raw.aboutlibraries`로 싣는다.
+    alias(libs.plugins.aboutlibraries.android)
     // apply false로 등록만 해두고, 실제 적용은 아래에서 google-services.json 존재 여부에
     // 따라 조건부로 한다 — plugins{} 블록 안에서는 file()을 쓸 수 없어 여기서는 등록만 한다.
     alias(libs.plugins.google.services) apply false
@@ -360,6 +362,25 @@ kotlin {
     jvmToolchain(17)
 }
 
+// ── 오픈소스 라이선스 목록(백로그 #195) ─────────────────────────────────────────
+// 플러그인이 변형(variant)마다 **그 변형이 실제로 싣는** 의존성을 모아 `R.raw.aboutlibraries`를
+// 만든다(`.android` 플러그인이 병합 리소스에 직접 넣으므로 저장소에 JSON을 두지 않는다).
+// ⚠️ **KataGo 엔진·신경망과 엔진 안에 컴파일된 C++ 부품은 플러그인이 못 찾는다** — Gradle 의존성이
+// 아니라 `.so`·에셋이다. 그래서 `config/aboutlibraries/`에 손으로 적어 합친다. 원문은 **원본 그대로**
+// 옮겼다(지어낸 문구가 아니다, 2026-09-30): KataGo 코드 = v1.16.4 태그의 `LICENSE`(엔진 빌드가 받는 그
+// 판, scripts/build-katago-android-spike.sh) · 신경망 = katagotraining.org/network_license/의
+// "KataGo Neural Network License" 블록 · Eigen = eigen-3.4.0 `COPYING.MPL2` · tclap·ghc filesystem·
+// nlohmann/json·sha2 = KataGo v1.16.4 `cpp/external`·`cpp/core/sha2.cpp`의 라이선스 원문.
+aboutLibraries {
+    // 빌드가 네트워크에 기대지 않게 한다. ⚠️ 오프라인이면 플러그인이 SPDX 본문(Apache-2.0·MIT·BSD-3-Clause)을
+    // 못 받아 **이름만 남는다** — 그래서 셋의 원문을 `config/aboutlibraries/licenses/`에 한 번 받아 두었다
+    // (플러그인이 온라인으로 받은 SPDX 본문 그대로). Google SDK 약관(ASDKL 등)은 원문이 없고 주소로 보낸다.
+    offlineMode = true
+    collect {
+        configPath = file("config/aboutlibraries")
+    }
+}
+
 dependencies {
     implementation(project(":shared"))
     implementation(project(":engine-android"))
@@ -402,6 +423,9 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.guava)
+
+    // 오픈소스 라이선스 화면(백로그 #195) — 생성된 JSON을 읽는 파서만. 화면은 우리 디자인 토큰으로 직접 그린다.
+    implementation(libs.aboutlibraries.core)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

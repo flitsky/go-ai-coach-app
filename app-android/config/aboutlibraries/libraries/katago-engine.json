@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:katago-engine",
+  "artifactVersion": "1.16.4",
+  "name": "KataGo",
+  "description": "Go engine bundled as the app's AI (native library libkatago.so).",
+  "website": "https://github.com/lightvector/KataGo",
+  "developers": [
+    {
+      "name": "David J Wu (\"lightvector\") and other KataGo authors"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "katago-code"
+  ]
+}

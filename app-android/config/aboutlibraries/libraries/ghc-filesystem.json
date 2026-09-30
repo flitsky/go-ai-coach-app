@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:ghc-filesystem",
+  "artifactVersion": "1.5.8",
+  "name": "ghc::filesystem",
+  "description": "Compiled into the KataGo engine.",
+  "website": "https://github.com/gulrak/filesystem",
+  "developers": [
+    {
+      "name": "Steffen Schümann"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "ghc-filesystem-mit"
+  ]
+}
