@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.preferences
 
+import com.worksoc.goaicoach.shared.policy.DefaultSearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import kotlin.test.Test
@@ -28,7 +29,8 @@ class SettingsSchemaMigrationTest {
 
         val migrated = migrateSettingsSchema(old)
 
-        assertEquals(SearchTimeLimit.WithinTenSeconds, migrated.searchTimeSettings.limit)
+        // 세대 1은 「그때의 기본값」으로 되돌린다 — 2026-09-30부터 기본값이 5초라 세대 0 사용자는 5초가 된다.
+        assertEquals(DefaultSearchTimeLimit, migrated.searchTimeSettings.limit)
         assertEquals(CurrentSettingsSchemaGeneration, migrated.settingsSchemaGeneration)
     }
 

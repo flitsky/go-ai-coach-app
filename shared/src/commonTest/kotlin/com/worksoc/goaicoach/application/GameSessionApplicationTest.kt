@@ -26,19 +26,16 @@ import kotlin.test.assertTrue
 
 class GameSessionApplicationTest {
     @Test
-    fun buildPlayerSetupChangePlanBlocksWhileEngineIsBusy() {
+    fun buildPlayerSetupChangePlanIsAcceptedEvenWhileTheEngineIsBusy() {
+        // 2026-09-30: 바쁨 게이트를 걷었다 — AI 대 AI에서 좌석을 「유저」로 되돌릴 수 있어야 한다(다음 수부터 적용).
         val plan = buildPlayerSetupChangePlan(
             nextSetup = PlayerSetup(),
             currentState = GameState.empty(),
             currentProfile = EngineProfile(),
             defaultPlayLevel = PlayLevelSetting(),
-            isEngineBusy = true,
         )
 
-        assertEquals(
-            PlayerSetupChangePlan.ShowMessage("Engine is busy. Change Player Setup after the current action."),
-            plan,
-        )
+        assertTrue(plan is PlayerSetupChangePlan.Apply)
     }
 
     @Test
@@ -55,7 +52,6 @@ class GameSessionApplicationTest {
             currentState = state,
             currentProfile = EngineProfile(),
             defaultPlayLevel = PlayLevelSetting(),
-            isEngineBusy = false,
         )
 
         assertTrue(plan is PlayerSetupChangePlan.Apply)

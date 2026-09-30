@@ -270,7 +270,8 @@ internal fun SettingsScreen(
 
             PlayerSetupPanel(
                 state = screenState.playerSetupUi,
-                enabled = !screenState.engine.isBusy,
+                // 엔진이 바빠도 받는다 — 다음 수부터 적용(2026-09-30, `buildPlayerSetupChangePlan`).
+                enabled = true,
                 onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
             )
 

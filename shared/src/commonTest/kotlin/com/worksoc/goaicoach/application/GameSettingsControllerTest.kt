@@ -213,7 +213,8 @@ class GameSettingsControllerTest {
     }
 
     @Test
-    fun changePlayerSetupBlocksWhileEngineIsBusy() {
+    fun changePlayerSetupAppliesEvenWhileEngineIsBusy() {
+        // 2026-09-30: AI 대 AI에서는 엔진이 늘 바빠 좌석을 「유저」로 되돌릴 수 없었다 — 바빠도 받고 다음 수부터 적용한다.
         var appliedSetup: PlayerSetup? = null
         var engineMessage: String? = null
 
@@ -265,8 +266,8 @@ class GameSettingsControllerTest {
 
         controller.changePlayerSetup(PlayerSetup())
 
-        assertNull(appliedSetup)
-        assertEquals("Engine is busy. Change Player Setup after the current action.", engineMessage)
+        assertEquals(PlayerSetup(), appliedSetup)
+        assertNull(engineMessage)
     }
 
     @Test

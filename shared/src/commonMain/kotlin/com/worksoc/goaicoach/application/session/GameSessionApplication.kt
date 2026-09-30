@@ -19,18 +19,21 @@ sealed class PlayerSetupChangePlan {
     ) : PlayerSetupChangePlan()
 }
 
+/**
+ * 플레이어 설정(좌석·AI 캐릭터) 바꾸기. **엔진이 바빠도 받는다**(2026-09-30 사용자 요청).
+ *
+ * 예전에는 엔진이 바쁘면 막았는데, **AI 대 AI 대국에서는 엔진이 사실상 늘 바빠** 좌석을 「유저」로 되돌릴 수 없었다
+ * (최대 탐색 시간이 2026-08-30에 같은 이유로 풀렸다 — `GameSettingsController.changeSearchTimeSettings`).
+ * 바꾼 값은 **다음 수부터** 적용된다 — 이미 탐색 중인 AI 차례는 자기 프로필로 끝까지 두고, 그다음 차례를 트리거가
+ * 새 좌석으로 고른다. 사용자 판단: *"변경되면 다음 수부터 적용되는 형태라면 문제없다."*
+ */
 fun buildPlayerSetupChangePlan(
     nextSetup: PlayerSetup,
     currentState: GameState,
     currentProfile: EngineProfile,
     defaultPlayLevel: PlayLevelSetting,
-    isEngineBusy: Boolean,
     searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
 ): PlayerSetupChangePlan {
-    if (isEngineBusy) {
-        return PlayerSetupChangePlan.ShowMessage("Engine is busy. Change Player Setup after the current action.")
-    }
-
     return PlayerSetupChangePlan.Apply(
         playerSetup = nextSetup,
         runtime = selectRuntimePlayLevel(

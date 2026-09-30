@@ -61,14 +61,14 @@ enum class SearchTimeLimit(
  * while this value only caps elapsed search time.
  */
 /**
- * AI 한 수에 허용하는 **최대 탐색 시간**의 기본값 — 2026-09-22에 3초에서 **10초**로 올렸다.
+ * AI 한 수에 허용하는 **최대 탐색 시간**의 기본값 — 2026-09-22에 3초에서 10초로 올렸고, 2026-09-30에 **5초**로 내렸다(사용자 요청).
  *
  * ⚠️ **이미 고른 사용자는 그대로다** — 저장된 값이 있으면 그것이 이긴다. 바뀌는 것은 새로
  * 설치한 사용자와, 아직 이 설정을 만져 본 적이 없는 사용자다.
  * ⚠️ **와치독 한도가 이 값에서 계산된다**(`engineTurnWatchdogTimeoutMillisFor`) — 여기를
  * 내리면 「엔진 응답 지연」 팝업이 그만큼 빨리 뜬다. 둘은 같이 움직인다.
  */
-val DefaultSearchTimeLimit: SearchTimeLimit = SearchTimeLimit.WithinTenSeconds
+val DefaultSearchTimeLimit: SearchTimeLimit = SearchTimeLimit.WithinFiveSeconds
 
 data class SearchTimeSettings(
     val limit: SearchTimeLimit = DefaultSearchTimeLimit,

@@ -189,9 +189,9 @@ internal fun ExpandedGameMenuSection(
 
         PlayerSetupPanel(
             state = screenState.playerSetupUi,
-            // 엔진이 바쁠 때는 잠근다 — 좌석 교체는 진행 중 세션에 그대로 적용되므로
-            // (`GameSettingsController.changePlayerSetup`), 탐색 도중에 바꾸면 어긋난다.
-            enabled = !screenState.engine.isBusy,
+            // ⚠️ **엔진이 바빠도 잠그지 않는다**(2026-09-30) — AI 대 AI에서는 늘 바빠 「유저」로 되돌릴 수 없었다.
+            //   바꾼 좌석은 다음 수부터 적용된다(`buildPlayerSetupChangePlan`).
+            enabled = true,
             onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
         )
 

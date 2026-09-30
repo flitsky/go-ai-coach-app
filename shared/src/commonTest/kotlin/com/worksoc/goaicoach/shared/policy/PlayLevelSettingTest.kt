@@ -18,9 +18,9 @@ class PlayLevelSettingTest {
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(16, profile.analysisLimit.visits)
         // ⚠️ **사용자 설정의 기본 상한**(`DefaultSearchTimeLimit`)이 얹힌 값이다 — 2026-09-22에
-        // 3초에서 10초로 올렸다. 16수 탐색은 어느 기기에서도 1초 안에 끝나므로 이 상한은
+        // 3초에서 10초로 올렸고 2026-09-30에 5초로 내렸다. 16수 탐색은 어느 기기에서도 1초 안에 끝나므로 이 상한은
         // 사실상 **느린 기기가 잘려 나가지 않게 하는 안전망**이다.
-        assertEquals(10_000L, profile.analysisLimit.timeMillis)
+        assertEquals(5_000L, profile.analysisLimit.timeMillis)
         assertEquals(8, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Lite, setting.analysisPreset)
     }
@@ -32,7 +32,7 @@ class PlayLevelSettingTest {
 
         assertEquals(DifficultyProfile.Beginner, profile.difficulty)
         assertEquals(32, profile.analysisLimit.visits)
-        assertEquals(10_000L, profile.analysisLimit.timeMillis)
+        assertEquals(5_000L, profile.analysisLimit.timeMillis)
         assertEquals(16, profile.analysisLimit.candidateCount)
         assertEquals(AnalysisPreset.Learning, setting.analysisPreset)
     }
@@ -60,7 +60,7 @@ class PlayLevelSettingTest {
         val limit = levelSeven.aiMoveAnalysisLimitWith(SearchTimeSettings())
 
         assertEquals(32, limit.visits)
-        assertEquals(10_000L, limit.timeMillis)
+        assertEquals(5_000L, limit.timeMillis)
         assertEquals(16, limit.candidateCount)
         assertEquals(true, limit.includePolicy)
         assertEquals(0, limit.refinePolicyMoves)

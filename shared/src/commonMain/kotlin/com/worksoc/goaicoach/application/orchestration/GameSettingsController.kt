@@ -66,7 +66,7 @@ class GameSettingsController(
     private val clearUndoEngineInterventionQuietWindow: () -> Unit,
 ) {
     /**
-     * Validates engine-busy gate, then builds and applies a [PlayerSetupChangePlan].
+     * Builds and applies a [PlayerSetupChangePlan] — **엔진이 바빠도 받는다**(다음 수부터 적용, [buildPlayerSetupChangePlan]).
      * No engine I/O — only local state mutation.
      */
     fun changePlayerSetup(nextSetup: PlayerSetup) {
@@ -77,7 +77,6 @@ class GameSettingsController(
                 currentState = gameState,
                 currentProfile = currentEngineProfile(),
                 defaultPlayLevel = defaultPlayLevel,
-                isEngineBusy = isEngineBusy(),
                 searchTimeSettings = currentSearchTimeSettings(),
             )
         ) {
