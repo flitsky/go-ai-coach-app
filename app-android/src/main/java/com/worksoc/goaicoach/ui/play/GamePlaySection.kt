@@ -163,6 +163,9 @@ internal fun GamePlaySection(
     // 상태 B(시간 초과·반복 실패 뒤 선택을 기다림)에서는 도는 작업이 없다 — 와치독이 다시 걸려 한 번 더 보고하면
     // 진단 로그에 없는 멈춤이 찍힌다(#109 검수). 선택이 나면 #74의 다시 걸기가 새로 잰다.
     val liveAwaitingEngineTimeoutChoice = rememberUpdatedState(screenState.isAwaitingEngineTimeoutChoice)
+    // 대국 시계가 멈춘 순간의 완료 순번(backlog #202) — 멈춘 사이 끝난 시도(백그라운드 취소)를 복귀 때 알아채려고
+    // 든다. ⚠️ 차례 시작 시각을 키로 걸지 말 것 — 시계의 `resume`이 그 시각을 옮겨 여기서 든 값이 복귀 순간 사라진다.
+    var watchdogCompletionSeqAtPause by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(watchdogBaseMillis, turnTimeState.isPaused, screenState.isGameEnded) {
         // 안전 관리(레프리) 도메인 와치독: 새 차례가 시작될 때마다, 그리고 다시 걸 때마다(이 effect가 재시작될
         // 때마다) 리셋되므로 별도 remember 없이 이 지역 변수 하나로 "이번 시도에서 이미 보고했는지"를 추적한다.
@@ -172,6 +175,13 @@ internal fun GamePlaySection(
             baseMillis = watchdogBaseMillis,
             completionSeq = liveEngineTurnWaitCompletionSeq.value,
         )
+        if (turnTimeState.isPaused) {
+            watchdogCompletionSeqAtPause = liveEngineTurnWaitCompletionSeq.value
+        } else {
+            // 멈춘 사이 시도가 끝났으면(백그라운드에서 취소된 AI 차례) 복귀 순간부터 새 시도로 잰다(#202).
+            watchdogAttempt = watchdogAttempt.resumedAfterPause(watchdogCompletionSeqAtPause, System.currentTimeMillis())
+            watchdogCompletionSeqAtPause = null
+        }
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
             delay(TurnTimerTickIntervalMillis)
             now = System.currentTimeMillis()

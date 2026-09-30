@@ -140,6 +140,9 @@ internal fun wireAutoAiTurnController(
         applyAutoAiTurnTimedOut = { timeout: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().markTimedOut(timeout)) },
         clearAutoAiTurnTimedOut = { context.setAutoAiTurnUiState(context.autoAiTurnUiState().clearTimedOut()) },
         recordAutoAiTurnFailure = { position: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().recordFailure(position)) },
+        // 재배선보다 오래 사는 수명 컨트롤러에 둔다 — Job과 같은 이유(#202).
+        isAppInForeground = { context.lifecycleController.isAppInForeground },
+        markAppInForeground = context.lifecycleController::markAppInForeground,
     )
 
 internal fun wireHumanMoveController(

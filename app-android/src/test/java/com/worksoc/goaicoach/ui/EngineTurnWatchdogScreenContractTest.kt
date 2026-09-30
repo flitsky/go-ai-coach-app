@@ -114,6 +114,33 @@ class EngineTurnWatchdogScreenContractTest {
         )
     }
 
+    /**
+     * backlog #202 — 멈춘 사이(앱이 백그라운드) 끝난 시도를 복귀 때 알아챈다. 효과가 멈춤으로 다시 걸릴 때 그 순간의 완료
+     * 순번을 들고, 복귀로 다시 걸릴 때 `resumedAfterPause`로 첫 시도를 고친 **뒤에** 루프에 들어가야 한다. 든 값을 차례
+     * 시작 시각으로 키 걸면 시계의 `resume`이 그 시각을 옮겨 복귀 순간 값이 사라진다.
+     */
+    @Test
+    fun theFirstAttemptAfterAPauseAccountsForAnAttemptThatEndedWhilePaused() {
+        assertTrue(
+            "멈춘 순간의 완료 순번을 키 없는 `remember`로 들지 않는다 — 차례 시작 시각을 키로 걸면 `resume`이 그 값을 지운다.",
+            Regex("""var\s+watchdogCompletionSeqAtPause\s+by\s+remember\s*\{\s*mutableStateOf<Int\?>\(null\)\s*\}""")
+                .containsMatchIn(screen),
+        )
+        val loopStart = watchdogEffect.indexOf("while")
+        assertTrue("와치독 효과에서 틱 루프(`while`)를 찾지 못했다 — 계약이 보는 자리가 사라졌다.", loopStart >= 0)
+        val setup = watchdogEffect.substring(0, loopStart)
+        assertTrue(
+            "멈춤으로 다시 걸릴 때 그 순간의 순번을 적지 않는다.",
+            Regex("""watchdogCompletionSeqAtPause\s*=\s*liveEngineTurnWaitCompletionSeq\.value""").containsMatchIn(setup),
+        )
+        assertTrue(
+            "복귀 때 첫 시도를 `resumedAfterPause`로 고치지 않는다 — 백그라운드에서 취소된 차례를 새로 요청한 탐색이 나가기 전의 " +
+                "시간까지 얹어 재여 멀쩡한데 팝업이 뜬다(#202).",
+            Regex("""watchdogAttempt\s*=\s*watchdogAttempt\.resumedAfterPause\(\s*watchdogCompletionSeqAtPause\s*,""")
+                .containsMatchIn(setup),
+        )
+    }
+
     @Test
     fun theFirstAttemptStartsFromTheTurnBaseAndTheCurrentCompletionSeq() {
         val loopStart = watchdogEffect.indexOf("while")

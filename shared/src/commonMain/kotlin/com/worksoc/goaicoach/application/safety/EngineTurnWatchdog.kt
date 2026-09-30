@@ -137,6 +137,23 @@ data class EngineTurnWatchdogAttempt(
     fun elapsedMillis(nowMillis: Long): Long = (nowMillis - baseMillis).coerceAtLeast(0L)
 
     fun reported(): EngineTurnWatchdogAttempt = copy(isReported = true)
+
+    /**
+     * 대국 시계가 멈췄다가(앱이 화면을 떠났다가) 다시 걸린 첫 시도를 고친다(backlog #202). 와치독 루프는 멈춘 동안
+     * 돌지 않아 그사이 끝난 시도를 [observe]로 못 본다 — 그래서 멈춘 순간의 완료 순번 [completionSeqAtPause]와
+     * 지금 순번을 맞대, 다르면 [nowMillis]부터 새 시도로 잰다.
+     *
+     * 그 사이에 시도가 끝나는 경우가 곧 앱이 백그라운드로 가며 AI 차례를 **취소**한 경우다 — 돌아와 새로 요청한
+     * 탐색을 차례 시작부터 재면, 나가기 전에 흐른 시간이 얹혀 멀쩡한 탐색에 「엔진 응답 지연」이 뜬다(2026-10-01 에뮬레이터
+     * 실측: 복귀 2.3초 만에 `elapsedMillis=31898`). 순번이 그대로면(멈춘 사이 끝난 것이 없다 — 광고 화면 등으로
+     * 가려졌을 뿐 탐색은 계속됐다) 그대로 둔다. 멈춘 적이 없으면([completionSeqAtPause]가 null) 그대로다.
+     */
+    fun resumedAfterPause(completionSeqAtPause: Int?, nowMillis: Long): EngineTurnWatchdogAttempt =
+        if (completionSeqAtPause == null || completionSeqAtPause == completionSeq) {
+            this
+        } else {
+            EngineTurnWatchdogAttempt(baseMillis = maxOf(baseMillis, nowMillis), completionSeq = completionSeq)
+        }
 }
 
 /** AI 차례에서 [elapsedSinceTurnStartMillis]가 와치독 한도를 넘겼는지 판정한다. */

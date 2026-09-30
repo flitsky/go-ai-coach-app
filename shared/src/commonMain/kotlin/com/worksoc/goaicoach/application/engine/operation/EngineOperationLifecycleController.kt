@@ -50,6 +50,18 @@ class EngineOperationLifecycleController(
      */
     private var inFlightAutoAiTurnJob: Job? = null
 
+    /**
+     * 앱 프로세스가 화면에 있는가(backlog #202) — 아니면 AI 차례를 띄우지 않는다. 여기 두는 이유는 위 Job과 같다:
+     * 이 컨트롤러는 키 없는 `remember`라 재배선에도 하나다. 처음은 참 — 기동 중에 AI 차례를 막지 않는다.
+     * 쓰는 쪽은 `AutoAiTurnController.onAppBackgrounded`/`onAppForegrounded` 하나뿐이다(순서가 거기서 정해진다).
+     */
+    var isAppInForeground: Boolean = true
+        private set
+
+    fun markAppInForeground(inForeground: Boolean) {
+        isAppInForeground = inForeground
+    }
+
     val isEngineBusy: Boolean get() = lifecycleState.isEngineBusy(currentSessionGeneration())
     val isBlockingBusy: Boolean get() = lifecycleState.isBlockingBusy(currentSessionGeneration())
 

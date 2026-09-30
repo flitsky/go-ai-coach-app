@@ -195,4 +195,31 @@ class EngineTurnWatchdogTest {
         val afterReset = attempt.reported().observe(nowMillis = 30_000L, completionSeq = 0)
         assertEquals(EngineTurnWatchdogAttempt(baseMillis = 30_000L, completionSeq = 0), afterReset)
     }
+
+    /**
+     * backlog #202 — 앱이 백그라운드로 가면 AI 차례가 취소되고(완료 순번이 바뀐다), 돌아오면 새로 요청된다. 와치독 루프는
+     * 멈춘 동안 돌지 않으므로 복귀 때 멈춘 순간의 순번과 맞대 **복귀 순간부터** 잰다. 차례 시작부터 재면 나가기 전의
+     * 시간이 얹혀 멀쩡한 새 탐색에 팝업이 뜬다(2026-10-01 에뮬레이터 실측: 복귀 2.3초 만에 경과 31.9초). 숫자는 손으로
+     * 적는다(1초 제한의 한도 9.2초).
+     */
+    @Test
+    fun anAttemptThatEndedWhileTheClockWasPausedIsMeasuredFromTheResume() {
+        val limit = SearchTimeLimit.WithinOneSecond
+        // 차례 시작 1초(시계의 resume이 멈춘 시간만큼 옮긴 값), 멈출 때 순번 3, 멈춘 사이 취소로 4가 됐다. 복귀 8초.
+        val onResume = EngineTurnWatchdogAttempt(baseMillis = 1_000L, completionSeq = 4)
+            .resumedAfterPause(completionSeqAtPause = 3, nowMillis = 8_000L)
+
+        assertEquals(EngineTurnWatchdogAttempt(baseMillis = 8_000L, completionSeq = 4), onResume)
+        assertFalse(isEngineTurnWatchdogTriggered(true, onResume.elapsedMillis(17_199L), limit), "새 시도는 복귀부터 9.2초를 기다린다")
+        assertTrue(isEngineTurnWatchdogTriggered(true, onResume.elapsedMillis(17_200L), limit), "새 시도가 멎으면 여전히 뜬다")
+    }
+
+    /** 멈춘 사이 끝난 시도가 없으면(가려졌을 뿐 탐색은 계속됐다) 차례 기준 그대로 잰다 — 진짜 멈춤을 늦게 알리지 않는다. */
+    @Test
+    fun aPauseWithoutAFinishedAttemptKeepsTheTurnBase() {
+        val attempt = EngineTurnWatchdogAttempt(baseMillis = 1_000L, completionSeq = 3)
+
+        assertEquals(attempt, attempt.resumedAfterPause(completionSeqAtPause = 3, nowMillis = 8_000L))
+        assertEquals(attempt, attempt.resumedAfterPause(completionSeqAtPause = null, nowMillis = 8_000L), "멈춘 적이 없으면 그대로")
+    }
 }

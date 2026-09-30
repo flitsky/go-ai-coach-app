@@ -597,6 +597,12 @@ private fun GoCoachScreen(
     }
 
     val controllers = remember(wiringContext) { wireGoCoachControllers(wiringContext) }
+    // 백그라운드면 AI 차례를 취소하고 돌아오면 다시 요청한다(#202). 람다로 넘긴다 — 컨트롤러는 다시 배선되므로
+    // 지금의 `controllers`를 불러야 한다(함정 46).
+    ObserveAppForegroundLifecycle(
+        onBackgrounded = { controllers.autoAiTurnController.onAppBackgrounded() },
+        onForegrounded = { controllers.autoAiTurnController.onAppForegrounded() },
+    )
     cancelUndoSync = controllers.undoController::cancelPendingSync
     exitToHome = {
         controllers.autoAiTurnController.cancelInFlightTurn() // 나가면 AI 차례는 물음 없이 멈춘다(#74)

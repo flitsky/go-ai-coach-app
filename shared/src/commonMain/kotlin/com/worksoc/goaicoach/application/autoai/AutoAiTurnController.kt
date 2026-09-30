@@ -13,6 +13,7 @@ import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
 import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
+import com.worksoc.goaicoach.match.MatchReferee
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
@@ -69,6 +70,14 @@ class AutoAiTurnController(
      * 표시가 붙어 [requestAiTurn]이 건너뛰고 선택 팝업이 뜬다 — 예전에는 화면에 아무것도 없이 조용히 계속 돌았다.
      */
     private val recordAutoAiTurnFailure: (AutoAiTurnTimeout) -> Unit,
+    /**
+     * 앱 프로세스가 화면에 있는가(backlog #202). 아니면 [requestAiTurn]이 새 차례를 띄우지 않는다 — 돌아오면
+     * [onAppForegrounded]가 다시 요청한다. 이 컨트롤러는 자주 다시 배선되므로 값은 컨트롤러 밖에 두고 부를 때마다
+     * 읽는다 — 배선은 `EngineOperationLifecycleController::isAppInForeground`.
+     */
+    private val isAppInForeground: () -> Boolean = { true },
+    /** 그 표시를 바꾼다 — 배선은 `EngineOperationLifecycleController::markAppInForeground`. */
+    private val markAppInForeground: (Boolean) -> Unit = {},
 ) {
     /**
      * 시간 초과 뒤 「한 번 더 기다리기」(refactor backlog #74, 설계 C-10 상태 B). 표시를 지우고 같은 국면을 같은
@@ -122,7 +131,48 @@ class AutoAiTurnController(
         )
     }
 
+    /**
+     * 앱 프로세스가 백그라운드로 갔다(backlog #202). 도는 AI 차례를 **취소**한다.
+     *
+     * 그대로 두면 안드로이드가 곧(Android 14+는 보통 10초쯤 뒤) 앱과 KataGo 자식 프로세스를 함께 동결한다. 탐색
+     * 마감은 동결 중에도 흐르는 단조 시계로 재므로, 오래 나가 있다 돌아오는 순간 마감이 터져 멀쩡한 엔진을 SIGKILL로
+     * 내리고 「엔진 응답 지연」이 뜬다(2026-09-30 AI 대 AI 리포트 — 36분 동결 뒤 복귀 1초 만의 시간 초과). 취소는
+     * 시간 초과가 아니라 프로세스를 내리지 않고 팝업도 없다([cancelInFlightTurn]).
+     *
+     * ⚠️ 표시를 취소보다 **먼저** 내린다 — 취소된 차례의 `finally`가 busy를 풀면 트리거 효과가 곧바로
+     * [requestAiTurn]을 부르고, 표시가 그대로면 백그라운드에서 새 차례가 뜬다.
+     * ⚠️ 양패스(또는 꽉 찬 판) 뒤 **계가 중**이면 취소하지 않는다. 계가는 이미 둔 수 뒤의 정리라 다시 요청할 길이
+     * 없어 판이 계가 중에 멈추고, 늦어져도 로컬 계가로 떨어질 뿐 팝업을 띄우지 않는다.
+     */
+    fun onAppBackgrounded() {
+        markAppInForeground(false)
+        val controllerState = currentControllerState()
+        val hadTurnInFlight = controllerState.isAutoAiTurnPending
+        val isResolvingEndgame = MatchReferee.shouldResolveEndgame(controllerState.gameState)
+        val cancelled = hadTurnInFlight && !isResolvingEndgame
+        if (cancelled) {
+            cancelInFlightTurn()
+        }
+        runtimeEventLog.append(
+            runtimeAppBackgroundLog(
+                context = currentRuntimeLogContext(),
+                hadTurnInFlight = hadTurnInFlight,
+                cancelled = cancelled,
+                isResolvingEndgame = isResolvingEndgame,
+            ),
+        )
+    }
+
+    /** 앱 프로세스가 화면으로 돌아왔다(backlog #202) — 백그라운드 동안 건너뛴 차례를 다시 요청한다. */
+    fun onAppForegrounded() {
+        markAppInForeground(true)
+        runtimeEventLog.append(runtimeAppForegroundLog(currentRuntimeLogContext()))
+        requestAiTurn()
+    }
+
     fun requestAiTurn() {
+        // 백그라운드에서는 새 차례를 띄우지 않는다(backlog #202) — 돌아오면 [onAppForegrounded]가 다시 요청한다.
+        if (!isAppInForeground()) return
         when (
             val request = currentControllerState().toAutoAiTurnRequestPlan(
                 isEngineReady = isEngineReady(),

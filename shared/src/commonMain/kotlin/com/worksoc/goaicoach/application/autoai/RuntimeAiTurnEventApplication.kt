@@ -146,6 +146,32 @@ internal fun runtimeAiTurnFailureLog(
             "turnElapsedMs=$turnElapsedMs fp=${turnState.runtimeShortFingerprint()} error=${error.runtimeErrorText(300)}",
     )
 
+/**
+ * 앱 프로세스가 백그라운드로 갔다(backlog #202). 도는 AI 차례가 있었는지와 그것을 취소했는지를 적는다 — 복귀 뒤의
+ * 느린 차례·시간 초과가 동결 때문인지를 리포트만으로 가를 수 있게(예전에는 logcat을 대조해야 했다).
+ */
+internal fun runtimeAppBackgroundLog(
+    context: RuntimeLogContext,
+    hadTurnInFlight: Boolean,
+    cancelled: Boolean,
+    isResolvingEndgame: Boolean,
+): String =
+    context.event(
+        name = "app_background",
+        phase = "app_lifecycle",
+        transition = if (cancelled) "cancel_ai_turn_until_foreground" else "hold_ai_turns_until_foreground",
+        detail = "aiTurnInFlight=$hadTurnInFlight cancelled=$cancelled resolvingEndgame=$isResolvingEndgame",
+    )
+
+/** 앱 프로세스가 화면으로 돌아왔다(backlog #202) — 건너뛴 AI 차례를 다시 요청한다. */
+internal fun runtimeAppForegroundLog(context: RuntimeLogContext): String =
+    context.event(
+        name = "app_foreground",
+        phase = "app_lifecycle",
+        transition = "request_ai_turn",
+        detail = "resume=ai_turn_request",
+    )
+
 /** 탐색이 시간 초과로 끝났다(refactor backlog #74) — 판은 그대로이고 사용자의 선택(팝업)을 기다린다. */
 internal fun runtimeAiTurnTimeoutLog(
     context: RuntimeLogContext,
