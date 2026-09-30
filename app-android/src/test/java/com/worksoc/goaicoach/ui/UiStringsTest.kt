@@ -78,10 +78,11 @@ class UiStringsTest {
 
     @Test
     fun compactDisplayLabelsUseShortLocalizedCopy() {
-        assertEquals("착수 표시", UiStringsKorean.lastMoveRing)
-        assertEquals("Move mark", UiStringsEnglish.lastMoveRing)
-        assertEquals("着手表示", UiStringsJapanese.lastMoveRing)
-        assertEquals("落子标记", UiStringsChineseSimplified.lastMoveRing)
+        // #198: 「착수」 섹션 안이라 짧게 — 방금 둔 돌 표시라는 뜻을 담는다.
+        assertEquals("마지막 수 표시", UiStringsKorean.lastMoveRing)
+        assertEquals("Last move", UiStringsEnglish.lastMoveRing)
+        assertEquals("最終手の表示", UiStringsJapanese.lastMoveRing)
+        assertEquals("显示最后一手", UiStringsChineseSimplified.lastMoveRing)
     }
 
     @Test

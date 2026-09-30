@@ -37,8 +37,10 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.MenuSection
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
 import com.worksoc.goaicoach.ui.l10n.largeHeldStoneLabelFor
+import com.worksoc.goaicoach.ui.l10n.menuSectionTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 
@@ -82,19 +84,26 @@ internal fun KaTrainUxMenuPanel(
             modifier = Modifier.padding(AppSpacing.Space12),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
         ) {
-            // **메뉴 순서는 사용자가 정한 것이다**(2026-09-12). 위에서부터 판 자체 → 착수하는 동작 →
-            // 착수 뒤의 표시 → 프리미엄 순으로 내려간다. ⚠️ 순서를 바꾸려거든 사용자에게 물을 것 —
-            // 여기 늘어선 차례가 곧 그 결정이고, `MenuOptionOrderContractTest`가 그것을 지킨다.
+            // **메뉴는 섹션 셋이다**(백로그 #198, 2026-09-30 사용자 결정) — 바둑판 → 착수 → AI 코치.
+            // 섹션 제목이 뜻을 실어 주므로 라벨은 짧다(「착수」 섹션의 「진동」·「애니메이션」). 2026-09-12에 정한 차례
+            // (판 → 착수 → 착수 뒤 표시 → 프리미엄)를 섹션으로 묶은 것이다. ⚠️ 차례를 바꾸려거든 사용자에게 물을 것 —
+            // `MenuOptionOrderContractTest`가 지킨다. ⚠️ 이 패널은 **☰ 대국 메뉴와 설정 화면이 공유**한다.
             //
-            // **판 위에 있던 토글 둘이 여기로 내려왔다**(백로그 #143). 대국 화면을 판에 집중시키려고
-            // 뺐고, 둘 다 기본값이 이미 그 값이라(돋보기 켜짐 · 판 최대) 대부분 사용자는 한 번도 누르지
-            // 않는다. ⚠️ 이 패널은 **☰ 대국 메뉴와 설정 화면이 공유**한다.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            // **판 위에 있던 토글 둘이 여기로 내려왔다**(백로그 #143) — 둘 다 기본값이 이미 그 값이라 대부분 한 번도 누르지 않는다.
+            val hapticContext = LocalContext.current
+            val hapticPreview = remember(hapticContext) { PlayHaptics(hapticContext) }
+            // 프리미엄 셋의 판정은 FeatureAccessPolicy(6계층)에 위임한다. ⚠️ **라벨을 프리미엄 색으로 적는다**(2026-09-12) —
+            // 흐리게(alpha)만 두면 "지금 못 쓴다"로는 읽혀도 **"프리미엄 기능이다"로는 읽히지 않는다.**
+            val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed
+            val topMovesAllowed = premium.resolve(FeatureId.TopMoves) is FeatureAccess.Allowed
+            val moveReviewAllowed = premium.resolve(FeatureId.MoveReview) is FeatureAccess.Allowed
+
+            // ── 바둑판 ──
+            OptionSectionTitle(title = menuSectionTitleFor(strings.language, MenuSection.Board), isFirst = true)
+            Row(modifier = Modifier.fillMaxWidth()) {
                 OptionSwitchCell(
                     // ⚠️ 스위치의 라벨은 **켰을 때의 상태**를 적는다(`바둑판 최대`) — 주체 이름(`바둑판 크기`)만
-                    // 적으면 켜짐이 무엇을 뜻하는지 알 수 없다. 판 위 토글이 상태를 라벨로 말하던 것과 같은 관용구다.
+                    // 적으면 켜짐이 무엇을 뜻하는지 알 수 없다.
                     label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
                     checked = options.isBoardMaxSize,
                     modifier = Modifier.weight(1f),
@@ -108,10 +117,22 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(showCoordinates = it)) },
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
                 OptionSwitchCell(
+                    label = strings.moveNumbers,
+                    checked = options.showMoveNumbers,
+                    modifier = Modifier.weight(1f),
+                    onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                Spacer(modifier = Modifier.weight(1f))
+            }
+
+            // ── 착수 ──
+            OptionSectionTitle(title = menuSectionTitleFor(strings.language, MenuSection.Placing))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OptionSwitchCell(
+                    // 「마지막 수」 — 방금 둔 돌에 두르는 고리(#198 전 「착수 표시」).
                     label = strings.lastMoveRing,
                     checked = options.showLastMoveRing,
                     modifier = Modifier.weight(1f),
@@ -120,8 +141,6 @@ internal fun KaTrainUxMenuPanel(
                 Spacer(modifier = Modifier.width(columnGap))
                 // 반상을 누르는 순간의 햅틱(#36). **켤 때 한 번 울려 준다**(2026-08-30 사용자 요청) —
                 // 진동은 눈에 보이지 않아 켠 것이 먹혔는지 알 길이 없다. 끌 때는 울리지 않는다.
-                val hapticContext = LocalContext.current
-                val hapticPreview = remember(hapticContext) { PlayHaptics(hapticContext) }
                 OptionSwitchCell(
                     label = strings.playHaptic,
                     checked = options.isPlayHapticEnabled,
@@ -132,11 +151,8 @@ internal fun KaTrainUxMenuPanel(
                     },
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                // **착수 이펙트**(백로그 #145) — 확정되는 순간 그 돌이 부풀었다가 제자리로 돌아온다.
-                // 기본 켜짐이라(없던 것이 생기는 쪽) 거슬리는 사람이 여기서 끈다.
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // **애니메이션**(백로그 #145, #198 전 「착수 이펙트」) — 확정되는 순간 그 돌이 부풀었다가 제자리로 돌아온다.
                 OptionSwitchCell(
                     label = strings.playEffect,
                     checked = options.isPlayEffectEnabled,
@@ -144,64 +160,33 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(isPlayEffectEnabled = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
-                // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로 켤 때만 노출한다.
-                // 프리미엄 전용 — 판정은 FeatureAccessPolicy(6계층)에 위임하고, 라벨도 프리미엄 색으로 적는다.
-                val moveReviewAllowed = premium.resolve(FeatureId.MoveReview) is FeatureAccess.Allowed
+                // 「끌 때 크게」(백로그 #196·#197) — 길게 눌러 끌며 조준하는 동안 가늠돌을 키울지.
                 OptionSwitchCell(
-                    label = strings.moveReviewToggle,
-                    checked = options.showMoveReview && moveReviewAllowed,
+                    label = largeHeldStoneLabelFor(strings.language),
+                    checked = options.isLargeHeldStoneEnabled,
                     modifier = Modifier.weight(1f),
-                    labelColor = PremiumGoldDeep,
-                    switchAlpha = if (moveReviewAllowed) 1f else 0.5f,
-                    onCheckedChange = {
-                        if (moveReviewAllowed) {
-                            onOptionsChange(options.copy(showMoveReview = it))
-                        } else {
-                            showPremiumUpsellDialog = true
-                        }
-                    },
+                    onCheckedChange = { onOptionsChange(options.copy(isLargeHeldStoneEnabled = it)) },
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                OptionSwitchCell(
-                    label = strings.moveNumbers,
-                    checked = options.showMoveNumbers,
-                    modifier = Modifier.weight(1f),
-                    onCheckedChange = { onOptionsChange(options.copy(showMoveNumbers = it)) },
-                )
-                Spacer(modifier = Modifier.width(columnGap))
-                // '착수 확인 / 바로 착수'는 #143이 UX에서 지웠다 — 코드는 플래그 뒤에 그대로 남는다
-                // (`FeatureFlags.isPlayConfirmModeEnabled`). 꺼져 있으면 이 칸이 **빈자리로** 남아 격자가 유지된다.
-                if (FeatureFlags.isPlayConfirmModeEnabled) {
+            // '착수 확인 / 바로 착수'는 #143이 UX에서 지웠다 — 코드는 플래그 뒤에 그대로 남는다
+            // (`FeatureFlags.isPlayConfirmModeEnabled`). 플래그가 켜지면 착수 섹션에 한 줄을 받는다.
+            if (FeatureFlags.isPlayConfirmModeEnabled) {
+                Row(modifier = Modifier.fillMaxWidth()) {
                     OptionSwitchCell(
                         label = strings.directPlay,
                         checked = options.isDirectPlayEnabled,
                         modifier = Modifier.weight(1f),
                         onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
                     )
-                } else {
-                    // 「착수 돌 크게」(백로그 #197) — 비어 있던 칸을 쓴다. 길게 눌러 조준하는 동안 가늠돌을 키울지.
-                    OptionSwitchCell(
-                        label = largeHeldStoneLabelFor(strings.language),
-                        checked = options.isLargeHeldStoneEnabled,
-                        modifier = Modifier.weight(1f),
-                        onCheckedChange = { onOptionsChange(options.copy(isLargeHeldStoneEnabled = it)) },
-                    )
+                    Spacer(modifier = Modifier.width(columnGap))
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
 
-            // '매 수마다' 2종(2026-08-29 신설). 대국 화면의 형세 보기·추천 수 버튼은 **1회성 동작**이고,
-            // 수가 진행돼도 계속 갱신되는 상시 표시는 여기서 켠다. 상시 표시는 **프리미엄 전용**이며,
-            // 판정은 버튼과 같은 FeatureAccessPolicy(6계층)를 쓴다.
-            // ⚠️ **라벨을 프리미엄 색으로 적는다**(2026-09-12 사용자 요청) — 흐리게(alpha)만 두면
-            //   "지금 못 쓴다"로는 읽혀도 **"프리미엄 기능이다"로는 읽히지 않는다.**
-            val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed
-            val topMovesAllowed = premium.resolve(FeatureId.TopMoves) is FeatureAccess.Allowed
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            // ── AI 코치(프리미엄) ── 대국 화면의 형세 보기·추천 수 버튼은 **1회성**이고, 수가 진행돼도 계속 갱신되는
+            // 상시 표시는 여기서 켠다(2026-08-29). 제목도 프리미엄 색이다 — 섹션 전체가 프리미엄이라는 신호.
+            OptionSectionTitle(title = menuSectionTitleFor(strings.language, MenuSection.AiCoach), color = PremiumGoldDeep)
+            Row(modifier = Modifier.fillMaxWidth()) {
                 OptionSwitchCell(
                     label = strings.everyMoveEval,
                     checked = options.showOwnershipOverlay && evalAllowed,
@@ -232,9 +217,38 @@ internal fun KaTrainUxMenuPanel(
                     },
                 )
             }
-
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // 착수 평가: 착수한 돌의 품질 색상 표시 여부. 기본 꺼짐 — 사용자가 의도적으로 켤 때만 노출한다.
+                OptionSwitchCell(
+                    label = strings.moveReviewToggle,
+                    checked = options.showMoveReview && moveReviewAllowed,
+                    modifier = Modifier.weight(1f),
+                    labelColor = PremiumGoldDeep,
+                    switchAlpha = if (moveReviewAllowed) 1f else 0.5f,
+                    onCheckedChange = {
+                        if (moveReviewAllowed) {
+                            onOptionsChange(options.copy(showMoveReview = it))
+                        } else {
+                            showPremiumUpsellDialog = true
+                        }
+                    },
+                )
+                Spacer(modifier = Modifier.width(columnGap))
+                Spacer(modifier = Modifier.weight(1f))
+            }
         }
     }
+}
+
+/** 메뉴 섹션 제목(#198). 섹션 사이는 위 여백으로 가른다 — 선을 긋지 않는다(카드 하나 안의 묶음이라). */
+@Composable
+private fun OptionSectionTitle(title: String, isFirst: Boolean = false, color: Color? = null) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = color ?: MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = if (isFirst) 0.dp else AppSpacing.Space8),
+    )
 }
 
 @Composable

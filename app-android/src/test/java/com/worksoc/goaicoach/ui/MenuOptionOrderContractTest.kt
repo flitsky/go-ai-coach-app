@@ -25,36 +25,41 @@ class MenuOptionOrderContractTest {
             .joinToString("\n") { it.substringBefore("//") }
 
     /**
-     * 사용자가 지정한 배열:
+     * 사용자가 지정한 배열(2026-09-30 #198 — 섹션 셋으로 다시 묶었다. 2026-09-12 배열을 대체한다):
      * ```
-     * 바둑판 최대 | 좌표
-     * 착수 돋보기 | 지연 착수
-     * 착수 표시   | 착수 진동
-     * 착수 이펙트 | 착수 평가
-     * 수순 번호   | (빈칸 — '바로 착수'가 플래그 뒤에 숨어 있다)
-     * 매 수마다 형세 | 매 수마다 추천
+     * [바둑판]   바둑판 최대 | 좌표
+     *           수순 번호   | (빈칸)
+     * [착수]     마지막 수 표시 | 진동
+     *           애니메이션   | 끌 때 크게
+     *           (바로 착수 — 플래그 뒤에 숨어 있다)
+     * [AI 코치]  매 수 형세 | 매 수 추천
+     *           착수 평가   | (빈칸)
      * ```
      */
     @Test
     fun theOptionsAppearInTheOrderTheUserAskedFor() {
         val expected = listOf(
+            "menuSectionTitleFor(strings.language, MenuSection.Board)",
             "boardSizeToggleLabelFor(strings.language, isMaxSize = true)",
             "strings.coordinates",
+            "strings.moveNumbers",
+            "menuSectionTitleFor(strings.language, MenuSection.Placing)",
             "strings.lastMoveRing",
             "strings.playHaptic",
             "strings.playEffect",
-            "strings.moveReviewToggle",
-            "strings.moveNumbers",
+            "largeHeldStoneLabelFor(strings.language)",
             "strings.directPlay",
+            "menuSectionTitleFor(strings.language, MenuSection.AiCoach)",
             "strings.everyMoveEval",
             "strings.everyMoveTopMoves",
+            "strings.moveReviewToggle",
         )
-        val actual = Regex("""label = (.+),""").findAll(menu)
-            .map { it.groupValues[1].trim() }
-            .filter { it in expected }
-            .toList()
+        expected.forEach { token ->
+            assertTrue("메뉴에서 `$token`을 찾지 못했다 — 옵션이나 섹션이 빠졌다.", menu.contains(token))
+        }
+        val actual = expected.sortedBy { menu.indexOf(it) }
         assertEquals(
-            "메뉴 옵션의 차례가 사용자가 정한 배열과 다르다(2026-09-12). 바꾸려면 사용자에게 물을 것.",
+            "메뉴 옵션의 차례가 사용자가 정한 배열과 다르다(2026-09-30 #198). 바꾸려면 사용자에게 물을 것.",
             expected,
             actual,
         )
@@ -64,13 +69,13 @@ class MenuOptionOrderContractTest {
      * ⚠️ **프리미엄 전용 셋은 라벨이 금색이다**(2026-09-12 사용자 요청).
      *
      * 흐리게(`alpha`)만 두면 *"지금 못 쓴다"* 로는 읽혀도 **"프리미엄 기능이다"로는 읽히지 않는다.**
-     * 그래서 색을 따로 준다 — 셋(매 수마다 형세 · 매 수마다 추천 · 착수 평가)뿐이고,
+     * 그래서 색을 따로 준다 — 셋(매 수 형세 · 매 수 추천 · 착수 평가 — 「AI 코치」 섹션)뿐이고,
      * 보통 옵션에 금색이 번지면 프리미엄 표시가 뜻을 잃는다.
      */
     @Test
     fun onlyThePremiumOptionsWearTheGoldLabel() {
         assertEquals(
-            "프리미엄 색을 쓰는 칸이 셋이 아니다 — 매 수마다 형세·매 수마다 추천·착수 평가뿐이어야 한다.",
+            "프리미엄 색을 쓰는 칸이 셋이 아니다 — 매 수 형세·매 수 추천·착수 평가뿐이어야 한다.",
             3,
             Regex("""labelColor = PremiumGoldDeep""").findAll(menu).count(),
         )

@@ -59,15 +59,42 @@ internal fun boardSizeSubjectFor(language: UiLanguage): String =
     BoardSizeSubjects.getValue(language)
 
 /**
- * 설정의 「착수 돌 크게」 토글(백로그 #197) — 길게 눌러 조준하는 동안 가늠돌을 키울지.
+ * 설정의 「끌 때 크게」 토글(백로그 #197 — #198에서 「착수 돌 크게」를 섹션 문맥에 맞게 줄였다) — 길게 눌러 조준하는 동안 가늠돌을 키울지.
  * ⚠️ `UiStrings` 필드 여유가 4개뿐이라(리팩토링 보류 `#48`) 위성 Map으로 둔다.
  */
 private val LargeHeldStoneLabels: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "착수 돌 크게",
-    UiLanguage.English to "Large aiming stone",
-    UiLanguage.Japanese to "着手の石を大きく",
-    UiLanguage.ChineseSimplified to "落子预览放大",
+    UiLanguage.Korean to "끌 때 크게",
+    UiLanguage.English to "Enlarge on drag",
+    UiLanguage.Japanese to "ドラッグ時に拡大",
+    UiLanguage.ChineseSimplified to "拖动时放大",
 )
 
 internal fun largeHeldStoneLabelFor(language: UiLanguage): String =
     LargeHeldStoneLabels.getValue(language)
+
+/** 대국 옵션 메뉴의 섹션(백로그 #198) — 위에서부터 이 차례다. */
+internal enum class MenuSection { Board, Placing, AiCoach }
+
+private val MenuSectionTitles: Map<MenuSection, Map<UiLanguage, String>> = mapOf(
+    MenuSection.Board to mapOf(
+        UiLanguage.Korean to "바둑판",
+        UiLanguage.English to "Board",
+        UiLanguage.Japanese to "碁盤",
+        UiLanguage.ChineseSimplified to "棋盘",
+    ),
+    MenuSection.Placing to mapOf(
+        UiLanguage.Korean to "착수",
+        UiLanguage.English to "Placing stones",
+        UiLanguage.Japanese to "着手",
+        UiLanguage.ChineseSimplified to "落子",
+    ),
+    MenuSection.AiCoach to mapOf(
+        UiLanguage.Korean to "AI 코치",
+        UiLanguage.English to "AI coach",
+        UiLanguage.Japanese to "AIコーチ",
+        UiLanguage.ChineseSimplified to "AI教练",
+    ),
+)
+
+internal fun menuSectionTitleFor(language: UiLanguage, section: MenuSection): String =
+    MenuSectionTitles.getValue(section).getValue(language)
