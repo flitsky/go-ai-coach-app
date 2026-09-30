@@ -113,11 +113,20 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 - **증상**(2026-09-30 AI 대 AI 디버그 리포트 + 에뮬레이터 logcat 대조): 홈으로 나간 뒤에도 대국이 계속 돌다가, 안드로이드의 cached-app freezer가 앱과 KataGo 자식 프로세스를 **함께 얼렸다**(22:36:08, 22:38:43).
   얼어 있던 36분 동안 **단조 시계**로 재는 30초 마감은 이미 지나 있었고, 복귀(23:14:59) 1초 뒤 마감이 터져 KataGo를 SIGKILL하고 「엔진 응답 지연」이 떴다 — **엔진은 멎지 않았다(오탐).** 9수의 148초도 같은 동결(22:36:08~22:38:29 해동)이다.
 - **실기기도 같다** — Android 14+는 백그라운드 앱을 보통 10초쯤 뒤 동결한다. AI가 생각하는 중에 다른 앱에 다녀오면 누구나 겪는다.
-- **① 수명 게이트**: Activity `ON_STOP` → 도는 AI 차례를 취소(`AutoAiTurnController.cancelInFlightTurn` — 취소는 시간 초과가 아니고 프로세스를 내리지 않는다) + 백그라운드 동안 `requestAiTurn`을 건너뛴다. `ON_START` → 다시 요청.
+- **① 수명 게이트**: **프로세스** `ON_STOP`(`ProcessLifecycleOwner` — 광고 등 우리 프로세스 안의 화면이 가릴 땐 대국이 계속된다) → 도는 AI 차례를 취소(`AutoAiTurnController.cancelInFlightTurn` — 취소는 시간 초과가 아니고 프로세스를 내리지 않는다) + 백그라운드 동안 `requestAiTurn`을 건너뛴다. `ON_START` → 다시 요청.
 - **③ 진단**: `RuntimeEventLog`에 `app_background`·`app_foreground`(도는 차례를 취소했는지 포함) — 다음 리포트가 logcat 없이 설명되게.
 - ⚠️ GTP `kata-search_analyze`는 도중에 끊을 수 없다 — 취소된 호출의 답은 2계층 배수가 마감까지 받는다. 탐색이 끝나기 전에 동결되면 복귀 때 배수가 마감으로 그 프로세스를 내린다(팝업은 아니다). 남는 경합은 **#204**.
 - ⚠️ 대국 시계는 이미 `ON_PAUSE`/`ON_RESUME`으로 멈춘다(`ObserveTimerLifecycle`) — 건드리지 않는다.
 - **검증**: 단위(백그라운드 중 요청 건너뜀 · 전환 때 취소) · 에뮬레이터: AI 대 AI 중 홈 → 1분 넘게 → 복귀 → 팝업 없이 이어 두고 로그에 전환 이벤트.
+- **상태(2026-10-01)**: 구현 `88b86688` — 와치독도 멈춘 사이 끝난 시도를 복귀 시점부터 잰다(`resumedAfterPause`). 에뮬레이터 실측 통과(`am freeze` 69초 동결 → 시간 초과 0·KataGo 재시작 0). **사용자 실기 확인 대기.**
+
+### 203. **GTP 방문 수 추정이 루트 자신의 1방문을 빼서 매 수 `visit_fill_short`가 뜬다** (Sonnet / 낮음)
+
+- `KataGoAnalysisParser.parseRootVisitsEstimate`는 자식 `info move … visits`의 합이다 = **루트 방문 − 1**(루트의 첫 방문은 어느 자식에도 안 붙는다).
+  그래서 16방문을 다 채워도 `root=15` → `fill=SHORT`·`engine.visit_fill_short`가 **매 수** 떠서, 진짜로 모자란 경우(2026-09-30 리포트 9수 `root=14` — 동결 뒤 시간 캡에 잘림)를 가렸다.
+  JSON 분석은 `rootInfo.visits`(진짜 루트)라 해당 없다.
+- **고침**: GTP 추정에 루트의 1방문을 더한다 — `root=`가 JSON과 같은 뜻이 된다. 벤치마크는 요약의 `root=`를 읽으므로 같은 값을 쓴다(확인함).
+- **상태(2026-10-01)**: 구현 `3073e0b6`(단위 테스트). ⚠️ 실기 `root=16 fill=OK`는 **아직 못 봤다** — 그날 호스트 부하로 에뮬레이터가 캡 안에 2~13방문밖에 못 채웠다. **사용자 실기 확인 대기.**
 
 ---
 
@@ -128,20 +137,12 @@ export JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home
 
 | # | 제목 | 모델/노력 | 이 자리인 이유 |
 |---|---|---|---|
-| 203 | GTP 방문 수 추정 off-by-one — 매 수 뜨는 `visit_fill_short` 잡음 | Sonnet/낮음 | **사용자 우선(2026-09-30).** #202와 같은 리포트에서 나왔다. 진짜 부족을 가린다 |
 | 184 | 학습 콘텐츠 「기본 사활」 | Opus/최대 | 사용자 승인 순서. ⚠️ **U-51을 먼저 물을 것** |
 | 170 | 로그인 부활 + 백업 동기화 | Opus/최대 | 방향은 확정. 비용 대부분이 코드 밖 |
 | 155 | 좌석 카드에 상대 캐릭터 얼굴 | Opus/높음 | 몰입도 고도화. 자산 판단(U-10)이 먼저 |
 | 167 | 상대 캐릭터 표정 변화 | Opus/중간 | 155 뒤. 자산이 병목 |
 | 204 | 기다리는 사이 백그라운드를 거친 시간 초과는 조용히 1회 재시도 | Opus/중간 | 등록만(2026-09-30 사용자). **#202 뒤** — 그것이 남기는 경합을 덮는 보험 |
 | 205 | AI 대 AI 관전 중 화면 꺼짐 막기 | Sonnet/낮음 | 등록만(2026-09-30 사용자). ⚠️ **U-58을 먼저 물을 것** |
-
-### 203. **GTP 방문 수 추정이 루트 자신의 1방문을 빼서 매 수 `visit_fill_short`가 뜬다** (Sonnet / 낮음)
-
-- `KataGoAnalysisParser.parseRootVisitsEstimate`는 자식 `info move … visits`의 합이다 = **루트 방문 − 1**(루트의 첫 방문은 어느 자식에도 안 붙는다).
-  그래서 16방문을 다 채워도 `root=15` → `fill=SHORT`·`engine.visit_fill_short`가 **매 수** 떠서, 진짜로 모자란 경우(2026-09-30 리포트 9수 `root=14` — 동결 뒤 시간 캡에 잘림)를 가렸다.
-  JSON 분석은 `rootInfo.visits`(진짜 루트)라 해당 없다.
-- **고침**: GTP 추정에 루트의 1방문을 더한다 — `root=`가 JSON과 같은 뜻이 된다. 벤치마크의 fill 판정이 같은 값을 쓰는지 확인할 것.
 
 ### 184. **학습 콘텐츠 — 「기본 사활」** (Opus / 최대) — ⚠️ **U-51을 먼저 물을 것**
 
