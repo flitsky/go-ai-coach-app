@@ -156,6 +156,9 @@ internal fun GoCoachContent(
         )
     }
 
+    // AI 대 AI 관전 중에는 화면이 꺼지지 않게 한다(#205) — 꺼지면 #202에 따라 대국이 멈춘다.
+    KeepScreenOnWhile(shouldKeepScreenOnWhileWatching(screenState.matchMode, screenState.isGameEnded))
+
     // **통과 알림 + 계가 묻기**(백로그 #175). ⚠️ 상태를 이 파일에 두지 않고 그 파일이 들게 한다 —
     // `GoCoachApp.kt`의 상태 훅 예산이 0이고, 여기도 같은 이유로 가볍게 유지한다.
     // ⚠️ **벤치마크가 떠 있는 동안에는 띄우지 않는다** — 아래 계가 팝업과 같은 이유다(팝업이 겹친다).
