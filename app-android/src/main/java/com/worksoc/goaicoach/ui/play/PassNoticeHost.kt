@@ -97,7 +97,10 @@ internal fun PassNoticeHost(
     val latestOnPassAgain by rememberUpdatedState(onPassAgain)
 
     // 이미 알린 수순은 다시 알리지 않는다 — 재구성마다 뜨면 알림이 화면을 점령한다.
-    var announcedMoveCount by remember { mutableIntStateOf(0) }
+    // ⚠️ **처음 붙을 때 지금 수순에서 시작한다**(백로그 #201) — 0에서 시작하면 복기·설정에 갔다가 돌아와
+    //   대국 화면이 다시 붙을 때마다 마지막 수(양통과 종국이면 통과)를 **이미 알린 통과인데 새 통과로** 다시 알렸다.
+    //   이 화면이 떠 있는 동안 생긴 통과만 알린다 — 떠나기 전의 통과는 그때 이미 알렸다.
+    var announcedMoveCount by remember { mutableIntStateOf(moveCount) }
     var showNotice by remember { mutableStateOf(false) }
     var showScorePrompt by remember { mutableStateOf(false) }
     // ⚠️ **알림을 띄우는 순간의 판정을 붙잡아 둔다.** 1.6초 뒤에 다시 보면 그 사이 AI가 두어
