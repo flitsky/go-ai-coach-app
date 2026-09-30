@@ -182,9 +182,13 @@ internal fun GamePlaySection(
             watchdogAttempt = watchdogAttempt.resumedAfterPause(watchdogCompletionSeqAtPause, System.currentTimeMillis())
             watchdogCompletionSeqAtPause = null
         }
+        var previousTickMillis = System.currentTimeMillis()
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
             delay(TurnTimerTickIntervalMillis)
             now = System.currentTimeMillis()
+            // 두 틱 사이에 앱이 화면에 있는 채로 멈췄으면(동결·VM 정지) 그 시간은 엔진이 멎은 시간이 아니다 — 지금부터 다시 잰다(#204).
+            watchdogAttempt = watchdogAttempt.resumedAfterProcessPause(previousTickMillis, now, TurnTimerTickIntervalMillis)
+            previousTickMillis = now
             watchdogAttempt = watchdogAttempt.observe(nowMillis = now, completionSeq = liveEngineTurnWaitCompletionSeq.value)
             if (liveAwaitingEngineTimeoutChoice.value) continue
             if (!watchdogAttempt.isReported) {

@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application.safety
 
+import com.worksoc.goaicoach.application.engine.operation.EngineWaitProcessPauseThresholdMillis
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 
 /**
@@ -153,6 +154,26 @@ data class EngineTurnWatchdogAttempt(
             this
         } else {
             EngineTurnWatchdogAttempt(baseMillis = maxOf(baseMillis, nowMillis), completionSeq = completionSeq)
+        }
+
+    /**
+     * 와치독 루프의 두 틱 사이에 **이 프로세스가 화면에 있는 채로 멈춰 있었으면**(수명 콜백 없는 동결·에뮬레이터 VM 정지 —
+     * backlog #204) 이 시도를 [nowMillis]부터 다시 잰다. 멈춘 동안은 엔진도(같은 동결에 묶인 KataGo 자식) 아무것도 못
+     * 했으니 그 시간을 멎음으로 세면, 풀리는 첫 틱에 멀쩡한 엔진에 「엔진 응답 지연」이 뜬다.
+     *
+     * 틈은 틱 간격을 뺀 만큼이고, 문턱은 차례 시간 초과의 판정과 같다([EngineWaitProcessPauseThresholdMillis]) — 살아
+     * 있는 메인 스레드는 틱을 10초씩 밀리지 않는다(5초면 이미 ANR). 앱이 화면을 떠나는 경우(`ON_PAUSE`)는 대국 시계가 멈춰
+     * 루프도 멈추므로 여기에 오지 않는다 — 그쪽은 [resumedAfterPause]의 몫이다. 이미 보고한 시도는 그대로 보고한 채다.
+     */
+    fun resumedAfterProcessPause(
+        previousTickMillis: Long,
+        nowMillis: Long,
+        tickIntervalMillis: Long,
+    ): EngineTurnWatchdogAttempt =
+        if (nowMillis - previousTickMillis - tickIntervalMillis >= EngineWaitProcessPauseThresholdMillis) {
+            copy(baseMillis = maxOf(baseMillis, nowMillis))
+        } else {
+            this
         }
 }
 

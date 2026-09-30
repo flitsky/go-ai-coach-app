@@ -222,4 +222,33 @@ class EngineTurnWatchdogTest {
         assertEquals(attempt, attempt.resumedAfterPause(completionSeqAtPause = 3, nowMillis = 8_000L))
         assertEquals(attempt, attempt.resumedAfterPause(completionSeqAtPause = null, nowMillis = 8_000L), "멈춘 적이 없으면 그대로")
     }
+
+    /**
+     * backlog #204 — 화면에 있는 채로 이 프로세스가 멈췄다가(동결·에뮬레이터 VM 정지 — 수명 콜백이 없어 대국 시계도 안 멈춘다)
+     * 풀리면, 풀린 첫 틱이 멈춘 시간까지 경과로 세어 멀쩡한 엔진에 팝업을 띄운다. 틱 사이의 틈이 문턱(10초)을 넘으면 그
+     * 틱부터 다시 잰다. 제때 온 틱은 아무것도 바꾸지 않는다 — 진짜 멈춤을 늦게 알리지 않는다. 숫자는 손으로 적는다(틱 200ms,
+     * 1초 제한의 한도 9.2초).
+     */
+    @Test
+    fun aTickAfterTheProcessWasPausedOnScreenMeasuresFromThatTick() {
+        val limit = SearchTimeLimit.WithinOneSecond
+        val attempt = EngineTurnWatchdogAttempt(baseMillis = 1_000L, completionSeq = 3)
+
+        // 3초에 틱, 다음 틱이 73초 — 70초 동안 돌지 못했다.
+        val thawed = attempt.resumedAfterProcessPause(previousTickMillis = 3_000L, nowMillis = 73_000L, tickIntervalMillis = 200L)
+        assertEquals(EngineTurnWatchdogAttempt(baseMillis = 73_000L, completionSeq = 3), thawed)
+        assertFalse(isEngineTurnWatchdogTriggered(true, thawed.elapsedMillis(73_000L), limit), "풀린 순간 팝업이 뜨면 오탐이다")
+        assertTrue(isEngineTurnWatchdogTriggered(true, thawed.elapsedMillis(82_200L), limit), "풀린 뒤에도 멎어 있으면 여전히 뜬다")
+
+        assertEquals(attempt, attempt.resumedAfterProcessPause(previousTickMillis = 3_000L, nowMillis = 3_200L, tickIntervalMillis = 200L))
+        assertEquals(
+            attempt,
+            attempt.resumedAfterProcessPause(previousTickMillis = 3_000L, nowMillis = 13_199L, tickIntervalMillis = 200L),
+            "문턱 아래의 밀림(GC·부하)은 그대로 잰다",
+        )
+        assertTrue(
+            attempt.reported().resumedAfterProcessPause(previousTickMillis = 3_000L, nowMillis = 73_000L, tickIntervalMillis = 200L).isReported,
+            "이미 보고한 시도는 다시 걸어도 보고한 채다 — 한 시도에 팝업은 한 번",
+        )
+    }
 }

@@ -141,6 +141,42 @@ class EngineTurnWatchdogScreenContractTest {
         )
     }
 
+    /**
+     * backlog #204 — 화면에 있는 채로 프로세스가 멈췄다 풀리면(동결·VM 정지 — 수명 콜백이 없어 대국 시계도 안 멈춘다) 풀린 첫
+     * 틱이 멈춘 시간까지 세어 멀쩡한 엔진에 팝업을 띄운다. 루프가 **틱마다** 앞 틱과의 틈을 `resumedAfterProcessPause`로
+     * 보고, 그 **뒤에** 이 시도의 보고 여부를 봐야 한다.
+     */
+    @Test
+    fun theLoopReArmsTheAttemptAfterAProcessPauseBetweenTicks() {
+        val loopStart = watchdogEffect.indexOfOrFail(
+            Regex("""while\s*\("""),
+            "와치독 효과에서 틱 루프(`while`)를 찾지 못했다 — 계약이 보는 자리가 사라졌다.",
+        )
+        assertTrue(
+            "루프 앞에서 앞 틱 시각을 들지 않는다.",
+            Regex("""var\s+previousTickMillis\s*=\s*System\.currentTimeMillis\(\)""").containsMatchIn(watchdogEffect.substring(0, loopStart)),
+        )
+        val rearm = watchdogEffect.indexOfOrFail(
+            Regex(
+                """watchdogAttempt\s*=\s*watchdogAttempt\.resumedAfterProcessPause\(\s*previousTickMillis\s*,\s*now\s*,\s*""" +
+                    """TurnTimerTickIntervalMillis\s*\)""",
+            ),
+            "루프가 틱마다 `resumedAfterProcessPause(previousTickMillis, now, …)`로 멈춤을 보지 않는다 — 풀린 첫 틱에 오탐 팝업이 뜬다(#204).",
+        )
+        val advance = watchdogEffect.indexOfOrFail(
+            Regex("""previousTickMillis\s*=\s*now\b"""),
+            "루프가 앞 틱 시각을 옮기지 않는다 — 한 번의 멈춤 뒤로 틱마다 다시 걸려 팝업이 영영 안 뜬다.",
+        )
+        val reportedGate = watchdogEffect.indexOfOrFail(
+            Regex("""if\s*\(\s*!\s*watchdogAttempt\.isReported\s*\)"""),
+            "루프가 `watchdogAttempt.isReported`로 이 시도의 보고 여부를 보지 않는다.",
+        )
+        assertTrue(
+            "멈춤을 보는 것이 틱 루프 안에서, 앞 틱 시각을 옮기기 전, 보고 여부 검사보다 앞에 있어야 한다.",
+            rearm in (loopStart + 1) until advance && advance < reportedGate,
+        )
+    }
+
     @Test
     fun theFirstAttemptStartsFromTheTurnBaseAndTheCurrentCompletionSeq() {
         val loopStart = watchdogEffect.indexOf("while")
