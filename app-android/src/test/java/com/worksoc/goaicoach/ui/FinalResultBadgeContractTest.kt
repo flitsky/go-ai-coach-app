@@ -37,7 +37,10 @@ class FinalResultBadgeContractTest {
     fun theBadgeOnlyAppearsOnceTheGameHasEnded() {
         assertTrue(
             "결과 배지가 `isGameEnded` 게이트 없이 그려진다 — 대국 중에 시계·사석을 가린다.",
-            panel.contains("if (screenState.isGameEnded)") && panel.contains("FinalResultBadge("),
+            // #191: 게이트가 `shouldShowFinalResultBadge`로 옮겨 갔다 — 그 함수가 `isGameEnded &&`로 시작해야 한다.
+            panel.contains("if (shouldShowFinalResultBadge(screenState.isGameEnded, screenState.gameState.moves.size))") &&
+                panel.contains("isGameEnded && moveCount > 0") &&
+                panel.contains("FinalResultBadge("),
         )
     }
 

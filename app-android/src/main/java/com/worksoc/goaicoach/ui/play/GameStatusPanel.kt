@@ -124,7 +124,10 @@ internal fun GameStatusPanel(
         }
 
         // ⚠️ **종국에만 뜬다** — 대국 중에는 좌석 카드 가운데를 가리면 안 된다(시계·사석이 있다).
-        if (screenState.isGameEnded) {
+        // ⚠️ **0수면 그리지 않는다**(백로그 #191) — 새 대국 준비 구간에도 `isGameEnded`가 참이라 승자 없는 배지가
+        //   「무승부」로 떴다. 끝난 판은 수가 반드시 하나 이상이다(기권 1수·양통과 2수) — 0수인데 끝났다는 것이 그 과도 상태다.
+        //   `isGameEnded` 자체는 건드리지 않는다(종료 버튼 묶음·계가 오버레이가 그 켜지는 순서에 기댄다).
+        if (shouldShowFinalResultBadge(screenState.isGameEnded, screenState.gameState.moves.size)) {
             FinalResultBadge(
                 gameState = screenState.gameState,
                 judgement = screenState.finalScoreJudgement,
@@ -546,3 +549,6 @@ internal val InactiveStateBorder: BorderStroke
     @Composable get() = BorderStroke(AppBorderWidth.Hairline, InactiveStateBorderColor)
 
 private val InactiveStateBorderColor = GameStatusPalette.InactiveStateBorder
+
+/** 결과 배지를 그릴 때인가(#191) — 끝났고, 수가 하나 이상일 때만. */
+internal fun shouldShowFinalResultBadge(isGameEnded: Boolean, moveCount: Int): Boolean = isGameEnded && moveCount > 0
