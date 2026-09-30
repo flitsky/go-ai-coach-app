@@ -21,7 +21,7 @@ Implemented baseline as of 2026-08-29:
 Next goal:
 
 1. **Released on Google Play** — 0.8.11 / 811 is in production (176 countries). 0.9.2 / 902 (renamed to *포켓 바둑 코치*) is submitted with a store-listing change and under review. Canonical release state: `GOOGLE_PLAY_LAUNCH_PLAN.md` §0.
-2. Work the active backlog — `260930-_ACTIVE_BACKLOG.md` is the entry point (10th generation, opened 2026-09-30 after the first refactoring cycle; the 9th generation, opened 2026-09-23 once 1.0.0 was live, is sealed as `260923-260923_ACTIVE_BACKLOG.md`). Take the **first item under `## 다음`**; that section holds only work you can actually start. Items blocked on a trigger live under `## 대기`, and `## 서 있는 답` is not work at all — it is the standing answer to proposals that keep coming back.
+2. Work the active backlog — `260930-_ACTIVE_BACKLOG.md` is the entry point (10th generation, opened 2026-09-30 after the first refactoring cycle; the 9th generation, opened 2026-09-23 once 1.0.0 was live, is sealed as `260923-260923_POST_1_0_STORE_LISTING_AND_PITFALLS.md`). Take the **first item under `## 다음`**; that section holds only work you can actually start. Items blocked on a trigger live under `## 대기`, and `## 서 있는 답` is not work at all — it is the standing answer to proposals that keep coming back.
 3. Add broader androidTest/Robolectric coverage. Default verification is JVM unit tests plus two emulator smoke tests.
 
 (`GameSessionStateHolder` moved into `:shared` in 2026-08; that goal is done.)
