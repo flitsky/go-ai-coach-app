@@ -25,7 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +38,8 @@ import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeni
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningMaxMoveCount
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
+import com.worksoc.goaicoach.application.gamehistory.countReviewRecommendationMistakes
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.presentation.GameScreenState
@@ -87,10 +93,17 @@ internal fun GoCoachContent(
     // 바꾸면 이 조각이 컴포지션에서 빠졌다가 돌아오는데, 그때 `remember`가 새로 만들어져
     // **판정 결과가 다시 뜬다**(2026-09-22 실기에서 잡혔다). 그래서 화면 밖에도 함께 적는다.
     var dismissedFinalJudgementKey by remember { mutableStateOf(FinishedGameFlow.dismissedJudgementKey) }
+    // 백로그 #200 — 「확인」(또는 바깥 탭)으로 판정 결과를 닫은 **그 판의 열쇠**. 말풍선은 이 열쇠가 지금 판과 같을 때만 뜬다.
+    // ⚠️ **일부러 화면 안(`remember`)에만 둔다** — 판정 결과의 "닫았음"(`FinishedGameFlow`)과 반대다. 복기·홈·설정으로
+    //   나가면 이 조각이 컴포지션에서 빠지며 함께 사라지고, 돌아와도 판정 결과가 다시 뜨지 않으니(그쪽은 화면 밖에 적혀 있다)
+    //   다시 설 일이 없다 — 그래서 *"나가면 사라진다"* 와 *"한 판에 한 번"* 이 따로 적지 않아도 성립한다.
+    //   새 대국·재 대국은 바로 아래 효과가 비우고, 열쇠(수순·결과)가 달라져도 뜨지 않는다.
+    var reviewRecommendationKey by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(screenState.isGameEnded) {
         if (!screenState.isGameEnded) {
             dismissedFinalJudgementKey = null
             FinishedGameFlow.clearDismissedJudgement()
+            reviewRecommendationKey = null
         }
     }
     val finalJudgementKey = screenState.finalScoreJudgement?.dialogKey(screenState.gameState.moves.size)
@@ -100,6 +113,26 @@ internal fun GoCoachContent(
         dismissedFinalJudgementKey = finalJudgementKey
         FinishedGameFlow.markJudgementDismissed(finalJudgementKey)
     }
+
+    // 백로그 #200 — 이 판의 「5집 이상 실착」 수. 판정 결과 팝업의 배지와 팝업 뒤 말풍선이 **같은 값**을 쓴다.
+    // `null`은 "잴 자료가 없었다"라 둘 다 띄우지 않는다(0과 다르다 — `countReviewRecommendationMistakes`의 KDoc).
+    val reviewMistakeCount = if (screenState.isGameEnded) {
+        countReviewRecommendationMistakes(screenState.gameState.moves, screenState.score.snapshots)
+    } else {
+        null
+    }
+    val closeFinalJudgementAndRecommendReview = {
+        reviewRecommendationKey = finalJudgementKey
+        dismissFinalJudgement()
+    }
+    // ⚠️ 엔진이 「새 대국을 위해 준비 중」이면 잠시 숨긴다(지우지는 않는다) — 재 대국을 누르면 새 판이 서기까지 끝난 판이
+    //   몇 초 더 보이는데(실기 약 20초), 그 위에 말풍선이 남으면 방금 떠난 판을 권하는 셈이다. 새 판이 서면 위 효과가 비운다.
+    val showReviewRecommendation = screenState.isGameEnded &&
+        finalJudgementToShow == null &&
+        reviewRecommendationKey != null &&
+        reviewRecommendationKey == finalJudgementKey &&
+        (reviewMistakeCount ?: 0) >= 1 &&
+        screenState.engine.activityIndicator != EngineActivityIndicator.Preparing
 
     // ⚠️ **벤치마크 팝업은 여기서 그리지 않는다**(2026-09-10). 이 화면은 `InGame`에서만
     // 컴포즈되는데 '엔진 성능 측정' 버튼은 **설정 화면**에 있어서, 여기서 그리면 설정에서 누른
@@ -138,10 +171,11 @@ internal fun GoCoachContent(
         FinalJudgementDialog(
             judgement = finalJudgementToShow,
             strings = strings,
-            onDismiss = dismissFinalJudgement,
+            // 바깥 탭·뒤로 가기도 「확인」과 같은 "닫기"다 — 둘 다 복기로 가지 않았으니 말풍선이 한 번 더 권한다(백로그 #200).
+            onDismiss = closeFinalJudgementAndRecommendReview,
             onReview = {
                 onFinalJudgementReview()
-                dismissFinalJudgement()
+                closeFinalJudgementAndRecommendReview()
             },
             // ⚠️ **팝업을 먼저 닫고 나간다** — 닫지 않으면 대국 기록 화면 위에 계가 결과가
             // 그대로 떠 있다(다이얼로그는 별도 윈도우라 목적지가 바뀌어도 살아남는다, 함정 7).
@@ -149,6 +183,7 @@ internal fun GoCoachContent(
                 dismissFinalJudgement()
                 onReviewFinishedGame()
             },
+            reviewMistakeCount = reviewMistakeCount,
         )
     }
 
@@ -164,6 +199,10 @@ internal fun GoCoachContent(
     var viewportHeightPx by remember { mutableIntStateOf(0) }
     var contentHeightPx by remember { mutableIntStateOf(0) }
     var boardHeightPx by remember { mutableIntStateOf(0) }
+    // 백로그 #200 — 「복기 하기」 말풍선이 판을 가리지 않고 그 오른쪽 아래에 서려고 **판 자리**와 **오버레이 원점**을
+    // 루트 기준으로 잰다. ⚠️ 둘 다 오버레이의 측정 단계에서만 읽는다(스크롤마다 바뀐다 — 이 화면을 다시 짜지 않게).
+    var boardSlotInRoot by remember { mutableStateOf<Rect?>(null) }
+    var reviewOverlayOriginInRoot by remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
     val boardMaxHeight = fittedBoardMaxHeightPx(
         viewportPx = viewportHeightPx,
@@ -246,6 +285,7 @@ internal fun GoCoachContent(
                     onScoreGraphExpandedChange = onScoreGraphExpandedChange,
                     turnTimeState = turnTimeState,
                     onEvent = onEvent,
+                    onBoardSlotPositioned = { slot -> boardSlotInRoot = slot },
                     wideMenuButton = {
                         KaTrainUxMenuButton(
                             menuExpanded = isDisplayMenuExpanded,
@@ -281,11 +321,37 @@ internal fun GoCoachContent(
                     onScoreGraphExpandedChange = onScoreGraphExpandedChange,
                     turnTimeState = turnTimeState,
                     onEvent = onEvent,
+                    onBoardSlotPositioned = { slot -> boardSlotInRoot = slot },
                     // 폰 배치의 ☰는 헤더(`GameHeaderSection`)가 그린다.
                     wideMenuButton = {},
                 )
             }
         }
+    }
+
+    // 판정 결과를 닫은 뒤의 「복기 하기」 추천(백로그 #200) — **본문 뒤에** 둔다: 형제는 나중이 위에 그려진다(함정 38).
+    //   자리는 판 아래 → 판 오른쪽 → (둘 다 없을 때만 — 폴드) 화면 오른쪽 아래 끝 순이다(`reviewRecommendationPlacement`).
+    //   오버레이는 말풍선 밖을 누르는 것을 가로채지 않는다 — 새 대국·재 대국 버튼은 그대로 눌린다. 예외는 말풍선이 판에
+    //   겹친 폴드 배치뿐이고, 그때 판을 누르면 말풍선이 닫힌다(끝난 판이라 판에 둘 수는 없다).
+    if (showReviewRecommendation) {
+        ReviewRecommendationOverlay(
+            boardSlotInRoot = { boardSlotInRoot },
+            originInRoot = { reviewOverlayOriginInRoot },
+            character = reviewRecommendationCharacterFor(screenState.playerSetup),
+            mistakeCount = reviewMistakeCount ?: 0,
+            language = strings.language,
+            closeLabel = strings.close,
+            onOpenReview = {
+                reviewRecommendationKey = null
+                onReviewFinishedGame()
+            },
+            onDismiss = { reviewRecommendationKey = null },
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .onGloballyPositioned { coordinates -> reviewOverlayOriginInRoot = coordinates.positionInRoot() },
+        )
     }
 
     // ⑤ 대국 화면 — 첫돌이가 **버튼마다 하나씩** 안내한다(백로그 #128, 사용자 확정 ⓒ: 첫 대국에

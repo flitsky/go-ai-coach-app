@@ -39,8 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -51,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.guide.GuideTarget
@@ -112,6 +116,12 @@ internal fun GamePlaySection(
     onReviewFinishedGame: () -> Unit,
     /** 대국 설정 화면으로 간다(백로그 #185). 같은 이유로 콜백이다. */
     onOpenGameSetup: () -> Unit,
+    /**
+     * 판 자리(`GoBoard`의 바깥 상자)의 **루트 기준** 사각형(백로그 #200) — 「복기 하기」 말풍선이 판을 가리지 않고
+     * 그 오른쪽 아래에 서려고 쓴다. 세 배치가 **같은** `board` 호출을 쓰므로 여기 한 곳에서 알린다.
+     * ⚠️ `boundsInRoot()`가 아니라 위치 + 크기다 — 스크롤로 판이 반쯤 가려지면 `boundsInRoot()`는 잘린 사각형을 준다.
+     */
+    onBoardSlotPositioned: (Rect) -> Unit,
 ) {
     var tentativeMove by remember { mutableStateOf<BoardCoordinate?>(null) }
     LaunchedEffect(screenState.gameState) {
@@ -315,7 +325,9 @@ internal fun GamePlaySection(
             inputEnabled = !screenState.isGameEnded &&
                 screenState.matchSeats.current.canAcceptBoardInput,
             engineActivityIndicator = screenState.engine.activityIndicator,
-            modifier = boardModifier,
+            modifier = boardModifier.onGloballyPositioned { coordinates ->
+                onBoardSlotPositioned(Rect(coordinates.positionInRoot(), coordinates.size.toSize()))
+            },
             tentativeMove = tentativeMove,
             onCoordinateTap = { coordinate ->
                 if (screenState.uxOptions.isDirectPlayEnabled) {

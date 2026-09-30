@@ -132,6 +132,46 @@ class FinishedGameFlowContractTest {
     }
 
     /**
+     * 대국 뒤 「복기 하기」 추천(백로그 #200)의 배선 — 전부 어겨도 컴파일되고 화면도 뜬다.
+     *
+     * - 팝업의 배지와 말풍선이 **같은 개수**를 본다(한쪽만 다른 계산을 쓰면 배지 3·말풍선 5가 된다).
+     * - 말풍선 기억은 **화면 안**(`remember`)에만 있고 새 대국이 비운다 — 화면 밖(`FinishedGameFlow`)에 적으면
+     *   복기에서 돌아올 때 **또 뜬다**(「한 판에 한 번」이 깨진다).
+     * - 오버레이는 본문 **뒤**에 있어야 위에 그려진다(함정 38 — 앞에 두면 판·상태판이 말풍선을 덮는다).
+     */
+    @Test
+    fun theReviewRecommendationIsWiredOncePerFinishedGame() {
+        assertTrue(
+            "판정 결과 팝업에 실착 수를 넘기지 않는다 — 배지가 영영 안 뜬다.",
+            content.contains("reviewMistakeCount = reviewMistakeCount"),
+        )
+        assertEquals(
+            "실착 수를 두 번 이상 계산한다 — 배지와 말풍선이 다른 값을 볼 수 있다.",
+            1,
+            Regex("""countReviewRecommendationMistakes\(""").findAll(content).count(),
+        )
+        val restartEffect = content.substringAfter("LaunchedEffect(screenState.isGameEnded) {").substringBefore("\n    }\n")
+        assertTrue(
+            "`LaunchedEffect(screenState.isGameEnded)`를 찾지 못했다 — 그물이 파일 전체를 재고 있다.",
+            content.contains("LaunchedEffect(screenState.isGameEnded) {"),
+        )
+        assertTrue("새 대국이 말풍선 기억을 비우지 않는다.", restartEffect.contains("reviewRecommendationKey = null"))
+        assertFalse(
+            "말풍선 기억을 화면 밖(`FinishedGameFlow`)에 적는다 — 복기에서 돌아오면 또 뜬다.",
+            content.contains("FinishedGameFlow.markReviewRecommendation") || content.contains("FinishedGameFlow.reviewRecommendation"),
+        )
+        assertTrue(
+            "말풍선 오버레이가 본문(`BoxWithConstraints`)보다 앞에 있다 — 판·상태판이 그것을 덮는다(함정 38).",
+            content.indexOf("ReviewRecommendationOverlay(") > content.indexOf("BoxWithConstraints("),
+        )
+        assertTrue(
+            "판 자리를 알리지 않는 배치가 있다 — 그 배치에서 말풍선이 설 곳을 모른다.",
+            Regex("""onBoardSlotPositioned = """).findAll(content).count() == 2 &&
+                play.contains("onBoardSlotPositioned(Rect(coordinates.positionInRoot(), coordinates.size.toSize()))"),
+        )
+    }
+
+    /**
      * ⚠️ **계가 팝업의 버튼은 둘로 유지한다**(2026-09-18 사용자 결정). Material3 `AlertDialog`는
      * 버튼 슬롯이 둘뿐이라 셋째를 넣으려면 커스텀 배치가 필요하고, 4개 언어 폭이 걸린다.
      */

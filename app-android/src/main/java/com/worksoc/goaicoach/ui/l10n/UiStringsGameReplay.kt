@@ -317,8 +317,8 @@ internal fun gameReplayTruncatedFor(language: UiLanguage, moveNumber: Int): Stri
         UiLanguage.ChineseSimplified -> "记录在第 $moveNumber 手出现不一致，只能回放到此处。"
     }
 
-/** `12.5` / `10`처럼 소수점 아래 한 자리, 정수면 떼고. */
-private fun pointsText(points: Double): String {
+/** `12.5` / `10`처럼 소수점 아래 한 자리, 정수면 떼고. 「복기 하기」 추천(백로그 #200)도 같은 표기를 쓴다. */
+internal fun pointsText(points: Double): String {
     val rounded = (points * 10).roundToInt() / 10.0
     return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
 }
