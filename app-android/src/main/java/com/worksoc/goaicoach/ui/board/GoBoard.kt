@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -124,6 +125,17 @@ internal fun GoBoard(
     // 컴포지션 본문에서 읽으면 손가락이 움직일 때마다 화면 전체가 리컴포즈된다.
     var playDrag by remember { mutableStateOf<PlayDrag?>(null) }
     var activityFrame by remember { mutableStateOf(0) }
+    // 길게 눌러 조준하는 동안(③) 가늠돌을 키운다(#196). `derivedStateOf`라 참/거짓이 바뀔 때만 리컴포즈되고,
+    // 커지는 정도는 `playDrag`처럼 **그리기 람다 안에서만** 읽는다.
+    val isHoldingPlay by remember { derivedStateOf { playDrag?.held == true } }
+    val heldGhostGrowth = remember { Animatable(0f) }
+    LaunchedEffect(isHoldingPlay) {
+        if (isHoldingPlay) {
+            heldGhostGrowth.animateTo(1f, tween(durationMillis = HeldGhostStoneGrowMillis))
+        } else {
+            heldGhostGrowth.snapTo(0f)
+        }
+    }
 
     // 착수 이펙트(#145) — 확정되는 순간 **그 돌 하나만** 120%까지 커졌다가 100%로 돌아온다.
     // ⚠️ 배율도 자리도 **그리기 람다 안에서만** 읽는다(`playDrag`와 같은 이유) — 컴포지션 본문에서 읽으면
@@ -352,14 +364,14 @@ internal fun GoBoard(
                                 val holdLiftPx = liftPx
                                 var finger = follow.finger
                                 var target = Offset(finger.x, finger.y - holdLiftPx)
-                                playDrag = PlayDrag(target, below = false, finger = finger)
+                                playDrag = PlayDrag(target, below = false, finger = finger, held = true)
                                 // ⚠️ **누르고 있는 동안 착수가 확정되면 안 된다**(사용자 확정).
                                 // 여기서는 좌표만 따라가고, 확정은 아래 `completed` 분기에서만 한다.
                                 val completed = drag(down.id) { change ->
                                     change.consume()
                                     finger = change.position
                                     target = Offset(finger.x, finger.y - holdLiftPx)
-                                    playDrag = PlayDrag(target, below = false, finger = finger)
+                                    playDrag = PlayDrag(target, below = false, finger = finger, held = true)
                                     maybeSignalInvalidHover(coordinateAt(target))
                                 }
                                 if (!completed) return@awaitEachGesture
@@ -484,7 +496,8 @@ internal fun GoBoard(
                         gameState.boardSize,
                         uxOptions.showCoordinates,
                     )
-                    val stoneRadius = geometry.spacing * 0.42f
+                    // ③(길게 눌러 임계를 넘김)이면 칸 간격 0.8배까지 커진다(#196) — 떼면 가늠돌이 사라지고 놓이는 돌은 일반 크기다.
+                    val stoneRadius = geometry.spacing * heldGhostStoneRadiusRatio(heldGhostGrowth.value)
                     // ⚠️ **1배 판의 가늠돌은 돋보기와 무관하게 항상 그린다**(2026-09-09).
                     // 이것이 손을 따라 움직이는 그 돌이다 — 확대창은 조준을 돕는 덤이고,
                     // "지금 어디에 놓이는지"를 알려주는 본체는 이쪽이다. 예전에는 이 블록 전체가
