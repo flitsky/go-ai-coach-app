@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +30,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +55,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.gameHistoryHideShortGamesLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNoteDialogTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryReferenceLabelFor
@@ -128,6 +132,11 @@ internal fun GameHistoryScreen(
     // 사용자가 다시보기에서 수순을 옮길 수 있으므로, 누를 때 다시 읽으면 **경고와 다른 자리**에서
     // 대국이 시작된다. 물어본 그 국면을 그대로 들고 있다가 그것으로 시작한다.
     var pendingBranch by remember { mutableStateOf<GameState?>(null) }
+    // 「10수 이하 기록 제외하기」(백로그 #208) — 기본 체크(사용자). 이 화면 안에서만 들고 있다:
+    // 셸 상태 훅 예산이 0이고(함정 3), 설정 스냅샷에 넣으면 자동저장 초기화 함정(함정 2)이 열린다.
+    // 그래서 화면을 다시 열면 체크된 상태로 돌아온다. 다시보기를 열었다 닫는 동안은 유지된다.
+    var hideShortGames by rememberSaveable { mutableStateOf(true) }
+    val visibleEntries = visibleGameHistoryEntries(entries, hideShortGames)
     // 대국 화면에서 왔는가 — 다시보기의 **나가는 문**과 덮어쓰기 경고를 함께 가른다(백로그 #185).
     var cameFromGame by remember { mutableStateOf(false) }
     opened?.let { (entry, replay) ->
@@ -273,9 +282,28 @@ internal fun GameHistoryScreen(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = AppSpacing.Space8),
             )
+            Spacer(modifier = Modifier.weight(1f))
+            // ⚠️ 줄 전체가 관문이다 — 체크박스만으로는 손가락에 좁다. `onCheckedChange`는 `null`로
+            // 비워 이중 리스너를 막는다(다시보기 「수순 표시」와 같은 방식).
+            Row(
+                modifier = Modifier
+                    .clickable { hideShortGames = !hideShortGames }
+                    .padding(end = AppSpacing.Space8),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = hideShortGames, onCheckedChange = null)
+                Text(
+                    text = gameHistoryHideShortGamesLabelFor(strings.language, ShortGameMaxMoveCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = AppSpacing.Space4),
+                )
+            }
         }
 
-        if (entries.isEmpty()) {
+        if (visibleEntries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = strings.gameHistoryEmptyMessage,
@@ -284,7 +312,7 @@ internal fun GameHistoryScreen(
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(entries) { entry ->
+                items(visibleEntries) { entry ->
                     GameHistoryRow(
                         entry = entry,
                         strings = strings,
@@ -300,6 +328,26 @@ internal fun GameHistoryScreen(
         }
     }
 }
+
+/** 「N수 이하 기록 제외하기」의 N(백로그 #208, 사용자 2026-10-01). 이 수 **이하**인 판을 숨긴다. */
+internal const val ShortGameMaxMoveCount: Int = 10
+
+/**
+ * 대국 기록 목록에 실제로 보일 판(백로그 #208).
+ *
+ * ⚠️ **거름은 목록 표시에만 건다** — `entries` 자체는 그대로다. 대국 화면 「복기 하기」(#185)가 찾는
+ * *"가장 최근 기록"* 은 짧은 판일 수 있고, 그걸 걸러 버리면 직전 대국을 열거나 아무것도 안 연다.
+ * ⚠️ 참고 기보는 수와 무관하게 늘 남긴다 — 고정 맨 앞 행이다.
+ */
+internal fun visibleGameHistoryEntries(
+    entries: List<GameHistoryEntry>,
+    hideShortGames: Boolean,
+): List<GameHistoryEntry> =
+    if (!hideShortGames) {
+        entries
+    } else {
+        entries.filter { it.id == ReferenceGameHistoryId || it.moveCount > ShortGameMaxMoveCount }
+    }
 
 /**
  * 분기 대국의 시작점(백로그 #172) — 계산은 전부 shared의 [buildBranchedGameSnapshot]이 한다.

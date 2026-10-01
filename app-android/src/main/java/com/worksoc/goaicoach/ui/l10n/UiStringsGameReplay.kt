@@ -223,6 +223,17 @@ internal fun gameReplayTitleFor(language: UiLanguage): String = Titles.getValue(
 internal fun gameHistoryReferenceLabelFor(language: UiLanguage): String =
     ReferenceGameLabels.getValue(language)
 
+/**
+ * 대국 기록 우측 상단 「☐ 10수 이하 기록 제외하기」(백로그 #208). 수는 호출부의 상수가 정본이다 — 문구에 박지 않는다.
+ */
+internal fun gameHistoryHideShortGamesLabelFor(language: UiLanguage, maxMoves: Int): String =
+    when (language) {
+        UiLanguage.Korean -> "${maxMoves}수 이하 기록 제외하기"
+        UiLanguage.English -> "Hide games of $maxMoves moves or fewer"
+        UiLanguage.Japanese -> "$maxMoves 手以下の記録を除外"
+        UiLanguage.ChineseSimplified -> "隐藏 $maxMoves 手以内的记录"
+    }
+
 internal fun gameHistoryNotePlaceholderFor(language: UiLanguage): String =
     NotePlaceholders.getValue(language)
 
