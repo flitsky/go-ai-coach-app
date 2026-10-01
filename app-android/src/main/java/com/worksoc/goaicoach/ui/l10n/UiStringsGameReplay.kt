@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui.l10n
 
-import com.worksoc.goaicoach.application.gamehistory.ScoreSwingThreshold
+import com.worksoc.goaicoach.application.gamehistory.ScoreSwingMaxCount
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -116,36 +116,31 @@ private val NoScoreData: Map<UiLanguage, String> = mapOf(
 )
 
 /**
- * 「변곡점」 절 제목(2026-09-20 사용자 리메이크 — "큰 실수"를 대체한다).
+ * 변곡점을 **잴 수 없는** 판 — 연속한 두 수가 모두 신경망 평가인 곳이 하나도 없다([canMeasureScoreSwings]).
  *
- * ⚠️ **"실수"가 아니라 "형세가 흔들린 지점"이다** — [deriveScoreSwingHighlights]가 사람·AI
- * 구분 없이 모든 수순을 보므로, 이제 "누구의 잘못"이라는 함의가 없는 이름이어야 한다.
+ * ⚠️ 이때는 "변곡점이 없었다"가 아니라 **"잴 자료가 없었다"** 고 말해야 한다.
+ * ⚠️ **"없어"가 아니라 "부족해"다**(2026-10-01 사용자, 백로그 #207) — 엔진이 준비되지 않은 판도 로컬 영역 계산은
+ * 쌓여서 바로 위 형세 그래프는 그려진다. "기록이 없다"고 하면 눈앞의 그래프와 어긋난다.
  */
-private val ScoreSwingSectionTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "변곡점",
-    UiLanguage.English to "Turning points",
-    UiLanguage.Japanese to "変局点",
-    UiLanguage.ChineseSimplified to "转折点",
+private val NoScoreDataForSwings: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "이 대국에는 형세 기록이 부족해 변곡점을 표시할 수 없습니다.",
+    UiLanguage.English to "This game doesn't have enough score records to show turning points.",
+    UiLanguage.Japanese to "この対局には形勢の記録が足りず、変局点を表示できません。",
+    UiLanguage.ChineseSimplified to "该对局的形势记录不足，无法显示转折点。",
 )
 
 /**
- * 형세 기록 자체가 없는 판.
+ * 재 봤더니 임계를 넘은 수가 없던 판(2026-10-01 사용자, 백로그 #207).
  *
- * ⚠️ [deriveScoreSwingHighlights]는 [ScoreSnapshot] 하나만 본다 — 그것이 아예 없으면 "변곡점이
- * 없었다"가 아니라 **"잴 자료가 없었다"** 고 말해야 한다(무료 대국은 이 조건이 잘 맞지 않는다).
+ * ⚠️ **"최적 수순"이라고 말하지 않는다** — 재는 것은 *연속한 두 수 사이에 임계 이상 흔들린 적이 없다*
+ * 뿐이고, 그 평가도 탐색 없는 신경망 1회의 대략값이다. 매 수 몇 집씩 잃은 판도 여기에 온다.
+ * 그래서 실제로 잰 것("안정적")만 말한다(사용자 확인).
  */
-private val NoScoreDataForSwings: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "이 대국에는 형세 기록이 없어 변곡점을 표시할 수 없습니다.",
-    UiLanguage.English to "This game has no score records, so turning points cannot be shown.",
-    UiLanguage.Japanese to "この対局には形勢の記録がなく、変局点を表示できません。",
-    UiLanguage.ChineseSimplified to "该对局没有形势记录，无法显示转折点。",
-)
-
 private val NoScoreSwings: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "형세가 크게 움직인 수가 없습니다.",
-    UiLanguage.English to "No move swung the score that much.",
-    UiLanguage.Japanese to "形勢が大きく動いた手はありません。",
-    UiLanguage.ChineseSimplified to "没有明显改变形势的着法。",
+    UiLanguage.Korean to "변곡점 없이 안정적으로 진행되었습니다.",
+    UiLanguage.English to "No turning points — the game stayed steady.",
+    UiLanguage.Japanese to "変局点なく安定して進みました。",
+    UiLanguage.ChineseSimplified to "没有转折点，对局进行平稳。",
 )
 
 private val NavigationLabels: Map<UiLanguage, List<String>> = mapOf(
@@ -247,8 +242,24 @@ internal fun gameReplayScoreSectionFor(language: UiLanguage): String = ScoreSect
 
 internal fun gameReplayNoScoreDataFor(language: UiLanguage): String = NoScoreData.getValue(language)
 
-internal fun gameReplayScoreSwingSectionFor(language: UiLanguage): String =
-    ScoreSwingSectionTitles.getValue(language)
+/**
+ * 「변곡점」 절 제목 — `변곡점(최대 5개)`(2026-09-20 "큰 실수"를 대체, 2026-10-01 개수 명시 — 백로그 #207).
+ *
+ * ⚠️ **"실수"가 아니라 "형세가 흔들린 지점"이다** — [deriveScoreSwingHighlights]가 사람·AI
+ * 구분 없이 모든 수순을 보므로, "누구의 잘못"이라는 함의가 없는 이름이어야 한다.
+ * ⚠️ **개수를 문구에 박지 않는다** — [ScoreSwingMaxCount] 하나가 정본이고 네 언어가 그 값을 따라온다.
+ * 버튼이 그보다 적게 뜨는 판이 많으므로 "최대"가 빠지면 안 된다.
+ */
+internal fun gameReplayScoreSwingSectionFor(
+    language: UiLanguage,
+    maxCount: Int = ScoreSwingMaxCount,
+): String =
+    when (language) {
+        UiLanguage.Korean -> "변곡점(최대 ${maxCount}개)"
+        UiLanguage.English -> "Turning points (up to $maxCount)"
+        UiLanguage.Japanese -> "変局点（最大 $maxCount 手）"
+        UiLanguage.ChineseSimplified -> "转折点（最多 $maxCount 手）"
+    }
 
 internal fun gameReplayNoScoreDataForSwingsFor(language: UiLanguage): String =
     NoScoreDataForSwings.getValue(language)
@@ -272,21 +283,19 @@ internal fun gameReplayBranchOverwriteMessageFor(language: UiLanguage, moveNumbe
     BranchOverwriteMessages.getValue(language)(moveNumber)
 
 /**
- * 「3집 이상」의 **집수를 문구에 박지 않는다** — 임계는
- * [ScoreSwingThreshold] 하나가 정본이고, 네 언어 문구가 그 값을 따라온다.
+ * 제목 뒤에 붙는 고르는 방식 — **큰 순으로 고르고, 보여 주는 차례는 수순**이다
+ * ([deriveScoreSwingHighlights]의 정렬 두 번, 2026-10-01 사용자 — 백로그 #207).
+ *
+ * ⚠️ **임계(5점)는 문구에 넣지 않는다**(사용자 선택) — "최대 5개"와 "5점"이 한 줄에 겹치면 간결하지 않다.
+ * 옛 문구 *"이전 수 대비 3 집 이상 증감한 수"* 는 임계만 말하고 개수 상한을 말하지 않았다.
  */
-internal fun gameReplayScoreSwingCriterionFor(
-    language: UiLanguage,
-    thresholdPoints: Double = ScoreSwingThreshold,
-): String {
-    val points = pointsText(thresholdPoints)
-    return when (language) {
-        UiLanguage.Korean -> "이전 수 대비 $points 집 이상 증감한 수"
-        UiLanguage.English -> "Moves that swung the score by $points+ points"
-        UiLanguage.Japanese -> "前の手より $points 目以上動いた手"
-        UiLanguage.ChineseSimplified -> "比上一手波动 $points 目以上的着法"
+internal fun gameReplayScoreSwingCriterionFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "변동이 큰 순으로 골라 수순대로"
+        UiLanguage.English -> "biggest swings, in move order"
+        UiLanguage.Japanese -> "変動の大きい順に選び手順どおりに"
+        UiLanguage.ChineseSimplified -> "按波动大小选出，按手顺排列"
     }
-}
 
 /**
  * 변곡점 버튼 하나의 라벨 — `1수: -9.5`(2026-09-20 사용자 리메이크). 부호는 그대로 보여준다

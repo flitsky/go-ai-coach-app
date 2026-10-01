@@ -42,6 +42,7 @@ import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.ScoreSwingHighlight
 import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
+import com.worksoc.goaicoach.application.gamehistory.canMeasureScoreSwings
 import com.worksoc.goaicoach.application.gamehistory.canStartBranchedGameAt
 import com.worksoc.goaicoach.application.gamehistory.deriveReplayMoveEvaluations
 import com.worksoc.goaicoach.application.gamehistory.deriveScoreSwingHighlights
@@ -137,6 +138,9 @@ internal fun GameReplayScreen(
     // ⚠️ **「변곡점」은 [moves]도 사람 진영도 보지 않는다**(2026-09-20 사용자 리메이크) —
     // `scoreSnapshots` 하나만으로 사람:사람·사람:AI·AI:AI 모든 대국에 똑같이 뜬다.
     val scoreSwings = remember(replay) { deriveScoreSwingHighlights(replay.scoreSnapshots) }
+    // ⚠️ **스냅샷이 있다고 잴 수 있는 것이 아니다**(백로그 #207) — 로컬 영역 계산만 쌓인 판은 그래프는
+    // 그려져도 변곡점 후보가 0개다. 그 판을 「안정적으로 진행」이라 말하지 않으려고 따로 본다.
+    val canMeasureSwings = remember(replay) { canMeasureScoreSwings(replay.scoreSnapshots) }
 
     // ⚠️ **마지막 수에서 연다.** 목록 행이 방금 말한 것이 결과이고, 그 국면에서 시작해야 화면이
     // 이어진다. 처음부터 보려면 `⏮`가 한 번이다.
@@ -203,7 +207,7 @@ internal fun GameReplayScreen(
         // 예전에 블런더 섹션 자신이 `top = 12.dp`로 더 얹어 두던 것을 걷어냈다. AdMob의
         // 「실수 클릭 유도 배치 금지」는 여전히 지킨다 — 간격이 0이 아니면 충분하다.
         ReplayScoreSwingSection(
-            hasScoreData = replay.scoreSnapshots.isNotEmpty(),
+            canMeasureSwings = canMeasureSwings,
             swings = scoreSwings,
             currentMoveNumber = moveNumber,
             strings = strings,
@@ -524,12 +528,14 @@ private fun ReplayScoreSection(
  * 고르므로, 사람:사람·사람:AI·AI:AI 어느 조합의 대국에도 똑같이 뜬다(옛 "실착" 목록은
  * 사람이 둔 수에만 붙었다).
  *
- * ⚠️ 형세 기록이 **하나도 없는 것**과 **기록은 있는데 변곡점이 없는 것**은 다른 말이다 — 앞의
+ * ⚠️ **잴 수 있는 수가 하나도 없는 것**과 **재 봤더니 변곡점이 없는 것**은 다른 말이다 — 앞의
  * 것을 "변곡점 없음"으로 적으면 잴 자료가 없었던 판을 형세가 안정적이던 판으로 바꿔 말하게 된다.
+ * ⚠️ 기준은 스냅샷 유무가 아니라 [canMeasureScoreSwings]다(백로그 #207) — 예전엔 기록이 하나라도 있으면
+ * "없음"으로 갔는데, #200부터 변곡점은 연속한 신경망 평가끼리만 재므로 로컬 계산만 쌓인 판이 거기 섞였다.
  */
 @Composable
 private fun ReplayScoreSwingSection(
-    hasScoreData: Boolean,
+    canMeasureSwings: Boolean,
     swings: List<ScoreSwingHighlight>,
     currentMoveNumber: Int,
     strings: UiStrings,
@@ -548,7 +554,7 @@ private fun ReplayScoreSwingSection(
             color = MaterialTheme.colorScheme.secondary,
         )
         when {
-            !hasScoreData -> Text(
+            !canMeasureSwings -> Text(
                 text = gameReplayNoScoreDataForSwingsFor(language),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.secondary,

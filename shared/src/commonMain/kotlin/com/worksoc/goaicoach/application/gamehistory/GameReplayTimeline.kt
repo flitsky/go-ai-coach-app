@@ -85,8 +85,14 @@ data class ScoreSwingHighlight(
     val swing: Double,
 )
 
-/** 「변곡점」의 기본 임계 — 이전 수 대비 **3집** 이상 증감(2026-09-20 사용자). */
-const val ScoreSwingThreshold: Double = 3.0
+/**
+ * 「변곡점」의 기본 임계 — 이전 수 대비 **5점** 이상 증감. 「복기 하기」 추천의
+ * [ReviewRecommendationMistakeThreshold]와 **같은 값을 따른다**(2026-10-01 사용자 — 3점에서 통일, 백로그 #207).
+ *
+ * ⚠️ 통일한 것은 **숫자뿐**이다 — 변곡점은 양방향(누구에게 유리해졌든)이고, 실착은 둔 쪽에 불리한 쪽만 센다.
+ * 그래서 「복기 하기」 배지의 개수와 다시보기의 버튼 수는 같지 않을 수 있다.
+ */
+const val ScoreSwingThreshold: Double = ReviewRecommendationMistakeThreshold
 
 /** 변곡점 버튼으로 띄울 최대 개수 — 이보다 많으면 **변동폭이 큰 쪽부터** 자른다(2026-09-20 사용자). */
 const val ScoreSwingMaxCount: Int = 5
@@ -125,6 +131,20 @@ fun deriveScoreSwingHighlights(
         .sortedByDescending { highlight -> abs(highlight.swing) }
         .take(maxCount)
         .sortedBy { highlight -> highlight.moveNumber }
+}
+
+/**
+ * 변곡점을 **잴 수 있는 수가 하나라도 있는가** — 앞뒤 스냅샷이 둘 다 신경망 평가인 수순이 있는가
+ * ([deriveScoreSwingHighlights]의 후보 조건과 같다, 백로그 #207).
+ *
+ * ⚠️ **스냅샷이 있다고 잴 수 있는 것이 아니다.** 엔진이 준비되지 않은 판이나 옛 기록은 로컬 영역 계산만
+ * 쌓여 형세 그래프는 그려지지만 변곡점 후보는 0개다 — 그 판에 *"변곡점 없이 안정적으로 진행되었다"* 고
+ * 말하면 재지 않은 것을 잰 것처럼 말하게 된다. `false`면 화면은 「기록이 부족하다」고 말한다
+ * ([countReviewRecommendationMistakes]가 `null`을 돌려주는 것과 같은 원칙).
+ */
+fun canMeasureScoreSwings(scoreSnapshots: List<ScoreSnapshot>): Boolean {
+    val leadByMoveNumber = engineEstimateWhiteLeadByMoveNumber(scoreSnapshots)
+    return leadByMoveNumber.keys.any { moveNumber -> moveNumber > 0 && (moveNumber - 1) in leadByMoveNumber }
 }
 
 /**

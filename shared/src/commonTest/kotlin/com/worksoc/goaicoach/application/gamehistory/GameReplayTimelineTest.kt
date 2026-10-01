@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -246,5 +247,39 @@ class GameReplayTimelineTest {
         )
 
         assertEquals(listOf(1), deriveScoreSwingHighlights(snapshots).map { it.moveNumber })
+    }
+
+    /**
+     * ⚠️ **변곡점 임계는 「복기 하기」 추천과 같은 값이다**(2026-10-01 사용자 — 3점에서 5점으로 통일, 백로그 #207).
+     * 한쪽만 바꾸면 이 단언이 깨진다 — 다시 갈라야 한다면 먼저 사용자에게 묻는다.
+     */
+    @Test
+    fun theSwingThresholdIsTheReviewRecommendationThreshold() {
+        assertEquals(ReviewRecommendationMistakeThreshold, ScoreSwingThreshold)
+        assertEquals(5.0, ScoreSwingThreshold)
+
+        // 옛 임계(3점)였다면 잡혔을 4점 변동은 이제 변곡점이 아니다.
+        val snapshots = listOf(snapshot(0, 0.0), snapshot(1, 4.0), snapshot(2, -1.0))
+        assertEquals(listOf(2), deriveScoreSwingHighlights(snapshots).map { it.moveNumber })
+    }
+
+    /**
+     * ⚠️ **스냅샷이 있다고 잴 수 있는 것이 아니다**(백로그 #207) — 연속한 두 수가 모두 신경망 평가인 곳이 있어야
+     * 한다. 아니면 화면이 「안정적으로 진행」 대신 「기록이 부족하다」고 말한다.
+     */
+    @Test
+    fun swingsAreMeasurableOnlyWithAnAdjacentEnginePair() {
+        fun local(moveNumber: Int) =
+            ScoreSnapshot(moveNumber = moveNumber, whiteScoreLead = 0.0, source = ScoreSnapshotSource.LocalAreaEstimate)
+
+        assertFalse(canMeasureScoreSwings(emptyList()))
+        // 엔진이 준비되지 않은 판 — 그래프는 그려지지만 변곡점은 잴 수 없다.
+        assertFalse(canMeasureScoreSwings(listOf(local(0), local(1), local(2))))
+        // 신경망 평가가 있어도 서로 붙어 있지 않으면 잴 수 없다.
+        assertFalse(canMeasureScoreSwings(listOf(snapshot(0, 0.0), local(1), snapshot(2, 1.0))))
+        // 붙은 한 쌍이면 잴 수 있다 — 흔들림이 없으면 「변곡점 없이 안정적으로 진행」이 맞는 판이다.
+        val steady = listOf(snapshot(0, 0.0), snapshot(1, 1.0), snapshot(2, 0.5))
+        assertTrue(canMeasureScoreSwings(steady))
+        assertEquals(emptyList(), deriveScoreSwingHighlights(steady))
     }
 }

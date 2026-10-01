@@ -12,7 +12,7 @@ import com.worksoc.goaicoach.application.gamehistory.ReviewRecommendationMistake
  * 사람이 아니라 *"이번 대국"* 이다. 영어 `You made …`처럼 사람에게 돌리면 AI의 실착까지 사용자 탓이 된다.
  *
  * ⚠️ **집수를 문구에 박지 않는다** — 임계는 [ReviewRecommendationMistakeThreshold] 하나가 정본이다
- * (`gameReplayScoreSwingCriterionFor`와 같은 원칙). 함수로 만든 문구라 리플렉션 그물 밖이다(함정 10) —
+ * (다시보기 `gameReplayScoreSwingSectionFor`의 개수와 같은 원칙). 함수로 만든 문구라 리플렉션 그물 밖이다(함정 10) —
  * `UiStringsReviewRecommendationTest`가 손 그물이다.
  */
 internal fun reviewRecommendationMessageFor(

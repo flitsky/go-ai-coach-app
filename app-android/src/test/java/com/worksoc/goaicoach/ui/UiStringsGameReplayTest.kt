@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.ui
 
-import com.worksoc.goaicoach.application.gamehistory.ScoreSwingThreshold
+import com.worksoc.goaicoach.application.gamehistory.ScoreSwingMaxCount
 import com.worksoc.goaicoach.ui.l10n.ReplayNavigation
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNoteDialogTitleFor
@@ -76,32 +76,55 @@ class UiStringsGameReplayTest {
     }
 
     /**
-     * ⚠️ **임계값을 문구에 박지 않는다.** 3집은 [ScoreSwingThreshold] 하나가 정본이고
-     * 네 언어가 그 값을 따라와야 한다 — 숫자를 손으로 적어 두면 임계를 바꾼 다음 스레드가
-     * **코드는 12집인데 화면은 3집이라고 말하는** 상태를 만든다.
+     * ⚠️ **개수 상한을 문구에 박지 않는다**(백로그 #207). 5개는 [ScoreSwingMaxCount] 하나가 정본이고
+     * 네 언어가 그 값을 따라와야 한다 — 숫자를 손으로 적어 두면 상한을 바꾼 다음 스레드가
+     * **버튼은 7개인데 화면은 최대 5개라고 말하는** 상태를 만든다.
      */
     @Test
-    fun theScoreSwingCriterionFollowsTheThresholdConstant() {
-        // ⚠️ **숫자 경계로 찾는다** — "23"은 문자열로 "3"을 포함하므로 `contains("3")`는
-        // 23집 문구를 옛 3집 문구로 오판한다.
+    fun theScoreSwingTitleFollowsTheMaxCountConstant() {
+        // ⚠️ **숫자 경계로 찾는다** — "25"는 문자열로 "5"를 포함하므로 `contains("5")`는
+        // 25개 문구를 옛 5개 문구로 오판한다.
         fun mentionsNumber(text: String, number: Int): Boolean =
             Regex("(?<!\\d)$number(?!\\d)").containsMatchIn(text)
 
         languages.forEach { language ->
             assertTrue(
-                "$language 기준 문구가 기본 임계(3)를 말하지 않는다",
-                mentionsNumber(gameReplayScoreSwingCriterionFor(language), 3),
+                "$language 제목이 기본 상한(5)을 말하지 않는다",
+                mentionsNumber(gameReplayScoreSwingSectionFor(language), 5),
             )
             assertTrue(
-                "$language 기준 문구가 바뀐 임계(23)를 따라오지 않는다",
-                mentionsNumber(gameReplayScoreSwingCriterionFor(language, 23.0), 23),
+                "$language 제목이 바뀐 상한(25)을 따라오지 않는다",
+                mentionsNumber(gameReplayScoreSwingSectionFor(language, 25), 25),
             )
             assertFalse(
-                "$language 기준 문구에 옛 임계가 남았다",
-                mentionsNumber(gameReplayScoreSwingCriterionFor(language, 23.0), 3),
+                "$language 제목에 옛 상한이 남았다",
+                mentionsNumber(gameReplayScoreSwingSectionFor(language, 25), 5),
+            )
+            // 고르는 방식 문구에는 숫자가 없다 — 옛 문구처럼 임계(집수)를 손으로 적어 두지 않았는지.
+            assertFalse(
+                "$language 고르는 방식 문구에 숫자가 박혔다: ${gameReplayScoreSwingCriterionFor(language)}",
+                gameReplayScoreSwingCriterionFor(language).any { it.isDigit() },
             )
         }
-        assertEquals(3.0, ScoreSwingThreshold, 0.0)
+        assertEquals(5, ScoreSwingMaxCount)
+    }
+
+    /**
+     * 한국어 세 문구는 **사용자가 고른 그대로**다(2026-10-01, 백로그 #207) — 바꾸려면 먼저 묻는다.
+     * ⚠️ 「없을 때」에 "최적 수순"을 쓰지 않은 이유는 `UiStringsGameReplay.kt`의 `NoScoreSwings` KDoc.
+     */
+    @Test
+    fun koreanScoreSwingCopyIsWhatTheUserChose() {
+        val korean = UiLanguage.Korean
+        assertEquals(
+            "변곡점(최대 5개) · 변동이 큰 순으로 골라 수순대로",
+            "${gameReplayScoreSwingSectionFor(korean)} \u00B7 ${gameReplayScoreSwingCriterionFor(korean)}",
+        )
+        assertEquals("변곡점 없이 안정적으로 진행되었습니다.", gameReplayNoScoreSwingsFor(korean))
+        assertEquals(
+            "이 대국에는 형세 기록이 부족해 변곡점을 표시할 수 없습니다.",
+            gameReplayNoScoreDataForSwingsFor(korean),
+        )
     }
 
     /**
