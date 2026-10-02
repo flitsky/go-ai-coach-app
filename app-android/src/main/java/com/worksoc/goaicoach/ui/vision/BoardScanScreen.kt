@@ -154,7 +154,9 @@ internal fun BoardScanScreen(
                                     isScanning = true
                                     scope.launch {
                                         try {
-                                            val result = AndroidBoardVisionScanner(bitmap).scan(corners, boardSize)
+                                            // 핀을 안 건드렸으면 자동 인식(또는 지난 인식)이 이미 격자에 붙인 자리다 — 다시 붙이지 않는다.
+                                            val untouched = corners == pinCorners && boardSize == pinBoardSize
+                                            val result = AndroidBoardVisionScanner(bitmap).scan(corners, boardSize, snap = !untouched)
                                             // 핀이 붙은 자리를 기억해 둔다 — 되돌아오면 붙은 핀에서 다시 시작한다.
                                             pinCorners = result.corners
                                             pinBoardSize = boardSize

@@ -13,6 +13,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.random.Random
 
 /** 자동으로 찾은 판 — [corners]는 바깥 격자선 교차점(원본 픽셀). */
 internal data class LocatedBoard(
@@ -74,20 +75,27 @@ internal object BoardLocator {
     }
 
     /**
-     * 손으로 놓은(또는 대략 맞은) 모서리를 **가까운 격자에 붙인다** — 핀이 칸의 3분의 1쯤 어긋나도 맞춰 준다.
-     * 그 모서리로 시작해 [snapToGrid]로 교점을 끌어당긴다. 모서리가 한 칸 가까이 움직였다면 엉뚱한 선에 붙은 것이라
-     * 손으로 놓은 값을 그대로 둔다.
+     * 손으로 놓은(또는 대략 맞은) 모서리를 **가까운 격자에 붙인다** — 핀 하나가 한 칸 가까이 어긋나도 맞춰 준다.
+     * [coarseAlign]으로 어긋난 핀을 [snapToGrid]의 창 안까지 먼저 옮기고, [snapToGrid]로 교점을 끌어당긴다.
+     * 모서리가 1.3칸 넘게 움직였다면 엉뚱한 선에 붙은 것이라 손으로 놓은 값을 그대로 둔다.
+     *
+     * ⚠️ **[snapToGrid]만으로는 0.3칸까지만 된다**(백로그 #210) — 에뮬레이터에서 핀 하나를 0.85칸 안쪽에 두었더니 그 근처
+     * 교점들이 옆 선에 붙고, 그 점들까지 넣어 투시 변환을 맞추면서 **제자리에 있던 핀까지** 0.4칸 끌려갔다(기준 이미지 02: 흑 93→81).
+     * 한계: 네 핀이 **모두** 반 칸 넘게 어긋나면 실물 사진 01에서는 못 맞춘다(손으로 놓은 값을 그대로 둔다).
      */
     fun refine(source: PixelSource, approx: BoardCornerPoints, boardSize: BoardSize): BoardCornerPoints {
         val n = boardSize.value
         val (gray, scale) = Gray.downscaled(source, WorkingMaxDim)
-        val start = BoardHomography.fit(unitCorners(n), approx.toList().map { it.scaled(scale) }) ?: return approx
+        val pins = approx.toList().map { it.scaled(scale) }
+        val start = BoardHomography.fit(unitCorners(n), pins) ?: return approx
         val pitch = localPitch(start, n / 2, n / 2)
         if (pitch < 3f) return approx
-        val fitted = snapToGrid(gray, StoneResponse(gray, pitch), n, start)
+        val stone = StoneResponse(gray, pitch)
+        val aligned = BoardHomography.fit(unitCorners(n), coarseAlign(coarseEvidence(gray, stone, pitch), n, pins, pitch)) ?: start
+        val fitted = snapToGrid(gray, stone, n, aligned)
         val refined = cornersOf(fitted, n, 1f / scale)
         val moved = refined.toList().zip(approx.toList()).maxOf { (a, b) -> hypot((a.x - b.x).toDouble(), (a.y - b.y).toDouble()) }
-        return if (moved <= pitch / scale * 0.8f) refined else approx
+        return if (moved <= pitch / scale * 1.3f) refined else approx
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -365,7 +373,7 @@ internal object BoardLocator {
                 }
             }
             if (gridPts.size < 8) break
-            var next = BoardHomography.fit(gridPts, imgPts) ?: break
+            var next = robustFit(gridPts, imgPts, n) ?: break
             repeat(2) {
                 val keepG = ArrayList<PointF2D>()
                 val keepI = ArrayList<PointF2D>()
@@ -383,6 +391,157 @@ internal object BoardLocator {
         }
         return h
     }
+
+    /**
+     * 핀 하나가 한 칸 가까이 어긋나도 [snapToGrid]의 창(0.3칸)이 닿을 자리까지 먼저 옮긴다 — 네 모서리 각각을 **처음 핀
+     * 자리에서** ±1칸 안 4분의 1칸 간격으로 옮겨 보고, [latticeScore]를 가장 많이 올리는 **모서리 하나의 이동만** 받아들인다.
+     * 오르는 게 없을 때까지(여덟 번까지 — 네 핀이 다 어긋나면 한 모서리를 두 번 옮기기도 한다) 되풀이한다.
+     *
+     * ⚠️ **모서리를 차례로 돌며 오르는 대로 받지 않는다** — 오른쪽 위 핀이 0.85칸 아래 있을 때 왼쪽 위부터 돌았더니, 왼쪽 위를
+     * 한 줄 내려 "어긋난 오른쪽 위에 맞추는" 쪽이 먼저 점수를 올려 그 자리(정답보다 낮은 봉우리)에 갇혔다(기준 이미지 04·05).
+     * 가장 많이 오르는 한 모서리만 옮기면 어긋난 그 핀이 먼저 제자리로 간다.
+     * ⚠️ **찾는 범위를 처음 핀 자리에 묶는다** — 지금 자리를 가운데로 다시 잡으면 모서리가 몇 칸씩 흘러가 판 밖 무늬에 붙었다(01).
+     */
+    private fun coarseAlign(evidence: Gray, n: Int, pins: List<PointF2D>, pitch: Float): List<PointF2D> {
+        val corners = pins.toMutableList()
+        val unit = unitCorners(n)
+        fun scoreOf(c: List<PointF2D>): Float? = BoardHomography.fit(unit, c)?.let { latticeScore(evidence, n, it) }
+        var current = scoreOf(corners) ?: return pins
+        for (step in 0 until 8) {
+            // 0.5%도 안 오르는 이동은 받지 않는다 — 거의 맞은 핀은 [snapToGrid]가 다듬는다(폰에서 몇 바퀴를 아낀다).
+            var bestGain = current * 0.005f
+            var bestIndex = -1
+            var bestPoint = corners[0]
+            for (i in corners.indices) {
+                val kept = corners[i]
+                for (iy in -4..4) {
+                    for (ix in -4..4) {
+                        val candidate = PointF2D(pins[i].x + ix * pitch / 4f, pins[i].y + iy * pitch / 4f)
+                        if (candidate == kept) continue
+                        corners[i] = candidate
+                        val gain = (scoreOf(corners) ?: continue) - current
+                        if (gain > bestGain) {
+                            bestGain = gain
+                            bestIndex = i
+                            bestPoint = candidate
+                        }
+                    }
+                }
+                corners[i] = kept
+            }
+            if (bestIndex < 0) break
+            corners[bestIndex] = bestPoint
+            current += bestGain
+        }
+        return corners
+    }
+
+    /**
+     * 격자 [h]가 사진에 얼마나 맞는가 — 격자선 2n개를 반 칸 간격으로 따라가며 [coarseEvidence]를 더한다.
+     * 사진 밖으로 나간 점은 0이다. [coarseAlign]이 수천 번 부르므로 점마다 객체를 만들지 않는다.
+     */
+    private fun latticeScore(evidence: Gray, n: Int, h: BoardHomography): Float {
+        var score = 0f
+        val xy = DoubleArray(2)
+        val samples = (n - 1) * 2
+        for (line in 0 until n) {
+            for (s in 0..samples) {
+                val t = s / 2.0
+                h.mapInto(line.toDouble(), t, xy)
+                score += evidence.bilinear(xy[0].toFloat(), xy[1].toFloat(), 0f)
+                h.mapInto(t, line.toDouble(), xy)
+                score += evidence.bilinear(xy[0].toFloat(), xy[1].toFloat(), 0f)
+            }
+        }
+        return score
+    }
+
+    /**
+     * [coarseAlign]이 오르내릴 증거 — 가는 어두운 선(등방성) + 돌 중심 반응을 **0.1칸쯤 흐린 것**. 선은 1~2px 굵기라
+     * 4분의 1칸 간격으로 옮겨 보는 격자가 그대로는 거의 밟지 못한다 — 흐려서 진짜 선 둘레에 비탈을 만든다.
+     */
+    private fun coarseEvidence(g: Gray, stone: StoneResponse, pitch: Float): Gray {
+        val ridge = EvidenceMaps.ridgeOf(g)
+        val sum = FloatArray(g.w * g.h) { i -> ridge[i] + stone.atIndex(i) }
+        return Gray(g.w, g.h, sum).boxBlurred(max(1, (pitch * 0.08f).roundToInt()))
+    }
+
+    /**
+     * 옮긴 교점들에 투시 변환을 맞추되, **어긋난 점이 한쪽에 몰려 있어도** 나머지가 이기게 한다 — 네 사분면에서 한 점씩
+     * 뽑아 맞추고 동의한 점(0.2칸 안) 전부로 다시 맞춰 가며, 동의가 가장 많은 것을 골라 그 점들로 맞춘다(LO-RANSAC,
+     * 씨앗 고정이라 늘 같은 답).
+     *
+     * ⚠️ **모든 점으로 한 번에 맞추지 않는다**(백로그 #210) — 핀 하나가 0.85칸 어긋나면 그 모서리 근처 교점들은 창(0.3칸)
+     * 밖이라 엉뚱한 선에 붙는데, 그 점들까지 넣어 맞추면 변환이 통째로 비틀려 **제자리에 있던 핀까지** 0.4칸 끌려갔다
+     * (에뮬레이터, 기준 이미지 02: 흑 93→81). 맞는 쪽 점들로 맞춘 변환은 어긋난 모서리 쪽으로도 바르게 뻗으므로, 다음 바퀴에
+     * 그 모서리 교점들이 창 안에 들어온다.
+     */
+    private fun robustFit(gridPts: List<PointF2D>, imgPts: List<PointF2D>, n: Int): BoardHomography? {
+        val all = BoardHomography.fit(gridPts, imgPts) ?: return null
+        val half = (n - 1) / 2f
+        val quadrants = List(4) { ArrayList<Int>() }
+        for (i in gridPts.indices) {
+            quadrants[(if (gridPts[i].x > half) 1 else 0) + (if (gridPts[i].y > half) 2 else 0)] += i
+        }
+        if (quadrants.any { it.isEmpty() }) return all
+        // 점마다 상자에 담긴 목록을 만들지 않고 표시 배열을 고쳐 쓴다 — 안드로이드 런타임은 상자 객체를 못 지운다(함정 86).
+        val xy = DoubleArray(2)
+        fun countInliers(h: BoardHomography, mark: BooleanArray): Int {
+            val tol = localPitch(h, n / 2, n / 2) * 0.2f
+            var count = 0
+            for (i in gridPts.indices) {
+                h.mapInto(gridPts[i].x.toDouble(), gridPts[i].y.toDouble(), xy)
+                mark[i] = hypot(xy[0] - imgPts[i].x, xy[1] - imgPts[i].y) <= tol
+                if (mark[i]) count++
+            }
+            return count
+        }
+        fun fitMarked(mark: BooleanArray): BoardHomography? {
+            val g = ArrayList<PointF2D>()
+            val p = ArrayList<PointF2D>()
+            for (i in mark.indices) {
+                if (mark[i]) {
+                    g += gridPts[i]
+                    p += imgPts[i]
+                }
+            }
+            return if (g.size >= 4) BoardHomography.fit(g, p) else null
+        }
+        val random = Random(RansacSeed)
+        val best = BooleanArray(gridPts.size)
+        var bestCount = 0
+        val mark = BooleanArray(gridPts.size)
+        val again = BooleanArray(gridPts.size)
+        val sampleG = MutableList(4) { gridPts[0] }
+        val sampleP = MutableList(4) { imgPts[0] }
+        repeat(RansacRounds) {
+            for (q in 0 until 4) {
+                val i = quadrants[q][random.nextInt(quadrants[q].size)]
+                sampleG[q] = gridPts[i]
+                sampleP[q] = imgPts[i]
+            }
+            val h = BoardHomography.fit(sampleG, sampleP) ?: return@repeat
+            var count = countInliers(h, mark)
+            if (count <= bestCount) return@repeat
+            // 네 점으로 맞춘 변환은 점마다의 흔들림을 판 끝까지 키운다 — 동의한 점 전부로 다시 맞춰 다시 센다.
+            for (round in 0 until 3) {
+                val refit = fitMarked(mark) ?: break
+                val c = countInliers(refit, again)
+                if (c <= count) break
+                again.copyInto(mark)
+                count = c
+            }
+            if (count > bestCount) {
+                mark.copyInto(best)
+                bestCount = count
+            }
+        }
+        if (bestCount < max(8, gridPts.size / 3)) return all
+        return fitMarked(best) ?: all
+    }
+
+    private const val RansacRounds = 100
+    private const val RansacSeed = 210
 
     /**
      * 판의 범위를 **한 줄** 단위로 바로잡는다 — 격자 전체를 가로·세로로 −1·0·+1줄 옮긴 아홉 후보 중, 바깥 격자선 바로
@@ -424,9 +583,10 @@ internal object BoardLocator {
             val dir = if (alongK) direction(h, k - 0.2, j, k + 0.2, j) else direction(h, k, j - 0.2, k, j + 0.2)
             val nx = -dir.second
             val ny = dir.first
-            val c = g.bilinear(p.x, p.y) ?: return 0f
-            val a = g.bilinear(p.x - 2 * nx, p.y - 2 * ny) ?: return 0f
-            val b = g.bilinear(p.x + 2 * nx, p.y + 2 * ny) ?: return 0f
+            val c = g.bilinear(p.x, p.y, Float.NaN)
+            val a = g.bilinear(p.x - 2 * nx, p.y - 2 * ny, Float.NaN)
+            val b = g.bilinear(p.x + 2 * nx, p.y + 2 * ny, Float.NaN)
+            if (c.isNaN() || a.isNaN() || b.isNaN()) return 0f
             val side = (a + b) / 2f
             return max(0f, side - c) / max(side, 16f) * 100f
         }
@@ -448,7 +608,8 @@ internal object BoardLocator {
         // 실은 판의 나무 가장자리다(01: 가장자리 그림자를 바깥선으로 잡았다). 인쇄는 안팎이 같은 종이라 아무 말도 안 한다.
         fun colorAt(k: Double, j: Double): Pair<Float, Float>? {
             val p = h.map(k, j)
-            val l = g.bilinear(p.x, p.y) ?: return null
+            val l = g.bilinear(p.x, p.y, Float.NaN)
+            if (l.isNaN()) return null
             return l to (g.saturationAt(p.x, p.y) ?: return null)
         }
         fun medianPair(list: List<Pair<Float, Float>>): Pair<Float, Float>? {
@@ -513,10 +674,10 @@ internal object BoardLocator {
             while (w <= half) {
                 val x = p.x + nx * t + ax * w
                 val y = p.y + ny * t + ay * w
-                val c = g.bilinear(x, y)
-                val l = g.bilinear(x - 2 * nx, y - 2 * ny)
-                val r = g.bilinear(x + 2 * nx, y + 2 * ny)
-                if (c != null && l != null && r != null) {
+                val c = g.bilinear(x, y, Float.NaN)
+                val l = g.bilinear(x - 2 * nx, y - 2 * ny, Float.NaN)
+                val r = g.bilinear(x + 2 * nx, y + 2 * ny, Float.NaN)
+                if (!c.isNaN() && !l.isNaN() && !r.isNaN()) {
                     val side = (l + r) / 2f
                     s += max(0f, side - c) / max(side, 16f) * 100f
                 }
@@ -615,15 +776,7 @@ internal object BoardLocator {
         private val strongRidge: IntArray
 
         init {
-            for (y in 0 until h) {
-                for (x in 0 until w) {
-                    val c = g.at(x, y)
-                    var sum = 0f
-                    for ((dx, dy) in Ring8) sum += g.at(x + dx, y + dy)
-                    val around = sum / 8f
-                    ridge[y * w + x] = max(0f, around - c) / max(around, 16f) * 100f
-                }
-            }
+            ridgeOf(g).copyInto(ridge)
             val cut = quantile(ridge, 0.85f)
             strongRidge = ridge.indices.filter { ridge[it] > cut && ridge[it] > 2f }.toIntArray()
         }
@@ -660,14 +813,14 @@ internal object BoardLocator {
                 val x = (i % w).toFloat()
                 val y = (i / w).toFloat()
                 val c = g.v[i]
-                abs((g.bilinear(x + nx, y + ny) ?: c) - (g.bilinear(x - nx, y - ny) ?: c))
+                abs(g.bilinear(x + nx, y + ny, c) - g.bilinear(x - nx, y - ny, c))
             }
             val r = project(family, angle, null) { i ->
                 val x = (i % w).toFloat()
                 val y = (i / w).toFloat()
                 val c = g.v[i]
-                val l = g.bilinear(x - 2 * nx, y - 2 * ny) ?: c
-                val rr = g.bilinear(x + 2 * nx, y + 2 * ny) ?: c
+                val l = g.bilinear(x - 2 * nx, y - 2 * ny, c)
+                val rr = g.bilinear(x + 2 * nx, y + 2 * ny, c)
                 max(0f, (l + rr) / 2f - c)
             }
             val me = e.maxOrNull()?.takeIf { it > 0f } ?: 1f
@@ -705,6 +858,20 @@ internal object BoardLocator {
 
         companion object {
             private val Ring8 = listOf(-2 to -2, 0 to -2, 2 to -2, -2 to 0, 2 to 0, -2 to 2, 0 to 2, 2 to 2)
+
+            fun ridgeOf(g: Gray): FloatArray {
+                val out = FloatArray(g.w * g.h)
+                for (y in 0 until g.h) {
+                    for (x in 0 until g.w) {
+                        val c = g.at(x, y)
+                        var sum = 0f
+                        for ((dx, dy) in Ring8) sum += g.at(x + dx, y + dy)
+                        val around = sum / 8f
+                        out[y * g.w + x] = max(0f, around - c) / max(around, 16f) * 100f
+                    }
+                }
+                return out
+            }
         }
     }
 
@@ -740,9 +907,13 @@ internal object BoardLocator {
             return if (xi in 0 until w && yi in 0 until h) s[yi * w + xi] else null
         }
 
-        /** 영상 밖이면 `null`. */
-        fun bilinear(x: Float, y: Float): Float? {
-            if (x < 0f || y < 0f || x > w - 1 || y > h - 1) return null
+        /**
+         * 이웃 넷 사이를 이은 밝기 — 영상 밖이면 [outside].
+         * ⚠️ `Float?`를 돌려주지 않는다 — 안드로이드 런타임은 JVM과 달리 그 상자 객체를 없애 주지 못해서, 픽셀마다 부르는
+         * 고리(주기 측정·교점 붙이기·격자 점수)에서 호출마다 객체가 생긴다(함정 86).
+         */
+        fun bilinear(x: Float, y: Float, outside: Float): Float {
+            if (x < 0f || y < 0f || x > w - 1 || y > h - 1) return outside
             val x0 = floor(x).toInt()
             val y0 = floor(y).toInt()
             val x1 = min(x0 + 1, w - 1)

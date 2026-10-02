@@ -19,6 +19,13 @@ internal class BoardHomography private constructor(private val h: DoubleArray) {
         )
     }
 
+    /** [map]과 같되 결과를 [out]에 쓴다 — 수천 번 도는 고리에서 점마다 객체를 만들지 않으려고. */
+    fun mapInto(x: Double, y: Double, out: DoubleArray) {
+        val w = h[6] * x + h[7] * y + 1.0
+        out[0] = (h[0] * x + h[1] * y + h[2]) / w
+        out[1] = (h[3] * x + h[4] * y + h[5]) / w
+    }
+
     companion object {
         /**
          * [from]의 점을 [to]의 점으로 보내는 변환. 점이 넷이면 정확히, 넷보다 많으면 최소제곱으로 맞춘다.
@@ -29,8 +36,11 @@ internal class BoardHomography private constructor(private val h: DoubleArray) {
             // 정규방정식 AᵀA h = Aᵀb (8x8). 점 넷이면 A가 정방이라 해와 같다.
             val ata = Array(8) { DoubleArray(8) }
             val atb = DoubleArray(8)
-            fun accumulate(row: DoubleArray, rhs: Double) {
+            // 한 점이 두 줄(u, v)을 보탠다 — 줄 배열은 고쳐 쓴다(RANSAC이 수백 번 부른다).
+            val row = DoubleArray(8)
+            fun accumulate(rhs: Double) {
                 for (i in 0 until 8) {
+                    if (row[i] == 0.0) continue
                     atb[i] += row[i] * rhs
                     for (j in 0 until 8) ata[i][j] += row[i] * row[j]
                 }
@@ -40,8 +50,20 @@ internal class BoardHomography private constructor(private val h: DoubleArray) {
                 val y = from[k].y.toDouble()
                 val u = to[k].x.toDouble()
                 val v = to[k].y.toDouble()
-                accumulate(doubleArrayOf(x, y, 1.0, 0.0, 0.0, 0.0, -x * u, -y * u), u)
-                accumulate(doubleArrayOf(0.0, 0.0, 0.0, x, y, 1.0, -x * v, -y * v), v)
+                row.fill(0.0)
+                row[0] = x
+                row[1] = y
+                row[2] = 1.0
+                row[6] = -x * u
+                row[7] = -y * u
+                accumulate(u)
+                row.fill(0.0)
+                row[3] = x
+                row[4] = y
+                row[5] = 1.0
+                row[6] = -x * v
+                row[7] = -y * v
+                accumulate(v)
             }
             val solution = solve(ata, atb) ?: return null
             return BoardHomography(solution + 1.0)

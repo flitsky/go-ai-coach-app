@@ -30,9 +30,12 @@ internal class AndroidBoardVisionScanner(
     /** 판을 스스로 찾는다 — 못 찾으면 `null`(수동 핀으로). */
     suspend fun locate(): LocatedBoard? = withContext(Dispatchers.Default) { BoardLocator.locate(pixels) }
 
-    /** 손으로 놓은 핀을 가까운 격자에 붙이고([BoardLocator.refine]) 돌을 읽는다. */
-    suspend fun scan(corners: BoardCornerPoints, boardSize: BoardSize): BoardScanResult = withContext(Dispatchers.Default) {
-        val refined = BoardLocator.refine(pixels, corners, boardSize)
+    /**
+     * 손으로 놓은 핀을 가까운 격자에 붙이고([BoardLocator.refine]) 돌을 읽는다.
+     * [snap]이 `false`면 붙이지 않는다 — 자동 인식이 찾은(또는 지난번에 붙인) 핀을 건드리지 않았을 때. 이미 격자에 붙은 자리다.
+     */
+    suspend fun scan(corners: BoardCornerPoints, boardSize: BoardSize, snap: Boolean = true): BoardScanResult = withContext(Dispatchers.Default) {
+        val refined = if (snap) BoardLocator.refine(pixels, corners, boardSize) else corners
         val board = BoardWarp.rectify(pixels, refined, boardSize)
         val detected = GridStoneDetector.detect(board)
         val photo = createBitmap(board.pixels.width, board.pixels.height)

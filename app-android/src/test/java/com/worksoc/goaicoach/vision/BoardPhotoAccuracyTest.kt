@@ -14,6 +14,10 @@ import org.junit.Test
  * - **정답 모서리**(사람이 잰 바깥 격자선 교차점)로 돌 판정: 01·02·03 ≥ 99.5%
  * - **자동 인식**(모서리를 스스로 찾고 돌 판정): 01·02·03 ≥ 98%, 판 크기도 맞아야 한다
  * - **핀이 0.3칸씩 어긋난 경우**(모서리마다 다른 방향) → [BoardLocator.refine]으로 붙인 뒤: 01·02·03 ≥ 99.5%
+ * - **핀 하나가 한 칸 가까이(0.85칸) 어긋난 경우**, **네 핀이 0.6칸씩 어긋난 경우**도 같은 기준 — 에뮬레이터에서 핀 하나를
+ *   0.85칸 안쪽에 두었더니 옛 [BoardLocator.refine]이 엉뚱한 선에 붙으며 **제자리에 있던 핀까지** 0.4칸 끌어갔다(흑 93→81).
+ *   단 [farExempt] — 실물 사진 01에서 네 핀이 다 어긋나면, 판 밖 바구니 무늬와 빽빽한 돌 때문에 한 칸 안쪽으로 줄인 격자가
+ *   더 잘 맞아 보인다. 그때 refine은 손으로 놓은 값을 그대로 둔다(더 나쁘게 만들지는 않는다).
  * - 인쇄 기보 04·05는 사용자 결정대로 **측정만** 하되, 처음 잰 값(지금 모두 100%)을 **기준선**으로 걸어 둔다(98%).
  *
  * ⚠️ 이미지가 없는 기계(이미지는 저장소에 없다 — `scripts/fetch-board-photo-fixtures.sh`)에서는 **건너뛴다**.
@@ -36,6 +40,8 @@ class BoardPhotoAccuracyTest {
     }
 
     private fun gate(f: BoardPhotoFixture, gated: Float, baseline: Float) = if (f.gated) gated else baseline
+
+    private val farExempt = setOf("01 넷 다 0.6칸")
 
     @Test
     fun manualCornersClassifyTheStones() {
@@ -76,5 +82,40 @@ class BoardPhotoAccuracyTest {
             val (acc, wrong) = accuracy(f, img, refined)
             assertTrue("${f.key} 핀 붙이기 뒤 인식률 ${"%.1f".format(acc * 100)}% — 틀린 점 $wrong", acc >= gate(f, 0.995f, 0.98f))
         }
+    }
+
+    @Test
+    fun farMisplacedPinsSnapBackToTheGrid() {
+        val failures = ArrayList<String>()
+        fixtures.forEach { f ->
+            val img = image(f)
+            val c = f.corners
+            val cell = hypot(c.topRight.x - c.topLeft.x, c.topRight.y - c.topLeft.y) / (f.boardSize.value - 1)
+            fun PointF2D.moved(dx: Float, dy: Float) = PointF2D(x + dx * cell, y + dy * cell)
+            val far = 0.85f
+            val cases = listOf(
+                "왼쪽 위만 0.85칸" to BoardCornerPoints(c.topLeft.moved(far, 0f), c.topRight, c.bottomRight, c.bottomLeft),
+                "오른쪽 위만 0.85칸" to BoardCornerPoints(c.topLeft, c.topRight.moved(0f, far), c.bottomRight, c.bottomLeft),
+                "오른쪽 아래만 0.85칸" to BoardCornerPoints(c.topLeft, c.topRight, c.bottomRight.moved(-far, 0f), c.bottomLeft),
+                "왼쪽 아래만 0.85칸" to BoardCornerPoints(c.topLeft, c.topRight, c.bottomRight, c.bottomLeft.moved(0f, -far)),
+                "넷 다 0.6칸" to BoardCornerPoints(
+                    c.topLeft.moved(0.6f, 0f),
+                    c.topRight.moved(0f, -0.6f),
+                    c.bottomRight.moved(0.42f, 0.42f),
+                    c.bottomLeft.moved(-0.42f, -0.42f),
+                ),
+            )
+            cases.forEach { (label, pins) ->
+                val refined = BoardLocator.refine(img, pins, f.boardSize)
+                val (acc, wrong) = accuracy(f, img, refined)
+                if ("${f.key} $label" in farExempt) {
+                    val asPlaced = accuracy(f, img, pins).first
+                    if (acc < asPlaced) failures += "${f.key} $label 손으로 놓은 것(${"%.1f".format(asPlaced * 100)}%)보다 나빠졌다 ${"%.1f".format(acc * 100)}%"
+                } else if (acc < gate(f, 0.995f, 0.98f)) {
+                    failures += "${f.key} $label 인식률 ${"%.1f".format(acc * 100)}% — 모서리 $refined 정답 $c 틀린 점 ${wrong.size}개"
+                }
+            }
+        }
+        assertTrue("어긋난 핀 붙이기 실패:\n" + failures.joinToString("\n"), failures.isEmpty())
     }
 }

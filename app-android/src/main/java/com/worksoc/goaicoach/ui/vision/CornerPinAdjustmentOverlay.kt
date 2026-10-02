@@ -169,23 +169,18 @@ internal fun CornerPinAdjustmentOverlay(
             val offsetX = (containerWidth - displayedWidth) / 2f
             val offsetY = (containerHeight - displayedHeight) / 2f
 
-            // 화면 좌표 <-> 비트맵 좌표 변환 헬퍼
-            fun bmpToScreen(pt: PointF2D): Offset =
-                Offset(offsetX + pt.x * scale, offsetY + pt.y * scale)
-
-            fun screenToBmp(offset: Offset): PointF2D {
-                val clampedX = ((offset.x - offsetX) / scale).coerceIn(0f, bmpWidth)
-                val clampedY = ((offset.y - offsetY) / scale).coerceIn(0f, bmpHeight)
-                return PointF2D(clampedX, clampedY)
-            }
+            // 화면 좌표 <-> 비트맵 좌표 변환
+            val frame = PinFrame(scale, offsetX, offsetY, bmpWidth, bmpHeight)
+            fun bmpToScreen(pt: PointF2D): Offset = frame.toScreen(pt)
 
             val touchHitRadius = 40.dp.value * 2.5f
             // ⚠️ **끄는 동안 핀 위치가 바뀌어도 제스처를 다시 시작하지 않는다**(백로그 #210). 옛 화면은 `pointerInput`의
             // 키에 `cornerPoints`를 넣어서, 핀이 한 번 움직일 때마다 제스처 감지가 끊기고 새로 시작했다 — 손가락을 계속 끌어도
             // 핀이 조금 가다 멈췄고, `onDragEnd`가 불리지 않아 활성 핀(과 돋보기)이 남았다. 최신 값은 아래 State로 읽는다.
+            // ⚠️ 변환은 **값(PinFrame)으로** 넘긴다 — 지역 함수 참조(`::bmpToScreen`)는 새 클로저여도 `==`라 첫 컴포지션 것에
+            // 얼어붙는다(함정 46).
             val latestCorners by rememberUpdatedState(cornerPoints)
-            val latestToScreen by rememberUpdatedState(::bmpToScreen)
-            val latestToBmp by rememberUpdatedState(::screenToBmp)
+            val latestFrame by rememberUpdatedState(frame)
 
             Box(
                 modifier = Modifier
@@ -193,10 +188,10 @@ internal fun CornerPinAdjustmentOverlay(
                     .pointerInput(bitmap) {
                         detectDragGestures(
                             onDragStart = { startOffset ->
-                                val tl = latestToScreen(latestCorners.topLeft)
-                                val tr = latestToScreen(latestCorners.topRight)
-                                val br = latestToScreen(latestCorners.bottomRight)
-                                val bl = latestToScreen(latestCorners.bottomLeft)
+                                val tl = latestFrame.toScreen(latestCorners.topLeft)
+                                val tr = latestFrame.toScreen(latestCorners.topRight)
+                                val br = latestFrame.toScreen(latestCorners.bottomRight)
+                                val bl = latestFrame.toScreen(latestCorners.bottomLeft)
 
                                 val dTL = hypot(startOffset.x - tl.x, startOffset.y - tl.y)
                                 val dTR = hypot(startOffset.x - tr.x, startOffset.y - tr.y)
@@ -216,9 +211,9 @@ internal fun CornerPinAdjustmentOverlay(
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 val corner = activeDragCorner ?: return@detectDragGestures
-                                val currentPos = latestToScreen(latestCorners.at(corner))
+                                val currentPos = latestFrame.toScreen(latestCorners.at(corner))
                                 val newScreenPos = Offset(currentPos.x + dragAmount.x, currentPos.y + dragAmount.y)
-                                cornerPoints = latestCorners.with(corner, latestToBmp(newScreenPos))
+                                cornerPoints = latestCorners.with(corner, latestFrame.toBitmap(newScreenPos))
                             },
                             onDragEnd = {
                                 activeDragCorner = null
@@ -330,6 +325,16 @@ internal fun CornerPinAdjustmentOverlay(
             )
         }
     }
+}
+
+/** 사진이 화면에 놓인 자리(ContentScale.Fit) — 비트맵 좌표와 화면 좌표를 오간다. 값 비교가 되도록 data class다. */
+private data class PinFrame(val scale: Float, val offsetX: Float, val offsetY: Float, val bmpWidth: Float, val bmpHeight: Float) {
+    fun toScreen(pt: PointF2D): Offset = Offset(offsetX + pt.x * scale, offsetY + pt.y * scale)
+
+    fun toBitmap(offset: Offset): PointF2D = PointF2D(
+        ((offset.x - offsetX) / scale).coerceIn(0f, bmpWidth),
+        ((offset.y - offsetY) / scale).coerceIn(0f, bmpHeight),
+    )
 }
 
 private fun BoardCornerPoints.at(corner: ActiveCorner): PointF2D = when (corner) {
