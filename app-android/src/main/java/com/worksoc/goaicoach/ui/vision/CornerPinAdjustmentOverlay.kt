@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -26,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,6 +96,8 @@ internal fun CornerPinAdjustmentOverlay(
         modifier = modifier
             .fillMaxSize()
             .background(VisionPalette.EditorBackdrop)
+            // targetSdk 36부터 앱이 시스템 바 영역까지 그린다(#25) — 제목이 상태 표시줄에, 버튼이 제스처 바에 깔리지 않게.
+            .systemBarsPadding()
             .padding(AppSpacing.Space16),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -176,17 +180,23 @@ internal fun CornerPinAdjustmentOverlay(
             }
 
             val touchHitRadius = 40.dp.value * 2.5f
+            // ⚠️ **끄는 동안 핀 위치가 바뀌어도 제스처를 다시 시작하지 않는다**(백로그 #210). 옛 화면은 `pointerInput`의
+            // 키에 `cornerPoints`를 넣어서, 핀이 한 번 움직일 때마다 제스처 감지가 끊기고 새로 시작했다 — 손가락을 계속 끌어도
+            // 핀이 조금 가다 멈췄고, `onDragEnd`가 불리지 않아 활성 핀(과 돋보기)이 남았다. 최신 값은 아래 State로 읽는다.
+            val latestCorners by rememberUpdatedState(cornerPoints)
+            val latestToScreen by rememberUpdatedState(::bmpToScreen)
+            val latestToBmp by rememberUpdatedState(::screenToBmp)
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(cornerPoints, scale, offsetX, offsetY) {
+                    .pointerInput(bitmap) {
                         detectDragGestures(
                             onDragStart = { startOffset ->
-                                val tl = bmpToScreen(cornerPoints.topLeft)
-                                val tr = bmpToScreen(cornerPoints.topRight)
-                                val br = bmpToScreen(cornerPoints.bottomRight)
-                                val bl = bmpToScreen(cornerPoints.bottomLeft)
+                                val tl = latestToScreen(latestCorners.topLeft)
+                                val tr = latestToScreen(latestCorners.topRight)
+                                val br = latestToScreen(latestCorners.bottomRight)
+                                val bl = latestToScreen(latestCorners.bottomLeft)
 
                                 val dTL = hypot(startOffset.x - tl.x, startOffset.y - tl.y)
                                 val dTR = hypot(startOffset.x - tr.x, startOffset.y - tr.y)
@@ -206,9 +216,9 @@ internal fun CornerPinAdjustmentOverlay(
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 val corner = activeDragCorner ?: return@detectDragGestures
-                                val currentPos = bmpToScreen(cornerPoints.at(corner))
+                                val currentPos = latestToScreen(latestCorners.at(corner))
                                 val newScreenPos = Offset(currentPos.x + dragAmount.x, currentPos.y + dragAmount.y)
-                                cornerPoints = cornerPoints.with(corner, screenToBmp(newScreenPos))
+                                cornerPoints = latestCorners.with(corner, latestToBmp(newScreenPos))
                             },
                             onDragEnd = {
                                 activeDragCorner = null
