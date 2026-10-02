@@ -49,3 +49,6 @@ __pycache__/
 venv/
 *-venv/
 scripts/remote-engine-mq-prototype/runs/
+
+# 바둑판 사진 인식 기준 이미지 — 남의 사진이라 커밋하지 않는다(scripts/fetch-board-photo-fixtures.sh가 받는다)
+test-fixtures/board-photos/
