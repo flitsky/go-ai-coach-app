@@ -40,6 +40,8 @@ import com.worksoc.goaicoach.shared.vision.DetectedBoard
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 import com.worksoc.goaicoach.vision.AndroidBoardVisionScanner
@@ -57,14 +59,15 @@ internal enum class ScanStep {
 }
 
 /**
- * 백로그 #179 — 카메라로 바둑판 인식해 분석 (Board Scan & Analysis Screen)
+ * 백로그 #179 — 카메라로 바둑판 인식해 분석 (Board Scan & Analysis Screen). #210에서 다시 지었다.
  *
  * 전체 플로우:
- * 1. [CameraCaptureView]로 바둑판 촬영 (또는 갤러리 이미지 선택)
- * 2. [CornerPinAdjustmentOverlay]로 4점 꼭짓점 핀 수동 미세조정
- * 3. 온디바이스 [AndroidBoardVisionScanner]로 왜곡 보정(Perspective Warp) 및 돌 검출
- * 4. [BoardCorrectionEditor]에서 터치 편집, 흑/백 차례, 덤 설정
- * 5. KataGo 비동기 형세 분석 실행 및 '이 국면부터 대국 시작' 연계
+ * 1. [CameraCaptureView]로 바둑판 촬영 (또는 갤러리 이미지 선택 — EXIF 회전·축소)
+ * 2. **판 자동 인식**([AndroidBoardVisionScanner.locate]) — 찾으면 그 모서리·판 크기로 핀 화면을 연다
+ * 3. [CornerPinAdjustmentOverlay]로 어긋난 핀만 미세조정(못 찾았으면 네 핀을 직접)
+ * 4. 핀을 **가까운 격자에 붙이고**([AndroidBoardVisionScanner.scan]) 돌 검출
+ * 5. [BoardCorrectionEditor]에서 원본 사진과 비교하며 터치 편집, 흑/백 차례, 덤 설정
+ * 6. KataGo 비동기 형세 분석 실행 및 '이 국면부터 대국 시작' 연계
  */
 @Composable
 internal fun BoardScanScreen(
@@ -76,7 +79,12 @@ internal fun BoardScanScreen(
     var step by remember { mutableStateOf(ScanStep.Capture) }
     var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var detectedGameState by remember { mutableStateOf<GameState?>(null) }
+    // 자동 인식(또는 지난 인식이 붙인) 모서리 — 핀 화면이 여기서 시작한다. `null`이면 기본 위치에서.
+    var pinCorners by remember { mutableStateOf<BoardCornerPoints?>(null) }
+    var pinBoardSize by remember { mutableStateOf(BoardSize.Nineteen) }
+    var boardPhoto by remember { mutableStateOf<Bitmap?>(null) }
 
+    var isLocating by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     var isAnalyzing by remember { mutableStateOf(false) }
     var analysisResult by remember { mutableStateOf<AnalysisResult?>(null) }
@@ -87,6 +95,7 @@ internal fun BoardScanScreen(
 
     val premiumUiState = LocalPremiumUiState.current
     val strings = LocalUiStrings.current
+    val text = boardScanStringsFor(strings.language)
     val scope = rememberCoroutineScope()
 
     // 단계별 뒤로가기 처리
@@ -100,6 +109,7 @@ internal fun BoardScanScreen(
             ScanStep.PinAdjustment -> {
                 step = ScanStep.Capture
                 capturedBitmap = null
+                pinCorners = null
             }
             ScanStep.Capture -> {
                 onBackClick()
@@ -113,7 +123,19 @@ internal fun BoardScanScreen(
                 CameraCaptureView(
                     onPhotoCaptured = { bitmap ->
                         capturedBitmap = bitmap
+                        pinCorners = null
+                        pinBoardSize = BoardSize.Nineteen
+                        isLocating = true
                         step = ScanStep.PinAdjustment
+                        scope.launch {
+                            // 판을 스스로 찾는다 — 못 찾으면 핀 화면이 "직접 맞춰 주세요"로 연다. 실패가 아니다.
+                            val located = runCatching { AndroidBoardVisionScanner(bitmap).locate() }.getOrNull()
+                            if (located != null && capturedBitmap === bitmap) {
+                                pinCorners = located.corners
+                                pinBoardSize = located.boardSize
+                            }
+                            isLocating = false
+                        }
                     },
                     onClose = onBackClick,
                 )
@@ -123,31 +145,38 @@ internal fun BoardScanScreen(
                 val bitmap = capturedBitmap
                 if (bitmap != null) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        CornerPinAdjustmentOverlay(
-                            bitmap = bitmap,
-                            initialBoardSize = BoardSize.Nineteen,
-                            onCornersConfirmed = { corners, boardSize ->
-                                isScanning = true
-                                scope.launch {
-                                    try {
-                                        val scanner = AndroidBoardVisionScanner(bitmap)
-                                        val detected = scanner.detectStones(corners, boardSize)
-                                        detectedGameState = detected.toGameState()
-                                        step = ScanStep.Correction
-                                    } catch (e: Exception) {
-                                        errorMessage = "바둑판 인식에 실패했습니다: ${e.localizedMessage ?: "알 수 없는 오류"}"
-                                    } finally {
-                                        isScanning = false
+                        if (!isLocating) {
+                            CornerPinAdjustmentOverlay(
+                                bitmap = bitmap,
+                                initialCorners = pinCorners,
+                                initialBoardSize = pinBoardSize,
+                                onCornersConfirmed = { corners, boardSize ->
+                                    isScanning = true
+                                    scope.launch {
+                                        try {
+                                            val result = AndroidBoardVisionScanner(bitmap).scan(corners, boardSize)
+                                            // 핀이 붙은 자리를 기억해 둔다 — 되돌아오면 붙은 핀에서 다시 시작한다.
+                                            pinCorners = result.corners
+                                            pinBoardSize = boardSize
+                                            boardPhoto = result.boardPhoto
+                                            detectedGameState = result.detected.toGameState()
+                                            step = ScanStep.Correction
+                                        } catch (e: Exception) {
+                                            errorMessage = text.scanFailed
+                                        } finally {
+                                            isScanning = false
+                                        }
                                     }
-                                }
-                            },
-                            onRetake = {
-                                step = ScanStep.Capture
-                                capturedBitmap = null
-                            },
-                        )
+                                },
+                                onRetake = {
+                                    step = ScanStep.Capture
+                                    capturedBitmap = null
+                                    pinCorners = null
+                                },
+                            )
+                        }
 
-                        if (isScanning) {
+                        if (isLocating || isScanning) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -158,7 +187,7 @@ internal fun BoardScanScreen(
                                     CircularProgressIndicator(color = VisionPalette.OnBackdrop)
                                     Spacer(modifier = Modifier.height(AppSpacing.Space16))
                                     Text(
-                                        text = "온디바이스 돌 배치 인식 중...",
+                                        text = if (isLocating) text.locating else text.scanning,
                                         color = VisionPalette.OnBackdrop,
                                         fontWeight = FontWeight.Medium,
                                     )
@@ -176,6 +205,7 @@ internal fun BoardScanScreen(
                 if (initialGameState != null) {
                     BoardCorrectionEditor(
                         initialGameState = initialGameState,
+                        boardPhoto = boardPhoto,
                         isAnalyzing = isAnalyzing,
                         analysisResult = analysisResult,
                         scoreEstimate = scoreEstimate,
@@ -206,7 +236,7 @@ internal fun BoardScanScreen(
                                         scoreEstimate = estimate
                                         analysisResult = analysis
                                     } catch (e: Exception) {
-                                        errorMessage = boardScanAnalysisErrorMessage(e)
+                                        errorMessage = boardScanAnalysisErrorMessage(e, strings.language)
                                     } finally {
                                         isAnalyzing = false
                                     }
@@ -238,7 +268,7 @@ internal fun BoardScanScreen(
         errorMessage?.let { msg ->
             AlertDialog(
                 onDismissRequest = { errorMessage = null },
-                title = { Text("안내", fontWeight = FontWeight.Bold) },
+                title = { Text(text.notice, fontWeight = FontWeight.Bold) },
                 text = { Text(msg) },
                 confirmButton = {
                     TextButton(onClick = { errorMessage = null }) {
@@ -258,12 +288,14 @@ internal fun BoardScanScreen(
  * "실패했습니다"와 예외 원문(영어)을 보이지 않고, 잠시 뒤 다시 누르라고 알린다. 예전에는 두 오퍼레이션이 한 엔진에서
  * 섞여 돌아 남의 판을 분석할 수 있었다.
  */
-internal fun boardScanAnalysisErrorMessage(error: Throwable): String =
-    if (error is EngineOperationBusy) {
-        "엔진이 다른 작업을 하고 있습니다. 잠시 뒤 다시 분석해 주세요."
+internal fun boardScanAnalysisErrorMessage(error: Throwable, language: UiLanguage = UiLanguage.Korean): String {
+    val text = boardScanStringsFor(language)
+    return if (error is EngineOperationBusy) {
+        text.engineBusy
     } else {
-        "AI 분석에 실패했습니다: ${error.localizedMessage ?: "알 수 없는 오류"}"
+        text.analysisFailed(error.localizedMessage ?: error.javaClass.simpleName)
     }
+}
 
 /**
  * [DetectedBoard] 비전 검출 모델을 게임 상태 [GameState]로 변환.

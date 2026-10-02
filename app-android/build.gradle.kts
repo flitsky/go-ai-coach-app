@@ -422,6 +422,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.guava)
 
     // 오픈소스 라이선스 화면(백로그 #195) — 생성된 JSON을 읽는 파서만. 화면은 우리 디자인 토큰으로 직접 그린다.

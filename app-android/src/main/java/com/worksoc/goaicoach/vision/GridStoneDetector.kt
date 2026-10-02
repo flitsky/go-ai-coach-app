@@ -19,18 +19,15 @@ interface PixelSource {
     fun getPixel(x: Int, y: Int): Int
 }
 
-class BitmapPixelSource(private val bitmap: Bitmap) : PixelSource {
-    override val width: Int get() = bitmap.width
-    override val height: Int get() = bitmap.height
-    override fun getPixel(x: Int, y: Int): Int = bitmap.getPixel(x, y)
-}
-
 class ArrayPixelSource(
     override val width: Int,
     override val height: Int,
     private val pixels: IntArray,
 ) : PixelSource {
     override fun getPixel(x: Int, y: Int): Int = pixels[y * width + x]
+
+    /** 화면에 보일 ARGB 배열 — 원본 사진 밖([BoardWarp.NoData])은 중간 회색으로. */
+    fun toArgbArray(): IntArray = IntArray(pixels.size) { i -> if (pixels[i] == BoardWarp.NoData) 0xFF808080.toInt() else pixels[i] }
 
     companion object {
         /** 비트맵 픽셀을 한 번에 복사한다 — `Bitmap.getPixel`을 픽셀마다 부르면 느리다. */

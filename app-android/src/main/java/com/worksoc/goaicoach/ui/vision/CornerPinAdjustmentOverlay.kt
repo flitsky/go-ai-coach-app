@@ -11,18 +11,13 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,14 +29,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -51,28 +48,44 @@ import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 enum class ActiveCorner {
     TopLeft, TopRight, BottomRight, BottomLeft
 }
 
+/**
+ * 네 모서리 핀으로 바둑판 영역을 지정한다.
+ *
+ * ⚠️ **사진은 핀 좌표 변환과 똑같은 맞춤(FitInside)으로 그린다**(백로그 #210). 옛 화면은 사진을
+ * `(displayedWidth / 2.54f * 72f / 160f).dp` — 뜻 없는 단위 변환에 정사각 강제 — 로 그렸는데, 핀의 화면↔사진 좌표 변환은
+ * 사진이 표시 영역을 가득 채운다고 가정했다. 그래서 **보이는 판 모서리에 핀을 정확히 놓아도 엉뚱한 사진 좌표가 넘어갔다**
+ * (*"맞춰 설정해도 인식률이 매우 낮다"* 의 1순위 원인). 지금은 사진도 [ContentScale.Fit]으로 같은 상자를 채운다.
+ *
+ * [initialCorners]가 있으면 자동 인식([com.worksoc.goaicoach.vision.BoardLocator])이 찾은 모서리에서 시작한다.
+ */
 @Composable
 internal fun CornerPinAdjustmentOverlay(
     bitmap: Bitmap,
-    initialBoardSize: BoardSize = BoardSize.Nineteen,
+    initialCorners: BoardCornerPoints?,
+    initialBoardSize: BoardSize,
     onCornersConfirmed: (BoardCornerPoints, BoardSize) -> Unit,
     onRetake: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var boardSize by remember { mutableStateOf(initialBoardSize) }
+    val text = boardScanStringsFor(LocalUiStrings.current.language)
+    var boardSize by remember(bitmap, initialBoardSize) { mutableStateOf(initialBoardSize) }
 
     // 비트맵 상의 실제 픽셀 좌표계 기준 4개 꼭짓점
     val bmpWidth = bitmap.width.toFloat()
     val bmpHeight = bitmap.height.toFloat()
+    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
 
-    var cornerPoints by remember(bitmap) {
-        mutableStateOf(BoardCornerPoints.defaultForSize(bmpWidth, bmpHeight, insetRatio = 0.08f))
+    var cornerPoints by remember(bitmap, initialCorners) {
+        mutableStateOf(initialCorners ?: BoardCornerPoints.defaultForSize(bmpWidth, bmpHeight, insetRatio = 0.08f))
     }
 
     var activeDragCorner by remember { mutableStateOf<ActiveCorner?>(null) }
@@ -90,25 +103,26 @@ internal fun CornerPinAdjustmentOverlay(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "바둑판 영역 지정",
+                    text = text.pinTitle,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = VisionPalette.OnBackdrop,
                 )
                 Text(
-                    text = "네 모서리(귀)의 교차점에 핀을 드래그해 맞추세요",
+                    text = if (initialCorners != null) text.pinFoundAutomatically else text.pinNotFound,
                     style = MaterialTheme.typography.bodySmall,
                     color = VisionPalette.OnBackdropMuted,
                 )
             }
 
+            Spacer(modifier = Modifier.width(AppSpacing.Space8))
             OutlinedButton(
                 onClick = onRetake,
                 shape = RoundedCornerShape(AppRadius.Corner8),
             ) {
-                Text("재촬영", color = VisionPalette.OnBackdrop)
+                Text(text.retake, color = VisionPalette.OnBackdrop)
             }
         }
 
@@ -120,13 +134,13 @@ internal fun CornerPinAdjustmentOverlay(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("판 크기: ", color = VisionPalette.OnBackdrop, fontSize = AppTextSize.Text14, fontWeight = FontWeight.Medium)
+            Text("${text.boardSizeLabel}: ", color = VisionPalette.OnBackdrop, fontSize = AppTextSize.Text14, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.width(AppSpacing.Space8))
             listOf(BoardSize.Nine, BoardSize.Thirteen, BoardSize.Nineteen).forEach { size ->
                 FilterChip(
                     selected = boardSize == size,
                     onClick = { boardSize = size },
-                    label = { Text("${size.value}줄") },
+                    label = { Text(text.boardSizeChip(size.value)) },
                     modifier = Modifier.padding(horizontal = AppSpacing.Space4),
                 )
             }
@@ -144,7 +158,7 @@ internal fun CornerPinAdjustmentOverlay(
             val containerWidth = constraints.maxWidth.toFloat()
             val containerHeight = constraints.maxHeight.toFloat()
 
-            // 사진의 화면 표시 스케일 및 오프셋 계산 (FitInside)
+            // 사진의 화면 표시 스케일 및 오프셋 계산 (FitInside) — 아래 Image의 ContentScale.Fit과 똑같은 계산이다.
             val scale = minOf(containerWidth / bmpWidth, containerHeight / bmpHeight)
             val displayedWidth = bmpWidth * scale
             val displayedHeight = bmpHeight * scale
@@ -192,23 +206,9 @@ internal fun CornerPinAdjustmentOverlay(
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 val corner = activeDragCorner ?: return@detectDragGestures
-                                val currentPos = bmpToScreen(
-                                    when (corner) {
-                                        ActiveCorner.TopLeft -> cornerPoints.topLeft
-                                        ActiveCorner.TopRight -> cornerPoints.topRight
-                                        ActiveCorner.BottomRight -> cornerPoints.bottomRight
-                                        ActiveCorner.BottomLeft -> cornerPoints.bottomLeft
-                                    }
-                                )
+                                val currentPos = bmpToScreen(cornerPoints.at(corner))
                                 val newScreenPos = Offset(currentPos.x + dragAmount.x, currentPos.y + dragAmount.y)
-                                val newBmpPt = screenToBmp(newScreenPos)
-
-                                cornerPoints = when (corner) {
-                                    ActiveCorner.TopLeft -> cornerPoints.copy(topLeft = newBmpPt)
-                                    ActiveCorner.TopRight -> cornerPoints.copy(topRight = newBmpPt)
-                                    ActiveCorner.BottomRight -> cornerPoints.copy(bottomRight = newBmpPt)
-                                    ActiveCorner.BottomLeft -> cornerPoints.copy(bottomLeft = newBmpPt)
-                                }
+                                cornerPoints = cornerPoints.with(corner, screenToBmp(newScreenPos))
                             },
                             onDragEnd = {
                                 activeDragCorner = null
@@ -219,14 +219,13 @@ internal fun CornerPinAdjustmentOverlay(
                         )
                     },
             ) {
-                // 비트맵 이미지 표시
+                // 비트맵 이미지 표시 — ⚠️ 위 FitInside 계산과 같은 상자·같은 맞춤이어야 핀 좌표가 맞는다.
                 Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Board Photo",
-                    modifier = Modifier
-                        .size((displayedWidth / 2.54f * 72f / 160f).dp) // Display size
-                        .align(Alignment.Center),
+                    bitmap = imageBitmap,
+                    contentDescription = text.photoDescription,
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit,
+                    alignment = Alignment.Center,
                 )
 
                 // 폴리곤 라인 및 4개 핀 그리기
@@ -267,6 +266,39 @@ internal fun CornerPinAdjustmentOverlay(
                         drawCircle(color = color, radius = handleRadius, center = pt)
                         drawCircle(color = VisionPalette.PinCenter, radius = 4.dp.toPx(), center = pt)
                     }
+
+                    // 돋보기 — 끄는 동안 손가락이 모서리를 가린다. 핀 둘레를 크게 보여 교차점에 정확히 맞추게 한다.
+                    // 손가락 반대쪽 위 귀에 띄운다(왼쪽 핀이면 오른쪽 위, 오른쪽 핀이면 왼쪽 위).
+                    activeDragCorner?.let { corner ->
+                        val pinBmp = cornerPoints.at(corner)
+                        val loupe = 112.dp.toPx()
+                        val zoom = 3f
+                        val margin = 8.dp.toPx()
+                        val onLeft = corner == ActiveCorner.TopRight || corner == ActiveCorner.BottomRight
+                        val center = Offset(if (onLeft) margin + loupe / 2 else size.width - margin - loupe / 2, margin + loupe / 2)
+                        // 화면 돋보기 지름이 담는 사진 영역(사진 픽셀)
+                        val srcSize = (loupe / (scale * zoom)).roundToInt().coerceAtLeast(8)
+                        val srcLeft = (pinBmp.x - srcSize / 2f).roundToInt().coerceIn(0, (bitmap.width - srcSize).coerceAtLeast(0))
+                        val srcTop = (pinBmp.y - srcSize / 2f).roundToInt().coerceIn(0, (bitmap.height - srcSize).coerceAtLeast(0))
+                        val circle = Path().apply {
+                            addOval(androidx.compose.ui.geometry.Rect(center, loupe / 2))
+                        }
+                        clipPath(circle) {
+                            drawImage(
+                                image = imageBitmap,
+                                srcOffset = IntOffset(srcLeft, srcTop),
+                                srcSize = IntSize(minOf(srcSize, bitmap.width), minOf(srcSize, bitmap.height)),
+                                dstOffset = IntOffset((center.x - loupe / 2).roundToInt(), (center.y - loupe / 2).roundToInt()),
+                                dstSize = IntSize(loupe.roundToInt(), loupe.roundToInt()),
+                            )
+                        }
+                        drawCircle(color = VisionPalette.OnBackdrop, radius = loupe / 2, center = center, style = Stroke(width = 3.dp.toPx()))
+                        // 핀이 돋보기 안에서 놓인 자리(사진 경계에 붙어 가운데가 아닐 수 있다)
+                        val k = loupe / srcSize
+                        val mark = Offset(center.x - loupe / 2 + (pinBmp.x - srcLeft) * k, center.y - loupe / 2 + (pinBmp.y - srcTop) * k)
+                        drawLine(VisionPalette.GuideHighlight, Offset(mark.x - 10.dp.toPx(), mark.y), Offset(mark.x + 10.dp.toPx(), mark.y), 2.dp.toPx())
+                        drawLine(VisionPalette.GuideHighlight, Offset(mark.x, mark.y - 10.dp.toPx()), Offset(mark.x, mark.y + 10.dp.toPx()), 2.dp.toPx())
+                    }
                 }
             }
         }
@@ -282,10 +314,24 @@ internal fun CornerPinAdjustmentOverlay(
             shape = RoundedCornerShape(AppRadius.Corner12),
         ) {
             Text(
-                text = "바둑판 인식하기",
+                text = text.recognize,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
             )
         }
     }
+}
+
+private fun BoardCornerPoints.at(corner: ActiveCorner): PointF2D = when (corner) {
+    ActiveCorner.TopLeft -> topLeft
+    ActiveCorner.TopRight -> topRight
+    ActiveCorner.BottomRight -> bottomRight
+    ActiveCorner.BottomLeft -> bottomLeft
+}
+
+private fun BoardCornerPoints.with(corner: ActiveCorner, point: PointF2D): BoardCornerPoints = when (corner) {
+    ActiveCorner.TopLeft -> copy(topLeft = point)
+    ActiveCorner.TopRight -> copy(topRight = point)
+    ActiveCorner.BottomRight -> copy(bottomRight = point)
+    ActiveCorner.BottomLeft -> copy(bottomLeft = point)
 }

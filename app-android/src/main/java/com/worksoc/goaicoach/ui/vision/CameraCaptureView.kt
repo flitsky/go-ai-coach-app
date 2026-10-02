@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -64,6 +63,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
+import com.worksoc.goaicoach.vision.BoardPhotoDecoder
 import java.util.concurrent.Executors
 
 @Composable
@@ -74,6 +76,9 @@ internal fun CameraCaptureView(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val text = boardScanStringsFor(LocalUiStrings.current.language)
+    // 촬영·불러오기 실패를 조용히 삼키지 않는다 — 옛 화면은 셔터를 눌러도 아무 일이 없는 것처럼 보였다.
+    var failure by remember { mutableStateOf<String?>(null) }
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -91,13 +96,8 @@ internal fun CameraCaptureView(
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
-        uri?.let {
-            runCatching {
-                context.contentResolver.openInputStream(it)?.use { stream ->
-                    BitmapFactory.decodeStream(stream)
-                }
-            }.getOrNull()?.let(onPhotoCaptured)
-        }
+        // ⚠️ EXIF 회전 + 긴 변 2048px로 줄여 읽는다(백로그 #210) — 원본 그대로는 옆으로 눕거나 메모리가 모자란다.
+        uri?.let { BoardPhotoDecoder.decode(context, it) ?: run { failure = text.photoLoadFailed; null } }?.let(onPhotoCaptured)
     }
 
     val imageCapture = remember {
@@ -191,7 +191,7 @@ internal fun CameraCaptureView(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Text(
-                    text = "바둑판 촬영을 위해\n카메라 권한이 필요합니다",
+                    text = text.cameraPermissionNeeded,
                     style = MaterialTheme.typography.titleMedium,
                     color = VisionPalette.OnBackdrop,
                     fontWeight = FontWeight.Bold,
@@ -202,14 +202,14 @@ internal fun CameraCaptureView(
                     onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                     shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
-                    Text("권한 허용하기")
+                    Text(text.grantPermission)
                 }
                 Spacer(modifier = Modifier.height(AppSpacing.Space12))
                 OutlinedButton(
                     onClick = { galleryLauncher.launch("image/*") },
                     shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
-                    Text("갤러리에서 사진 불러오기", color = VisionPalette.OnBackdrop)
+                    Text(text.loadFromGallery, color = VisionPalette.OnBackdrop)
                 }
             }
         }
@@ -228,14 +228,28 @@ internal fun CameraCaptureView(
                 shape = RoundedCornerShape(AppRadius.Corner8),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = VisionPalette.OnBackdrop),
             ) {
-                Text("닫기")
+                Text(text.close)
             }
 
             Text(
-                text = "바둑판이 초록 사각형에 꽉 차게 맞춰주세요",
+                text = text.captureHint,
                 style = MaterialTheme.typography.bodySmall,
                 color = VisionPalette.OnBackdrop,
                 fontWeight = FontWeight.Medium,
+            )
+        }
+
+        failure?.let { message ->
+            Text(
+                text = message,
+                color = VisionPalette.OnBackdrop,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 128.dp)
+                    .background(VisionPalette.Backdrop.copy(alpha = 0.7f), RoundedCornerShape(AppRadius.Corner8))
+                    .clickable { failure = null }
+                    .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space8),
             )
         }
 
@@ -254,7 +268,7 @@ internal fun CameraCaptureView(
                 shape = RoundedCornerShape(AppRadius.Corner8),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = VisionPalette.OnBackdrop),
             ) {
-                Text("사진첩")
+                Text(text.gallery)
             }
 
             // 셔터 촬영 버튼
@@ -275,7 +289,7 @@ internal fun CameraCaptureView(
                             object : ImageCapture.OnImageCapturedCallback() {
                                 override fun onCaptureSuccess(image: ImageProxy) {
                                     val rotation = image.imageInfo.rotationDegrees
-                                    val bmp = image.toBitmap().rotate(rotation)
+                                    val bmp = BoardPhotoDecoder.limit(image.toBitmap().rotate(rotation))
                                     image.close()
                                     isCapturing = false
                                     onPhotoCaptured(bmp)
@@ -283,6 +297,7 @@ internal fun CameraCaptureView(
 
                                 override fun onError(exception: ImageCaptureException) {
                                     isCapturing = false
+                                    failure = text.captureFailed
                                 }
                             },
                         )
