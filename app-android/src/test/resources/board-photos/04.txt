@@ -1,0 +1,28 @@
+# 신문 인쇄 기보 — 흑백 선화, 백돌은 테두리뿐, 117~142수만 번호, 우하귀 백돌이 판 밖으로 걸침
+# 사람이 이미지를 보고 손으로 뽑은 정답(2026-10-02, 백로그 #210) — 검출기 출력을 옮겨 적은 것이 아니다.
+# 이미지는 저장소에 없다(남의 사진) — scripts/fetch-board-photo-fixtures.sh가 test-fixtures/board-photos/로 받는다.
+# corners = 바깥 격자선 교차점 TL TR BR BL(원본 픽셀). 격자 = 위에서 아래 19줄, B 흑 · W 백 · . 빈 점.
+# gate = gated(통과 기준: 자동 ≥ 98%, 핀 수동 ≥ 99.5%) | baseline(측정만, 기준선 기록)
+image: 04_kado_200212_kid.jpg
+size: 19
+corners: 7,2 293,2 293,287 7,287
+gate: baseline
+...................
+..BW.W...WWB.......
+..B.WB...WB..B.BBB.
+..BW.WB.W.B...WB.W.
+.B...W.........W...
+W.B.WBW..W....W....
+..BBB.B..WB..BBWW..
+.WWW.B...WB...BBW..
+....WB...WWBBBWBW..
+.B..WB....BW..BWW..
+..B.W.........BBW..
+..BW...WW.W..WWBBW.
+..BBW..BBWB.....BW.
+..BW..........WB...
+..B...B..BB...WWBB.
+.B.W.WB..BWB...BWB.
+.WW..WB..BWBWW.BBWW
+.....WWB.BWW...WWBB
+.................WW

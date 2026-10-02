@@ -31,3 +31,15 @@ fetch 02_yna_20240912.jpg "https://img7.yna.co.kr/etc/inner/KR/2024/09/12/AKR202
 fetch 03_yna_20170109.jpg "https://img9.yna.co.kr/etc/inner/KR/2017/01/09/AKR20170109070900007_01_i_P4.jpg"
 fetch 04_kado_200212_kid.jpg "https://cdn.kado.net/news/photo/200212/kd_kid_baduk.jpg"
 fetch 05_kado_20050627.jpg "https://cdn.kado.net/news/photo/200506/baduk_20050627.jpg"
+
+# JVM 테스트(`javax.imageio`)는 webp를 못 읽는다 — PNG 사본을 둔다. 정답 라벨·인식률 테스트는 이 PNG를 읽는다.
+if [[ ! -s "$OUT_DIR/01_namuwiki.png" ]]; then
+  if command -v sips >/dev/null 2>&1; then
+    sips -s format png "$OUT_DIR/01_namuwiki.webp" --out "$OUT_DIR/01_namuwiki.png" >/dev/null
+  elif command -v dwebp >/dev/null 2>&1; then
+    dwebp -quiet "$OUT_DIR/01_namuwiki.webp" -o "$OUT_DIR/01_namuwiki.png"
+  else
+    python3 -c "from PIL import Image; Image.open('$OUT_DIR/01_namuwiki.webp').save('$OUT_DIR/01_namuwiki.png')"
+  fi
+  echo "변환: 01_namuwiki.png"
+fi

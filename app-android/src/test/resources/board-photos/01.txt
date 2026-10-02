@@ -1,0 +1,28 @@
+# 실물 사진 — 위에서 약한 원근, 나무판 + 바둑통, 돌 일부가 교점에서 살짝 비껴 있다
+# 사람이 이미지를 보고 손으로 뽑은 정답(2026-10-02, 백로그 #210) — 검출기 출력을 옮겨 적은 것이 아니다.
+# 이미지는 저장소에 없다(남의 사진) — scripts/fetch-board-photo-fixtures.sh가 test-fixtures/board-photos/로 받는다.
+# corners = 바깥 격자선 교차점 TL TR BR BL(원본 픽셀). 격자 = 위에서 아래 19줄, B 흑 · W 백 · . 빈 점.
+# gate = gated(통과 기준: 자동 ≥ 98%, 핀 수동 ≥ 99.5%) | baseline(측정만, 기준선 기록)
+image: 01_namuwiki.png
+size: 19
+corners: 123.9,45.2 376.0,44.0 375.9,285.8 123.6,285.5
+gate: gated
+.....WWBB..........
+...BWBWWBBB..BWW...
+.W.....WBWWBB.BW...
+WBWWWWWBB.WWW.BW...
+.BWBWBBW.BWWBBBW...
+B.BBBWB.WWWBBWW....
+..BWWWBBBBBBW......
+WB.BBWWBWWWW.W.WW..
+W...BW.WBBBW.WWBBW.
+.WWWW.WWB.BBBBB.BW.
+BWBWBWWBWW....BBBW.
+.BBBBBWBBW.W.WB.BW.
+BB.B.WWB.BW.WBBBBW.
+..BWWWB.BBW..WWWW..
+BBWWBWBBBW.WWBWBW..
+BWWB.BBBWWWBBBBB...
+W.WBB.WWWBBWBB.B.W.
+.WBB.......WWWB.BW.
+.B.............B.W.

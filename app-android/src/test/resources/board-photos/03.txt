@@ -1,0 +1,28 @@
+# 디지털 기보 — 모든 돌에 수순 번호(흑돌엔 흰 숫자, 백돌엔 검은 숫자), 판 밖 좌표 표기
+# 사람이 이미지를 보고 손으로 뽑은 정답(2026-10-02, 백로그 #210) — 검출기 출력을 옮겨 적은 것이 아니다.
+# 이미지는 저장소에 없다(남의 사진) — scripts/fetch-board-photo-fixtures.sh가 test-fixtures/board-photos/로 받는다.
+# corners = 바깥 격자선 교차점 TL TR BR BL(원본 픽셀). 격자 = 위에서 아래 19줄, B 흑 · W 백 · . 빈 점.
+# gate = gated(통과 기준: 자동 ≥ 98%, 핀 수동 ≥ 99.5%) | baseline(측정만, 기준선 기록)
+image: 03_yna_20170109.jpg
+size: 19
+corners: 27,55 459,55 459,487 27,487
+gate: gated
+......WWWWWBW.BBWW.
+.....W..WBBB..BWW.W
+.....W.WWB.B.WBW..W
+...W.WWBBBWB..BBWW.
+....W.WWB.....BWWBB
+..W..WWBBBW....BB.B
+WW...W.B.BW...B.BB.
+BWWWWWBBBWBBBBB.B.B
+BB..BWWBWWWBBBBWBB.
+..BBBWBW...WBWBBWWB
+.BBWBBBWW.WWWWWBWB.
+BBWWWB.BBW.....WWB.
+BWWW.WB.BW..BWW.WB.
+WW...WWBBW.BWWWWBB.
+...W.WWBBWBWWBWBWWB
+..WWBWB.BWWWBBBBBWW
+..BWBWBB.BBB.BBWWW.
+..WWWB.B.....BBBW.W
+..WBBBB.B......WBB.
