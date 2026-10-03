@@ -1,0 +1,38 @@
+{
+ "experiment": "e3_resign_threshold",
+ "label": "mac-v1",
+ "startedAt": "2026-10-03T15:25:15",
+ "args": {
+  "label": "mac-v1",
+  "games": "",
+  "source": "engine-lab/experiments/e2b_tier_vs_human/runs/20261003-1446-darwin-arm64-mac-v1/samples.jsonl"
+ },
+ "appCommit": "4c8c1cb4+lab-dirty",
+ "python": "3.14.6",
+ "machine": "Darwin arm64 darwin-arm64",
+ "katago": "/opt/homebrew/bin/katago",
+ "engineVersions": {
+  "gtp": "1.16.4+b18c384nbt-s9996M"
+ },
+ "models": {
+  "main": {
+   "path": "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+   "sha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d"
+  },
+  "human": {
+   "path": "/Users/ryan9kim/worksoc/katago/models/b18c384nbt-humanv0.bin.gz",
+   "sha256": "637746e44f0efe00ad1245a50aa9bbf0716efe364c43965ead97bd6835d84ab5"
+  }
+ },
+ "configs": {
+  "gtp": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg",
+   "sha256": "fb620cb846d1080688006f0ba56babb527eeff1f64c472656de6509efde5876d"
+  },
+  "analysis": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg",
+   "sha256": "8338f3d110067fa1fa2f9cd41f6de2cf1ed0e0f2a0115d93a369299254763ada"
+  }
+ },
+ "finishedAt": "2026-10-03T15:29:46"
+}

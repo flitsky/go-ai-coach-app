@@ -1,0 +1,286 @@
+{
+ "source": "engine-lab/experiments/e2b_tier_vs_human/runs/20261003-1446-darwin-arm64-mac-v1/samples.jsonl",
+ "games": 144,
+ "conditions": [
+  {
+   "kind": "lead",
+   "threshold": 5.0,
+   "streak": 5,
+   "triggered": 145,
+   "falseResignRate": 0.09655172413793103,
+   "falseResigns": 14,
+   "coverage": 0.9097222222222222,
+   "medianMovesRemaining": 86
+  },
+  {
+   "kind": "lead",
+   "threshold": 5.0,
+   "streak": 10,
+   "triggered": 130,
+   "falseResignRate": 0.07692307692307693,
+   "falseResigns": 10,
+   "coverage": 0.8333333333333334,
+   "medianMovesRemaining": 77.5
+  },
+  {
+   "kind": "lead",
+   "threshold": 5.0,
+   "streak": 15,
+   "triggered": 121,
+   "falseResignRate": 0.03305785123966942,
+   "falseResigns": 4,
+   "coverage": 0.8125,
+   "medianMovesRemaining": 63
+  },
+  {
+   "kind": "lead",
+   "threshold": 5.0,
+   "streak": 20,
+   "triggered": 109,
+   "falseResignRate": 0.01834862385321101,
+   "falseResigns": 2,
+   "coverage": 0.7430555555555556,
+   "medianMovesRemaining": 55
+  },
+  {
+   "kind": "lead",
+   "threshold": 10.0,
+   "streak": 5,
+   "triggered": 122,
+   "falseResignRate": 0.040983606557377046,
+   "falseResigns": 5,
+   "coverage": 0.8125,
+   "medianMovesRemaining": 72.5
+  },
+  {
+   "kind": "lead",
+   "threshold": 10.0,
+   "streak": 10,
+   "triggered": 108,
+   "falseResignRate": 0.018518518518518517,
+   "falseResigns": 2,
+   "coverage": 0.7361111111111112,
+   "medianMovesRemaining": 63.0
+  },
+  {
+   "kind": "lead",
+   "threshold": 10.0,
+   "streak": 15,
+   "triggered": 105,
+   "falseResignRate": 0.01904761904761905,
+   "falseResigns": 2,
+   "coverage": 0.7152777777777778,
+   "medianMovesRemaining": 53
+  },
+  {
+   "kind": "lead",
+   "threshold": 10.0,
+   "streak": 20,
+   "triggered": 92,
+   "falseResignRate": 0.010869565217391304,
+   "falseResigns": 1,
+   "coverage": 0.6319444444444444,
+   "medianMovesRemaining": 48.5
+  },
+  {
+   "kind": "lead",
+   "threshold": 15.0,
+   "streak": 5,
+   "triggered": 97,
+   "falseResignRate": 0.020618556701030927,
+   "falseResigns": 2,
+   "coverage": 0.6597222222222222,
+   "medianMovesRemaining": 73
+  },
+  {
+   "kind": "lead",
+   "threshold": 15.0,
+   "streak": 10,
+   "triggered": 93,
+   "falseResignRate": 0.010752688172043012,
+   "falseResigns": 1,
+   "coverage": 0.6388888888888888,
+   "medianMovesRemaining": 63
+  },
+  {
+   "kind": "lead",
+   "threshold": 15.0,
+   "streak": 15,
+   "triggered": 89,
+   "falseResignRate": 0.011235955056179775,
+   "falseResigns": 1,
+   "coverage": 0.6111111111111112,
+   "medianMovesRemaining": 55
+  },
+  {
+   "kind": "lead",
+   "threshold": 15.0,
+   "streak": 20,
+   "triggered": 80,
+   "falseResignRate": 0.0125,
+   "falseResigns": 1,
+   "coverage": 0.5486111111111112,
+   "medianMovesRemaining": 47.5
+  },
+  {
+   "kind": "lead",
+   "threshold": 20.0,
+   "streak": 5,
+   "triggered": 85,
+   "falseResignRate": 0.023529411764705882,
+   "falseResigns": 2,
+   "coverage": 0.5763888888888888,
+   "medianMovesRemaining": 69
+  },
+  {
+   "kind": "lead",
+   "threshold": 20.0,
+   "streak": 10,
+   "triggered": 79,
+   "falseResignRate": 0.012658227848101266,
+   "falseResigns": 1,
+   "coverage": 0.5416666666666666,
+   "medianMovesRemaining": 59
+  },
+  {
+   "kind": "lead",
+   "threshold": 20.0,
+   "streak": 15,
+   "triggered": 77,
+   "falseResignRate": 0.012987012987012988,
+   "falseResigns": 1,
+   "coverage": 0.5277777777777778,
+   "medianMovesRemaining": 49
+  },
+  {
+   "kind": "lead",
+   "threshold": 20.0,
+   "streak": 20,
+   "triggered": 70,
+   "falseResignRate": 0.014285714285714285,
+   "falseResigns": 1,
+   "coverage": 0.4791666666666667,
+   "medianMovesRemaining": 44.5
+  },
+  {
+   "kind": "lead",
+   "threshold": 30.0,
+   "streak": 5,
+   "triggered": 70,
+   "falseResignRate": 0.02857142857142857,
+   "falseResigns": 2,
+   "coverage": 0.4722222222222222,
+   "medianMovesRemaining": 65.0
+  },
+  {
+   "kind": "lead",
+   "threshold": 30.0,
+   "streak": 10,
+   "triggered": 66,
+   "falseResignRate": 0.015151515151515152,
+   "falseResigns": 1,
+   "coverage": 0.4513888888888889,
+   "medianMovesRemaining": 51.0
+  },
+  {
+   "kind": "lead",
+   "threshold": 30.0,
+   "streak": 15,
+   "triggered": 60,
+   "falseResignRate": 0.016666666666666666,
+   "falseResigns": 1,
+   "coverage": 0.4097222222222222,
+   "medianMovesRemaining": 46.0
+  },
+  {
+   "kind": "lead",
+   "threshold": 30.0,
+   "streak": 20,
+   "triggered": 55,
+   "falseResignRate": 0.01818181818181818,
+   "falseResigns": 1,
+   "coverage": 0.375,
+   "medianMovesRemaining": 41
+  },
+  {
+   "kind": "win",
+   "threshold": 0.1,
+   "streak": 5,
+   "triggered": 173,
+   "falseResignRate": 0.1676300578034682,
+   "falseResigns": 29,
+   "coverage": 1.0,
+   "medianMovesRemaining": 86
+  },
+  {
+   "kind": "win",
+   "threshold": 0.1,
+   "streak": 10,
+   "triggered": 160,
+   "falseResignRate": 0.11875,
+   "falseResigns": 19,
+   "coverage": 0.9791666666666666,
+   "medianMovesRemaining": 75.0
+  },
+  {
+   "kind": "win",
+   "threshold": 0.1,
+   "streak": 15,
+   "triggered": 144,
+   "falseResignRate": 0.05555555555555555,
+   "falseResigns": 8,
+   "coverage": 0.9444444444444444,
+   "medianMovesRemaining": 61.0
+  },
+  {
+   "kind": "win",
+   "threshold": 0.1,
+   "streak": 20,
+   "triggered": 131,
+   "falseResignRate": 0.030534351145038167,
+   "falseResigns": 4,
+   "coverage": 0.8819444444444444,
+   "medianMovesRemaining": 51
+  },
+  {
+   "kind": "win",
+   "threshold": 0.05,
+   "streak": 5,
+   "triggered": 167,
+   "falseResignRate": 0.1377245508982036,
+   "falseResigns": 23,
+   "coverage": 1.0,
+   "medianMovesRemaining": 83
+  },
+  {
+   "kind": "win",
+   "threshold": 0.05,
+   "streak": 10,
+   "triggered": 149,
+   "falseResignRate": 0.06711409395973154,
+   "falseResigns": 10,
+   "coverage": 0.9652777777777778,
+   "medianMovesRemaining": 71
+  },
+  {
+   "kind": "win",
+   "threshold": 0.05,
+   "streak": 15,
+   "triggered": 137,
+   "falseResignRate": 0.0364963503649635,
+   "falseResigns": 5,
+   "coverage": 0.9166666666666666,
+   "medianMovesRemaining": 61
+  },
+  {
+   "kind": "win",
+   "threshold": 0.05,
+   "streak": 20,
+   "triggered": 124,
+   "falseResignRate": 0.024193548387096774,
+   "falseResigns": 3,
+   "coverage": 0.8402777777777778,
+   "medianMovesRemaining": 52.0
+  }
+ ]
+}
