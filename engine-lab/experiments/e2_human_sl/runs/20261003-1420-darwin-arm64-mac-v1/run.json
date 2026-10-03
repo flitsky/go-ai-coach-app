@@ -1,0 +1,45 @@
+{
+ "experiment": "e2_human_sl",
+ "label": "mac-v1",
+ "startedAt": "2026-10-03T14:20:12",
+ "args": {
+  "label": "mac-v1",
+  "positions": "/Users/ryan9kim/worksoc/go-ai-coach/.claude/worktrees/backlog-214/engine-lab/positions/selfplay-human-v1.json",
+  "sizes": "9,13,19",
+  "profiles": "rank_20k,rank_15k,rank_12k,rank_10k,rank_8k,rank_5k,rank_3k,rank_1k,rank_1d,rank_3d",
+  "recipes": "R2-tail,R3-full",
+  "e1_summary": "",
+  "ref_root_visits": 800,
+  "ref_move_visits": 300,
+  "ref_threads": 8
+ },
+ "appCommit": "11a330fc+lab-dirty",
+ "python": "3.14.6",
+ "machine": "Darwin arm64 darwin-arm64",
+ "katago": "/opt/homebrew/bin/katago",
+ "engineVersions": {
+  "gtp": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0",
+  "reference": "1.16.4 <omitted>"
+ },
+ "models": {
+  "main": {
+   "path": "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+   "sha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d"
+  },
+  "human": {
+   "path": "/Users/ryan9kim/worksoc/katago/models/b18c384nbt-humanv0.bin.gz",
+   "sha256": "637746e44f0efe00ad1245a50aa9bbf0716efe364c43965ead97bd6835d84ab5"
+  }
+ },
+ "configs": {
+  "gtp": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg",
+   "sha256": "fb620cb846d1080688006f0ba56babb527eeff1f64c472656de6509efde5876d"
+  },
+  "analysis": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg",
+   "sha256": "8338f3d110067fa1fa2f9cd41f6de2cf1ed0e0f2a0115d93a369299254763ada"
+  }
+ },
+ "finishedAt": "2026-10-03T14:45:49"
+}

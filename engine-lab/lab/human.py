@@ -39,10 +39,10 @@ class Recipe:
     only_below_prob: float
 
     def describe(self) -> str:
-        return (
-            f"{self.name}: T {self.temperature_early}→{self.temperature} (반감 {self.halflife}수), "
-            f"확률 {self.only_below_prob:g} 미만에만"
-        )
+        scope = "모든 수에" if self.only_below_prob >= 1.0 else f"확률 {self.only_below_prob:g} 미만인 수에만"
+        if self.temperature_early == self.temperature:
+            return f"{self.name}: 온도 {self.temperature:g}, {scope}"
+        return f"{self.name}: 온도 {self.temperature_early:g}→{self.temperature:g}(반감 {self.halflife:g}수), {scope}"
 
 
 # go-bot / `gtp_human5k_example.cfg`의 착수 온도 설정.
