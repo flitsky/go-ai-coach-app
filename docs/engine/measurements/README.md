@@ -30,7 +30,7 @@
 | `engine-benchmark/phone-autoplay-freshprocess-20260611-203855/` | 위 프로세스 재시작 수정의 검증 | 위와 같음. "같은 판 안에서 B64 직후 B16이 즉시 반환" 은 남은 문제로 기록 |
 | `engine-benchmark/phone-autoplay-clearcache-20260611-204836/` | AI 착수 직전 캐시 비우기 검증 | **코드**: `EngineCoreApi.clearSearchCache()` (`shared/.../EngineModels.kt`), 호출부는 `match/MatchTurnOrchestration.kt` |
 | `engine-benchmark/emulator-pixel7-20260610/` | Pixel 7 에뮬레이터 startup benchmark | `fill=UNKNOWN` 원인(GTP fast path에 visit 진단 문자열 없음) → **코드**: `KataGoAnalysisParser.parseRootVisitsEstimate()`, 사용처 `KataGoGtpAnalysisClient` |
-| `engine-benchmark/mac-20260610/`, `mac-b16best3-20260610/` | 맥 로컬 KataGo 기준선 | 측정 포지션 규약이 코드 상수 `EngineBenchmarkPositionName`(`b16-best-3-variants`)과 `scripts/run-katago-device-benchmark.py`로 고정됨. 설명은 `docs/spec/USER_OPTION_MANUAL.md` |
+| `engine-benchmark/mac-20260610/`, `mac-b16best3-20260610/` | 맥 로컬 KataGo 기준선 | 측정 포지션 규약이 코드 상수 `EngineBenchmarkPositionName`(`b16-best-3-variants`)과 `engine-lab/benchmarks/run-katago-device-benchmark.py`로 고정됨. 설명은 `docs/spec/USER_OPTION_MANUAL.md` |
 | `engine-benchmark/search-mode-{mac,phone}-20260613/` | 엔진 검색 모드 2종 비교 | `docs/ENGINE.md` — 결론 표가 본문에 있다(원본 로드맵 문서는 2026-08-17 보존 정책 전환으로 제거됨) |
 | `engine-benchmark/candidate-refine-mac-20260817.{md,json}` | 후보수 refine 측정 | `docs/engine/ENGINE_STRENGTH_RESEARCH.md` |
 | `engine-match/` 전체 | 레벨 간 상대 기력(승률·Elo) 대국 매트릭스 | `docs/engine/ENGINE_STRENGTH_RESEARCH.md` — 경로를 직접 인용한다. **지우지 말 것** |

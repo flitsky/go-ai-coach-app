@@ -4,7 +4,7 @@ scored (pointLoss-bearing) candidate pool, and at what latency cost.
 
 This is a standalone terminal experiment for the JsonPositionAnalysis path
 (used by 초급/중급/고급). It reuses the exact same test positions as the
-archived docs/archive/2026-06-docs-consolidation/ENGINE_BEGINNER_VISITS_BENCHMARK.md
+old beginner-visits benchmark (now §1 of `ENGINE_STRENGTH_RESEARCH.md`)
 (P0 empty board, P1 8-move opening, P2 20-move midgame) so results are directly
 comparable to that historical baseline.
 
@@ -31,7 +31,7 @@ Caveats (documented, not hidden):
     subtrees a little faster than an isolated cold process would be. This
     matches how the app actually behaves in a live session (no clear_cache
     between AI-move JSON queries), so it is a reasonable approximation, not a
-    strict isolation benchmark like scripts/run-katago-level-match.py's
+    strict isolation benchmark like run-katago-level-match.py's
     --cache-isolation modes.
   - Occupied-point tracking for excluding illegal refine candidates does not
     replay captures. None of P0/P1/P2's opening moves produce a capture, so
@@ -51,10 +51,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
-DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
-DEFAULT_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
-LETTERS = "ABCDEFGHJ"  # matches scripts/run-katago-level-match.py: 9x9 skips "I"
+LAB_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LAB_ROOT))
+from lab import paths as lab_paths  # noqa: E402  — 기본 경로는 실험실 한 곳에서(워크트리엔 앱 cfg가 없다)
+DEFAULT_KATAGO = str(lab_paths.katago_binary())
+DEFAULT_MODEL = str(lab_paths.main_model())
+DEFAULT_CONFIG = str(lab_paths.analysis_config())
+LETTERS = "ABCDEFGHJ"  # matches run-katago-level-match.py: 9x9 skips "I"
 BOARD_SIZE = 9
 REFINE_QUERY_VISITS = 8  # mirrors KataGoJsonPositionAnalysisClient.JsonRefineLimit
 
@@ -253,7 +256,7 @@ def write_markdown(rows: list[dict[str, Any]], path: Path) -> None:
     lines = [
         "# KataGo candidate refine experiment",
         "",
-        f"생성: `scripts/run-katago-candidate-refine-experiment.py` (자동 생성, 수동 편집 금지)",
+        f"생성: `engine-lab/benchmarks/run-katago-candidate-refine-experiment.py` (자동 생성, 수동 편집 금지)",
         "",
         "| Position | Visits | Baseline ms | Scored before | Refine budget | Scored after | Refine total ms | Refine avg ms/move | Combined ms |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -276,7 +279,7 @@ def main() -> int:
     parser.add_argument("--katago", default=os.environ.get("KATAGO_BIN", DEFAULT_KATAGO))
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
-    parser.add_argument("--out", type=Path, default=Path("docs/engine/measurements/engine-benchmark/candidate-refine-latest.md"))
+    parser.add_argument("--out", type=Path, default=LAB_ROOT / "benchmarks" / "runs" / f"candidate-refine-{time.strftime('%Y%m%d-%H%M')}.md")
     parser.add_argument("--json-out", type=Path, default=None)
     args = parser.parse_args()
 

@@ -507,7 +507,7 @@ make engine-search-mode-benchmark-phone
 직접 실행할 수도 있다.
 
 ```bash
-python3 scripts/run-katago-search-mode-benchmark.py \
+python3 engine-lab/benchmarks/run-katago-search-mode-benchmark.py \
   --samples 3 \
   --time-cap-ms 10000 \
   --adb-serial 192.168.35.3:45513 \

@@ -152,7 +152,7 @@ data class TierProgressState(
 
 ## 9. 검증 계획 — 코드 반영 전에 터미널에서 먼저 확인할 것
 
-오늘 만든 `scripts/run-katago-candidate-refine-experiment.py`와 같은 방향으로, Kotlin을 건드리기 전에 순수 Python 시뮬레이션으로 5절 알고리즘을 먼저 검증하는 걸 제안한다:
+오늘 만든 `engine-lab/benchmarks/run-katago-candidate-refine-experiment.py`와 같은 방향으로, Kotlin을 건드리기 전에 순수 Python 시뮬레이션으로 5절 알고리즘을 먼저 검증하는 걸 제안한다:
 
 1. 2절의 버킷 분류 규칙과 5절의 방식 B 알고리즘을 Python으로 그대로 구현.
 2. 실제 KataGo 응답(오늘 스크립트가 이미 만드는 `moveInfos` 목록)에 대입해 N수 시뮬레이션 대국을 여러 판 돌리고, 판마다 실제 최하수/중급수/최적수 사용 비율이 원안 비율(예: 고수 10/30/60)에 얼마나 수렴하는지 확인.

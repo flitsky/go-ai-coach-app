@@ -1,6 +1,6 @@
 # KataGo candidate refine experiment
 
-생성: `scripts/run-katago-candidate-refine-experiment.py` (자동 생성, 수동 편집 금지)
+생성: `engine-lab/benchmarks/run-katago-candidate-refine-experiment.py` (자동 생성, 수동 편집 금지)
 
 | Position | Visits | Baseline ms | Scored before | Refine budget | Scored after | Refine total ms | Refine avg ms/move | Combined ms |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |

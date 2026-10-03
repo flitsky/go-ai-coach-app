@@ -101,9 +101,6 @@ ALLOWED: dict[tuple[str, str], str] = {
         "그 시점에 있었던 문서를 가리키는 히스토리 서술",
     ("work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md", "design-handoff/README.md"):
         "2026-09-13에 design-handoff/ 자체를 work/play-store-assets/로 흡수하며 삭제한 것을 기록한 문장",
-    ("scripts/run-katago-candidate-refine-experiment.py",
-     "docs/archive/2026-06-docs-consolidation/ENGINE_BEGINNER_VISITS_BENCHMARK.md"):
-        "옛 아카이브 위치를 적어 둔 주석(사실 서술)",
     # ⓑ 아직 만들지 않은 제안 문서
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/UI_DESIGN_TOKENS.md"): "추천 신규 제안(미작성)",
     ("docs/spec/APP_IA_AND_UI_SPEC.md", "docs/spec/SGF_AND_REVIEW_MODE_SPEC.md"): "추천 신규 제안(미작성)",
@@ -122,10 +119,8 @@ ALLOWED: dict[tuple[str, str], str] = {
         "봉인된 발송본 — 지금 위치는 `PREMIUM_MODE.md`",
     ("design-handoff/export/2026-08-11-v0.1.2/go_ai_coach_handoff.md", "auth-onboarding/README.md"):
         "봉인된 발송본 — 지금 위치는 `LOGIN_AND_ACCOUNT_SYSTEM.md`",
-    # ⓒ 스크립트가 만들어 낼 출력 경로
-    ("scripts/run-katago-candidate-refine-experiment.py",
-     "docs/engine/measurements/engine-benchmark/candidate-refine-latest.md"):
-        "--out 기본값(실행하면 생성되는 산출물)",
+    # ⓒ 스크립트가 만들어 낼 출력 경로 — (2026-10-03 #214) 후보 확장 실험의 `--out` 기본값이 `engine-lab/benchmarks/runs/`로 옮겨
+    #    문서 경로가 아니게 돼 항목이 비었다. 다시 생기면 여기에.
 }
 
 # **봉인 문서 안의 옛 경로**는 깨진 것이 아니다 (2026-09-23 신설).

@@ -23,13 +23,19 @@ from statistics import mean
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
-DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
-DEFAULT_GTP_CONFIG = "app-android/src/friend/assets/katago/gtp_learning.cfg"
-DEFAULT_ANALYSIS_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
-DEFAULT_ADB_PACKAGE = "com.worksoc.goaicoach"
-DEFAULT_ADB_MODEL = "files/katago/model.bin.gz"
+LAB_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LAB_ROOT))
+from lab import paths as lab_paths  # noqa: E402  — 기본 경로는 실험실 한 곳에서(워크트리엔 앱 cfg가 없다)
+from lab.gtp import AdbTarget  # noqa: E402
+
+ROOT = LAB_ROOT.parent
+DEFAULT_KATAGO = str(lab_paths.katago_binary())
+DEFAULT_MODEL = str(lab_paths.main_model())
+DEFAULT_GTP_CONFIG = str(lab_paths.gtp_config())
+DEFAULT_ANALYSIS_CONFIG = str(lab_paths.analysis_config())
+# ⚠️ applicationId는 2026-08-04부터 com.zenit9hub.ai.baduk다(namespace com.worksoc.goaicoach와 다르다 — 백로그 #214에서 고침).
+DEFAULT_ADB_PACKAGE = "com.zenit9hub.ai.baduk"
+DEFAULT_ADB_MODEL = "files/katago/model.bin"  # 실제 이름은 기기에서 찾는다(model.bin 또는 model.bin.gz)
 DEFAULT_ADB_GTP_CONFIG = "files/katago/gtp_learning.cfg"
 DEFAULT_ADB_ANALYSIS_CONFIG = "files/katago/analysis_learning.cfg"
 DEFAULT_BASE_MOVES = (("B", "E5"), ("W", "C4"), ("B", "E3"))
@@ -289,7 +295,7 @@ def resolve_adb_defaults(args: argparse.Namespace) -> None:
     if args.katago == DEFAULT_KATAGO:
         args.katago = find_adb_katago_executable(args.adb_serial, args.adb_package)
     if args.model == DEFAULT_MODEL:
-        args.model = DEFAULT_ADB_MODEL
+        args.model = AdbTarget(serial=args.adb_serial, package=args.adb_package).model_path()
     if args.gtp_config == DEFAULT_GTP_CONFIG:
         args.gtp_config = DEFAULT_ADB_GTP_CONFIG
     if args.analysis_config == DEFAULT_ANALYSIS_CONFIG:
@@ -345,7 +351,8 @@ def parse_gtp_response(response: str) -> dict[str, Any]:
                 "prior": optional_float(fields.get("prior")),
             },
         )
-    root_visits = sum(visits_by_move.values()) if visits_by_move else None
+    # 루트 자신의 첫 방문 +1(백로그 #203 — 앱 `parseRootVisitsEstimate`와 같게). 없으면 16방문을 채워도 root=15·SHORT로 읽힌다.
+    root_visits = sum(visits_by_move.values()) + 1 if visits_by_move else None
     return {
         "rootVisits": root_visits,
         "moveInfoCount": len(move_infos),
@@ -529,7 +536,7 @@ def main() -> int:
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--gtp-config", default=os.environ.get("KATAGO_GTP_CONFIG", DEFAULT_GTP_CONFIG))
     parser.add_argument("--analysis-config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_ANALYSIS_CONFIG))
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "docs" / "engine-benchmark-logs" / "search-mode-latest")
+    parser.add_argument("--out-dir", type=Path, default=LAB_ROOT / "benchmarks" / "runs" / f"search-mode-{time.strftime('%Y%m%d-%H%M')}")
     args = parser.parse_args()
     resolve_adb_defaults(args)
 

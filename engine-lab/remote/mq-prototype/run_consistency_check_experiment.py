@@ -7,7 +7,7 @@ the same position, KataGo is not fully deterministic (thread races, batch
 ordering), so **exact equality is the wrong comparison**. But how loose
 does the tolerance need to be? This script measures it instead of
 guessing, by reusing the real `KataGoEngine` from
-`scripts/run-katago-remote-analysis-server.py` (imported directly, no
+`engine-lab/remote/run-katago-remote-analysis-server.py` (imported directly, no
 duplicated engine-management code, per the plan's instruction to reuse
 that file's KataGo call code):
 
@@ -25,7 +25,7 @@ that file's KataGo call code):
      assumed.
 
 Usage:
-    python3 scripts/remote-engine-mq-prototype/run_consistency_check_experiment.py \\
+    python3 engine-lab/remote/mq-prototype/run_consistency_check_experiment.py \\
         --visits 200 --repeats 3
 """
 

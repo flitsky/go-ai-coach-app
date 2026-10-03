@@ -125,7 +125,7 @@ class HttpRemotePositionAnalysisTransportTest {
     }
 
     /**
-     * Contract/regression test against `scripts/run-katago-remote-analysis-server.py`
+     * Contract/regression test against `engine-lab/remote/run-katago-remote-analysis-server.py`
      * (the macOS dev-time reference server, `REMOTE_ENGINE_AND_LAYERING.md`
      * Stage E-3). The response body below is a verbatim capture from that script
      * actually running against local KataGo (the app's own model), answering the
@@ -232,7 +232,7 @@ class HttpRemotePositionAnalysisTransportTest {
 /**
  * 백로그 #19 — `encodeState`가 `komi`/`handicapCount`를 실어 보내는지 직접 확인한다.
  * 이 값이 빠지면 원격 서버는 덤/접바둑을 알 길이 없어 `DefaultKomi`(6.5)·맞바둑을 그냥
- * 가정한다(`scripts/run-katago-remote-analysis-server.py` 모듈 docstring이 이 gap을
+ * 가정한다(`engine-lab/remote/run-katago-remote-analysis-server.py` 모듈 docstring이 이 gap을
  * 스스로 문서화해 두고 있었다) — 이어하기 덤 유실(#1)과 같은 함정이 같은 이유로 남는다.
  */
 class RemotePositionAnalysisJsonCodecStateTest {

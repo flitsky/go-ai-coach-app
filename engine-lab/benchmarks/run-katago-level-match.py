@@ -5,6 +5,12 @@ This script mirrors the app's current play-level budgets and move-selection
 windows closely enough for engine-strength experiments. It uses KataGo's
 analysis engine directly, so it is intended for local benchmarking rather than
 Android UI testing.
+
+⚠️ 빠른 초급(캐릭터 5명)은 지금 **5단계 버킷**(최하·중간·최선, `PlayLevel.kt` `BucketedTierSelection`)이다 —
+실험실의 `lab/selection.py`(앱 규칙을 옮긴 것)로 고른다. 2026-08-18 이전의 3단계 백분위 정의는 백로그 #214에서 걷어냈다.
+⚠️ 앱의 빠른 초급은 **GTP 경로**(`kata-search_analyze`, 1스레드)를 쓰는데 이 러너는 **JSON 분석 엔진**으로 돈다 —
+후보 수가 조금 다르게 나올 수 있다(맥 16방문 GTP 평균 3.9개 · JSON 5.6개, `docs/engine/measurements/README.md`).
+후보 수 자체를 재려면 `experiments/e1_low_visit_candidates/run.py`를 쓴다.
 """
 
 from __future__ import annotations
@@ -20,10 +26,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+LAB_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LAB_ROOT))
+from lab import app_parity as lab_parity  # noqa: E402
+from lab import paths as lab_paths  # noqa: E402
+from lab import selection as lab_selection  # noqa: E402
 
-DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
-DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
-DEFAULT_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
+
+DEFAULT_KATAGO = str(lab_paths.katago_binary())
+DEFAULT_MODEL = str(lab_paths.main_model())
+DEFAULT_CONFIG = str(lab_paths.analysis_config())
 LETTERS = "ABCDEFGHJ"
 
 
@@ -36,6 +48,7 @@ class LevelSpec:
     policy: str
     window: tuple[int, int] | None = None
     exclude_best: bool = False
+    tier_level: int | None = None  # 빠른 초급 버킷 단계(1~4) — policy == "bucket"일 때
 
 
 def level_spec(raw: str) -> LevelSpec:
@@ -48,11 +61,12 @@ def level_spec(raw: str) -> LevelSpec:
         ) from exc
 
     if group in {"fast", "fast_beginner", "fb"}:
-        if level == 1:
-            return LevelSpec("빠른 초급 1단계", 16, 1.0, 8, "percentile", (50, 100))
-        if level == 2:
-            return LevelSpec("빠른 초급 2단계", 16, 1.0, 8, "percentile", (0, 60), True)
-        return LevelSpec("빠른 초급 3단계", 16, 1.0, 8, "best")
+        tier = lab_parity.tier(max(1, min(level, len(lab_parity.TIERS))))
+        label = f"빠른 초급 {tier.level}단계 {tier.name}"
+        visits = lab_parity.FAST_BEGINNER_VISITS
+        if tier.best_only:
+            return LevelSpec(label, visits, 1.0, 1, "best")
+        return LevelSpec(label, visits, 1.0, lab_parity.FAST_BEGINNER_CANDIDATE_COUNT, "bucket", tier_level=tier.level)
 
     if group in {"beginner", "learning_beginner", "lb"}:
         windows = {
@@ -103,6 +117,7 @@ def with_time_override(spec: LevelSpec, time_ms: int | None) -> LevelSpec:
         policy=spec.policy,
         window=spec.window,
         exclude_best=spec.exclude_best,
+        tier_level=spec.tier_level,
     )
 
 
@@ -234,6 +249,7 @@ def choose_move(
     response: dict[str, Any],
     spec: LevelSpec,
     rng: random.Random,
+    own_move_index: int = 0,
 ) -> tuple[str, dict[str, Any]]:
     move_infos = sorted(response.get("moveInfos", []), key=lambda item: item.get("order", 999999))
     if not move_infos:
@@ -245,6 +261,11 @@ def choose_move(
     play_infos = play_infos[: spec.candidate_count]
     if not play_infos:
         return "pass", move_infos[0]
+    if spec.policy == "bucket":
+        tier = lab_parity.tier(spec.tier_level or 1)
+        rank = lab_selection.select_rank(tier, len(play_infos), own_move_index, rng)
+        selected = play_infos[rank if rank is not None else 0]
+        return selected["move"], selected
     selectable = [play_infos[index] for index in candidate_range(spec, len(play_infos))]
     selected = rng.choice(selectable or play_infos[:1])
     return selected["move"], selected
@@ -288,7 +309,8 @@ def play_game(
             clear_cache_before_query=cache_isolation == "clear-cache",
         )
         last_response = response
-        move, selected = choose_move(response, spec, rng)
+        own_move_index = sum(1 for color, mv in moves if color == player and mv.lower() != "pass")
+        move, selected = choose_move(response, spec, rng, own_move_index)
         moves.append([player, move])
         consecutive_passes = consecutive_passes + 1 if move.lower() == "pass" else 0
         turn_logs.append(
@@ -375,7 +397,7 @@ def main() -> int:
     parser.add_argument("--katago", default=os.environ.get("KATAGO_BIN", DEFAULT_KATAGO))
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
-    parser.add_argument("--out", type=Path, default=Path("docs/engine-match-logs/latest.jsonl"))
+    parser.add_argument("--out", type=Path, default=LAB_ROOT / "benchmarks" / "runs" / f"level-match-{time.strftime('%Y%m%d-%H%M')}.jsonl")
     args = parser.parse_args()
     if args.reuse_cache:
         args.cache_isolation = "none"

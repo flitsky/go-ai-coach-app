@@ -12,7 +12,7 @@ data or needs real credentials. Start it first:
 
     npx firebase-tools emulators:start --only firestore \\
         --project demo-go-ai-coach \\
-        --config scripts/remote-engine-mq-prototype/firebase.json
+        --config engine-lab/remote/mq-prototype/firebase.json
 
 `--project demo-go-ai-coach` (a `demo-` prefixed id) is a Firestore-emulator
 convention that skips real GCP auth entirely, unlike the app's real
@@ -28,7 +28,7 @@ reward/audit design would trust, so both roles use it for the fields that
 matter for ranking.
 
 Usage:
-    python3 scripts/remote-engine-mq-prototype/run_session_topic_firestore_prototype.py --role demo
+    python3 engine-lab/remote/mq-prototype/run_session_topic_firestore_prototype.py --role demo
 """
 
 from __future__ import annotations

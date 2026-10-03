@@ -105,10 +105,10 @@ would move the remote path off the local one by about the amounts above.
 
 `build_katago_query()` is checked without KataGo by
 `make test-remote-analysis-server`
-(`scripts/test_run_katago_remote_analysis_server.py`, refactor backlog #90).
+(`engine-lab/remote/test_run_katago_remote_analysis_server.py`, refactor backlog #90).
 
 Usage:
-    python3 scripts/run-katago-remote-analysis-server.py --port 8765
+    python3 engine-lab/remote/run-katago-remote-analysis-server.py --port 8765
 
 Then on the phone, point RemoteEngineCandidate.endpointUrl at
 http://<mac-lan-ip>:8765/engine (both devices must be on the same network).
@@ -124,11 +124,15 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 
-DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
-DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
-DEFAULT_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
+LAB_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LAB_ROOT))
+from lab import paths as lab_paths  # noqa: E402  — 기본 경로는 실험실 한 곳에서(워크트리엔 앱 cfg가 없다)
+DEFAULT_KATAGO = str(lab_paths.katago_binary())
+DEFAULT_MODEL = str(lab_paths.main_model())
+DEFAULT_CONFIG = str(lab_paths.analysis_config())
 DEFAULT_KOMI = 6.5  # fallback only now (#62) — build_katago_query() prefers state["komi"] when a client sends it
 
 

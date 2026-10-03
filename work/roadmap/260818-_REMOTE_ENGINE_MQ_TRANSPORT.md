@@ -14,7 +14,7 @@
 
 ## 1. 오늘 보고된 버그 — 근본 원인
 
-에뮬레이터에서 대국 시작 시 "엔진 응답 지연" 팝업이 바로 떴다. 원인은 단순하다: 어제 Stage E-3 검증 때 `local.properties`의 `debug.remoteEngineUrl`을 켜둔 채로 세션을 마쳤고, 검증에 쓴 맥북 참조 서버(`scripts/run-katago-remote-analysis-server.py`)는 이미 꺼져 있었다. 지금 배선(`MainActivity.kt`)은 **엔진 클라이언트를 앱 시작 시점에 한 번만** 원격/로컬 중 선택한다 — 서버가 있는지 없는지는 그 시점에 확인하지 않고, 있다고 가정하고 원격으로 고정한다. 이후 모든 엔진 호출(`genMove`/`analyze`/`estimateScore`)이 죽은 서버로 나가 `connectTimeoutMillis=3000`/`readTimeoutMillis=30000`(최대 33초) 뒤에야 실패하고, 그 실패가 "느린 로컬 엔진"과 구분 없이 같은 지연 팝업으로 보인다.
+에뮬레이터에서 대국 시작 시 "엔진 응답 지연" 팝업이 바로 떴다. 원인은 단순하다: 어제 Stage E-3 검증 때 `local.properties`의 `debug.remoteEngineUrl`을 켜둔 채로 세션을 마쳤고, 검증에 쓴 맥북 참조 서버(`engine-lab/remote/run-katago-remote-analysis-server.py`)는 이미 꺼져 있었다. 지금 배선(`MainActivity.kt`)은 **엔진 클라이언트를 앱 시작 시점에 한 번만** 원격/로컬 중 선택한다 — 서버가 있는지 없는지는 그 시점에 확인하지 않고, 있다고 가정하고 원격으로 고정한다. 이후 모든 엔진 호출(`genMove`/`analyze`/`estimateScore`)이 죽은 서버로 나가 `connectTimeoutMillis=3000`/`readTimeoutMillis=30000`(최대 33초) 뒤에야 실패하고, 그 실패가 "느린 로컬 엔진"과 구분 없이 같은 지연 팝업으로 보인다.
 
 **즉시 조치**: `local.properties`의 `debug.remoteEngineUrl`을 주석 처리해 껐다(이 파일은 개인 로컬 설정이라 git에 안 잡힌다 — 다시 테스트하려면 주석만 풀면 된다). 근본 해결은 "턴 단위로 원격 실패를 감지해 그 즉시 로컬로 병행/전환"하는 것인데, 이게 정확히 오늘 사용자가 요청한 재설계(4절)와 같은 작업이라 이번 킥오프에 포함해 같이 설계한다 — HTTP 버전에만 임시로 패치하고 MQ 버전에서 다시 만드는 이중 작업을 피한다.
 
@@ -76,9 +76,9 @@
 
 ## 7. 프로토타입 실행 결과 (2026-08-18, 5절 승인 후 즉시 착수)
 
-6절 1~4번을 맥북에서 실제로 실행해 확인했다. 코드는 전부 `scripts/remote-engine-mq-prototype/`에 있다.
+6절 1~4번을 맥북에서 실제로 실행해 확인했다. 코드는 전부 `engine-lab/remote/mq-prototype/`에 있다.
 
-**환경**: `pyenv`의 Python 3.11.9로 전용 가상환경(`scripts/.mq-prototype-venv/`, git에 안 잡힘)을 만들어 `paho-mqtt`/`google-cloud-firestore`를 설치했다 — 시스템 기본 Python은 3.14라 이 두 패키지의 사전빌드 wheel이 아직 없었다. MQTT는 `brew install mosquitto`로 로컬 브로커(`mosquitto-local.conf`, `localhost:1883`, 인증 없음, 이 프로토타입 전용)를, Firestore는 `npx firebase-tools emulators:start --only firestore --project demo-go-ai-coach`로 에뮬레이터(`127.0.0.1:8080`)를 띄웠다 — **둘 다 로컬 전용이고, 실제 프로덕션 Firebase 프로젝트(`project-baduk-hanpan`)나 실제 인증정보는 전혀 건드리지 않는다.**
+**환경**: `pyenv`의 Python 3.11.9로 전용 가상환경(`engine-lab/remote/.mq-prototype-venv/`, git에 안 잡힘)을 만들어 `paho-mqtt`/`google-cloud-firestore`를 설치했다 — 시스템 기본 Python은 3.14라 이 두 패키지의 사전빌드 wheel이 아직 없었다. MQTT는 `brew install mosquitto`로 로컬 브로커(`mosquitto-local.conf`, `localhost:1883`, 인증 없음, 이 프로토타입 전용)를, Firestore는 `npx firebase-tools emulators:start --only firestore --project demo-go-ai-coach`로 에뮬레이터(`127.0.0.1:8080`)를 띄웠다 — **둘 다 로컬 전용이고, 실제 프로덕션 Firebase 프로젝트(`project-baduk-hanpan`)나 실제 인증정보는 전혀 건드리지 않는다.**
 
 **1) 세션 토픽 흉내내기 — `run_session_topic_mqtt_prototype.py` / `run_session_topic_firestore_prototype.py`**: 요청자 1 + 후보 2를 각각 별도 프로세스로 띄우는 `--role demo` 모드로 실행. 두 트랜스포트 모두 "세션 ID로 토픽/컬렉션 구성 → 요청 발행 → 복수 응답 수신 → 도착 순서로 5/3/2/1점 랭킹 계산 → JSONL 이력 파일 기록"이 그대로 동작함을 확인했다(`runs/*.jsonl`). 후보가 응답하지 않는 경우("연결 불가")도 두 트랜스포트 모두에서 타임아웃 후 "NO responses" 경로가 정상적으로 잡혔다.
 
@@ -102,6 +102,6 @@
 ## 참고 문서
 
 - `REMOTE_ENGINE_AND_LAYERING.md` — Stage D/E(오늘 이 문서가 이어받는 원격 엔진 배경), Stage F 정의(이 문서가 그 전용 킥오프)
-- `scripts/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
-- `scripts/remote-engine-mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
+- `engine-lab/remote/run-katago-remote-analysis-server.py` — 어제 만든 HTTP 참조 서버. MQ/Firestore 프로토타입에서 KataGo 프로세스 관리 부분을 그대로 재사용한다
+- `engine-lab/remote/mq-prototype/` — 7절 결과를 낸 실제 파이썬 프로토타입 코드(MQTT/Firestore 세션 토픽, 정합성 체크, 타임아웃+병행 폴백 실험)와 실행 로그(`runs/*.jsonl`)
 - `core/enginecontract/src/commonMain/kotlin/com/worksoc/goaicoach/shared/enginecontract/RemotePositionAnalysisTransport.kt` — 이미 있는 트랜스포트 추상화 계약(3절)

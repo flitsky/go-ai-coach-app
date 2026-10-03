@@ -26,7 +26,7 @@ local cadence thread, never by the response handler, so a stale arrival
 provably cannot corrupt or rewrite a move local already committed.
 
 Usage:
-    python3 scripts/remote-engine-mq-prototype/run_timeout_parallel_fallback_experiment.py --role demo
+    python3 engine-lab/remote/mq-prototype/run_timeout_parallel_fallback_experiment.py --role demo
 """
 
 from __future__ import annotations

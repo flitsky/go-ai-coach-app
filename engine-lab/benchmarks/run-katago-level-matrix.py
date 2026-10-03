@@ -8,15 +8,18 @@ import importlib.util
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "run-katago-level-match.py"
+LAB_ROOT = Path(__file__).resolve().parents[1]
+ROOT = LAB_ROOT.parent
+RUNNER = Path(__file__).with_name("run-katago-level-match.py")
+# 빠른 초급 5단계 = 최선만(옛 3단계 체계의 "3단계"와 같은 뜻 — 백로그 #214에서 번호를 옮겼다).
 DEFAULT_MATCHUPS = [
-    ("fast_beginner:3", "beginner:7", "B16-vs-B32"),
-    ("fast_beginner:3", "intermediate:5", "B16-vs-B64"),
+    ("fast_beginner:5", "beginner:7", "B16-vs-B32"),
+    ("fast_beginner:5", "intermediate:5", "B16-vs-B64"),
     ("beginner:7", "intermediate:5", "B32-vs-B64"),
 ]
 
@@ -125,7 +128,7 @@ def write_markdown(summary: dict[str, Any], path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--games-per-matchup", type=int, default=50)
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "docs" / "engine-match-logs" / "matrix-latest")
+    parser.add_argument("--out-dir", type=Path, default=LAB_ROOT / "benchmarks" / "runs" / f"level-matrix-{time.strftime('%Y%m%d-%H%M')}")
     parser.add_argument("--max-moves", type=int, default=120)
     parser.add_argument("--seed", type=int, default=20260610)
     parser.add_argument("--deterministic", action="store_true")

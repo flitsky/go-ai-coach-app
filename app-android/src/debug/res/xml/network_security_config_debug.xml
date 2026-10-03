@@ -2,7 +2,7 @@
 <!--
   개발용 원격 엔진 스파이크 전용(`LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`
   Stage E-3). Android는 targetSdk 28+부터 평문(cleartext) HTTP를 기본 차단한다 —
-  BuildConfig.REMOTE_ENGINE_URL(scripts/run-katago-remote-analysis-server.py)이
+  BuildConfig.REMOTE_ENGINE_URL(engine-lab/remote/run-katago-remote-analysis-server.py)이
   로컬 네트워크 IP로 평문 HTTP를 쓰므로 이 예외가 필요하다.
 
   이 파일은 debug 소스셋에만 있다 — friend/playInternal/release 매니페스트는

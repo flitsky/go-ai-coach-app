@@ -11,7 +11,7 @@ handicap stones were re-derived from `state["stones"]` (`infer_initial_stones`),
 which silently lost any handicap stone White had captured.
 
 Run directly (no pytest/package install needed):
-    python3 scripts/test_run_katago_remote_analysis_server.py -v
+    python3 engine-lab/remote/test_run_katago_remote_analysis_server.py -v
 
 Sabotage check (backlog #90's own red/green requirement): reverting
 `build_katago_query()`'s `initial_player` assignment back to the literal
@@ -32,8 +32,8 @@ from typing import Any
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SERVER_PATH = os.path.join(_HERE, "run-katago-remote-analysis-server.py")
 
-# The module under test has hyphens in its filename (matches the rest of
-# scripts/), so it can't be `import`ed by name — load it by path instead.
+# The module under test has hyphens in its filename (matches the benchmark
+# runners), so it can't be `import`ed by name — load it by path instead.
 _spec = importlib.util.spec_from_file_location("run_katago_remote_analysis_server", _SERVER_PATH)
 assert _spec is not None and _spec.loader is not None
 remote_server = importlib.util.module_from_spec(_spec)

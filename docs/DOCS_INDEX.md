@@ -46,6 +46,7 @@
 | `work/artwork/` | 봇 캐릭터 **원화**(768px PNG 5장, 2026-09-06 사용자 제공) | 자산 원본. 앱에 들어가는 것은 여기서 `scripts/make-bot-avatars.py`가 뽑은 투명 WebP다 — 원화를 갈면 그 스크립트를 다시 돌린다 | "기능별 마스터플랜" |
 | `work/play-store-assets/` | Play Console 업로드 자산의 **git 추적 정본** — 스크린샷·앱 아이콘·피처 그래픽·`store_listing.txt` | 2026-09-13에 저장소 루트 `design-handoff/`(라운드별 스냅샷 방식)에서 이 경로로 통합했다. 버전 이력은 git이 기본이고, 필요하면 날짜 붙인 폴더/파일을 추가한다(사용자 결정). ⚠️ **`AppNameContractTest`가 이 경로를 실제로 읽는다** | "루트 자산 폴더의 흡수" |
 | `docs/engine/measurements/` | 엔진 성능·매치 raw/summary 로그 | 데이터, 구조 고정. **깊이 규칙 적용 대상 밖** | "데이터 로그" |
+| `engine-lab/` (저장소 **루트**) | **엔진 실험실**(백로그 #214, 2026-10-03) — 맥에서 파이썬으로 KataGo를 시험하는 곳. 공용 패키지·실험·국면 세트·옛 벤치마크 러너·원격 분석 서버 | 앱과 **엄격히 분리** — 앱 코드를 import하지 않고, 앱 값은 대응표 한 곳에 두어 앱 소스와 대조하는 테스트가 지킨다. 실험 결과는 원자료까지 커밋. 규칙·지도는 `engine-lab/README.md`. **문서 구조 정책(깊이·개수) 적용 대상 밖** — 코드 폴더다 | "엔진 딥다이브·검증" |
 
 ### 루트 자산 폴더의 흡수 — `design-handoff/`가 남았다가 사라지기까지
 
@@ -412,7 +413,7 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` | `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` (개명) | 날짜 접두사가 없어 폴더의 **이름순 = 시간순** 정렬을 혼자 깨고 있었다 |
 
 ⚠️ **두 문서 다 "착수 전"이 아니다**(2026-09-23 기준). MQ 킥오프의 6절 파이썬 프로토타입은
-2026-08-29에 완료돼 `main`에 들어와 있고(`scripts/remote-engine-mq-prototype/`), 남은 것은
+2026-08-29에 완료돼 `main`에 들어와 있고(`engine-lab/remote/mq-prototype/`), 남은 것은
 **앱 이식**(개발자 토글 UI, `EngineCoreApiFactory`에 새 transport 추가)뿐이며 그것이 별도 승인
 대기다. 계층 정렬 축(Stage A~C)의 실측 정본은
 `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다.
@@ -427,7 +428,8 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | `engine/ENGINE_API_CALL_POLICY.md` | 엔진 호출 정책, 턴 분석, 캐시, 후보수 처리 기준 — `ENGINE.md`의 딥다이브 |
 | `engine/SCORE_AND_ENDGAME_DECISION.md` | 중간 형세, 사석 정리, 종국 계가 정책, 부심/주심 SLA — `OPERATIONS.md`·`ENGINE.md`가 함께 가리키는 딥다이브 |
 | `engine/ENGINE_STRENGTH_RESEARCH.md` | **실측 근거 통합본**(백로그 #62) — B16/B32/B64 후보수·latency 최초 실측(2026-06-08), 레벨 강도 검토와 150판 매트릭스(2026-06-10~12), `refinePolicyMoves` 후보 확장 레버 검토(2026-08-17) 셋을 한 문서로 합쳤다. ⚠️ **본문은 원본 그대로**이고 머리말이 관통 결론·대체된 전제·열린 질문을 정리한다 |
-| `engine/measurements/` | 위 실측들의 raw/summary 로그. **깊이 규칙 적용 대상 밖** |
+| `engine/measurements/` | 위 실측들의 raw/summary 로그. **깊이 규칙 적용 대상 밖**. ⚠️ 2026-10-03부터는 **읽기 전용 기록**이다 — 새 측정은 `engine-lab/` |
+| `engine-lab/` (저장소 루트) | **엔진 실험실**(백로그 #214) — 새 실험·측정은 여기서. 실험마다 `experiments/<실험>/README.md`에 질문·방법·결론, `runs/`에 원자료 |
 | `engine/error-cases/` | 계가/사석/패스 관련 **재현 케이스 분석 3건**. ⚠️ raw 로그가 아니라 분석 문서라 `measurements/`가 아니고, `engine/SCORE_AND_ENDGAME_DECISION.md`가 이들을 인용한다 |
 
 ⚠️ **`ENGINE_SEARCH_TREE_REUSE_REVIEW.md`는 2026-09-23에 삭제됐다**(`96ee12bd`). 미흡수분이던

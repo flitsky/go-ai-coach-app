@@ -339,7 +339,7 @@ class RemoteEngineCoreApiAdapterTest {
     }
 
     /**
-     * Contract/regression test against `scripts/run-katago-remote-analysis-server.py`'s
+     * Contract/regression test against `engine-lab/remote/run-katago-remote-analysis-server.py`'s
      * `/engine` endpoint (`REMOTE_ENGINE_AND_LAYERING.md` Stage E-3) — the
      * one `createRemoteEngineSessionClient` actually talks to. Both response bodies
      * below are verbatim captures from that script running against local KataGo on

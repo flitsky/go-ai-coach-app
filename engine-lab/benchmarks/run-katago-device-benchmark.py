@@ -18,10 +18,13 @@ from statistics import mean
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_KATAGO = "/opt/homebrew/bin/katago"
-DEFAULT_MODEL = "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz"
-DEFAULT_CONFIG = "app-android/src/friend/assets/katago/analysis_learning.cfg"
+LAB_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(LAB_ROOT))
+from lab import paths as lab_paths  # noqa: E402  — 기본 경로는 실험실 한 곳에서(워크트리엔 앱 cfg가 없다)
+ROOT = LAB_ROOT.parent
+DEFAULT_KATAGO = str(lab_paths.katago_binary())
+DEFAULT_MODEL = str(lab_paths.main_model())
+DEFAULT_CONFIG = str(lab_paths.analysis_config())
 LETTERS = "ABCDEFGHJ"
 DEFAULT_VISITS = (16, 32, 64)
 DEFAULT_POSITIONS = ("b16-best-3-variants", "empty", "random")
@@ -420,7 +423,7 @@ def main() -> int:
     parser.add_argument("--katago", default=os.environ.get("KATAGO_BIN", DEFAULT_KATAGO))
     parser.add_argument("--model", default=os.environ.get("KATAGO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--config", default=os.environ.get("KATAGO_ANALYSIS_CONFIG", DEFAULT_CONFIG))
-    parser.add_argument("--out-dir", type=Path, default=ROOT / "docs" / "engine-benchmark-logs" / "local-latest")
+    parser.add_argument("--out-dir", type=Path, default=LAB_ROOT / "benchmarks" / "runs" / f"device-benchmark-{time.strftime('%Y%m%d-%H%M')}")
     args = parser.parse_args()
 
     visits = [int(value.strip()) for value in args.visits.split(",") if value.strip()]

@@ -24,7 +24,7 @@ class KataGoNamedRulesTest {
      *
      * ⚠️ 룰셋의 보정 방식을 일부러 바꾸다 이 테스트가 빨개졌다면: 로컬 GTP·JSON은 덮어쓰기를 알아서 싣지만
      * **원격 요청은 싣지 않는다**(`RemotePositionAnalysisJsonCodec.encodeState`는 룰셋 이름만 보내고, 서버는
-     * 이름 룰 기본값을 쓴다 — #65). 이 가드를 풀기 전에 와이어와 `scripts/run-katago-remote-analysis-server.py`를
+     * 이름 룰 기본값을 쓴다 — #65). 이 가드를 풀기 전에 와이어와 `engine-lab/remote/run-katago-remote-analysis-server.py`를
      * 먼저 넓혀라. 안 그러면 원격 AI만 다른 보정으로 둔다.
      */
     @Test

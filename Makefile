@@ -43,18 +43,22 @@ RELEASE_AAB := dist/go-ai-coach-release.aab
 FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
 FRIEND_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg
 FRIEND_ANALYSIS_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg
+# 엔진 실험실(`engine-lab/`, 백로그 #214) — 벤치마크 출력 폴더.
+# ⚠️ **비워 두면 스크립트 기본값**(`engine-lab/benchmarks/runs/<이름>-<시각>/`)이다. 예전 기본값은 **커밋된 측정 폴더**
+# (`docs/engine/measurements/…-20260610` 등)여서 기본값으로 돌리면 그 기록을 덮어썼다. 그 폴더들은 이제 읽기 전용 기록이다.
 ENGINE_MATCH_GAMES ?= 50
-ENGINE_MATCH_OUT ?= docs/engine/measurements/engine-match/matrix-20260610
+ENGINE_MATCH_OUT ?=
 ENGINE_MATCH_ARGS ?=
 ENGINE_DEVICE_BENCHMARK_SAMPLES ?= 10
-ENGINE_DEVICE_BENCHMARK_OUT ?= docs/engine/measurements/engine-benchmark/mac-20260610
+ENGINE_DEVICE_BENCHMARK_OUT ?=
 ENGINE_DEVICE_BENCHMARK_ARGS ?=
 ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES ?= 5
-ENGINE_SEARCH_MODE_BENCHMARK_OUT ?= docs/engine/measurements/engine-benchmark/search-mode-mac-20260613
+ENGINE_SEARCH_MODE_BENCHMARK_OUT ?=
 ENGINE_SEARCH_MODE_BENCHMARK_ARGS ?=
 ENGINE_PHONE_BENCHMARK_SERIAL ?= $(ANDROID_SERIAL)
-ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT ?= docs/engine/measurements/engine-benchmark/search-mode-phone-latest
+ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT ?=
 ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS ?= --time-cap-ms 10000
+ENGINE_LAB_BENCH := engine-lab/benchmarks
 
 # release/play-internal-aab/bundle-aab 실행 시 `make bundle-aab VERSION=0.2.0`처럼 넘기면
 # version.properties의 VERSION_NAME이 그 값으로 바뀐다. 비워두면(기본값) 패치 자리만 1
@@ -66,7 +70,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean
 
 help:
 	@echo "=========================================================================="
@@ -92,6 +96,8 @@ help:
 	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
 	@echo "  make test-remote-analysis-server - Check run-katago-remote-analysis-server.py's query builder"
 	@echo "                             (no KataGo/device needed; NOT part of make test — see Makefile comment)"
+	@echo "  make engine-lab-test     - Engine lab unit tests + app-parity check (engine-lab/, no KataGo needed;"
+	@echo "                             NOT part of make test — same reason as test-remote-analysis-server)"
 	@echo ""
 	@echo " [Build & Engine Prebuild]"
 	@echo "  make play-internal-aab   - Build release-signed AAB (debug engine + bundled assets) for Play Console internal testing"
@@ -180,7 +186,7 @@ test-ios:
 test-device: doctor
 	$(GRADLEW) :app-android:connectedDebugAndroidTest
 
-# ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #90). `scripts/run-katago-remote-analysis-server.py`는
+# ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #90). `engine-lab/remote/run-katago-remote-analysis-server.py`는
 # dev-only 스파이크다 — debug 빌드에 REMOTE_ENGINE_URL이 있을 때만 쓰이고(`app-android/build.gradle.kts`:
 # debug만 값을 채우고 release·playInternal은 빈 문자열), 프로덕션 사용자·앱 배포 어느 쪽에도 닿지 않는다.
 # `make test`(릴리스 게이트)는 JDK+Android SDK만 있으면 도는 것이 지금까지의 전제였고(`doctor`가 그 둘만
@@ -191,7 +197,13 @@ test-device: doctor
 # 것이라 같은 문제를 우회로만 옮긴다. 대신 이 스크립트를 고칠 때 사람이 직접 돌리는 수동 게이트로 둔다 —
 # 변경 빈도가 낮고(dev 스파이크), KataGo 바이너리 없이도 0.01초 안에 돈다.
 test-remote-analysis-server:
-	python3 scripts/test_run_katago_remote_analysis_server.py -v
+	python3 engine-lab/remote/test_run_katago_remote_analysis_server.py -v
+
+# 엔진 실험실 단위 테스트(백로그 #214) — KataGo 없이 돈다. ⚠️ `make test`에 합치지 않는 이유는 위와 같다(python3을 릴리스 게이트의
+# 필수 의존으로 만들지 않는다). 그중 `test_app_parity.py`는 **앱 소스 글자**를 읽어 실험실의 앱 대응표(16방문·버킷 비율 등)와
+# 비교한다 — 앱의 AI 값을 바꾸는 커밋에서는 이것을 돌려 실험실 표도 같이 고칠 것.
+engine-lab-test: test-remote-analysis-server
+	python3 -m unittest discover -s engine-lab/tests -v
 
 dev: doctor ensure-debug-engine
 	$(GRADLEW) :app-android:assembleDebug
@@ -257,17 +269,17 @@ verify-admob-keys:
 	$(GRADLEW) :app-android:verifyReleaseAdmobKeys
 
 engine-level-benchmark:
-	python3 scripts/run-katago-level-matrix.py --games-per-matchup "$(ENGINE_MATCH_GAMES)" --out-dir "$(ENGINE_MATCH_OUT)" $(ENGINE_MATCH_ARGS)
+	python3 $(ENGINE_LAB_BENCH)/run-katago-level-matrix.py --games-per-matchup "$(ENGINE_MATCH_GAMES)" $(if $(ENGINE_MATCH_OUT),--out-dir "$(ENGINE_MATCH_OUT)",) $(ENGINE_MATCH_ARGS)
 
 engine-device-benchmark:
-	python3 scripts/run-katago-device-benchmark.py --samples "$(ENGINE_DEVICE_BENCHMARK_SAMPLES)" --out-dir "$(ENGINE_DEVICE_BENCHMARK_OUT)" $(ENGINE_DEVICE_BENCHMARK_ARGS)
+	python3 $(ENGINE_LAB_BENCH)/run-katago-device-benchmark.py --samples "$(ENGINE_DEVICE_BENCHMARK_SAMPLES)" $(if $(ENGINE_DEVICE_BENCHMARK_OUT),--out-dir "$(ENGINE_DEVICE_BENCHMARK_OUT)",) $(ENGINE_DEVICE_BENCHMARK_ARGS)
 
 engine-search-mode-benchmark:
-	python3 scripts/run-katago-search-mode-benchmark.py --samples "$(ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES)" --out-dir "$(ENGINE_SEARCH_MODE_BENCHMARK_OUT)" $(ENGINE_SEARCH_MODE_BENCHMARK_ARGS)
+	python3 $(ENGINE_LAB_BENCH)/run-katago-search-mode-benchmark.py --samples "$(ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES)" $(if $(ENGINE_SEARCH_MODE_BENCHMARK_OUT),--out-dir "$(ENGINE_SEARCH_MODE_BENCHMARK_OUT)",) $(ENGINE_SEARCH_MODE_BENCHMARK_ARGS)
 
 engine-search-mode-benchmark-phone:
 	@test -n "$(ENGINE_PHONE_BENCHMARK_SERIAL)" || (echo "Set ENGINE_PHONE_BENCHMARK_SERIAL=<adb serial> or ANDROID_SERIAL=<adb serial>." && exit 2)
-	python3 scripts/run-katago-search-mode-benchmark.py --samples "$(ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES)" --out-dir "$(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT)" --adb-serial "$(ENGINE_PHONE_BENCHMARK_SERIAL)" $(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS)
+	python3 $(ENGINE_LAB_BENCH)/run-katago-search-mode-benchmark.py --samples "$(ENGINE_SEARCH_MODE_BENCHMARK_SAMPLES)" $(if $(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT),--out-dir "$(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_OUT)",) --adb-serial "$(ENGINE_PHONE_BENCHMARK_SERIAL)" $(ENGINE_PHONE_SEARCH_MODE_BENCHMARK_ARGS)
 
 prepare-friend-assets:
 	@test -f "$(FRIEND_MODEL_PATH)" || (echo "Friend APK model not found: $(FRIEND_MODEL_PATH)" && exit 1)

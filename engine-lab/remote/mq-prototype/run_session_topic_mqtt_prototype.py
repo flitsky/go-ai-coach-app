@@ -23,10 +23,10 @@ collections which show up once written).
 Requires a broker. Quickest local one:
     brew install mosquitto  # already done as part of this prototype
     /opt/homebrew/opt/mosquitto/sbin/mosquitto -c \\
-        scripts/remote-engine-mq-prototype/mosquitto-local.conf -v
+        engine-lab/remote/mq-prototype/mosquitto-local.conf -v
 
 Usage:
-    python3 scripts/remote-engine-mq-prototype/run_session_topic_mqtt_prototype.py --role demo
+    python3 engine-lab/remote/mq-prototype/run_session_topic_mqtt_prototype.py --role demo
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ try:
 except ImportError:
     print(
         "paho-mqtt not installed. Activate the prototype venv:\n"
-        "  source scripts/remote-engine-mq-prototype/../.mq-prototype-venv/bin/activate",
+        "  source engine-lab/remote/.mq-prototype-venv/bin/activate",
         file=sys.stderr,
     )
     raise

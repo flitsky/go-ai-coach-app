@@ -422,7 +422,7 @@ fallback:
 
 스크립트 변경:
 
-- `scripts/run-katago-level-match.py`의 기본 time cap을 앱 기본값과 맞췄다.
+- `engine-lab/benchmarks/run-katago-level-match.py`의 기본 time cap을 앱 기본값과 맞췄다.
   - B16: `16 visits / 1000ms`
   - B32: `32 visits / 2000ms`
   - B64: `64 visits / 3000ms`
@@ -621,7 +621,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 
 초기 smoke 결과:
 
-- script: `scripts/run-katago-level-match.py`
+- script: `engine-lab/benchmarks/run-katago-level-match.py`
 - log: `docs/engine/measurements/engine-match/fb3-vs-lb7-det-20260610.jsonl`
 - 조건: deterministic, `numSearchThreads=1`, warm-up 후 4판, 흑백 교대
 - 결과: `초급 7단계` 3승, `빠른 초급 3단계` 1승
@@ -633,7 +633,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 요청한 3개 조합을 각각 50판씩 실행했다.
 
 - command: `make engine-level-benchmark ENGINE_MATCH_GAMES=50 ENGINE_MATCH_OUT=docs/engine/measurements/engine-match/matrix-20260610`
-- script: `scripts/run-katago-level-matrix.py`
+- script: `engine-lab/benchmarks/run-katago-level-matrix.py`
 - summary: `docs/engine/measurements/engine-match/matrix-20260610/summary.md`
 - raw logs:
   - `docs/engine/measurements/engine-match/matrix-20260610/B16-vs-B32.jsonl`
@@ -676,7 +676,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 
 `maxTime` 부족으로 B32가 충분히 32 visits를 채우지 못하는지 확인하기 위해, 방문수는 그대로 두고 B16/B32의 time cap만 모두 `1000ms`로 늘린 50판 실험을 추가했다.
 
-- command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260611 --out docs/engine/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
+- command: `python3 engine-lab/benchmarks/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260611 --out docs/engine/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
 - summary: `b16-vs-b32-time1000-20260610-summary.md`
 - raw log: `docs/engine/measurements/engine-match/b16-vs-b32-time1000-20260610.jsonl`
 - 조건: 실사용에 가까운 non-deterministic, `numSearchThreads=4`, 흑백 교대, warm-up, final evaluator `400 visits / 2000ms`
@@ -700,7 +700,7 @@ Top Moves/힌트 분석은 학습 UI 품질을 위해 기존 `Balanced` 보강�
 
 동일 조건을 새 seed로 50판 더 실행했다.
 
-- command: `python3 scripts/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260612 --out docs/engine/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
+- command: `python3 engine-lab/benchmarks/run-katago-level-match.py --black fast_beginner:3 --white beginner:7 --black-time-ms 1000 --white-time-ms 1000 --games 50 --swap-colors --seed 20260612 --out docs/engine/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
 - summary: `b16-vs-b32-time1000-r2-20260610-summary.md`
 - raw log: `docs/engine/measurements/engine-match/b16-vs-b32-time1000-r2-20260610.jsonl`
 
@@ -859,16 +859,16 @@ KataGo 문서(`ENGINE_API_CALL_POLICY.md` "Visit의 의미와 탐색 원리" 절
 
 ### 4. 터미널 실측: `refinePolicyMoves`의 실제 비용
 
-기존 `scripts/run-katago-level-match.py`류는 raw visits/time만 바꿀 수 있고 `refinePolicyMoves`를 흉내내지 못해서, 새 스크립트를 추가했다.
+기존 `engine-lab/benchmarks/run-katago-level-match.py`류는 raw visits/time만 바꿀 수 있고 `refinePolicyMoves`를 흉내내지 못해서, 새 스크립트를 추가했다.
 
-**신규: [`scripts/run-katago-candidate-refine-experiment.py`](../../scripts/run-katago-candidate-refine-experiment.py)**
+**신규: [`engine-lab/benchmarks/run-katago-candidate-refine-experiment.py`](../../engine-lab/benchmarks/run-katago-candidate-refine-experiment.py)**
 
 `KataGoJsonAnalysisQueryFactory.build()`/`KataGoJsonPositionAnalysisClient.refineJsonPolicyCandidates()`의 refine 쿼리(policy 상위 후보에 수를 하나 얹어 `analyzeTurns`를 한 수 미루고 `maxVisits=8`로 재검색)를 Python으로 그대로 포팅했다. 기존 `ENGINE_BEGINNER_VISITS_BENCHMARK.md`와 같은 3개 국면(P0 빈 보드, P1 초반 8수, P2 중반 20수)을 그대로 재사용해 과거 데이터와 비교 가능하게 했다.
 
 실행(맥북 M-시리즈, Metal backend, `numSearchThreads=4`, `numAnalysisThreads=1`, `analysis_learning.cfg`, time cap 5000ms로 visits가 먼저 걸리게 설정):
 
 ```bash
-python3 scripts/run-katago-candidate-refine-experiment.py \
+python3 engine-lab/benchmarks/run-katago-candidate-refine-experiment.py \
   --visits 16,32,64 --refine-budgets 0,4,8,12 --time-cap-ms 5000 \
   --out docs/engine/measurements/engine-benchmark/candidate-refine-mac-20260817.md
 ```
@@ -906,7 +906,7 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 #### 실측의 한계 (다음 실험에서 보완할 점)
 
 - 표본 1회(n=1)다. `run-katago-level-match.py`처럼 반복 샘플링하지 않았다 — latency 숫자는 경향 확인용이지 SLA 근거로 쓰면 안 된다.
-- 맥북 Metal 기준이다. `ENGINE.md`가 보여주듯 폰 실기기(Eigen CPU)에서는 JSON이 GTP보다 훨씬 유리해지는 역전이 이미 확인된 바 있다(B32에서 JSON 3067ms vs GTP 7603ms) — refine 비용도 폰에서 다시 재보는 게 맞다. 기존 `scripts/run-katago-search-mode-benchmark.py`의 ADB `run-as` 경로를 재사용하면 앱과 100% 동일한 바이너리/모델로 측정할 수 있다.
+- 맥북 Metal 기준이다. `ENGINE.md`가 보여주듯 폰 실기기(Eigen CPU)에서는 JSON이 GTP보다 훨씬 유리해지는 역전이 이미 확인된 바 있다(B32에서 JSON 3067ms vs GTP 7603ms) — refine 비용도 폰에서 다시 재보는 게 맞다. 기존 `engine-lab/benchmarks/run-katago-search-mode-benchmark.py`의 ADB `run-as` 경로를 재사용하면 앱과 100% 동일한 바이너리/모델로 측정할 수 있다.
 - 후보 증가가 색상/승률 레벨링 품질까지 실제로 개선하는지는 확인하지 않았다(이번 실험은 "몇 개 늘릴 수 있고 얼마나 드는가"만 측정). 이건 5절의 다음 단계다.
 
 ### 5. 권장 방향 (확신 있는 부분은 결정, 나머지는 다음 실험으로 분리)
@@ -930,11 +930,11 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 
 | 스크립트 | 역할 | Makefile 타겟 |
 | --- | --- | --- |
-| `scripts/run-katago-level-match.py` | 레벨 A vs 레벨 B 1:1 반복 대국, 승률/집차이 JSONL 로그 | (직접 실행) |
-| `scripts/run-katago-level-matrix.py` | 여러 레벨 조합을 한 번에 매트릭스로 실행 | `make engine-level-benchmark` |
-| `scripts/run-katago-device-benchmark.py` | 기기별 B16/B32/B64 순수 성능(맥북) | `make engine-device-benchmark` |
-| `scripts/run-katago-search-mode-benchmark.py` | GTP fast vs JSON position analysis latency 비교, 맥북/폰(ADB `run-as`) 둘 다 지원 | `make engine-search-mode-benchmark[-phone]` |
-| **`scripts/run-katago-candidate-refine-experiment.py`(신규)** | `refinePolicyMoves` 후보 확장 레버의 후보수 증가량과 latency 비용 측정 | 없음(직접 실행) |
+| `engine-lab/benchmarks/run-katago-level-match.py` | 레벨 A vs 레벨 B 1:1 반복 대국, 승률/집차이 JSONL 로그 | (직접 실행) |
+| `engine-lab/benchmarks/run-katago-level-matrix.py` | 여러 레벨 조합을 한 번에 매트릭스로 실행 | `make engine-level-benchmark` |
+| `engine-lab/benchmarks/run-katago-device-benchmark.py` | 기기별 B16/B32/B64 순수 성능(맥북) | `make engine-device-benchmark` |
+| `engine-lab/benchmarks/run-katago-search-mode-benchmark.py` | GTP fast vs JSON position analysis latency 비교, 맥북/폰(ADB `run-as`) 둘 다 지원 | `make engine-search-mode-benchmark[-phone]` |
+| **`engine-lab/benchmarks/run-katago-candidate-refine-experiment.py`(신규)** | `refinePolicyMoves` 후보 확장 레버의 후보수 증가량과 latency 비용 측정 | 없음(직접 실행) |
 
 전부 앱 바이너리 없이 로컬 Homebrew KataGo(`/opt/homebrew/bin/katago`)와 번들 모델/config를 직접 구동한다. 폰 실측이 필요할 때만 ADB `run-as`로 실제 설치된 앱의 KataGo 산출물을 그대로 실행한다(`ENGINE_API_CALL_POLICY.md` "원격 폰 엔진 벤치마크 표준" 절). 이 경로는 앱을 빌드/설치/재시작할 필요 없이 반복 실험할 수 있다 — 사용자가 요청한 방향과 정확히 일치하는 기존 관례다. 새 스크립트도 이 관례(같은 옵션 이름, 같은 국면 데이터, `docs/engine/measurements/engine-benchmark/`에 결과 저장)를 그대로 따랐다.
 
@@ -948,6 +948,6 @@ P0에서 B32/B64 모두 `refine=0` 기준 13개로 동일했다. `ENGINE_BEGINNE
 - `ENGINE_LEVEL_STRENGTH_REVIEW_2026-06-10.md` — `Balanced` 프리셋이 AI 응수에 실수로 섞였던 과거 사고 기록
 - `ENGINE_API_CALL_POLICY.md`의 「턴별 일관성 정책」·「랜덤 시드와 search cache」 — GTP tree reuse/JSON position-scoped 분석의 구조적 차이 (2026-09-23: `ENGINE_SEARCH_TREE_REUSE_REVIEW.md`가 여기로 흡수되고 삭제됐다)
 - `candidate-refine-mac-20260817.md` — 오늘 실측 원본 데이터(36행)
-- `scripts/run-katago-candidate-refine-experiment.py` — 오늘 추가한 실험 스크립트
+- `engine-lab/benchmarks/run-katago-candidate-refine-experiment.py` — 오늘 추가한 실험 스크립트
 
 ---
