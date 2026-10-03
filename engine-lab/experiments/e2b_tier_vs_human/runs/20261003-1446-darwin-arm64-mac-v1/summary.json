@@ -1,0 +1,150 @@
+{
+ "pairs": {
+  "1|rank_1d": {
+   "tier": "T1-초보",
+   "profile": "rank_1d",
+   "games": 16,
+   "tierWins": 12,
+   "tierWinRate": 0.75,
+   "ci95": [
+    0.5050123107060135,
+    0.8981809801576265
+   ],
+   "meanTierLead": 7.1842249663125,
+   "meanMoves": 134.125,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "1|rank_5d": {
+   "tier": "T1-초보",
+   "profile": "rank_5d",
+   "games": 16,
+   "tierWins": 4,
+   "tierWinRate": 0.25,
+   "ci95": [
+    0.10181901984237346,
+    0.49498768929398645
+   ],
+   "meanTierLead": -17.76320620625,
+   "meanMoves": 132.625,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "1|rank_9d": {
+   "tier": "T1-초보",
+   "profile": "rank_9d",
+   "games": 16,
+   "tierWins": 2,
+   "tierWinRate": 0.125,
+   "ci95": [
+    0.034976749337057134,
+    0.3602333143674828
+   ],
+   "meanTierLead": -47.8269464575,
+   "meanMoves": 148.125,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "3|rank_1d": {
+   "tier": "T3-중수",
+   "profile": "rank_1d",
+   "games": 16,
+   "tierWins": 11,
+   "tierWinRate": 0.6875,
+   "ci95": [
+    0.4440393186673406,
+    0.8583556494803894
+   ],
+   "meanTierLead": 22.205965285875,
+   "meanMoves": 146.25,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "3|rank_5d": {
+   "tier": "T3-중수",
+   "profile": "rank_5d",
+   "games": 16,
+   "tierWins": 11,
+   "tierWinRate": 0.6875,
+   "ci95": [
+    0.4440393186673406,
+    0.8583556494803894
+   ],
+   "meanTierLead": 8.8142854020625,
+   "meanMoves": 141.125,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "3|rank_9d": {
+   "tier": "T3-중수",
+   "profile": "rank_9d",
+   "games": 16,
+   "tierWins": 7,
+   "tierWinRate": 0.4375,
+   "ci95": [
+    0.2309836333518552,
+    0.6682180439322347
+   ],
+   "meanTierLead": -16.7749139611875,
+   "meanMoves": 135.3125,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "5|rank_1d": {
+   "tier": "T5-초고수",
+   "profile": "rank_1d",
+   "games": 16,
+   "tierWins": 16,
+   "tierWinRate": 1.0,
+   "ci95": [
+    0.8063865817272802,
+    1.0
+   ],
+   "meanTierLead": 103.1150857,
+   "meanMoves": 134.0625,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "5|rank_5d": {
+   "tier": "T5-초고수",
+   "profile": "rank_5d",
+   "games": 16,
+   "tierWins": 16,
+   "tierWinRate": 1.0,
+   "ci95": [
+    0.8063865817272802,
+    1.0
+   ],
+   "meanTierLead": 58.723832109875,
+   "meanMoves": 133.5,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  },
+  "5|rank_9d": {
+   "tier": "T5-초고수",
+   "profile": "rank_9d",
+   "games": 16,
+   "tierWins": 16,
+   "tierWinRate": 1.0,
+   "ci95": [
+    0.8063865817272802,
+    1.0
+   ],
+   "meanTierLead": 91.2181919375,
+   "meanMoves": 138.0625,
+   "endedBy": {
+    "pass-pass": 16
+   }
+  }
+ },
+ "size": 13,
+ "recipe": "R2-tail"
+}

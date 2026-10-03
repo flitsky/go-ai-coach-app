@@ -65,9 +65,10 @@ python3 engine-lab/experiments/e1_low_visit_candidates/run.py --label phone --ad
 
 | # | 질문 | 상태 | 결론 |
 | --- | --- | --- | --- |
-| E1 `experiments/e1_low_visit_candidates/README.md` | 방문 8·16 + 1초대로 줄이면 후보가 몇 개 나오고, 캐릭터 5단계는 실제로 무엇을 두나 — 짧게 탐색하면 최적수만 남아 실수가 실수가 아니게 되나 | 맥 ✅ · 폰 대기 | README |
-| E2 `experiments/e2_human_sl/README.md` | 사람 모델 1방문 추출의 손해는 어떤가, 지금 캐릭터 5단계는 어느 프로필쯤인가(#215 준비) | 맥 ✅ | README |
-| E3 | 「−X집이 N수 지속」 뒤 실제로 역전된 비율 — 기권 임계(#213 준비) | 예정 | – |
+| E1 `experiments/e1_low_visit_candidates/README.md` | 방문 8·16 + 1초대로 줄이면 후보가 몇 개 나오고, 캐릭터 5단계는 실제로 무엇을 두나 — 짧게 탐색하면 최적수만 남아 실수가 실수가 아니게 되나 | 맥 ✅ · 폰 대기 | 16방문 후보 평균 3.1개 — 41%는 「최하」 없음, 16%는 모두 최선수. 후보는 애초에 그럴듯한 수라 초보도 한 수 1.7집 손해뿐 |
+| E2 `experiments/e2_human_sl/README.md` | 사람 모델 1방문 추출의 손해는 어떤가, 지금 캐릭터 5단계는 어느 프로필쯤인가(#215 준비) | 맥 ✅ | 사람 모델 20k 4.6 → 3d 2.4집. 캐릭터 5명 모두 3단보다 손해가 적다(13줄 초보 2.4 = 3단) |
+| E2b `experiments/e2b_tier_vs_human/README.md` | 캐릭터 대 사람 모델 프로필, 끝까지 두면 누가 이기나(#215 준비) | 맥 진행 | README |
+| E3 `experiments/e3_resign_threshold/README.md` | 「불리한 채 N수」 기권 조건을 걸면 얼마나 자주 잘못 던지나(#213 준비) | E2b 뒤 | README |
 
 ## 새 실험 만들기
 

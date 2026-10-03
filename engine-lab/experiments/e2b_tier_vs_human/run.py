@@ -147,7 +147,7 @@ def summarize(results: list[dict], tiers: list[int], profiles: list[str], args) 
         "",
         f"- 짝마다 {args.games}판, 흑백 번갈아. 덤 {ap.DEFAULT_KOMI}, {ap.DEFAULT_RULES}. 판정: 주 모델 {args.judge_visits}방문 점수.",
         "- 캐릭터는 트리를 이어 쓴다(앱의 사람 대 AI). 사람 쪽 통과는 주 모델 원시 정책 1위가 통과일 때만.",
-        "- ⚠️ 20판의 95% 구간은 ±20%p쯤 — 방향을 보는 측정이다.",
+        f"- ⚠️ {args.games}판의 95% 구간은 ±{int(round(98 / (args.games ** 0.5)))}%p쯤(승률 50% 근처) — 방향을 보는 측정이다.",
         "",
         "## 캐릭터 승률(행 = 캐릭터, 열 = 사람 모델 프로필)",
         "",
