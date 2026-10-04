@@ -69,6 +69,7 @@ python3 engine-lab/experiments/e1_low_visit_candidates/run.py --label phone --ad
 | E2 `experiments/e2_human_sl/README.md` | 사람 모델 1방문 추출의 손해는 어떤가, 지금 캐릭터 5단계는 어느 프로필쯤인가(#215 준비) | 맥 ✅ | 사람 모델 20k 4.6 → 3d 2.4집. 캐릭터 5명 모두 3단보다 손해가 적다(13줄 초보 2.4 = 3단) |
 | E2b `experiments/e2b_tier_vs_human/README.md` | 캐릭터 대 사람 모델 프로필, 끝까지 두면 누가 이기나(#215 준비) | 맥 ✅ | 13줄 — 초보는 사람 1단(75%)과 5단(25%) 사이, 중수 ≈ 9단, 초고수는 전승 |
 | E3 `experiments/e3_resign_threshold/README.md` | 「불리한 채 N수」 기권 조건을 걸면 얼마나 자주 잘못 던지나(#213 준비) | 맥 ✅ | 점수 ≤ −10~−15집 10수 연속 → 잘못 던짐 1~2%, 진 판 2/3~3/4 정리. 승률 기준은 12% 잘못 던짐 |
+| E4 `experiments/e4_kgs_rank_matches/README.md` | KGS 급수 설정(사람 모델)끼리 9·13·19줄에서 두면 급수 차이가 나는가 — 공식 값은 19줄 기준(#216) | 맥 진행 | README |
 
 ## 새 실험 만들기
 
