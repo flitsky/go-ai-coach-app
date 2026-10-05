@@ -1,0 +1,44 @@
+{
+ "experiment": "e7_main_policy_levels",
+ "label": "mac-likeness",
+ "startedAt": "2026-10-05T21:29:49",
+ "args": {
+  "label": "mac-likeness",
+  "positions": "/Users/ryan9kim/worksoc/go-ai-coach/.claude/worktrees/backlog-218/engine-lab/positions/selfplay-human-v1.json",
+  "profiles": "rank_15k,rank_8k,rank_3k,rank_3d",
+  "temperatures": "1.0,1.5,2.0,3.0,4.0",
+  "games": 6,
+  "size": 13,
+  "seed": 20261005,
+  "skip_games": true
+ },
+ "appCommit": "2281ff6b+lab-dirty",
+ "python": "3.11.9",
+ "machine": "Darwin arm64 darwin-arm64",
+ "katago": "/opt/homebrew/bin/katago",
+ "engineVersions": {
+  "gtp": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0",
+  "judge": "1.16.4 <omitted>"
+ },
+ "models": {
+  "main": {
+   "path": "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+   "sha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d"
+  },
+  "human": {
+   "path": "/Users/ryan9kim/worksoc/katago/models/b18c384nbt-humanv0.bin.gz",
+   "sha256": "637746e44f0efe00ad1245a50aa9bbf0716efe364c43965ead97bd6835d84ab5"
+  }
+ },
+ "configs": {
+  "gtp": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg",
+   "sha256": "fb620cb846d1080688006f0ba56babb527eeff1f64c472656de6509efde5876d"
+  },
+  "analysis": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg",
+   "sha256": "8338f3d110067fa1fa2f9cd41f6de2cf1ed0e0f2a0115d93a369299254763ada"
+  }
+ },
+ "finishedAt": "2026-10-05T21:30:06"
+}
