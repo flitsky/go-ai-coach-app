@@ -36,7 +36,7 @@
 > |---|---|---|---|
 > | `:core:domain` | `core/domain/` | `shared.domain`(바둑 규칙 커널, 7파일) | **없음** — `DomainModuleBuildScriptContractTest`가 빌드 스크립트를 읽어 막는다 |
 > | `:core:enginecontract` | `core/enginecontract/` | `shared.enginecontract`(2계층 계약) · `shared.scoring`(로컬 계가기) | `api(:core:domain)` |
-> | `:shared` | `shared/` | `application.*` 37개 · `match` · `shared.policy`·`diagnostic`·`content`·`vision` | `api(:core:enginecontract)` + 코루틴 |
+> | `:shared` | `shared/` | `application.*` 37개 · `match` · `shared.policy`·`playstyle`·`diagnostic`·`content`·`vision` | `api(:core:enginecontract)` + 코루틴 |
 > | `:engine-android` | `engine-android/` | `engine.android` | `api(:core:enginecontract)` — 앱 계층(`:shared`)은 **테스트만** 본다 |
 > | `:app-android` | `app-android/` | 나머지 전부 | `:shared` + `:engine-android` |
 >

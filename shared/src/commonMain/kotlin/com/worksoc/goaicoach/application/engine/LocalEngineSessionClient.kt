@@ -31,6 +31,7 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.engineOperationRequest
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
+import kotlin.random.Random
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -83,6 +84,8 @@ class LocalEngineSessionClient(
     private val trustedPositionAnalysisCacheProviders: List<TrustedPositionAnalysisCacheProvider> = emptyList(),
     private val diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     private val clock: EngineClock = SystemEngineClock,
+    /** 급수 캐릭터가 사람 정책에서 수를 뽑는 주사위(백로그 #215) — 테스트가 고정한다. */
+    private val random: Random = Random.Default,
 ) : EngineSessionClient {
     /**
      * ⚠️ **읽을 때마다 새로 묻는다 — 어딘가에 담아두지 말 것.** 답은 시간이 지나면서 바뀐다
@@ -94,6 +97,7 @@ class LocalEngineSessionClient(
     private val coreSession = LocalEngineCoreSessionDelegate(
         coreApi = coreApi,
         clock = clock,
+        random = random,
     )
     private val positionAnalysisCache = LocalPositionAnalysisCacheCoordinator(
         localStore = positionAnalysisCacheStore,

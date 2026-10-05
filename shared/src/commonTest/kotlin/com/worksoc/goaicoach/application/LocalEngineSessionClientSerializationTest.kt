@@ -18,10 +18,12 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -372,6 +374,36 @@ internal class ParkingCoreApi : EngineCoreApi {
         lock.withLock { boardSizeHints += boardSize.value to recorded.size }
     }
 
+    // ── 사람 모델(백로그 #215) — 기본은 없다: 지금까지의 테스트는 주 모델만 안다 ─────────────────────────
+
+    /** 사람 모델 파일이 있는 기기인가. */
+    var humanNetworkAvailable: Boolean = false
+
+    /** 프로필 → 그 프로필의 사람 정책. 없는 프로필을 물으면 [humanPolicyFailure]가 없더라도 던진다. */
+    var humanPolicies: Map<String, HumanPolicy> = emptyMap()
+
+    /** 있으면 `humanPolicy`가 이것을 던진다 — 깨진 모델 파일·죽은 프로세스. */
+    var humanPolicyFailure: Throwable? = null
+
+    private var network: EngineNetwork = EngineNetwork.Main
+
+    override val supportsHumanNetwork: Boolean
+        get() = humanNetworkAvailable
+
+    override suspend fun useNetwork(network: EngineNetwork): Boolean {
+        if (network == this.network) return false
+        check(network == EngineNetwork.Main || humanNetworkAvailable) { "no human network" }
+        this.network = network
+        record("useNetwork ${network.name}")
+        return true
+    }
+
+    override suspend fun humanPolicy(profile: String): HumanPolicy {
+        record("humanPolicy $profile")
+        humanPolicyFailure?.let { throw it }
+        return humanPolicies.getValue(profile)
+    }
+
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         record("initialize")
         return EngineStatus.ready("initialized")
@@ -431,7 +463,7 @@ internal class ParkingCoreApi : EngineCoreApi {
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
         record("estimate")
-        return ScoreEstimate(status = EngineStatus.ready("estimated"), whiteScoreLead = 1.5, whiteWinRate = 0.55, summary = "estimated")
+        return ScoreEstimate(status = EngineStatus.ready("estimated"), whiteScoreLead = 1.5, whiteWinRate = 0.55, summary = "estimated", network = network)
     }
 
     override suspend fun deadStones(): DeadStonesResult {

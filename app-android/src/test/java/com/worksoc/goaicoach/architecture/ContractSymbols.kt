@@ -241,6 +241,7 @@ internal object ContractSymbols {
         "com.worksoc.goaicoach.shared.content",
         "com.worksoc.goaicoach.shared.diagnostic",
         "com.worksoc.goaicoach.shared.domain",
+        "com.worksoc.goaicoach.shared.playstyle",
         "com.worksoc.goaicoach.shared.policy",
         "com.worksoc.goaicoach.shared.scoring",
     )
