@@ -1,0 +1,102 @@
+{
+ "profile": "rank_9d",
+ "threshold": 5.0,
+ "games": [
+  {
+   "game": "13|rank_17k|rank_14k|1",
+   "moves": 146,
+   "mainSwings": 60,
+   "humanSwings": 54,
+   "both": 46,
+   "missedByHuman": 14,
+   "extraByHuman": 8,
+   "meanAbsLeadDiff": 4.83,
+   "maxAbsLeadDiff": 19.3
+  },
+  {
+   "game": "13|rank_17k|rank_14k|2",
+   "moves": 141,
+   "mainSwings": 24,
+   "humanSwings": 25,
+   "both": 16,
+   "missedByHuman": 8,
+   "extraByHuman": 9,
+   "meanAbsLeadDiff": 2.39,
+   "maxAbsLeadDiff": 11.2
+  },
+  {
+   "game": "13|rank_17k|rank_14k|3",
+   "moves": 131,
+   "mainSwings": 13,
+   "humanSwings": 11,
+   "both": 9,
+   "missedByHuman": 4,
+   "extraByHuman": 2,
+   "meanAbsLeadDiff": 1.5,
+   "maxAbsLeadDiff": 7.5
+  },
+  {
+   "game": "13|rank_17k|rank_14k|4",
+   "moves": 108,
+   "mainSwings": 21,
+   "humanSwings": 13,
+   "both": 11,
+   "missedByHuman": 10,
+   "extraByHuman": 2,
+   "meanAbsLeadDiff": 2.42,
+   "maxAbsLeadDiff": 18.5
+  },
+  {
+   "game": "13|rank_17k|rank_14k|5",
+   "moves": 105,
+   "mainSwings": 29,
+   "humanSwings": 14,
+   "both": 11,
+   "missedByHuman": 18,
+   "extraByHuman": 3,
+   "meanAbsLeadDiff": 3.2,
+   "maxAbsLeadDiff": 19.3
+  },
+  {
+   "game": "13|rank_17k|rank_14k|6",
+   "moves": 132,
+   "mainSwings": 27,
+   "humanSwings": 39,
+   "both": 25,
+   "missedByHuman": 2,
+   "extraByHuman": 14,
+   "meanAbsLeadDiff": 6.13,
+   "maxAbsLeadDiff": 21.0
+  },
+  {
+   "game": "19|rank_14k|rank_11k|1",
+   "moves": 225,
+   "mainSwings": 74,
+   "humanSwings": 47,
+   "both": 45,
+   "missedByHuman": 29,
+   "extraByHuman": 2,
+   "meanAbsLeadDiff": 2.73,
+   "maxAbsLeadDiff": 24.1
+  },
+  {
+   "game": "19|rank_14k|rank_11k|2",
+   "moves": 319,
+   "mainSwings": 102,
+   "humanSwings": 62,
+   "both": 54,
+   "missedByHuman": 48,
+   "extraByHuman": 8,
+   "meanAbsLeadDiff": 6.71,
+   "maxAbsLeadDiff": 26.6
+  }
+ ],
+ "total": {
+  "moves": 1307,
+  "mainSwings": 350,
+  "humanSwings": 265,
+  "both": 217,
+  "missedByHuman": 133,
+  "extraByHuman": 48
+ }
+}
