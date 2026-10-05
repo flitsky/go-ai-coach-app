@@ -324,8 +324,9 @@ class LocalEngineSessionClientSerializationTest {
 /**
  * 받은 명령을 순서대로 적는 가짜 엔진. [parkAt]으로 고른 명령 하나에서 **한 번** 멈춘다(그 명령은 적힌 뒤 멈춘다).
  * 멈춤은 취소된다 — 막힌 파이프 읽기의 취소 뒤 동작(#14의 배수·폐기)은 `engine-android`의 진짜 어댑터 테스트가 맡는다.
+ * `LocalEngineSessionClientBorrowedBoardTest`도 이것을 쓴다(backlog #218).
  */
-private class ParkingCoreApi : EngineCoreApi {
+internal class ParkingCoreApi : EngineCoreApi {
     private val lock = sharedLock()
     private val recorded = mutableListOf<String>()
     private var parkTarget: String? = null

@@ -146,6 +146,23 @@ class LocalEngineSessionClient(
     override val isEngineOperationInFlight: Boolean
         get() = operationLock.isLocked
 
+    /**
+     * **분석 계열 호출이 판을 두고 간 자리**(backlog #218). 대국 계열 오퍼레이션이 판을 맞추면 [AnalysisBoard.None]으로 돌아간다.
+     *
+     * 형세 추정의 `syncFirst = false`는 *"판이 이미 이 국면이다"* 라는 가정이다. 사람:AI·AI:AI 대국의 형세 보기가 그렇게
+     * 부르고, 대국 안에서는 참이다 — AI 차례와 사람 착수가 매번 판을 맞춘다. 그런데 엔진은 하나이고 분석은 판을 **요청 국면으로
+     * 바꾼다**. 대국 밖의 화면(다시보기·바둑판 사진)이 다른 국면을 분석한 뒤 대국 화면으로 돌아오면 그 가정이 깨진다 —
+     * 끝난 판에서 「복기 하기」로 30수째를 분석하고 돌아와 형세 보기를 누르면 30수째의 형세가 나온다.
+     * 그래서 분석 계열이 판을 **다른 국면**에 두고 갔거나([AnalysisBoard.At]), 맞추다 끊겨 **어디인지 모르면**
+     * ([AnalysisBoard.Unknown]) 형세 추정이 그 가정을 거두고 판부터 맞춘다([estimateScoreForState]).
+     *
+     * ⚠️ **대국 흐름은 그대로다.** 대국 안의 추천 수가 맞추는 국면은 지금 국면이라 [GameState]가 같고, 그 뒤의 형세 보기는
+     * 예전처럼 맞추지 않는다. 빌린 쪽이 돌려놓게 하지 않은 이유: 돌려놓기는 화면이 닫힌 뒤에 돌아야 해서, 돌아온 사용자가
+     * 곧바로 누른 형세 보기와 순서를 다툰다. 가정을 쓰는 쪽이 락 안에서 확인하면 다툴 순서가 없다.
+     * ⚠️ 락 안에서만 읽고 쓴다.
+     */
+    private var boardLeftByAnalysis: AnalysisBoard = AnalysisBoard.None
+
     override fun positionAnalysisCacheStatsText(nowMillis: Long): String =
         positionAnalysisCache.statsText(nowMillis)
 
@@ -166,7 +183,7 @@ class LocalEngineSessionClient(
         profile: EngineProfile,
         state: GameState,
     ): EngineStartupResult =
-        serialized("startSession") { coreSession.startSession(profile, state) }
+        serialized("startSession") { coreSession.startSession(profile, state).alsoBoardIsTheGames() }
 
     override suspend fun startNewGame(
         profile: EngineProfile,
@@ -175,7 +192,9 @@ class LocalEngineSessionClient(
         handicapCount: Int,
         komi: Double,
     ): EngineStartupResult =
-        serialized("startNewGame") { coreSession.startNewGame(profile, boardSize, ruleset, handicapCount, komi) }
+        serialized("startNewGame") {
+            coreSession.startNewGame(profile, boardSize, ruleset, handicapCount, komi).alsoBoardIsTheGames()
+        }
 
     override suspend fun analyzePosition(
         state: GameState,
@@ -236,10 +255,12 @@ class LocalEngineSessionClient(
             diagnosticEventLog = diagnosticEventLog,
             currentTimeMillis = clock::currentTimeMillis,
         ) {
+            // 맞추기 **전에** 모른다고 적는다 — 수순을 다시 두다 끊기면(취소·마감) 판은 어느 국면도 아니다([boardLeftByAnalysis]).
+            boardLeftByAnalysis = AnalysisBoard.Unknown
             coreSession.syncAndAnalyzePosition(
                 state = state,
                 limit = context.effectiveLimit,
-            )
+            ).also { boardLeftByAnalysis = AnalysisBoard.At(state) }
         }
         analysisDiagnostics.recordVisitFill(
             state = state,
@@ -300,13 +321,15 @@ class LocalEngineSessionClient(
         state: GameState,
         profile: EngineProfile,
     ): ScoreEstimate =
-        serialized("syncAndEstimateGraphScore") { coreSession.syncAndEstimateGraphScore(state, profile) }
+        serialized("syncAndEstimateGraphScore") { coreSession.syncAndEstimateGraphScore(state, profile).alsoBoardIsTheGames() }
 
     override suspend fun configureSyncAndEstimateGraphScore(
         state: GameState,
         profile: EngineProfile,
     ): ScoreEstimate =
-        serialized("configureSyncAndEstimateGraphScore") { coreSession.configureSyncAndEstimateGraphScore(state, profile) }
+        serialized("configureSyncAndEstimateGraphScore") {
+            coreSession.configureSyncAndEstimateGraphScore(state, profile).alsoBoardIsTheGames()
+        }
 
     override suspend fun runAutoAiTurn(
         currentState: GameState,
@@ -332,7 +355,7 @@ class LocalEngineSessionClient(
                         searchMode = searchMode,
                     )
                 },
-            )
+            ).alsoBoardIsTheGames()
         }
 
     override suspend fun syncAfterHumanMove(
@@ -348,7 +371,7 @@ class LocalEngineSessionClient(
                 move = move,
                 previousReviewCandidates = previousReviewCandidates,
                 diagnosticEventLog = diagnosticEventLog,
-            )
+            ).alsoBoardIsTheGames()
         }
 
     override suspend fun estimateScoreForState(
@@ -357,11 +380,14 @@ class LocalEngineSessionClient(
         syncFirst: Boolean,
     ): ScoreEstimate =
         serializedOrBusy("estimateScoreForState") {
+            // `syncFirst = false`는 "판이 이미 이 국면"이라는 가정이다 — 분석 계열이 판을 다른 데 두고 갔으면 거둔다([boardLeftByAnalysis]).
+            val syncNow = syncFirst || boardLeftByAnalysis.isElsewhereThan(state)
+            if (syncNow) boardLeftByAnalysis = AnalysisBoard.Unknown
             coreSession.estimateScoreForState(
                 state = state,
                 profile = profile,
-                syncFirst = syncFirst,
-            )
+                syncFirst = syncNow,
+            ).also { if (syncNow) boardLeftByAnalysis = AnalysisBoard.At(state) }
         }
 
     override suspend fun resolveEndgameForState(
@@ -394,8 +420,14 @@ class LocalEngineSessionClient(
                 restoreState = restoreState,
                 nowMillis = nowMillis,
                 onProgress = onProgress,
-            )
+            ).alsoBoardIsTheGames()
         }
+
+    /**
+     * 대국 계열 오퍼레이션이 판을 맞추고 **끝났다** — 판은 다시 대국의 것이다([boardLeftByAnalysis]).
+     * 실패·취소로 끝난 오퍼레이션은 부르지 않는다: 판을 맞췄다는 보장이 없으므로 앞선 표시를 그대로 둔다.
+     */
+    private fun <T> T.alsoBoardIsTheGames(): T = also { boardLeftByAnalysis = AnalysisBoard.None }
 
     /** [operationLock]을 기다려 쥐고 [block]을 돈다. 기다리다 취소되면 줄에서 빠지고 [block]은 돌지 않는다. */
     private suspend fun <T> serialized(
@@ -439,6 +471,26 @@ class LocalEngineSessionClient(
                 "re-entrant — call the private helper that runs under the held lock instead (refactor backlog #15)."
         }
     }
+}
+
+/** 분석 계열 호출이 엔진 판을 어디에 두고 갔는가 — `LocalEngineSessionClient.boardLeftByAnalysis`(backlog #218). */
+private sealed interface AnalysisBoard {
+    /** 마지막으로 판을 맞춘 것은 대국 계열 오퍼레이션이다 — 판은 대국의 것이다. */
+    data object None : AnalysisBoard
+
+    /** 분석 계열이 판을 맞추는 중이다(또는 그러다 끊겼다) — 판이 어느 국면인지 모른다. */
+    data object Unknown : AnalysisBoard
+
+    /** 분석 계열이 판을 [state]로 맞춰 두었다. */
+    data class At(val state: GameState) : AnalysisBoard
+
+    /** 판이 [state]가 **아닐 수 있는가** — 참이면 "판이 이미 이 국면"이라는 가정을 쓸 수 없다. */
+    fun isElsewhereThan(state: GameState): Boolean =
+        when (this) {
+            None -> false
+            Unknown -> true
+            is At -> this.state != state
+        }
 }
 
 /** 지금 이 코루틴이 [owner]의 오퍼레이션 락을 쥐고 [operation]을 돌고 있다는 표지(refactor backlog #15) — 재진입을 알아본다. */

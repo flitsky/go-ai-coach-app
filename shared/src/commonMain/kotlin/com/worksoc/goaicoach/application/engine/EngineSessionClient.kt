@@ -57,6 +57,9 @@ data class EngineSessionCapabilities(
  *  - **분석도 대국 엔진의 판을 바꾼다.** [EngineAnalysisClient.analyzePosition]은 요청 국면으로 엔진 판을
  *    먼저 동기화한 뒤 분석한다. *"분석 역할은 부수효과가 없다"*, *"역할마다 다른 백엔드로 보낼 수 있다"* 로
  *    읽지 말 것 — 대국 엔진과 분석 엔진을 가르는 것은 이 분할과 다른 축이다(`ENGINE_API_CALL_POLICY.md` 중기안).
+ *    그래서 대국 밖의 화면(다시보기·바둑판 사진)이 분석하면 **대국의 판이 그 국면으로 바뀐다.** 돌아온 대국은 대부분 스스로
+ *    판을 다시 맞추고(새 대국·이어하기·AI 차례·사람 착수), 맞추지 않는 하나 — `syncFirst = false`의 형세 추정 — 는
+ *    구현이 지킨다(`LocalEngineSessionClient`의 `boardLeftByAnalysis`, backlog #218).
  *  - **구현을 역할별 클래스로 쪼개지 말 것.** `LocalEngineSessionClient`의 캐시 붙은 분석 경로를 대국
  *    ([EngineGamePlayClient.runAutoAiTurn] 안의 분석)과 분석([EngineAnalysisClient.analyzePosition]·
  *    [EngineAnalysisClient.optimizePositionAnalysisCache])이 함께 쓴다. 쪼개면 캐시가 둘이 되어 적중이 떨어진다.
@@ -207,6 +210,11 @@ interface EngineScoringClient {
         profile: EngineProfile,
     ): ScoreEstimate
 
+    /**
+     * [state]의 형세. [syncFirst]가 거짓이면 *"엔진 판이 이미 이 국면"* 이라고 믿고 맞추지 않는다 — 사람:AI·AI:AI 대국의
+     * 형세 보기가 그렇게 부른다. 대국 밖의 국면(다시보기·바둑판 사진)은 반드시 `syncFirst = true`로 부른다.
+     * 분석 계열 호출이 판을 다른 국면에 두고 갔으면 구현은 거짓이어도 먼저 맞춘다(backlog #218).
+     */
     suspend fun estimateScoreForState(
         state: GameState,
         profile: EngineProfile,
