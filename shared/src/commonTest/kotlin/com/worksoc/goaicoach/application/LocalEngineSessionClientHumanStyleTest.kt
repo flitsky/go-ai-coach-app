@@ -152,7 +152,67 @@ class LocalEngineSessionClientHumanStyleTest {
         assertFalse(engine.calls.drop(afterFirst).any { it.startsWith("useNetwork") || it.startsWith("humanPolicy") }, "the human network must not be retried every move")
     }
 
+    /**
+     * **계가는 주 모델이 한다**(보강 ①). 사람의 통과로 끝난 판 — 사람 모델이 올라간 채로 오므로, 판을 맞추기 **전에** 주 모델을 올린다.
+     * 순서가 뒤집히면 맞춘 판이 옛 프로세스와 함께 사라지고, 새 프로세스는 빈 판을 계가한다.
+     */
+    @Test
+    fun aGameEndedByTheUsersPassIsScoredOnTheMainNetwork() = runBlocking {
+        turn(level = 1)
+        val before = engine.calls.size
+
+        client.syncAfterHumanMove(EndedByTwoPasses, Profile, EndedByTwoPasses.moves.last(), previousReviewCandidates = emptyList())
+
+        val calls = engine.calls.drop(before)
+        assertEquals(listOf("useNetwork Main", "newGame", "play Black E5", "play White pass", "play Black pass"), calls.take(5))
+        assertTrue(calls.indexOf("deadStones") > calls.indexOf("play Black pass"), "the dead stones must be judged after the board is synced: $calls")
+    }
+
+    /** 판이 끝나지 않는 사람 착수는 갈아 올리지 않는다 — 수마다 엔진을 다시 띄우면 급수 대국이 느려진다. */
+    @Test
+    fun anOrdinaryUserMoveStaysOnTheHumanNetwork() = runBlocking {
+        val afterAi = turn(level = 1).turnOutcome.gameState
+        val afterUser = afterAi.play(Move.Play(StoneColor.White, C3))
+        val before = engine.calls.size
+
+        val result = client.syncAfterHumanMove(afterUser, Profile, afterUser.moves.last(), previousReviewCandidates = emptyList())
+
+        assertFalse(engine.calls.drop(before).any { it.startsWith("useNetwork") })
+        assertEquals(EngineNetwork.Human, result.estimate?.network)
+    }
+
+    /**
+     * AI의 통과로 끝난 판의 계가는 "판이 이미 이 국면"이라고 믿고 계가만 한다 — 주 모델로 갈아 올렸으면 그 믿음이 깨지므로 판부터 맞춘다.
+     */
+    @Test
+    fun aGameEndedByTheAisPassIsResyncedOnTheMainNetworkBeforeScoring() = runBlocking {
+        turn(level = 1)
+        val before = engine.calls.size
+
+        client.resolveEndgameForState(EndedByTwoPasses, Profile, prePassCandidates = emptyList())
+
+        val calls = engine.calls.drop(before)
+        assertEquals(listOf("useNetwork Main", "newGame", "play Black E5", "play White pass", "play Black pass"), calls.take(5))
+        assertTrue(calls.contains("deadStones"))
+    }
+
+    /** 주 모델로 두던 판(단 구간 캐릭터)의 계가는 예전 그대로다 — 갈아 올리지도, 판을 다시 맞추지도 않는다. */
+    @Test
+    fun scoringAGameAlreadyOnTheMainNetworkDoesNotResync() = runBlocking {
+        turn(level = 5)
+        val before = engine.calls.size
+
+        client.resolveEndgameForState(EndedByTwoPasses, Profile, prePassCandidates = emptyList())
+
+        val calls = engine.calls.drop(before)
+        assertFalse(calls.any { it.startsWith("useNetwork") || it == "newGame" }, "scoring must not replay the game when nothing was swapped: $calls")
+    }
+
     private companion object {
+        val EndedByTwoPasses: GameState = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+            .play(Move.Pass(StoneColor.White))
+            .play(Move.Pass(StoneColor.Black))
         val Profile = EngineProfile()
         val E5 = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
         val C3 = BoardCoordinate.fromLabel("C3", BoardSize.Nine)

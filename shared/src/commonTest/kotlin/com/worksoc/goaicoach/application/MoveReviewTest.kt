@@ -147,6 +147,27 @@ class MoveReviewTest {
         assertEquals(MoveReviewTone.Excellent, whiteMarker.tone)
     }
 
+    /**
+     * 주 모델 값과 사람 모델의 임시 값은 섞어 빼지 않는다(백로그 #215) — 급수 캐릭터와 두는 판에서 형세 보기를 누른 수만
+     * 주 모델 값이 된다. 섞으면 누른 자리의 앞뒤 수가 가짜 큰 실수로 찍힌다. 같은 망이 본 값끼리는 그대로 잰다.
+     */
+    @Test
+    fun deriveMoveReviewMarkersFromScoreSwingDoesNotCompareAcrossNetworks() {
+        val first = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
+        val second = BoardCoordinate.fromLabel("C3", BoardSize.Nine)
+        val third = BoardCoordinate.fromLabel("G7", BoardSize.Nine)
+        val moves = listOf(Move.Play(StoneColor.Black, first), Move.Play(StoneColor.Black, second), Move.Play(StoneColor.Black, third))
+        fun provisional(moveNumber: Int, whiteScoreLead: Double) =
+            leadSnapshot(moveNumber, whiteScoreLead).copy(source = ScoreSnapshotSource.HumanNetworkEstimate)
+        // 1수 뒤만 사용자가 형세 보기를 눌러 주 모델 값이다 — 0→1의 +9집과 1→2의 -9집은 망의 차이일 뿐이다.
+        val snapshots = listOf(provisional(0, 0.0), leadSnapshot(1, 9.0), provisional(2, 0.0), provisional(3, 6.0))
+
+        val markers = deriveMoveReviewMarkersFromScoreSwing(moves, snapshots, humanColors = setOf(StoneColor.Black))
+
+        assertEquals(listOf(3), markers.map { it.moveNumber })
+        assertEquals(6.0, markers.single().pointLoss)
+    }
+
     @Test
     fun deriveMoveReviewMarkersFromScoreSwingChargesAWhiteBlunderCorrectly() {
         val coordinate = BoardCoordinate.fromLabel("E5", BoardSize.Nine)

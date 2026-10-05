@@ -120,17 +120,22 @@ fun deriveMoveReviewMarkersFromScoreSwing(
     humanColors: Set<StoneColor>,
 ): List<MoveReviewMarker> {
     if (humanColors.isEmpty() || scoreSnapshots.isEmpty()) return emptyList()
-    val whiteLeadByMoveNumber = scoreSnapshots
-        .mapNotNull { snapshot -> snapshot.whiteScoreLead?.let { snapshot.moveNumber to it } }
-        .toMap()
+    val snapshotByMoveNumber = scoreSnapshots
+        .filter { snapshot -> snapshot.whiteScoreLead != null }
+        .associateBy { snapshot -> snapshot.moveNumber }
 
     val markers = mutableListOf<MoveReviewMarker>()
     moves.forEachIndexed { index, move ->
         val play = move as? Move.Play ?: return@forEachIndexed
         if (move.player !in humanColors) return@forEachIndexed
         val moveNumber = index + 1
-        val beforeLead = whiteLeadByMoveNumber[moveNumber - 1] ?: return@forEachIndexed
-        val afterLead = whiteLeadByMoveNumber[moveNumber] ?: return@forEachIndexed
+        val before = snapshotByMoveNumber[moveNumber - 1] ?: return@forEachIndexed
+        val after = snapshotByMoveNumber[moveNumber] ?: return@forEachIndexed
+        // 주 모델 값과 사람 모델의 임시 값은 섞어 빼지 않는다(백로그 #215) — 급수 캐릭터와 두는 판에서 형세 보기를 누른 수만
+        // 주 모델 값이라, 섞으면 그 앞뒤 수가 가짜 큰 실수가 된다(두 망은 같은 국면을 평균 2집 넘게 다르게 본다).
+        if (before.source.isNetworkEstimate && after.source.isNetworkEstimate && before.source != after.source) return@forEachIndexed
+        val beforeLead = before.whiteScoreLead ?: return@forEachIndexed
+        val afterLead = after.whiteScoreLead ?: return@forEachIndexed
         val swingForWhite = afterLead - beforeLead
         val swingForMover = if (move.player == StoneColor.White) swingForWhite else -swingForWhite
         // ⚠️ `(-swingForMover).coerceAtLeast(0.0)`이면 안 된다 — swingForMover가 정확히

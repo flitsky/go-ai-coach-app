@@ -41,6 +41,8 @@ internal class LocalEngineCoreSessionDelegate(
     private val clock: EngineClock = SystemEngineClock,
     /** 사람 정책에서 수를 뽑는 주사위 — 테스트가 고정한다. */
     private val random: Random = Random.Default,
+    /** 신경망을 갈아 올릴 때 판의 행방을 적는 쪽 — 세션 클라이언트다([NetworkSwapBoardTracker]). */
+    private val swapBoardTracker: NetworkSwapBoardTracker = NetworkSwapBoardTracker.None,
 ) {
     private val benchmarkDelegate = LocalEngineBenchmarkDelegate(coreApi)
 
@@ -97,11 +99,20 @@ internal class LocalEngineCoreSessionDelegate(
      * @return 갈아 올렸는가. 그랬다면 **새 프로세스의 판은 비어 있다** — 부른 쪽이 판부터 맞춘다.
      */
     suspend fun bringMainNetwork(): Boolean =
-        coreApi.supportsHumanNetwork && coreApi.useNetwork(EngineNetwork.Main)
+        coreApi.supportsHumanNetwork && swapTo(EngineNetwork.Main)
 
-    /** 올릴 망을 고를 수 있는 엔진인가 — 아니면 [bringMainNetwork]는 늘 아무 일도 하지 않는다. */
-    val canSwapNetworks: Boolean
-        get() = coreApi.supportsHumanNetwork
+    /**
+     * [network]를 올린다. 갈아 올렸으면 참 — **새 프로세스의 판은 비어 있다.**
+     *
+     * ⚠️ 갈아 올리기는 이 함수로만 한다. **부르기 전에** 판을 모른다고 알려야 하기 때문이다([NetworkSwapBoardTracker]) —
+     * 갈아 올리다 끊기면(취소·마감) 옛 프로세스는 이미 내려갔고, 판을 다시 맞출 코드는 돌지 않는다.
+     */
+    private suspend fun swapTo(network: EngineNetwork): Boolean {
+        swapBoardTracker.swapStarting()
+        val swapped = coreApi.useNetwork(network)
+        if (!swapped) swapBoardTracker.swapNotNeeded()
+        return swapped
+    }
 
     /** 추천 수 분석 — **늘 주 모델로** 한다([bringMainNetwork]). 판은 어차피 여기서 맞추므로 갈아 올린 뒤의 빈 판도 덮인다. */
     suspend fun syncAndAnalyzePosition(
@@ -154,7 +165,7 @@ internal class LocalEngineCoreSessionDelegate(
             }
         }
         // 그 밖의 AI 차례는 주 모델로 둔다 — 급수 캐릭터와 두던 엔진이면 여기서 갈아 올린다. 판은 바로 아래에서 맞춘다.
-        if (coreApi.supportsHumanNetwork) coreApi.useNetwork(EngineNetwork.Main)
+        bringMainNetwork()
         coreApi.configure(turnProfile)
         coreApi.syncToGameState(currentState)
         val aiMoveGateway = LocalAiMoveEngineGateway(coreApi)
@@ -209,7 +220,7 @@ internal class LocalEngineCoreSessionDelegate(
         turnProfile: EngineProfile,
         style: HumanPlayStyle,
     ): AutoAiTurnResult {
-        coreApi.useNetwork(EngineNetwork.Human)
+        swapTo(EngineNetwork.Human)
         coreApi.configure(turnProfile)
         coreApi.syncToGameState(currentState)
         val move = chooseHumanStyleMove(currentState, aiPlayer, coreApi.humanPolicy(style.profile))
@@ -271,10 +282,14 @@ internal class LocalEngineCoreSessionDelegate(
         previousReviewCandidates: List<CandidateMove>,
         diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     ): LocalEngineMoveResult {
+        val endsTheGame = MatchReferee.shouldResolveEndgame(afterMove)
+        // **계가는 주 모델이 한다**(백로그 #215 보강 ①) — 급수 캐릭터와 두던 판은 사람 모델이 올라간 채로 끝난다.
+        // 판을 맞추기 **전에** 올린다: 갈아 올린 프로세스의 판은 비어 있다.
+        if (endsTheGame) bringMainNetwork()
         val syncReplayStartMillis = clock.currentTimeMillis()
         coreApi.syncToGameState(afterMove)
         val syncReplayMs = clock.currentTimeMillis() - syncReplayStartMillis
-        return if (MatchReferee.shouldResolveEndgame(afterMove)) {
+        return if (endsTheGame) {
             val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
             val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
             LocalEngineMoveResult(
@@ -317,6 +332,9 @@ internal class LocalEngineCoreSessionDelegate(
         prePassCandidates: List<CandidateMove>,
         diagnosticEventLog: DiagnosticEventLogPort = NoopDiagnosticEventLog,
     ): AiEndgameResolution {
+        // **계가는 주 모델이 한다**(백로그 #215 보강 ①) — AI가 통과해 끝난 판은 사람 모델이 올라간 채로 온다.
+        // 이 함수는 "판이 이미 이 국면"이라고 믿고 계가만 하므로, 갈아 올렸으면(새 프로세스의 판은 비어 있다) 판부터 맞춘다.
+        if (bringMainNetwork()) coreApi.syncToGameState(state)
         val deadStonesProfile = profile.withAssistantJudgeDeadStonesTimeCap()
         val finalScoreProfile = profile.withAssistantJudgeFinalScoreTimeCap()
         return resolveAiEndgame(
@@ -344,3 +362,23 @@ internal class LocalEngineCoreSessionDelegate(
 
 /** 사람 정책에서 뽑은 자리가 둘 수 없는 자리일 때 다시 뽑는 횟수 — 넘으면 통과한다. */
 private const val MaxHumanStyleDraws = 8
+
+/**
+ * 신경망을 갈아 올릴 때 **엔진 판의 행방**을 적는 쪽(백로그 #215) — `LocalEngineSessionClient`의 `boardLeftByAnalysis`다.
+ *
+ * 갈아 올리면 옛 프로세스가 내려가고 새 프로세스의 판은 비어 있다. 그 뒤에 판을 맞추는 코드가 끝까지 돌면 괜찮지만,
+ * 그 사이에 끊기면 판은 어느 국면도 아니다 — 형세 추정의 "판이 이미 이 국면"이라는 믿음(`syncFirst = false`)이 빈 판을 읽는다.
+ */
+interface NetworkSwapBoardTracker {
+    /** 갈아 올릴지도 모르는 호출 **직전**. 이 뒤로는 판을 모른다. */
+    fun swapStarting()
+
+    /** 갈아 올릴 일이 없었다(이미 그 망이다) — 판은 [swapStarting] 전 그대로다. */
+    fun swapNotNeeded()
+
+    data object None : NetworkSwapBoardTracker {
+        override fun swapStarting() = Unit
+
+        override fun swapNotNeeded() = Unit
+    }
+}
