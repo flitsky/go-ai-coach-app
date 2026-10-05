@@ -59,6 +59,7 @@ make engine-lab-test                                                        # �
 python3 engine-lab/experiments/e1_low_visit_candidates/run.py --label mac-v1  # E1 (맥, 방문 수별)
 python3 engine-lab/experiments/e2_human_sl/run.py --label mac-v1              # E2 (사람 모델)
 python3 engine-lab/experiments/e1_low_visit_candidates/run.py --label phone --adb-serial <시리얼> --sizes 13  # E1 폰(시간 상한별)
+python3 engine-lab/experiments/e5_phone_cost/run.py --label s23 --adb-serial <시리얼>                        # E5 폰(사람 모델 비용)
 ```
 
 ## 실험
@@ -70,6 +71,7 @@ python3 engine-lab/experiments/e1_low_visit_candidates/run.py --label phone --ad
 | E2b `experiments/e2b_tier_vs_human/README.md` | 캐릭터 대 사람 모델 프로필, 끝까지 두면 누가 이기나(#215 준비) | 맥 ✅ | 13줄 — 초보는 사람 1단(75%)과 5단(25%) 사이, 중수 ≈ 9단, 초고수는 전승 |
 | E3 `experiments/e3_resign_threshold/README.md` | 「불리한 채 N수」 기권 조건을 걸면 얼마나 자주 잘못 던지나(#213 준비) | 맥 ✅ | 점수 ≤ −10~−15집 10수 연속 → 잘못 던짐 1~2%, 진 판 2/3~3/4 정리. 승률 기준은 12% 잘못 던짐 |
 | E4 `experiments/e4_kgs_rank_matches/README.md` | KGS 급수 설정(사람 모델)끼리 9·13·19줄에서 두면 급수 차이가 나는가 — 공식 값은 19줄 기준(#216) | 맥 ✅ | 3급 차 센 쪽 승률 19줄 77% · 13줄 70% · 9줄 60%. 17~11급은 어느 판에서도 거의 안 갈린다 |
+| E5 `experiments/e5_phone_cost/README.md` | 폰에서 사람 모델을 올리면 한 수에 얼마가 드나 — 시간·메모리·스레드·NN 버퍼·JSON 분석(#215 단계 ①) | 폰(S23) ✅ | 사람 모델 평가 1회 0.29초(13줄) · 0.50초(19줄) — 지금 16방문의 1/15. 대가는 메모리: 신경망 하나에 약 500MB(주 + 사람 1.0GB), 설정으로 못 줄인다. 32·40방문은 8~20초. 스레드·NN 버퍼는 덕이 없다 |
 
 ## 새 실험 만들기
 

@@ -1,0 +1,18 @@
+{
+ "configs": {
+  "human-t1": {
+   "startupMs": 2644.7,
+   "rssLoadedKb": 1027260,
+   "rssWorkedKb": 1029304,
+   "rssPeakKb": 1029864,
+   "gtpBesideRssKb": null,
+   "roundtripMs": 1.2,
+   "bySize": {
+    "13": {
+     "raw-nn": 297.2,
+     "raw-human-nn": 299.1
+    }
+   }
+  }
+ }
+}

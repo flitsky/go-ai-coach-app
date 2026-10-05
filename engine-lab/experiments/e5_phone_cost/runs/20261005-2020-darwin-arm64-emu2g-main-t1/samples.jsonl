@@ -1,0 +1,17 @@
+{"config": "main-t1", "kind": "startup", "ms": 8269.3, "version": "1.16.4+b18c384nbt-s9996M", "batteryTempTenthC": 250, "memAvailableKb": 887036}
+{"config": "main-t1", "kind": "memory", "when": "loaded", "VmHWM": 520080, "VmRSS": 520080, "RssAnon": 514320, "RssFile": 5632}
+{"config": "main-t1", "kind": "roundtrip", "ms": 3.18}
+{"config": "main-t1", "kind": "roundtrip", "ms": 5.26}
+{"config": "main-t1", "kind": "roundtrip", "ms": 5.82}
+{"config": "main-t1", "kind": "roundtrip", "ms": 3.52}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.49}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.39}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.35}
+{"config": "main-t1", "kind": "roundtrip", "ms": 2.43}
+{"config": "main-t1", "kind": "roundtrip", "ms": 5.55}
+{"config": "main-t1", "kind": "roundtrip", "ms": 4.2}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 1190.0}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 1248.2}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 1091.5}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 19126.8, "rootVisits": 16}
+{"config": "main-t1", "kind": "memory", "when": "worked", "VmHWM": 525896, "VmRSS": 525240, "RssAnon": 519480, "RssFile": 5632, "batteryTempTenthC": 250, "memAvailableKb": 390796}

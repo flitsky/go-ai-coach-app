@@ -1,0 +1,18 @@
+{
+ "configs": {
+  "main-t1": {
+   "startupMs": 8269.3,
+   "rssLoadedKb": 520080,
+   "rssWorkedKb": 525240,
+   "rssPeakKb": 525896,
+   "gtpBesideRssKb": null,
+   "roundtripMs": 3.4,
+   "bySize": {
+    "13": {
+     "raw-nn": 1190.0,
+     "search-16": 19126.8
+    }
+   }
+  }
+ }
+}

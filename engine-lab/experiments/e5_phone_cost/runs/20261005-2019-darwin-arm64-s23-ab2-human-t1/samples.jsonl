@@ -1,0 +1,29 @@
+{"config": "human-t1", "kind": "startup", "ms": 2686.7, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 393, "memAvailableKb": 3292260}
+{"config": "human-t1", "kind": "memory", "when": "loaded", "VmHWM": 1027264, "VmRSS": 1027264, "RssAnon": 1022352, "RssFile": 4540}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.64}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.04}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.04}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.35}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.26}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.02}
+{"config": "human-t1", "kind": "roundtrip", "ms": 0.96}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.08}
+{"config": "human-t1", "kind": "roundtrip", "ms": 0.88}
+{"config": "human-t1", "kind": "roundtrip", "ms": 0.84}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 295.2}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 300.1}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 296.7}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 297.6}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 297.8}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 296.2}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 299.0}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 297.5}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 300.1}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 305.0}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 303.2}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 302.9}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 300.7}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 299.9}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 301.2}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 299.5}
+{"config": "human-t1", "kind": "memory", "when": "worked", "VmHWM": 1029788, "VmRSS": 1029228, "RssAnon": 1024240, "RssFile": 4616, "batteryTempTenthC": 399, "memAvailableKb": 2205908}

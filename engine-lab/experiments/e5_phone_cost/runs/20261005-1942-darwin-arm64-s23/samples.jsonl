@@ -1,0 +1,364 @@
+{"config": "main-t1", "kind": "startup", "ms": 1390.4, "version": "1.16.4+b18c384nbt-s9996M", "batteryTempTenthC": 303, "memAvailableKb": 3389980}
+{"config": "main-t1", "kind": "memory", "when": "loaded", "VmHWM": 519520, "VmRSS": 519520, "RssAnon": 514896, "RssFile": 4264}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.85}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.92}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.9}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.49}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.47}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.57}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.77}
+{"config": "main-t1", "kind": "roundtrip", "ms": 1.87}
+{"config": "main-t1", "kind": "roundtrip", "ms": 2.05}
+{"config": "main-t1", "kind": "roundtrip", "ms": 2.16}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 269.6}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 266.4}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 265.9}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 264.5}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 265.4}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4307.5, "rootVisits": 16}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4352.1, "rootVisits": 16}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 8762.5, "rootVisits": 32}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 8850.7, "rootVisits": 32}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 11142.8, "rootVisits": 40}
+{"config": "main-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 11214.0, "rootVisits": 40}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 495.1}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 489.6}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 492.9}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 494.5}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 495.1}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 7696.4, "rootVisits": 16}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 7680.6, "rootVisits": 16}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 15367.4, "rootVisits": 32}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 15435.8, "rootVisits": 32}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 19334.2, "rootVisits": 40}
+{"config": "main-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 19398.8, "rootVisits": 40}
+{"config": "main-t1", "kind": "memory", "when": "worked", "VmHWM": 529276, "VmRSS": 528164, "RssAnon": 523404, "RssFile": 4400, "batteryTempTenthC": 342, "memAvailableKb": 2838728}
+{"config": "human-t1", "kind": "startup", "ms": 2529.1, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 348, "memAvailableKb": 3353112}
+{"config": "human-t1", "kind": "memory", "when": "loaded", "VmHWM": 1027008, "VmRSS": 1027008, "RssAnon": 1022344, "RssFile": 4304}
+{"config": "human-t1", "kind": "roundtrip", "ms": 2.45}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.92}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.64}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.67}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.82}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.78}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.99}
+{"config": "human-t1", "kind": "roundtrip", "ms": 1.64}
+{"config": "human-t1", "kind": "roundtrip", "ms": 2.1}
+{"config": "human-t1", "kind": "roundtrip", "ms": 2.02}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 284.2}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 285.3}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 284.4}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 288.9}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 286.5}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 288.3}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 288.1}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 287.1}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 291.2}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 296.1}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4872.2, "rootVisits": 16}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4870.0, "rootVisits": 16}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 9435.1, "rootVisits": 32}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 9452.6, "rootVisits": 32}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 11727.6, "rootVisits": 40}
+{"config": "human-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 11758.2, "rootVisits": 40}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 505.5}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 490.6}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 489.5}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 492.2}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 496.8}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 500.9}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 500.6}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 498.5}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 493.7}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 495.8}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 8274.8, "rootVisits": 16}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 8262.7, "rootVisits": 16}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 15993.1, "rootVisits": 32}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 16648.4, "rootVisits": 32}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 21461.0, "rootVisits": 40}
+{"config": "human-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 21466.2, "rootVisits": 40}
+{"config": "human-t1", "kind": "memory", "when": "worked", "VmHWM": 1040528, "VmRSS": 1039416, "RssAnon": 1034616, "RssFile": 4440, "batteryTempTenthC": 366, "memAvailableKb": 2308624}
+{"config": "human-t2", "kind": "startup", "ms": 2970.1, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 366, "memAvailableKb": 3330648}
+{"config": "human-t2", "kind": "memory", "when": "loaded", "VmHWM": 1032956, "VmRSS": 1032956, "RssAnon": 1028380, "RssFile": 4208}
+{"config": "human-t2", "kind": "roundtrip", "ms": 2.19}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.56}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.32}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.63}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.35}
+{"config": "human-t2", "kind": "roundtrip", "ms": 2.31}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.64}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.86}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.63}
+{"config": "human-t2", "kind": "roundtrip", "ms": 1.45}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 302.0}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 341.8}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 306.6}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 303.0}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 300.9}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 348.8}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 299.5}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 320.3}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 302.3}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 300.7}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 3721.0, "rootVisits": 17}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 3785.6, "rootVisits": 17}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 7048.4, "rootVisits": 33}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 7113.9, "rootVisits": 33}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 9551.0, "rootVisits": 41}
+{"config": "human-t2", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 10441.5, "rootVisits": 41}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 703.2}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 696.8}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 666.0}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 667.2}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 670.8}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 669.1}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 728.9}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 663.0}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 682.2}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 670.0}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 7990.2, "rootVisits": 17}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 8873.3, "rootVisits": 17}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 14370.5, "rootVisits": 33}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 15412.1, "rootVisits": 33}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 18562.4, "rootVisits": 41}
+{"config": "human-t2", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 19215.1, "rootVisits": 41}
+{"config": "human-t2", "kind": "memory", "when": "worked", "VmHWM": 1064252, "VmRSS": 1062076, "RssAnon": 1057376, "RssFile": 4332, "batteryTempTenthC": 374, "memAvailableKb": 2240928}
+{"config": "human-t4", "kind": "startup", "ms": 3607.4, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 374, "memAvailableKb": 3288904}
+{"config": "human-t4", "kind": "memory", "when": "loaded", "VmHWM": 1045520, "VmRSS": 1045520, "RssAnon": 1040940, "RssFile": 4204}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.87}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.78}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.51}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.89}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.75}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.64}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.67}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.46}
+{"config": "human-t4", "kind": "roundtrip", "ms": 2.0}
+{"config": "human-t4", "kind": "roundtrip", "ms": 1.94}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 426.9}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 379.6}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 398.1}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 367.2}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 414.0}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 372.1}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 367.4}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 411.8}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 371.3}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 412.2}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4534.8, "rootVisits": 17}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4644.9, "rootVisits": 17}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 6077.7, "rootVisits": 35}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 6437.2, "rootVisits": 35}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 8073.0, "rootVisits": 43}
+{"config": "human-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 8230.0, "rootVisits": 43}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 771.0}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 748.7}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 771.5}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 738.3}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-nn", "ms": 739.1}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 738.7}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 756.9}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 740.9}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 759.8}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "raw-human-nn", "ms": 747.9}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 9209.0, "rootVisits": 17}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 16, "ms": 9239.0, "rootVisits": 17}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 11025.2, "rootVisits": 35}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 32, "ms": 12502.7, "rootVisits": 35}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 14268.5, "rootVisits": 43}
+{"config": "human-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "search", "visits": 40, "ms": 13829.6, "rootVisits": 43}
+{"config": "human-t4", "kind": "memory", "when": "worked", "VmHWM": 1100836, "VmRSS": 1098132, "RssAnon": 1093396, "RssFile": 4360, "batteryTempTenthC": 382, "memAvailableKb": 2323016}
+{"config": "human-t1-buf13", "kind": "startup", "ms": 3941.4, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 382, "memAvailableKb": 3375880}
+{"config": "human-t1-buf13", "kind": "memory", "when": "loaded", "VmHWM": 1024844, "VmRSS": 1024844, "RssAnon": 1020184, "RssFile": 4300}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 1.34}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 1.21}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.82}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.82}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.99}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 1.19}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.92}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.84}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.92}
+{"config": "human-t1-buf13", "kind": "roundtrip", "ms": 0.98}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 429.1}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 412.5}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 408.1}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 402.9}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 403.8}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 430.1}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 412.7}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 412.2}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 405.6}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 405.3}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 6859.2, "rootVisits": 16}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 6844.2, "rootVisits": 16}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 13731.9, "rootVisits": 32}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 14214.1, "rootVisits": 32}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 17645.9, "rootVisits": 40}
+{"config": "human-t1-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 17696.3, "rootVisits": 40}
+{"config": "human-t1-buf13", "kind": "memory", "when": "worked", "VmHWM": 1033732, "VmRSS": 1033164, "RssAnon": 1028400, "RssFile": 4404, "batteryTempTenthC": 378, "memAvailableKb": 2404052}
+{"config": "human-t4-buf13", "kind": "startup", "ms": 3919.9, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 378, "memAvailableKb": 3470556}
+{"config": "human-t4-buf13", "kind": "memory", "when": "loaded", "VmHWM": 1036096, "VmRSS": 1036096, "RssAnon": 1031464, "RssFile": 4272}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 2.11}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.4}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.09}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.15}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 0.98}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.27}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.24}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.3}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.82}
+{"config": "human-t4-buf13", "kind": "roundtrip", "ms": 1.57}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 435.4}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 423.5}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 384.9}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 444.3}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-nn", "ms": 383.5}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 406.8}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 444.9}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 391.7}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 444.8}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "raw-human-nn", "ms": 389.9}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4831.7, "rootVisits": 17}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 16, "ms": 4824.8, "rootVisits": 17}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 5849.1, "rootVisits": 35}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 32, "ms": 6668.4, "rootVisits": 35}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 8560.8, "rootVisits": 43}
+{"config": "human-t4-buf13", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "search", "visits": 40, "ms": 8190.6, "rootVisits": 43}
+{"config": "human-t4-buf13", "kind": "memory", "when": "worked", "VmHWM": 1063312, "VmRSS": 1061620, "RssAnon": 1056884, "RssFile": 4376, "batteryTempTenthC": 382, "memAvailableKb": 2358892}
+{"config": "gobot-t1", "kind": "startup", "ms": 3933.2, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 382, "memAvailableKb": 3433176}
+{"config": "gobot-t1", "kind": "memory", "when": "loaded", "VmHWM": 1026896, "VmRSS": 1026896, "RssAnon": 1022328, "RssFile": 4208}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.44}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.12}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.11}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 0.92}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.02}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.05}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.15}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.14}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.65}
+{"config": "gobot-t1", "kind": "roundtrip", "ms": 1.2}
+{"config": "gobot-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "gobot-genmove", "visits": 40, "ms": 17856.0, "move": "K9"}
+{"config": "gobot-t1", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "gobot-genmove", "visits": 40, "ms": 18926.2, "move": "K9"}
+{"config": "gobot-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "gobot-genmove", "visits": 40, "ms": 32062.4, "move": "H6"}
+{"config": "gobot-t1", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "gobot-genmove", "visits": 40, "ms": 31949.5, "move": "H6"}
+{"config": "gobot-t1", "kind": "memory", "when": "worked", "VmHWM": 1040204, "VmRSS": 1039108, "RssAnon": 1034380, "RssFile": 4368, "batteryTempTenthC": 379, "memAvailableKb": 2395184}
+{"config": "gobot-t4", "kind": "startup", "ms": 4175.4, "version": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0", "batteryTempTenthC": 379, "memAvailableKb": 3389160}
+{"config": "gobot-t4", "kind": "memory", "when": "loaded", "VmHWM": 1045048, "VmRSS": 1045048, "RssAnon": 1040448, "RssFile": 4248}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.75}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.04}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.24}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.19}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.08}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.11}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.11}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.16}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.14}
+{"config": "gobot-t4", "kind": "roundtrip", "ms": 1.23}
+{"config": "gobot-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "gobot-genmove", "visits": 40, "ms": 9126.6, "move": "K9"}
+{"config": "gobot-t4", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "gobot-genmove", "visits": 40, "ms": 9953.7, "move": "K9"}
+{"config": "gobot-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "gobot-genmove", "visits": 40, "ms": 16952.6, "move": "H6"}
+{"config": "gobot-t4", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "gobot-genmove", "visits": 40, "ms": 17319.0, "move": "H6"}
+{"config": "gobot-t4", "kind": "memory", "when": "worked", "VmHWM": 1090744, "VmRSS": 1087536, "RssAnon": 1082860, "RssFile": 4324, "batteryTempTenthC": 383, "memAvailableKb": 2294976}
+{"config": "analysis-main", "kind": "startup", "ms": 2165.9, "version": "1.16.4 <omitted>", "batteryTempTenthC": 387, "memAvailableKb": 3357392}
+{"config": "analysis-main", "kind": "memory", "when": "loaded", "VmHWM": 528724, "VmRSS": 528724, "RssAnon": 524104, "RssFile": 4268}
+{"config": "analysis-main", "size": 13, "position": "s13-g1-m12", "moves": 12, "kind": "json-1visit", "ms": 576.7, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 13, "position": "s13-g1-m24", "moves": 24, "kind": "json-1visit", "ms": 547.3, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 13, "position": "s13-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 551.3, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 13, "position": "s13-g2-m12", "moves": 12, "kind": "json-1visit", "ms": 570.2, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 13, "position": "s13-g2-m24", "moves": 24, "kind": "json-1visit", "ms": 533.6, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 13, "position": "s13-g5-m120", "moves": 120, "kind": "json-ownership", "visits": 16, "ms": 6280.2, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main", "size": 13, "position": "s13-g5-m100", "moves": 100, "kind": "json-ownership", "visits": 16, "ms": 5337.7, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main", "size": 13, "position": "s13-g5-m80", "moves": 80, "kind": "json-ownership", "visits": 64, "ms": 12978.0, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main", "size": 13, "position": "s13-g5-m60", "moves": 60, "kind": "json-ownership", "visits": 64, "ms": 13982.6, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 26748.0, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main", "size": 13, "position": "s13-g5-m24", "moves": 24, "kind": "json-ownership", "visits": 128, "ms": 30495.5, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main", "size": 19, "position": "s19-g1-m20", "moves": 20, "kind": "json-1visit", "ms": 835.1, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 19, "position": "s19-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 843.0, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 19, "position": "s19-g1-m70", "moves": 70, "kind": "json-1visit", "ms": 850.1, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 19, "position": "s19-g1-m100", "moves": 100, "kind": "json-1visit", "ms": 843.2, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 19, "position": "s19-g1-m140", "moves": 140, "kind": "json-1visit", "ms": 918.5, "hasHumanPolicy": false}
+{"config": "analysis-main", "size": 19, "position": "s19-g3-m220", "moves": 220, "kind": "json-ownership", "visits": 16, "ms": 9789.7, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main", "size": 19, "position": "s19-g3-m180", "moves": 180, "kind": "json-ownership", "visits": 16, "ms": 9454.6, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main", "size": 19, "position": "s19-g3-m140", "moves": 140, "kind": "json-ownership", "visits": 64, "ms": 19357.1, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "json-ownership", "visits": 64, "ms": 19802.3, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main", "size": 19, "position": "s19-g3-m70", "moves": 70, "kind": "json-ownership", "visits": 128, "ms": 39995.0, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main", "size": 19, "position": "s19-g3-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 44278.8, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main", "kind": "memory", "when": "worked", "VmHWM": 563160, "VmRSS": 559664, "RssAnon": 554788, "RssFile": 4524, "batteryTempTenthC": 397, "memAvailableKb": 2956996}
+{"config": "analysis-human", "kind": "startup", "ms": 4695.8, "version": "1.16.4 <omitted>", "batteryTempTenthC": 397, "memAvailableKb": 3438172}
+{"config": "analysis-human", "kind": "memory", "when": "loaded", "VmHWM": 1045124, "VmRSS": 1045124, "RssAnon": 1040284, "RssFile": 4480}
+{"config": "analysis-human", "size": 13, "position": "s13-g1-m12", "moves": 12, "kind": "json-1visit", "ms": 1097.3, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g1-m24", "moves": 24, "kind": "json-1visit", "ms": 1093.1, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 1065.7, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g2-m12", "moves": 12, "kind": "json-1visit", "ms": 1079.9, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g2-m24", "moves": 24, "kind": "json-1visit", "ms": 1082.6, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g5-m120", "moves": 120, "kind": "json-ownership", "visits": 16, "ms": 5854.7, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g5-m100", "moves": 100, "kind": "json-ownership", "visits": 16, "ms": 5626.9, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g5-m80", "moves": 80, "kind": "json-ownership", "visits": 64, "ms": 14032.3, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g5-m60", "moves": 60, "kind": "json-ownership", "visits": 64, "ms": 16132.2, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 31455.6, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human", "size": 13, "position": "s13-g5-m24", "moves": 24, "kind": "json-ownership", "visits": 128, "ms": 30731.3, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g1-m20", "moves": 20, "kind": "json-1visit", "ms": 1724.4, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 1734.6, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g1-m70", "moves": 70, "kind": "json-1visit", "ms": 1718.7, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g1-m100", "moves": 100, "kind": "json-1visit", "ms": 1828.6, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g1-m140", "moves": 140, "kind": "json-1visit", "ms": 1777.1, "hasHumanPolicy": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g3-m220", "moves": 220, "kind": "json-ownership", "visits": 16, "ms": 9516.7, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g3-m180", "moves": 180, "kind": "json-ownership", "visits": 16, "ms": 9354.1, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g3-m140", "moves": 140, "kind": "json-ownership", "visits": 64, "ms": 20702.1, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "json-ownership", "visits": 64, "ms": 23020.7, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g3-m70", "moves": 70, "kind": "json-ownership", "visits": 128, "ms": 42908.9, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human", "size": 19, "position": "s19-g3-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 41280.2, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human", "kind": "memory", "when": "worked", "VmHWM": 1093524, "VmRSS": 1090528, "RssAnon": 1085448, "RssFile": 4720, "batteryTempTenthC": 402, "memAvailableKb": 2324448}
+{"config": "analysis-main+gtp", "kind": "startup", "ms": 2463.3, "version": "1.16.4 <omitted>", "batteryTempTenthC": 402, "memAvailableKb": 3429796}
+{"config": "analysis-main+gtp", "kind": "memory", "when": "loaded", "VmHWM": 528696, "VmRSS": 528696, "RssAnon": 523852, "RssFile": 4484}
+{"config": "analysis-main+gtp", "kind": "memory", "when": "gtp-beside", "VmHWM": 519752, "VmRSS": 519752, "RssAnon": 514872, "RssFile": 4528}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g1-m12", "moves": 12, "kind": "json-1visit", "ms": 577.7, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g1-m24", "moves": 24, "kind": "json-1visit", "ms": 554.3, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 536.5, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g2-m12", "moves": 12, "kind": "json-1visit", "ms": 542.5, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g2-m24", "moves": 24, "kind": "json-1visit", "ms": 579.6, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g5-m120", "moves": 120, "kind": "json-ownership", "visits": 16, "ms": 6082.9, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g5-m100", "moves": 100, "kind": "json-ownership", "visits": 16, "ms": 6055.0, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g5-m80", "moves": 80, "kind": "json-ownership", "visits": 64, "ms": 13807.5, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g5-m60", "moves": 60, "kind": "json-ownership", "visits": 64, "ms": 15485.1, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 31589.4, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 13, "position": "s13-g5-m24", "moves": 24, "kind": "json-ownership", "visits": 128, "ms": 30593.3, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g1-m20", "moves": 20, "kind": "json-1visit", "ms": 855.3, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 866.9, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g1-m70", "moves": 70, "kind": "json-1visit", "ms": 870.4, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g1-m100", "moves": 100, "kind": "json-1visit", "ms": 860.7, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g1-m140", "moves": 140, "kind": "json-1visit", "ms": 865.0, "hasHumanPolicy": false}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g3-m220", "moves": 220, "kind": "json-ownership", "visits": 16, "ms": 10491.0, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g3-m180", "moves": 180, "kind": "json-ownership", "visits": 16, "ms": 10225.3, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g3-m140", "moves": 140, "kind": "json-ownership", "visits": 64, "ms": 23612.3, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "json-ownership", "visits": 64, "ms": 25050.4, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g3-m70", "moves": 70, "kind": "json-ownership", "visits": 128, "ms": 41932.0, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main+gtp", "size": 19, "position": "s19-g3-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 42293.4, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-main+gtp", "kind": "memory", "when": "worked", "VmHWM": 565856, "VmRSS": 562656, "RssAnon": 557636, "RssFile": 4660, "batteryTempTenthC": 405, "memAvailableKb": 2232916}
+{"config": "analysis-human+gtp", "kind": "startup", "ms": 4730.0, "version": "1.16.4 <omitted>", "batteryTempTenthC": 406, "memAvailableKb": 3318800}
+{"config": "analysis-human+gtp", "kind": "memory", "when": "loaded", "VmHWM": 1044932, "VmRSS": 1044932, "RssAnon": 1040128, "RssFile": 4444}
+{"config": "analysis-human+gtp", "kind": "memory", "when": "gtp-beside", "VmHWM": 519780, "VmRSS": 519780, "RssAnon": 514884, "RssFile": 4528}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g1-m12", "moves": 12, "kind": "json-1visit", "ms": 1121.0, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g1-m24", "moves": 24, "kind": "json-1visit", "ms": 1068.4, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 1056.4, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g2-m12", "moves": 12, "kind": "json-1visit", "ms": 1061.1, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g2-m24", "moves": 24, "kind": "json-1visit", "ms": 1054.7, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g5-m120", "moves": 120, "kind": "json-ownership", "visits": 16, "ms": 5975.3, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g5-m100", "moves": 100, "kind": "json-ownership", "visits": 16, "ms": 6055.7, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g5-m80", "moves": 80, "kind": "json-ownership", "visits": 64, "ms": 13966.9, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g5-m60", "moves": 60, "kind": "json-ownership", "visits": 64, "ms": 15564.1, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g5-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 29495.0, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 13, "position": "s13-g5-m24", "moves": 24, "kind": "json-ownership", "visits": 128, "ms": 29908.1, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g1-m20", "moves": 20, "kind": "json-1visit", "ms": 1733.8, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g1-m40", "moves": 40, "kind": "json-1visit", "ms": 1730.2, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g1-m70", "moves": 70, "kind": "json-1visit", "ms": 1716.3, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g1-m100", "moves": 100, "kind": "json-1visit", "ms": 1700.3, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g1-m140", "moves": 140, "kind": "json-1visit", "ms": 1716.5, "hasHumanPolicy": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g3-m220", "moves": 220, "kind": "json-ownership", "visits": 16, "ms": 9565.3, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g3-m180", "moves": 180, "kind": "json-ownership", "visits": 16, "ms": 9501.1, "rootVisits": 17, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g3-m140", "moves": 140, "kind": "json-ownership", "visits": 64, "ms": 23833.2, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g3-m100", "moves": 100, "kind": "json-ownership", "visits": 64, "ms": 23356.3, "rootVisits": 67, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g3-m70", "moves": 70, "kind": "json-ownership", "visits": 128, "ms": 42798.9, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human+gtp", "size": 19, "position": "s19-g3-m40", "moves": 40, "kind": "json-ownership", "visits": 128, "ms": 44109.3, "rootVisits": 131, "hasOwnership": true}
+{"config": "analysis-human+gtp", "kind": "memory", "when": "worked", "VmHWM": 1097044, "VmRSS": 1093860, "RssAnon": 1088828, "RssFile": 4672, "batteryTempTenthC": 408, "memAvailableKb": 1753612}
