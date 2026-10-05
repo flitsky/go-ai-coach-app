@@ -30,6 +30,12 @@ internal enum class EngineProcessRetireReason(val forcible: Boolean) {
 
     /** `stop()` — `quit` 뒤의 정상 종료. */
     Stop(forcible = false),
+
+    /**
+     * 올릴 신경망을 바꾼다(백로그 #215) — 새 프로세스가 다른 모델로 뜨기 전에 이 프로세스를 내린다.
+     * 곧바로 내린다(SIGKILL): 물러나는 프로세스가 머무는 동안은 신경망 둘이 메모리에 같이 있다.
+     */
+    NetworkSwap(forcible = true),
 }
 
 /**

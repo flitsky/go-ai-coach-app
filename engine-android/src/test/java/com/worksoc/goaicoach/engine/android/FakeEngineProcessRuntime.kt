@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.engine.android
 
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import java.io.BufferedReader
 import java.io.BufferedWriter
@@ -75,7 +77,21 @@ internal class FakeEngineProcessRuntime : EngineProcessRuntime {
     private val startsInFlight = mutableMapOf<Kind, Int>()
     private val maxStartsInFlight = mutableMapOf<Kind, Int>()
 
-    override fun startGtp(profile: EngineProfile): EngineProcessPipes = start(Kind.Gtp)
+    /** 사람 모델 파일이 있는 기기인가(백로그 #215). 기본은 없다 — 지금까지의 테스트는 주 모델만 안다. */
+    @Volatile override var humanNetworkAvailable: Boolean = false
+
+    /** GTP 프로세스가 뜬 순서대로, 그때 올린 신경망. */
+    val gtpNetworks = CopyOnWriteArrayList<EngineNetwork>()
+
+    /** GTP 프로세스가 뜬 순서대로, 그때 받은 판 크기. 모른 채 떴으면 [UnknownBoardSize](KataGo 기본으로 뜬다). */
+    val gtpBoardSizes = CopyOnWriteArrayList<Int>()
+
+    override fun startGtp(profile: EngineProfile, network: EngineNetwork, boardSize: BoardSize?): EngineProcessPipes {
+        require(network == EngineNetwork.Main || humanNetworkAvailable) { "KataGo model not found: human" }
+        gtpNetworks += network
+        gtpBoardSizes += boardSize?.value ?: UnknownBoardSize
+        return start(Kind.Gtp)
+    }
 
     override fun analysisConfigPathOrNull(): String? = analysisConfigPath
 
@@ -132,6 +148,9 @@ internal class FakeEngineProcessRuntime : EngineProcessRuntime {
         }
     }
 }
+
+/** [FakeEngineProcessRuntime.gtpBoardSizes]에서 「판 크기를 모른 채 떴다」는 표시. */
+internal const val UnknownBoardSize = 0
 
 internal class FakeEngineProcess(
     val kind: FakeEngineProcessRuntime.Kind,

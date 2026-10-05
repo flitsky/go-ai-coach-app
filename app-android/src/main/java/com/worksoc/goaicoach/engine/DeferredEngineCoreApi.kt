@@ -9,9 +9,11 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import kotlinx.coroutines.Deferred
@@ -88,6 +90,19 @@ internal class DeferredEngineCoreApi(
     override suspend fun scoreFinal(): FinalScoreResult = api().scoreFinal()
 
     override suspend fun stop(): EngineStatus = api().stop()
+
+    /**
+     * 엔진이 아직 준비되지 않았으면 「없다」고 답한다(백로그 #215) — 이 값은 서스펜드 없이 읽혀서 기다릴 수 없다.
+     * 준비된 뒤에는 진짜 엔진의 답이다. 그 사이의 대국은 지금 방식(주 모델)으로 시작하고, 다음 수부터 진짜 답을 본다.
+     */
+    override val supportsHumanNetwork: Boolean
+        get() = resolved?.supportsHumanNetwork ?: false
+
+    override suspend fun expectBoardSize(boardSize: BoardSize) = api().expectBoardSize(boardSize)
+
+    override suspend fun useNetwork(network: EngineNetwork): Boolean = api().useNetwork(network)
+
+    override suspend fun humanPolicy(profile: String): HumanPolicy = api().humanPolicy(profile)
 
     /**
      * ⚠️ **준비 전에는 조용히 아무것도 하지 않는다** — 던지지 않는다. 이 메서드의 계약이

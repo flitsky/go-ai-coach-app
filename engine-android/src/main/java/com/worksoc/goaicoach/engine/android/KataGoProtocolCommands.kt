@@ -50,6 +50,17 @@ internal object KataGoProtocolCommands {
 
     fun rawNn(): String = "kata-raw-nn 0"
 
+    /**
+     * 사람 모델의 프로필을 바꾼다(백로그 #215) — 재시작 없이 다음 평가부터 그 급수로 답한다.
+     * ⚠️ 프로필 이름은 KataGo가 아는 꼴(`rank_15k`·`preaz_9d`·`proyear_2023`)만 받는다 — 줄바꿈이 섞이면 명령이 둘이 된다.
+     */
+    fun humanProfile(profile: String): String {
+        require(HumanProfilePattern.matches(profile)) { "Not a KataGo human profile name: $profile" }
+        return "kata-set-param humanSLProfile $profile"
+    }
+
+    private val HumanProfilePattern = Regex("[a-z0-9_]{1,32}")
+
     fun searchAnalyze(player: StoneColor, limit: AnalysisLimit): String {
         val timeMillis = limit.timeMillis ?: return "kata-search_analyze ${player.toGtpColor()}"
         val centiseconds = ((timeMillis + 9) / 10).coerceAtLeast(1)

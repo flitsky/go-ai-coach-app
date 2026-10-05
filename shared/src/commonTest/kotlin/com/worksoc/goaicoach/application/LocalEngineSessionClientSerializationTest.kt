@@ -365,6 +365,13 @@ internal class ParkingCoreApi : EngineCoreApi {
         released.await()
     }
 
+    /** 판 크기 알림(백로그 #215)과, 그때까지 받은 명령 수 — [calls]에는 적지 않는다(엔진에 가는 명령이 아니다). */
+    val boardSizeHints = mutableListOf<Pair<Int, Int>>()
+
+    override suspend fun expectBoardSize(boardSize: BoardSize) {
+        lock.withLock { boardSizeHints += boardSize.value to recorded.size }
+    }
+
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         record("initialize")
         return EngineStatus.ready("initialized")

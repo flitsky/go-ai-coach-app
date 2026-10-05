@@ -8,6 +8,7 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipPoint
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
@@ -222,6 +223,39 @@ internal object KataGoAnalysisParser {
             ownership = ownership,
             summary = "Raw NN estimate. Positive score lead favors White; negative favors Black. Ownership counts are an influence indicator, not final scoring.",
         )
+    }
+
+    /**
+     * `kata-raw-nn`의 정책 — `policy` 줄 아래 판 크기만큼의 줄(맨 윗줄이 판의 맨 위), 그리고 `policyPass`.
+     * 둘 수 없는 자리는 `NAN`이라 빠진다. 격자가 온전하지 않으면 `null` — 반쪽 정책으로 수를 뽑지 않는다.
+     * 사람 모델만 올린 프로세스에서는 이것이 그 프로필의 사람이 둘 법한 수의 분포다(백로그 #215).
+     */
+    fun parseRawPolicy(
+        response: String,
+        boardSize: BoardSize,
+        profile: String,
+    ): HumanPolicy? {
+        val lines = response.lineSequence().map { it.trim() }.toList()
+        val header = lines.indexOf("policy")
+        if (header < 0 || lines.size < header + 1 + boardSize.value) return null
+        val moves = mutableMapOf<BoardCoordinate, Double>()
+        for (row in 0 until boardSize.value) {
+            val cells = lines[header + 1 + row].split(whitespace).filter { it.isNotBlank() }
+            if (cells.size != boardSize.value) return null
+            cells.forEachIndexed { column, cell ->
+                val probability = cell.toDoubleOrNull()
+                if (probability != null && !probability.isNaN() && probability >= 0.0) {
+                    moves[BoardCoordinate(row, column)] = probability
+                }
+            }
+        }
+        val pass = lines
+            .firstOrNull { it.startsWith("policyPass") }
+            ?.split(whitespace)
+            ?.getOrNull(1)
+            ?.toDoubleOrNull()
+            ?.takeIf { !it.isNaN() }
+        return HumanPolicy(profile = profile, moves = moves, passProbability = pass)
     }
 
     fun parseFinalScore(rawScore: String): FinalScoreResult {

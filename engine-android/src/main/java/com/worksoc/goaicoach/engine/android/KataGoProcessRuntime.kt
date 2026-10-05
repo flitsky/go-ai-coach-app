@@ -1,6 +1,9 @@
 package com.worksoc.goaicoach.engine.android
 
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.enginecontract.HumanNetworkJudgeProfile
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.File
@@ -13,6 +16,11 @@ data class KataGoProcessConfig(
     val configPath: String,
     val analysisConfigPath: String? = null,
     val startupOverrides: Map<String, String> = emptyMap(),
+    /**
+     * 사람 모델(KataGo Human SL) 파일. 없으면 `null` — 그 기기에서는 급수 캐릭터가 지금 방식으로 둔다(백로그 #215).
+     * ⚠️ 주 모델과 **같이 올리지 않는다** — 올릴 때는 이 파일이 [modelPath] 자리(`-model`)에 간다([buildGtpCommand]).
+     */
+    val humanModelPath: String? = null,
 )
 
 internal data class KataGoProcessCommand(
@@ -30,8 +38,19 @@ internal data class KataGoProcessCommand(
  * 첫 응답 같은 것)은 하지 않는다. 그래서 호출자가 수명 락을 쥔 채 불러도 된다.
  */
 internal interface EngineProcessRuntime {
-    /** GTP 엔진을 띄운다. 실행 파일·모델·설정 파일이 없으면 [IllegalArgumentException]. */
-    fun startGtp(profile: EngineProfile): EngineProcessPipes
+    /**
+     * GTP 엔진을 [network]를 올려 띄운다. 실행 파일·모델·설정 파일이 없으면 [IllegalArgumentException].
+     * [boardSize]를 알면 그 크기로 띄운다 — 모르면(`null`) KataGo 기본(19줄)이다.
+     */
+    fun startGtp(
+        profile: EngineProfile,
+        network: EngineNetwork = EngineNetwork.Main,
+        boardSize: BoardSize? = null,
+    ): EngineProcessPipes
+
+    /** 사람 모델 파일이 있어 [EngineNetwork.Human]으로 띄울 수 있는가. */
+    val humanNetworkAvailable: Boolean
+        get() = false
 
     /** JSON analysis 엔진의 설정 파일 경로. 없으면 `null` — JSON 경로가 구성되지 않은 빌드다(사고가 아니다). */
     fun analysisConfigPathOrNull(): String?
@@ -65,10 +84,13 @@ internal class LocalKataGoProcessRuntime(
     private val config: KataGoProcessConfig,
     private val analysisSearchThreads: Int = DefaultAnalysisSearchThreads,
 ) : EngineProcessRuntime {
-    override fun startGtp(profile: EngineProfile): EngineProcessPipes {
-        config.validateGtpFiles()
-        return spawn(config.buildGtpCommand(profile))
+    override fun startGtp(profile: EngineProfile, network: EngineNetwork, boardSize: BoardSize?): EngineProcessPipes {
+        config.validateGtpFiles(network)
+        return spawn(config.buildGtpCommand(profile, network, boardSize))
     }
+
+    override val humanNetworkAvailable: Boolean
+        get() = config.humanModelPath?.let { File(it).isFile } == true
 
     override fun analysisConfigPathOrNull(): String? = config.resolveAnalysisConfigPath()
 
@@ -109,12 +131,20 @@ private class LocalProcessPipes(
     }
 }
 
-internal fun KataGoProcessConfig.validateGtpFiles() {
+/** [network]로 띄울 때 `-model`에 갈 파일 — 주 모델이거나, 사람 모델(없으면 [IllegalArgumentException]). */
+internal fun KataGoProcessConfig.modelPathFor(network: EngineNetwork): String =
+    when (network) {
+        EngineNetwork.Main -> modelPath
+        EngineNetwork.Human -> requireNotNull(humanModelPath) { "KataGo human model is not configured." }
+    }
+
+internal fun KataGoProcessConfig.validateGtpFiles(network: EngineNetwork = EngineNetwork.Main) {
     require(File(executablePath).canExecute()) {
         "KataGo executable is not executable: $executablePath"
     }
-    require(File(modelPath).isFile) {
-        "KataGo model not found: $modelPath"
+    val model = modelPathFor(network)
+    require(File(model).isFile) {
+        "KataGo model not found: $model"
     }
     require(File(configPath).isFile) {
         "KataGo config not found: $configPath"
@@ -124,19 +154,36 @@ internal fun KataGoProcessConfig.validateGtpFiles() {
 internal fun KataGoProcessConfig.resolveAnalysisConfigPath(): String? =
     analysisConfigPath?.takeIf { File(it).isFile }
 
-internal fun KataGoProcessConfig.buildGtpCommand(profile: EngineProfile): KataGoProcessCommand {
+/**
+ * GTP 프로세스의 명령줄. [network]가 사람 모델이면 그 파일이 **`-model` 자리**에 간다 — `-human-model`로 주 모델 옆에
+ * 얹지 않는다(백로그 #215: 신경망은 한 번에 하나만. 둘을 같이 올리면 메모리가 0.5 → 1.0GB다, 실험실 E5).
+ * 사람 모델만 올린 KataGo는 프로필이 있어야 답한다 — 띄울 때 [HumanNetworkJudgeProfile]을 주고, 뒤에는 요청마다 바꾼다.
+ *
+ * [boardSize]를 알면 `defaultBoardSize`로 준다 — KataGo는 19줄로 떠서 다른 크기의 **첫** `boardsize`에 약 1.2초를 쓴다
+ * (S23: 13줄 판의 첫 평가까지 2.98 → 1.64초). 갈아 올릴 때마다 내던 값이라, 대국 중인 판 크기로 띄운다.
+ */
+internal fun KataGoProcessConfig.buildGtpCommand(
+    profile: EngineProfile,
+    network: EngineNetwork = EngineNetwork.Main,
+    boardSize: BoardSize? = null,
+): KataGoProcessCommand {
     val overrides = startupOverrides +
         EngineBehaviorOverrides +
         mapOf(
             "maxVisits" to profile.analysisLimit.visits.toString(),
             "logToStderr" to "false",
-        )
+        ) +
+        when (network) {
+            EngineNetwork.Main -> emptyMap()
+            EngineNetwork.Human -> mapOf("humanSLProfile" to HumanNetworkJudgeProfile)
+        } +
+        (boardSize?.let { size -> mapOf("defaultBoardSize" to size.value.toString()) } ?: emptyMap())
     return KataGoProcessCommand(
         executablePath = executablePath,
         arguments = listOf(
             "gtp",
             "-model",
-            modelPath,
+            modelPathFor(network),
             "-config",
             configPath,
             "-override-config",

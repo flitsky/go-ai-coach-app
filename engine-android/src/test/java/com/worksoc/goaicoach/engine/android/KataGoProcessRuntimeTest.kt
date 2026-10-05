@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.engine.android
 
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,6 +39,53 @@ class KataGoProcessRuntimeTest {
         assertTrue(overrides.contains("allowResignation=false"))
         assertTrue(overrides.contains("maxVisits=32"))
         assertTrue(overrides.contains("logToStderr=false"))
+    }
+
+    /**
+     * 사람 모델로 띄울 때 그 파일은 **`-model` 자리**에 간다(백로그 #215) — `-human-model`로 주 모델 옆에 얹으면 신경망 둘이
+     * 같이 올라가 메모리가 두 배다. 프로필이 없으면 사람 모델만 올린 KataGo는 답하지 못하므로 띄울 때 준다.
+     */
+    @Test
+    fun theHumanNetworkTakesTheModelSlotAndCarriesAStartupProfile() {
+        val config = KataGoProcessConfig(
+            executablePath = "/bin/katago",
+            modelPath = "/model.bin.gz",
+            configPath = "/gtp_learning.cfg",
+            humanModelPath = "/human.bin.gz",
+        )
+
+        val human = config.buildGtpCommand(EngineProfile(), EngineNetwork.Human).commandLine
+        val main = config.buildGtpCommand(EngineProfile(), EngineNetwork.Main).commandLine
+
+        assertEquals("/human.bin.gz", human[human.indexOf("-model") + 1])
+        assertFalse(human.contains("-human-model"), "the two networks must never share a process")
+        assertFalse(human.contains("/model.bin.gz"))
+        assertTrue(human.last().contains("humanSLProfile=rank_9d"))
+        assertEquals("/model.bin.gz", main[main.indexOf("-model") + 1])
+        assertFalse(main.last().contains("humanSLProfile"), "the main network must start exactly as before")
+    }
+
+    /**
+     * 판 크기를 알면 그 크기로 띄운다(백로그 #215) — KataGo는 19줄로 떠서 다른 크기의 첫 `boardsize`에 약 1.2초를 쓴다(S23).
+     * 모르면 인자를 붙이지 않는다 — 명령줄이 예전과 같은 바이트다.
+     */
+    @Test
+    fun aKnownBoardSizeBecomesTheStartupDefaultAndAnUnknownOneAddsNothing() {
+        val config = KataGoProcessConfig(executablePath = "/bin/katago", modelPath = "/model.bin.gz", configPath = "/gtp_learning.cfg")
+
+        val sized = config.buildGtpCommand(EngineProfile(), EngineNetwork.Main, BoardSize.Thirteen).commandLine
+        val unsized = config.buildGtpCommand(EngineProfile(), EngineNetwork.Main, boardSize = null).commandLine
+
+        assertTrue(sized.last().contains("defaultBoardSize=13"))
+        assertFalse(unsized.last().contains("defaultBoardSize"))
+        assertEquals(config.buildGtpCommand(EngineProfile()).commandLine, unsized)
+    }
+
+    @Test
+    fun theHumanNetworkCannotBeBuiltWithoutItsModelFile() {
+        val config = KataGoProcessConfig(executablePath = "/bin/katago", modelPath = "/model.bin.gz", configPath = "/gtp_learning.cfg")
+
+        kotlin.test.assertFailsWith<IllegalArgumentException> { config.buildGtpCommand(EngineProfile(), EngineNetwork.Human) }
     }
 
     @Test

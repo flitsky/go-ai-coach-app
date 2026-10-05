@@ -122,7 +122,69 @@ interface EngineCoreApi {
      * do this unconditionally).
      */
     fun forceReset()
+
+    /**
+     * 곧 둘 판의 크기를 미리 알린다(백로그 #215) — 엔진을 **띄우기 전에** 부르면 그 크기로 띄운다.
+     *
+     * KataGo는 19줄로 떠서, 다른 크기의 첫 `boardsize`에서 약 1.2초를 더 쓴다(S23 실측 — 13줄 판의 첫 평가까지 2.98 → 1.64초).
+     * 알려 주지 않아도 동작은 같다 — 그 1.2초를 낼 뿐이다. 이미 떠 있는 엔진에는 아무 일도 하지 않는다.
+     */
+    suspend fun expectBoardSize(boardSize: BoardSize) {}
+
+    /**
+     * 사람 모델([EngineNetwork.Human])을 올릴 수 있는가(백로그 #215) — 그 신경망 파일이 있고 이 백엔드가 갈아 올리기를
+     * 아는가. 거짓이면 급수 캐릭터는 지금 방식(주 모델 탐색 뒤 후보에서 고르기)으로 둔다 — 원격·스텁이 그렇다.
+     */
+    val supportsHumanNetwork: Boolean
+        get() = false
+
+    /**
+     * 엔진이 올릴 신경망을 고른다. **한 번에 하나만** 올린다 — 신경망 하나가 메모리 약 500MB라서다(실험실 E5).
+     *
+     * 지금 것과 다르면 프로세스를 내리고, 다음 명령이 [network]로 새로 띄운다(S23에서 약 1.4초). 그때 **엔진의 판은 비어
+     * 있다** — 부르는 쪽이 판을 다시 맞춘다(`forceReset` 뒤와 같다). 돌려주는 값은 **실제로 바뀌었는가**다.
+     *
+     * 기본 구현은 망이 하나뿐인 백엔드다 — 주 모델이면 그대로(거짓), 사람 모델이면 못 한다고 던진다.
+     * 부르기 전에 [supportsHumanNetwork]를 볼 것.
+     */
+    suspend fun useNetwork(network: EngineNetwork): Boolean {
+        check(network == EngineNetwork.Main) { "This engine cannot load the $network network." }
+        return false
+    }
+
+    /**
+     * 지금 국면에서 [profile](`rank_15k` 같은 사람 모델 프로필)의 사람이 **둘 법한 수**의 분포 — 신경망 평가 1회.
+     * [EngineNetwork.Human]이 올라가 있어야 한다([useNetwork]). 뽑는 일(꼬리 누르기)은 부르는 쪽이 한다.
+     */
+    suspend fun humanPolicy(profile: String): HumanPolicy =
+        throw UnsupportedOperationException("This engine has no human network.")
 }
+
+/**
+ * 엔진이 올리는 신경망(백로그 #215). 폰에서는 한 번에 하나만 올린다.
+ *
+ * - [Main]: 가장 센 망. 형세 판단·계가·추천 수, 그리고 단 구간 캐릭터의 착수.
+ * - [Human]: 사람 기보로 배운 망(KataGo Human SL). 급수 프로필을 입력으로 받아 그 급수의 사람처럼 둔다 — **급수 캐릭터의 착수**에 쓴다.
+ *   이 망만 올라가 있는 동안의 형세·영역은 가장 센 프로필([HumanNetworkJudgeProfile])로 낸 **임시 값**이다
+ *   (주 모델보다 점수 오차가 크다 — 실험실 E6: 중앙값 0.5 → 2.5집).
+ */
+enum class EngineNetwork {
+    Main,
+    Human,
+}
+
+/**
+ * 사람 모델만 올라가 있을 때 형세·영역을 내는 프로필. 9단 · 알파고 이전 9단 · 프로 기보 프로필의 정확도가 같아서
+ * (실험실 E6: 평균 오차 4.1 · 4.5 · 4.8집) 가장 단순한 것을 쓴다. 프로세스를 띄울 때의 기본 프로필이기도 하다.
+ */
+const val HumanNetworkJudgeProfile: String = "rank_9d"
+
+/** [EngineCoreApi.humanPolicy]의 답 — 둘 수 있는 자리마다의 확률과 통과 확률. 합은 1에 가깝다. */
+data class HumanPolicy(
+    val profile: String,
+    val moves: Map<BoardCoordinate, Double>,
+    val passProbability: Double?,
+)
 
 /**
  * ⚠️ **기본값이 [EngineMode.Stub]이면 안 된다.** 예전에는 그랬는데, 실제 백엔드를 채워 넣지
@@ -354,6 +416,11 @@ data class ScoreEstimate(
     val whiteScoreLead: Double? = null,
     val ownership: OwnershipEstimate? = null,
     val summary: String,
+    /**
+     * 이 값을 낸 신경망(백로그 #215). [EngineNetwork.Human]이면 급수 캐릭터 대국 중의 **임시 값**이다 —
+     * 대국이 끝나면 주 모델로 다시 잰다.
+     */
+    val network: EngineNetwork = EngineNetwork.Main,
 )
 
 data class FinalScoreResult(

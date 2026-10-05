@@ -14,9 +14,12 @@ import com.worksoc.goaicoach.shared.enginecontract.DeadStonesResult
 import com.worksoc.goaicoach.shared.enginecontract.DefaultCommandTimeoutMillis
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.HumanNetworkJudgeProfile
+import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.enginecontract.analysisSearchTimeMillis
@@ -91,6 +94,24 @@ internal class KataGoProcessEngineAdapter(
     private val playedMoves = mutableListOf<Move>()
 
     /**
+     * GTP 프로세스가 올리는(또는 다음에 뜰 때 올릴) 신경망(백로그 #215) — **한 번에 하나**다.
+     * 바꾸는 곳은 [useNetwork] 하나뿐이고, 그때 떠 있던 프로세스를 내린다. 3계층의 오퍼레이션 락이 지킨다(판 거울과 같다).
+     */
+    private var gtpNetwork: EngineNetwork = EngineNetwork.Main
+
+    /**
+     * 사람 모델 프로세스에 지금 걸려 있는 프로필과 **그 프로세스**. 프로세스가 바뀌었으면(재시작·갈아 올리기) 새 프로세스는
+     * 띄울 때의 기본값([HumanNetworkJudgeProfile])이다 — 그래서 핸들과 짝지어 든다([ensureHumanProfile]).
+     */
+    private var humanProfileOn: Pair<EngineProcessHandle, String>? = null
+
+    /**
+     * 다음에 GTP 프로세스를 띄울 때의 판 크기 — 대국이 정해진 뒤에만 안다([expectBoardSize]·[newGame]·[syncStaticPosition]).
+     * 모르는 동안은 `null`이라 KataGo 기본(19줄)으로 뜬다. [boardSize] 거울의 기본값(9줄)을 그대로 넘기지 않으려고 따로 든다.
+     */
+    private var startupBoardSize: BoardSize? = null
+
+    /**
      * 종류마다 "지금 프로세스" 자리. 한 프로세스의 stdin/stdout 왕복은 그 핸들의 락이 한 번에 하나로 묶는다 —
      * 두 오퍼레이션(예: 배경 분석과 착수 동기화)이 같은 스트림에서 서로의 답 줄을 가로채지 않게.
      */
@@ -124,6 +145,7 @@ internal class KataGoProcessEngineAdapter(
         handicapCount: Int,
         komi: Double,
     ): EngineStatus {
+        startupBoardSize = boardSize
         val gtp = acquireGtp()
         this.boardSize = boardSize
         this.ruleset = ruleset
@@ -145,6 +167,7 @@ internal class KataGoProcessEngineAdapter(
 
     override suspend fun syncStaticPosition(state: GameState): EngineStatus {
         // 보내는 명령은 없다 — 오늘처럼 GTP 프로세스를 띄워 두기만 한다(기동 실패도 여기서 드러난다).
+        startupBoardSize = state.boardSize
         acquireGtp()
         this.boardSize = state.boardSize
         this.ruleset = state.ruleset
@@ -210,7 +233,8 @@ internal class KataGoProcessEngineAdapter(
         val effectiveLimit = limit.effectiveAnalysisLimit()
         // ⚠️ 폴백 판정은 [attemptJsonAnalysis]가 한다 — 취소/타임아웃을 삼키지 않기 위해서다.
         // 여기서 runCatching으로 되돌리지 마라(refactor backlog #16ⓐ, 그 함수의 KDoc 참고).
-        val attempt = if (effectiveLimit.needsJsonAnalysis()) {
+        // 사람 모델이 올라가 있는 동안은 JSON analysis 프로세스를 띄우지 않는다 — 그 프로세스는 주 모델을 올린다(한 번에 하나).
+        val attempt = if (effectiveLimit.needsJsonAnalysis() && gtpNetwork == EngineNetwork.Main) {
             attemptJsonAnalysis {
                 val analysisConfigPath = runtime.analysisConfigPathOrNull()
                     ?: return@attemptJsonAnalysis null
@@ -231,8 +255,53 @@ internal class KataGoProcessEngineAdapter(
 
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
         val gtp = acquireGtp()
+        // 사람 모델만 올라가 있으면 **가장 센 프로필**의 눈으로 본다 — 착수에 쓰던 급수 프로필이 걸린 채로 재면
+        // 그 급수끼리의 예상 결과가 나온다(20급 프로필은 같은 판을 10집 넘게 다르게 본다). 임시 값이라고 표시해 돌려준다.
+        if (gtpNetwork == EngineNetwork.Human) ensureHumanProfile(gtp, HumanNetworkJudgeProfile)
         val response = sendCommand(gtp, KataGoProtocolCommands.rawNn())
-        return KataGoAnalysisParser.parseScoreEstimate(response, boardSize)
+        return KataGoAnalysisParser.parseScoreEstimate(response, boardSize).copy(network = gtpNetwork)
+    }
+
+    override suspend fun expectBoardSize(boardSize: BoardSize) {
+        startupBoardSize = boardSize
+    }
+
+    override val supportsHumanNetwork: Boolean
+        get() = runtime.humanNetworkAvailable
+
+    /**
+     * 올릴 신경망을 바꾼다 — 지금 프로세스를 내리고, 다음 명령이 새 망으로 띄운다(백로그 #215).
+     *
+     * - **JSON analysis 프로세스도 같이 내린다.** 그 프로세스는 주 모델을 쥐고 있다 — 사람 모델로 갈 때 남겨 두면 둘이
+     *   같이 올라가 있고, 주 모델로 돌아올 때는 어차피 필요하면 다시 뜬다. 「한 번에 하나」가 이 함수의 약속이다.
+     * - 새 프로세스의 판은 비어 있다. 이 어댑터는 판을 스스로 다시 두지 않는다 — 재시작 뒤의 재동기화는 지금처럼 호출자 몫이다.
+     * - 사람 모델 파일이 없으면 던진다. 부르는 쪽이 [supportsHumanNetwork]를 먼저 본다.
+     */
+    override suspend fun useNetwork(network: EngineNetwork): Boolean {
+        if (network == gtpNetwork) return false
+        check(network == EngineNetwork.Main || supportsHumanNetwork) { "KataGo human model is not available on this device." }
+        gtpNetwork = network
+        gtpSlot.retireCurrent(EngineProcessRetireReason.NetworkSwap)
+        analysisSlot.retireCurrent(EngineProcessRetireReason.NetworkSwap)
+        return true
+    }
+
+    override suspend fun humanPolicy(profile: String): HumanPolicy {
+        check(gtpNetwork == EngineNetwork.Human) { "The human network is not loaded — call useNetwork(Human) first." }
+        val gtp = acquireGtp()
+        ensureHumanProfile(gtp, profile)
+        val response = sendCommand(gtp, KataGoProtocolCommands.rawNn())
+        return checkNotNull(KataGoAnalysisParser.parseRawPolicy(response, boardSize, profile)) {
+            "KataGo returned no policy grid for the human profile `$profile`."
+        }
+    }
+
+    /** [gtp]에 걸린 프로필이 [profile]이 아니면 바꾼다. 같은 프로필을 잇달아 물으면 명령을 다시 보내지 않는다. */
+    private suspend fun ensureHumanProfile(gtp: EngineProcessHandle, profile: String) {
+        val current = humanProfileOn?.takeIf { (handle, _) -> handle === gtp }?.second ?: HumanNetworkJudgeProfile
+        if (current == profile) return
+        sendCommand(gtp, KataGoProtocolCommands.humanProfile(profile))
+        humanProfileOn = gtp to profile
     }
 
     override suspend fun scoreFinal(): FinalScoreResult {
@@ -290,7 +359,8 @@ internal class KataGoProcessEngineAdapter(
         analysisSlot.retireCurrent(EngineProcessRetireReason.ForceReset)
     }
 
-    private suspend fun acquireGtp(): EngineProcessHandle = gtpSlot.acquire { runtime.startGtp(profile) }
+    private suspend fun acquireGtp(): EngineProcessHandle =
+        gtpSlot.acquire { runtime.startGtp(profile, gtpNetwork, startupBoardSize) }
 
     private suspend fun sendCommand(
         gtp: EngineProcessHandle,

@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
@@ -125,6 +126,25 @@ class LocalEngineSessionClientBorrowedBoardTest {
         client.estimateScoreForState(LiveGame, Profile, syncFirst = false)
 
         assertEquals(LiveGameResync, engine.calls.drop(before))
+    }
+
+    /**
+     * 엔진을 **띄우기 전에** 판 크기를 알린다(백로그 #215) — 새 대국은 프로세스를 새로 띄우는데, 모르고 띄우면 19줄로 떠서
+     * 13줄 판의 첫 `boardsize`에 약 1.2초를 더 쓴다(S23). 알림이 `initialize` 뒤로 가면 이미 뜬 뒤라 소용이 없다.
+     */
+    @Test
+    fun aNewGameTellsTheEngineItsBoardSizeBeforeStartingIt() = runBlocking {
+        client.startNewGame(Profile, BoardSize.Thirteen, Ruleset.Japanese, 0, 6.5)
+
+        assertEquals(listOf(13 to 1), engine.boardSizeHints, "the hint must come after `stop` and before `initialize`")
+        assertEquals(listOf("stop", "initialize"), engine.calls.take(2))
+    }
+
+    @Test
+    fun startingTheSessionTellsTheEngineTheBoardSizeFirst() = runBlocking {
+        client.startSession(Profile, LiveGame)
+
+        assertEquals(listOf(LiveGame.boardSize.value to 0), engine.boardSizeHints)
     }
 
     private companion object {

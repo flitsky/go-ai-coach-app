@@ -36,6 +36,10 @@ fun createEngineBootstrap(
         analysisConfig = analysisConfig,
     )
     val model = compressedModel.takeIf { it.isFile && it.length() > 0L } ?: bundledModel
+    // 사람 모델(백로그 #215) — 있으면 급수 캐릭터가 그것으로 둔다. 없는 것은 사고가 아니다: 그 기기는 지금 방식으로 둔다.
+    // ⚠️ 아직 번들에 싣지 않는다(배포 방식 미정) — 개발 중에는 `adb`로 이 자리에 넣는다. 주 모델과 같은 두 이름을 본다.
+    val humanModel = listOf(File(katagoDir, HumanModelCompressedName), File(katagoDir, HumanModelName))
+        .firstOrNull { it.isFile && it.length() > 0L }
 
     val missing = buildList {
         if (!executable.canExecute()) {
@@ -74,6 +78,7 @@ fun createEngineBootstrap(
                 modelPath = model.absolutePath,
                 configPath = config.absolutePath,
                 analysisConfigPath = analysisConfig.takeIf { it.isFile }?.absolutePath,
+                humanModelPath = humanModel?.absolutePath,
                 startupOverrides = mapOf(
                     "numSearchThreads" to "1",
                     "logDir" to logsDir.absolutePath,
@@ -90,6 +95,7 @@ fun createEngineBootstrap(
         displayName = "KataGo",
         diagnostic = buildString {
             append("KataGo assets found. Using local process engine.")
+            append(if (humanModel != null) " Human model found: ${humanModel.name}." else " Human model absent.")
             if (!analysisConfig.isFile) {
                 append("\n")
                 append("KataGo JSON analysis config missing. Broad study analysis will fall back to GTP search analysis.")
@@ -196,3 +202,7 @@ private fun seedAssetIfMissing(
         null
     }
 }
+
+/** 기기의 `files/katago/`에서 찾는 사람 모델 파일 이름(백로그 #215) — KataGo는 `.bin.gz`를 풀지 않고 읽는다. */
+internal const val HumanModelCompressedName = "human.bin.gz"
+internal const val HumanModelName = "human.bin"

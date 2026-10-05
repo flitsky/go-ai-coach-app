@@ -35,6 +35,8 @@ internal class LocalEngineCoreSessionDelegate(
         profile: EngineProfile,
         state: GameState,
     ): EngineStartupResult {
+        // 띄우기 **전에** 판 크기를 알린다(백로그 #215) — 모르고 띄우면 19줄로 떠서 첫 `boardsize`에 약 1.2초를 더 쓴다.
+        coreApi.expectBoardSize(state.boardSize)
         val init = coreApi.initialize(profile)
         return EngineStartupResult(
             // 앱 시작은 엔진 준비만 수행한다. 실제 대국 보드 초기화는 사용자가
@@ -55,6 +57,8 @@ internal class LocalEngineCoreSessionDelegate(
         // survive clear_board across repeated games, causing the next game to
         // replay nearly instantly from retained search data.
         coreApi.stop()
+        // 새 대국마다 프로세스를 새로 띄우므로, 이 판의 크기로 띄운다(백로그 #215 — S23에서 13줄 새 대국의 준비가 약 1.2초 준다).
+        coreApi.expectBoardSize(boardSize)
         coreApi.initialize(profile)
         val status = coreApi.newGame(boardSize, ruleset, handicapCount, komi)
         val estimate = runCatching {
