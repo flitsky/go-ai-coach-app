@@ -138,6 +138,10 @@ JSON 기반 운영의 목표는 다음과 같다.
 - Undo 복원 cache: 같은 앱 세션에서 무르기로 과거 국면에 돌아왔을 때만 사용하는 짧은 메모리 cache를 둔다. 이 cache는 `rootInfo.visits >= requested visits` 또는 동등한 complete 품질이 확인된 분석 snapshot만 저장하며, 같은 `AnalysisCacheKey`가 다시 요청되면 엔진 호출 없이 복원한다. 새 게임/복원 같은 session boundary에서는 비운다.
 - Broad study analysis: 전체 합법 착점, policy 후보, refine sweep, deep fallback은 기본 대국 경로에서 비활성이다.
 - 대국 밖의 분석(2026-10-05, 백로그 #218): 다시보기의 형세 보기·추천 수와 바둑판 사진 분석은 **대국과 같은 엔진**에 지나간(또는 찍은) 국면을 묻는다 — `estimateScoreForState(syncFirst = true)`와 `analyzePosition`. 추천 수는 대국 화면과 같은 계획(`buildTopMoveAnalysisPlan`, B16·GTP fast)을 탄다. 엔진이 하나라 **물으면 대국의 판이 그 국면으로 바뀐다** — 돌아온 대국의 `syncFirst = false` 형세 추정은 엔진 클라이언트가 판부터 다시 맞춘다(`boardLeftByAnalysis`, `docs/spec/PITFALLS.md` 함정 87).
+- 올리는 신경망(2026-10-05, 백로그 #215): 신경망은 **한 번에 하나만** 올린다 — 사람 모델 파일이 기기에 있을 때(`EngineCoreApi.supportsHumanNetwork`) 호출마다 올릴 망이 정해져 있고, 다르면 프로세스를 갈아 올린다(`useNetwork` — 새 프로세스의 판은 비어 있어 **늘 판부터 맞춘다**).
+  · 급수 캐릭터(초보·하수·중수)의 AI 차례 → **사람 모델**: 그 급수 프로필의 정책에서 한 수를 뽑는다(탐색 없음). 둔 뒤의 형세는 가장 센 프로필이 본 **임시 값**이다(`ScoreEstimate.network = Human` → `ScoreSnapshotSource.HumanNetworkEstimate`).
+  · 그 밖의 AI 차례, 그리고 **사용자가 물어본 분석 전부**(형세 보기 `estimateScoreForState` · 추천 수 `analyzePosition`) → **주 모델**.
+  · 사람 착수 뒤 동기화·무르기 뒤 재동기화의 형세는 **그때 올라가 있는 망**이 본다 — 형세 기록에 출처가 남고, 변곡점·복기 추천은 같은 망이 본 값끼리만 뺀다.
 
 즉 “항상 분석 snapshot을 만든다”는 정책은 유지하되, 폰 실시간 사람 차례에서는 아직 best-5 경량 snapshot만 자동 생성한다. 여러 색상의 후보 분포나 전체 착점 평가가 필요하면 별도 `StudyBroad` 예산으로 분리해서 켠다.
 

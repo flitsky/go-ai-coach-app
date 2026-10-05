@@ -384,8 +384,10 @@ class LocalEngineSessionClient(
         syncFirst: Boolean,
     ): ScoreEstimate =
         serializedOrBusy("estimateScoreForState") {
+            // 누른 형세 보기는 주 모델이 답한다(백로그 #215 보강 ②) — 갈아 올렸으면 새 프로세스의 판은 비어 있다.
+            val swapped = bringMainNetworkForAskedAnalysis()
             // `syncFirst = false`는 "판이 이미 이 국면"이라는 가정이다 — 분석 계열이 판을 다른 데 두고 갔으면 거둔다([boardLeftByAnalysis]).
-            val syncNow = syncFirst || boardLeftByAnalysis.isElsewhereThan(state)
+            val syncNow = syncFirst || swapped || boardLeftByAnalysis.isElsewhereThan(state)
             if (syncNow) boardLeftByAnalysis = AnalysisBoard.Unknown
             coreSession.estimateScoreForState(
                 state = state,
@@ -426,6 +428,22 @@ class LocalEngineSessionClient(
                 onProgress = onProgress,
             ).alsoBoardIsTheGames()
         }
+
+    /**
+     * 사용자가 물어본 분석 앞에서 주 모델을 올린다(`LocalEngineCoreSessionDelegate.bringMainNetwork`). 갈아 올렸으면 참.
+     *
+     * ⚠️ **갈아 올리기 전에** 판을 모른다고 적는다 — 갈아 올리다 끊기면(취소·마감) 옛 프로세스는 이미 내려갔고 다음 명령이 띄울
+     * 새 프로세스의 판은 비어 있다. 그대로 두면 다음 형세 보기가 "판이 이미 이 국면"이라고 믿고 **빈 판의 형세**를 낸다.
+     * 갈아 올릴 일이 없었으면(이미 주 모델) 적어 둔 것을 되돌린다 — 대국 흐름은 그대로다.
+     */
+    private suspend fun bringMainNetworkForAskedAnalysis(): Boolean {
+        if (!coreSession.canSwapNetworks) return false
+        val before = boardLeftByAnalysis
+        boardLeftByAnalysis = AnalysisBoard.Unknown
+        val swapped = coreSession.bringMainNetwork()
+        if (!swapped) boardLeftByAnalysis = before
+        return swapped
+    }
 
     /**
      * 대국 계열 오퍼레이션이 판을 맞추고 **끝났다** — 판은 다시 대국의 것이다([boardLeftByAnalysis]).

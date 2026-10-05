@@ -89,10 +89,26 @@ internal class LocalEngineCoreSessionDelegate(
         )
     }
 
+    /**
+     * 사용자가 **물어본** 분석은 주 모델이 답한다(백로그 #215 보강 ②) — 급수 캐릭터와 두는 동안 올라가 있는 사람 모델은
+     * 그 급수처럼 두려고 올린 것이지 판을 읽으려고 올린 것이 아니다(형세 오차 0.5 → 2.5집, 실험실 E6).
+     * 다음 AI 차례가 제게 필요한 망을 다시 올린다([runAutoAiTurn]).
+     *
+     * @return 갈아 올렸는가. 그랬다면 **새 프로세스의 판은 비어 있다** — 부른 쪽이 판부터 맞춘다.
+     */
+    suspend fun bringMainNetwork(): Boolean =
+        coreApi.supportsHumanNetwork && coreApi.useNetwork(EngineNetwork.Main)
+
+    /** 올릴 망을 고를 수 있는 엔진인가 — 아니면 [bringMainNetwork]는 늘 아무 일도 하지 않는다. */
+    val canSwapNetworks: Boolean
+        get() = coreApi.supportsHumanNetwork
+
+    /** 추천 수 분석 — **늘 주 모델로** 한다([bringMainNetwork]). 판은 어차피 여기서 맞추므로 갈아 올린 뒤의 빈 판도 덮인다. */
     suspend fun syncAndAnalyzePosition(
         state: GameState,
         limit: AnalysisLimit,
     ): AnalysisResult {
+        bringMainNetwork()
         coreApi.syncToGameState(state)
         return coreApi.analyze(limit)
     }

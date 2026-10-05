@@ -7,7 +7,6 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
-import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import kotlin.math.abs
 
 /**
@@ -108,7 +107,7 @@ const val ScoreSwingMaxCount: Int = 5
  * 부호를 지운 적이 없다. 앞뒤 스냅샷이 둘 다 있는 수순에만 매기고(`moveNumber-1`·`moveNumber`),
  * 없으면 그 수는 후보에서 빠진다.
  *
- * ⚠️ **앞뒤 둘 다 신경망 평가([ScoreSnapshotSource.EngineEstimate])일 때만 잰다**(백로그 #200, 2026-09-30).
+ * ⚠️ **앞뒤 둘 다 같은 망의 신경망 평가일 때만 잰다**([networkScoreSwingByMoveNumber], 백로그 #200, 2026-09-30).
  * 엔진 평가가 실패·시간 초과·미준비인 수에는 로컬 영역 계산(`LocalAreaEstimate`)이, 종국에는 `FinalScore`가
  * 기록되는데 둘은 신경망 우세와 **척도가 달라** 섞어 빼면 가짜 변곡점이 생긴다 — 그런 수는 후보에서 빠진다.
  * 「복기 하기」 추천([countReviewRecommendationMistakes])과 **같은 거름망**이다.
@@ -118,14 +117,8 @@ fun deriveScoreSwingHighlights(
     thresholdPoints: Double = ScoreSwingThreshold,
     maxCount: Int = ScoreSwingMaxCount,
 ): List<ScoreSwingHighlight> {
-    val leadByMoveNumber = engineEstimateWhiteLeadByMoveNumber(scoreSnapshots)
-
-    return leadByMoveNumber.keys
-        .filter { moveNumber -> moveNumber > 0 }
-        .mapNotNull { moveNumber ->
-            val before = leadByMoveNumber[moveNumber - 1] ?: return@mapNotNull null
-            val after = leadByMoveNumber.getValue(moveNumber)
-            val swing = after - before
+    return networkScoreSwingByMoveNumber(scoreSnapshots)
+        .mapNotNull { (moveNumber, swing) ->
             ScoreSwingHighlight(moveNumber, swing).takeIf { abs(swing) >= thresholdPoints }
         }
         .sortedByDescending { highlight -> abs(highlight.swing) }
@@ -142,10 +135,8 @@ fun deriveScoreSwingHighlights(
  * 말하면 재지 않은 것을 잰 것처럼 말하게 된다. `false`면 화면은 「기록이 부족하다」고 말한다
  * ([countReviewRecommendationMistakes]가 `null`을 돌려주는 것과 같은 원칙).
  */
-fun canMeasureScoreSwings(scoreSnapshots: List<ScoreSnapshot>): Boolean {
-    val leadByMoveNumber = engineEstimateWhiteLeadByMoveNumber(scoreSnapshots)
-    return leadByMoveNumber.keys.any { moveNumber -> moveNumber > 0 && (moveNumber - 1) in leadByMoveNumber }
-}
+fun canMeasureScoreSwings(scoreSnapshots: List<ScoreSnapshot>): Boolean =
+    networkScoreSwingByMoveNumber(scoreSnapshots).isNotEmpty()
 
 /**
  * 착수 평가를 **저장된 값을 믿지 않고 그 자리에서 다시 계산한다**(2026-09-20 사용자 결정).

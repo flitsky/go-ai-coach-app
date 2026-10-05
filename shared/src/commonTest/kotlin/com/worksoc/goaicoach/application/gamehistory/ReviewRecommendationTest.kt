@@ -19,6 +19,10 @@ class ReviewRecommendationTest {
     private fun engine(moveNumber: Int, whiteLead: Double?) =
         ScoreSnapshot(moveNumber = moveNumber, whiteScoreLead = whiteLead, source = ScoreSnapshotSource.EngineEstimate)
 
+    /** 사람 모델이 본 임시 값(백로그 #215) — 급수 캐릭터와 두는 동안 수마다 남는다. */
+    private fun humanNetwork(moveNumber: Int, whiteLead: Double) =
+        ScoreSnapshot(moveNumber = moveNumber, whiteScoreLead = whiteLead, source = ScoreSnapshotSource.HumanNetworkEstimate)
+
     private fun local(moveNumber: Int, whiteLead: Double) =
         ScoreSnapshot(moveNumber = moveNumber, whiteScoreLead = whiteLead, source = ScoreSnapshotSource.LocalAreaEstimate)
 
@@ -179,6 +183,31 @@ class ReviewRecommendationTest {
         val moves = listOf(black(), white(1, 1))
 
         assertEquals(0, countReviewRecommendationMistakes(moves, listOf(engine(0, 0.0), engine(1, 1.0), engine(2, 0.5))))
+    }
+
+    /**
+     * 급수 캐릭터와 두는 동안의 기록은 사람 모델의 임시 값이다(백로그 #215) — **같은 망이 본 값끼리는** 잰다.
+     * 대국이 끝나고 주 모델로 다시 재기 전에도 복기 추천은 나온다.
+     */
+    @Test
+    fun snapshotsFromTheHumanNetworkAreMeasuredAgainstEachOther() {
+        val moves = listOf(black(), white(1, 1))
+
+        assertEquals(1, countReviewRecommendationMistakes(moves, listOf(humanNetwork(0, 0.0), humanNetwork(1, 6.0), humanNetwork(2, 5.0))))
+    }
+
+    /**
+     * **주 모델 값과 사람 모델 값은 섞어 빼지 않는다.** 사용자가 형세 보기를 누른 수만 주 모델 값이 되는데, 두 망은 같은 국면을
+     * 평균 2집 넘게 다르게 본다 — 섞어 빼면 누른 자리마다 가짜 실착이 생긴다. 놓칠 뿐 지어내지 않는다.
+     */
+    @Test
+    fun aMainNetworkSnapshotNextToAHumanNetworkSnapshotIsSkipped() {
+        val moves = listOf(black(), white(1, 1), black(2, 2))
+        // 1수 뒤만 사용자가 형세 보기를 눌러 주 모델 값이다 — 앞뒤와의 차이(7집·-7집)는 망의 차이일 뿐이다.
+        val snapshots = listOf(humanNetwork(0, 0.0), engine(1, 7.0), humanNetwork(2, 0.0), humanNetwork(3, 1.0))
+
+        assertEquals(0, countReviewRecommendationMistakes(moves, snapshots))
+        assertNull(countReviewRecommendationMistakes(moves.take(2), snapshots.take(3)), "no same-network pair means no data, not zero")
     }
 
     /** 개수는 **자르지 않는다** — `9+`는 화면의 몫이다. */

@@ -21,7 +21,7 @@ const val ReviewRecommendationMistakeThreshold: Double = 5.0
  *
  * ## 규칙
  * `moveNumber == k`인 스냅샷은 k번째 수를 둔 **뒤**의 형세다([GameReplayTimeline]의 KDoc). 그래서 k번째 수는
- * 스냅샷 `k-1`과 `k`가 **둘 다 [ScoreSnapshotSource.EngineEstimate]이고 백 리드가 있을 때만** 잰다.
+ * 스냅샷 `k-1`과 `k`가 **둘 다 같은 망의 신경망 평가이고 백 리드가 있을 때만** 잰다([networkScoreSwingByMoveNumber]).
  * 흑이 두었으면 백 리드가 [thresholdPoints] 이상 **늘었을 때**, 백이 두었으면 그만큼 **줄었을 때** 실착이다.
  *
  * - ⚠️ **둔 쪽은 수순에서 읽는다**(`moves[k-1].player`) — 흑백이 번갈아 둔다고 가정하지 않는다. 접바둑은 백이
@@ -43,18 +43,16 @@ fun countReviewRecommendationMistakes(
     scoreSnapshots: List<ScoreSnapshot>,
     thresholdPoints: Double = ReviewRecommendationMistakeThreshold,
 ): Int? {
-    val leadByMoveNumber = engineEstimateWhiteLeadByMoveNumber(scoreSnapshots)
+    val swingByMoveNumber = networkScoreSwingByMoveNumber(scoreSnapshots)
     var measuredMoves = 0
     var mistakes = 0
     moves.forEachIndexed { index, move ->
         if (move is Move.Resign) return@forEachIndexed
-        val moveNumber = index + 1
-        val before = leadByMoveNumber[moveNumber - 1] ?: return@forEachIndexed
-        val after = leadByMoveNumber[moveNumber] ?: return@forEachIndexed
+        val whiteGain = swingByMoveNumber[index + 1] ?: return@forEachIndexed
         measuredMoves += 1
         val lossForMover = when (move.player) {
-            StoneColor.Black -> after - before
-            StoneColor.White -> before - after
+            StoneColor.Black -> whiteGain
+            StoneColor.White -> -whiteGain
         }
         if (lossForMover >= thresholdPoints) mistakes += 1
     }
@@ -62,11 +60,22 @@ fun countReviewRecommendationMistakes(
 }
 
 /**
- * 신경망 평가([ScoreSnapshotSource.EngineEstimate]) 스냅샷만 골라 `수순 번호 → 백 리드`로 — 「복기 하기」 추천과
- * 다시보기 「변곡점」([deriveScoreSwingHighlights])이 **같은 거름망**을 쓴다(백로그 #200).
+ * `수순 번호 k → k번째 수가 바꾼 백 리드`(k의 형세 − k-1의 형세) — 「복기 하기」 추천과 다시보기 「변곡점」
+ * ([deriveScoreSwingHighlights])이 **같은 거름망**을 쓴다(백로그 #200).
+ *
+ * 앞뒤 스냅샷이 **둘 다 신경망 평가이고 같은 망이 본 값**일 때만 잰다([ScoreSnapshotSource.isNetworkEstimate]).
+ * ⚠️ **주 모델과 사람 모델의 값도 섞어 빼지 않는다**(백로그 #215) — 급수 캐릭터와 두는 동안의 수마다 기록은 사람 모델의
+ * 임시 값([ScoreSnapshotSource.HumanNetworkEstimate])이고, 사용자가 형세 보기를 누른 수만 주 모델 값이다. 두 망은
+ * 같은 국면을 평균 2집 넘게 다르게 본다(실험실 E6) — 섞어 빼면 누른 자리마다 가짜 변곡점이 생긴다.
  */
-internal fun engineEstimateWhiteLeadByMoveNumber(scoreSnapshots: List<ScoreSnapshot>): Map<Int, Double> =
-    scoreSnapshots
-        .filter { snapshot -> snapshot.source == ScoreSnapshotSource.EngineEstimate }
-        .mapNotNull { snapshot -> snapshot.whiteScoreLead?.let { snapshot.moveNumber to it } }
-        .toMap()
+internal fun networkScoreSwingByMoveNumber(scoreSnapshots: List<ScoreSnapshot>): Map<Int, Double> {
+    val estimateByMoveNumber = scoreSnapshots
+        .filter { snapshot -> snapshot.source.isNetworkEstimate && snapshot.whiteScoreLead != null }
+        .associateBy { snapshot -> snapshot.moveNumber }
+    return estimateByMoveNumber.mapNotNull { (moveNumber, after) ->
+        val before = estimateByMoveNumber[moveNumber - 1]?.takeIf { it.source == after.source } ?: return@mapNotNull null
+        val whiteLeadBefore = before.whiteScoreLead ?: return@mapNotNull null
+        val whiteLeadAfter = after.whiteScoreLead ?: return@mapNotNull null
+        moveNumber to (whiteLeadAfter - whiteLeadBefore)
+    }.toMap()
+}

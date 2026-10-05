@@ -61,6 +61,8 @@ import com.worksoc.goaicoach.application.savedgame.buildEndedGameRestoreDisplayP
 import com.worksoc.goaicoach.application.savedgame.runSavedGamePersistenceApplication
 import com.worksoc.goaicoach.application.savedgame.runSavedSessionPromptApplication
 import com.worksoc.goaicoach.application.score.FinalScoreDisplayPlan
+import com.worksoc.goaicoach.application.score.ProvisionalScoreRefineAttempt
+import com.worksoc.goaicoach.application.score.ProvisionalScoreRefineInput
 import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
@@ -126,6 +128,7 @@ import com.worksoc.goaicoach.ui.monetization.buildConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.buildPremiumUiState
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.GoCoachContent
+import com.worksoc.goaicoach.ui.play.ProvisionalScoreRefineEffect
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
 import com.worksoc.goaicoach.ui.settings.SettingsScreen
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
@@ -830,6 +833,22 @@ private fun GoCoachScreen(
 
     // 1회권으로 켠 표시는 단발성이라 다음 수가 놓이면 스스로 꺼진다 — 프리미엄 토글과 달리 계속 갱신되지 않는 것이 "1회"의 단위다(4.5절).
     OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
+
+    // 형세 보기를 켜 둔 채 급수 캐릭터와 두면 AI가 둘 때마다 화면의 형세가 사람 모델의 임시 값이 된다 — 사람 차례에 주 모델로 다시 잰다(백로그 #215).
+    ProvisionalScoreRefineEffect(
+        input = ProvisionalScoreRefineInput(
+            isScoreViewOn = uxOptions.showOwnershipOverlay,
+            shownEstimateNetwork = scoreState.scoreEstimate?.network,
+            isGameEnded = isGameEnded,
+            isEngineReady = isEngineReady,
+            isEngineBusy = isEngineBusy,
+            isPendingUndoSync = isPendingUndoSync,
+            isHumanTurn = playerSetup.seatFor(gameState.nextPlayer).isHuman,
+            attempt = ProvisionalScoreRefineAttempt(runtimeState.sessionGeneration, gameState.moves.size),
+        ),
+        isEngineBusyNow = { isEngineBusy || engineClient.isEngineOperationInFlight },
+        refine = controllers.scoreEstimateController::request,
+    )
 
     CompositionLocalProvider(
         LocalPremiumUiState provides premiumUiState,

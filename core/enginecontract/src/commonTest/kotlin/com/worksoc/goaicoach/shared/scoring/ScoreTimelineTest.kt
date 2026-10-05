@@ -1,8 +1,10 @@
 package com.worksoc.goaicoach.shared.scoring
 
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -51,5 +53,22 @@ class ScoreTimelineTest {
 
         assertEquals(-9.5, ScoreTimeline.fromFinalScore(10, blackWin).whiteScoreLead)
         assertEquals(2.5, ScoreTimeline.fromFinalScore(10, whiteWin).whiteScoreLead)
+    }
+
+    /**
+     * 형세 기록은 **어느 망이 본 값인지**를 남긴다(백로그 #215) — 급수 캐릭터와 두는 동안의 수마다 기록은 사람 모델의 임시 값이라
+     * 주 모델 값과 섞어 쓰면 안 되고(변곡점), 대국이 끝나면 주 모델로 다시 잴 대상이다.
+     */
+    @Test
+    fun aSnapshotRemembersWhichNetworkSawIt() {
+        val fromMain = ScoreEstimate(status = EngineStatus.ready("ok"), whiteScoreLead = 1.5, summary = "ok")
+        val fromHuman = fromMain.copy(network = EngineNetwork.Human)
+
+        assertEquals(ScoreSnapshotSource.EngineEstimate, ScoreTimeline.fromEstimate(3, fromMain).source)
+        assertEquals(ScoreSnapshotSource.HumanNetworkEstimate, ScoreTimeline.fromEstimate(3, fromHuman).source)
+        assertEquals(
+            listOf(ScoreSnapshotSource.EngineEstimate, ScoreSnapshotSource.HumanNetworkEstimate),
+            ScoreSnapshotSource.entries.filter { it.isNetworkEstimate },
+        )
     }
 }
