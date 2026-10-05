@@ -1,0 +1,103 @@
+{
+ "rows": [
+  {
+   "size": 13,
+   "pair": "rank_17k:rank_14k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 131.0,
+   "minMoves": 117,
+   "maxMoves": 140,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 5.25
+  },
+  {
+   "size": 13,
+   "pair": "rank_11k:rank_8k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 132.0,
+   "minMoves": 119,
+   "maxMoves": 146,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 6.75
+  },
+  {
+   "size": 13,
+   "pair": "rank_5k:rank_2k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 133.0,
+   "minMoves": 120,
+   "maxMoves": 142,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 4.25
+  },
+  {
+   "size": 9,
+   "pair": "rank_17k:rank_14k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 68.5,
+   "minMoves": 53,
+   "maxMoves": 73,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 3
+  },
+  {
+   "size": 9,
+   "pair": "rank_11k:rank_8k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 56.5,
+   "minMoves": 47,
+   "maxMoves": 66,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 5
+  },
+  {
+   "size": 9,
+   "pair": "rank_5k:rank_2k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 68.5,
+   "minMoves": 60,
+   "maxMoves": 73,
+   "bestIsPassAtEnd": 3,
+   "judgeChecksPerGame": 2.75
+  },
+  {
+   "size": 19,
+   "pair": "rank_17k:rank_14k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 281.5,
+   "minMoves": 256,
+   "maxMoves": 311,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 10
+  },
+  {
+   "size": 19,
+   "pair": "rank_11k:rank_8k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 273.5,
+   "minMoves": 212,
+   "maxMoves": 299,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 10.25
+  },
+  {
+   "size": 19,
+   "pair": "rank_5k:rank_2k",
+   "games": 4,
+   "passPass": 4,
+   "medianMoves": 321.0,
+   "minMoves": 239,
+   "maxMoves": 338,
+   "bestIsPassAtEnd": 4,
+   "judgeChecksPerGame": 12.75
+  }
+ ]
+}
