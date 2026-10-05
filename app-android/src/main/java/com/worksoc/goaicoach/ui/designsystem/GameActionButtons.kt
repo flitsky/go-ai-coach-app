@@ -79,7 +79,33 @@ internal fun ToggleActionButton(
      */
     premiumFeature: Boolean = false,
 ) {
-    val isOn = action.isFilled
+    ToggleActionButton(
+        isOn = action.isFilled,
+        label = label,
+        mark = mark,
+        onClick = { onEvent(action.event) },
+        modifier = modifier,
+        enabled = action.enabled,
+        premiumLocked = premiumLocked,
+        premiumFeature = premiumFeature,
+    )
+}
+
+/**
+ * 대국 세션에 묶이지 않은 자리(다시보기, backlog #218)가 쓰는 같은 버튼. 위의 것이 이것을 부른다 —
+ * **생김새는 한 벌뿐이다.** 다시보기가 제 버튼을 따로 그리면 같은 기능이 화면마다 다른 얼굴을 한다.
+ */
+@Composable
+internal fun ToggleActionButton(
+    isOn: Boolean,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    mark: String? = null,
+    enabled: Boolean = true,
+    premiumLocked: Boolean = false,
+    premiumFeature: Boolean = false,
+) {
     val toggleModifier = modifier
         .height(ActionButtonMinHeight)
         .semantics(mergeDescendants = true) {
@@ -87,10 +113,10 @@ internal fun ToggleActionButton(
             stateDescription = if (isOn) "ON" else "OFF"
         }
 
-    if (action.isFilled) {
+    if (isOn) {
         Button(
-            onClick = { onEvent(action.event) },
-            enabled = action.enabled,
+            onClick = onClick,
+            enabled = enabled,
             modifier = toggleModifier,
             shape = ActionButtonShape,
             contentPadding = ActionButtonContentPadding,
@@ -103,8 +129,8 @@ internal fun ToggleActionButton(
         }
     } else {
         OutlinedButton(
-            onClick = { onEvent(action.event) },
-            enabled = action.enabled,
+            onClick = onClick,
+            enabled = enabled,
             modifier = toggleModifier,
             shape = ActionButtonShape,
             contentPadding = ActionButtonContentPadding,

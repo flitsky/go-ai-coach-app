@@ -41,6 +41,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
+import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.buildBranchedGameSnapshot
@@ -97,10 +99,19 @@ internal fun GameHistoryScreen(
      * (`GameReplayContractTest`), 그래서 이 화면이 [SavedGameSnapshot]까지 지어서 올린다.
      */
     onStartBranchedGame: (SavedGameSnapshot) -> Unit,
+    /**
+     * 다시보기의 「형세 보기」·「추천 수」가 쓰는 엔진의 역할 둘(백로그 #218) — 셸은 같은 엔진 객체를 두 번 넘긴다.
+     *
+     * ⚠️ 합성 타입(`EngineSessionClient`)이 아니라 **필요한 역할만** 받는다(그 타입의 KDoc: 새 소비자는 역할 타입을 받는다).
+     * ⚠️ 셸에는 엔진만 올라가 있고 다시보기는 여전히 모른다 — 창구([ReplayAnalysisEngine])는 이 화면이 짓는다.
+     */
+    engineScoring: EngineScoringClient,
+    engineAnalysis: EngineAnalysisClient,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
+    val analysisEngine = remember(engineScoring, engineAnalysis) { ReplayAnalysisEngine(engineScoring, engineAnalysis) }
     // ⚠️ **참고 기보는 항상 맨 앞이다** — 실기 기록 정렬(재생 시각 내림차순)에 끼워 넣는 게
     // 아니라, 그 앞에 붙인다. 그래야 나중에 실제로 둔 판이 쌓여도 순서가 안 밀린다.
     //
@@ -164,6 +175,7 @@ internal fun GameHistoryScreen(
                 }
             },
             onBranchFromHere = branch,
+            analysisEngine = analysisEngine,
             modifier = modifier,
         )
         // ⚠️ 팝업은 다시보기 화면 **위에** 그려야 한다 — `return` 앞에서 함께 컴포즈한다.

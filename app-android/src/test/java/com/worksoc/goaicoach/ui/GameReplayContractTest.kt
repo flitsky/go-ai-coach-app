@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,6 +24,7 @@ class GameReplayContractTest {
 
     private val replay = source(RepoPaths.uiFile("GameReplayScreen.kt").path)
     private val history = source(RepoPaths.uiFile("GameHistoryScreen.kt").path)
+    private val analysis = source(RepoPaths.uiFile("ReplayAnalysis.kt").path)
     private val shell = source(RepoPaths.uiFile("GoCoachApp.kt").path)
     private val banner = source(RepoPaths.uiFile("BannerAdView.kt").path)
 
@@ -189,7 +191,7 @@ class GameReplayContractTest {
      * 오른쪽 끝에는 버튼이 아니라 **체크박스**로 "수순 표시"를 켜고 끈다.
      *
      * ⚠️ **`ReplayToggleButton`으로 만든 "수순 번호" 버튼은 없앴다** — 그 자리는 이제 아래
-     * 버튼 줄의 예비 버튼 둘이 대신 쓴다.
+     * 버튼 줄의 분석 버튼 둘(형세 보기·추천 수, 백로그 #218)이 쓴다.
      */
     @Test
     fun theMoveTitleIsShortAndTheToggleIsACheckbox() {
@@ -209,24 +211,107 @@ class GameReplayContractTest {
     }
 
     /**
-     * ⚠️ **예비 버튼은 지금 항상 비활성이다**(2026-09-19 사용자: "나중에 엔진도 개입시켜서").
-     * `enabled = true`로 되돌리면 아직 배선하지 않은 기능이 눌리는 버튼처럼 보인다.
+     * 「형세 보기」·「추천 수」는 **살아 있는 버튼**이다(백로그 #218 — 2026-09-19의 예비 버튼을 살렸다).
+     * 조작부가 분석 버튼 줄을 그리고, 판이 그 결과(추천 수·영역)를 받는다. 둘 중 하나만 이어져도 컴파일은 된다 —
+     * 버튼은 눌리는데 판에 아무것도 안 뜨거나, 결과는 있는데 누를 곳이 없다.
      */
     @Test
-    fun theReservedButtonsStayDisabledUntilTheEngineIsWired() {
-        listOf("FeatureId.Eval", "FeatureId.TopMoves").forEach { feature ->
+    fun theAnalysisButtonsAreWiredToTheBoard() {
+        assertTrue(
+            "다시보기 조작부가 `ReplayAnalysisButtons(`를 그리지 않는다 — 형세 보기·추천 수 버튼이 없다.",
+            replay.contains("ReplayAnalysisButtons("),
+        )
+        listOf("candidateMoves = analysis.candidateMoves", "ownershipEstimate = analysis.ownership").forEach { wiring ->
             assertTrue(
-                "예비 버튼이 `strings.featureShortName($feature)`를 안 쓴다 — 대국 화면과 " +
-                    "같은 이름 표를 재사용해야 한다.",
-                replay.contains("strings.featureShortName($feature)"),
+                "판이 `$wiring`를 받지 않는다 — 버튼을 눌러도 판에 결과가 안 뜬다.",
+                replay.contains(wiring),
             )
         }
-        val reservedRow = replay.substringAfter("strings.featureShortName(FeatureId.Eval)")
-            .substringBefore("strings.featureShortName(FeatureId.TopMoves)")
-        assertTrue(
-            "형세 보기 예비 버튼이 `enabled = false`가 아니다 — 아직 배선되지 않은 기능이다.",
-            reservedRow.contains("enabled = false"),
+        assertFalse(
+            "다시보기에 눌리지 않는 버튼(`onClick = {}`)이 남아 있다 — 예비 버튼은 #218에서 없앴다.",
+            replay.contains("onClick = {}"),
         )
+        listOf("FeatureId.Eval", "FeatureId.TopMoves").forEach { feature ->
+            assertTrue(
+                "분석 버튼이 `strings.featureShortName($feature)`를 안 쓴다 — 대국 화면과 같은 이름 표를 써야 한다.",
+                analysis.contains("strings.featureShortName($feature)"),
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **다시보기는 대국 화면의 1회권 원장을 쓰지 않는다.** 그 원장(`markOneShot`·`paidAtMove`…)은 **대국의 수순 번호**로
+     * 세고 셸 전역이다 — 다시보기의 수순 번호를 거기 적으면, 돌아간 대국의 같은 수순에서 표시가 켜지거나 값을 안 내고
+     * 통과한다. 다시보기는 재고에서 차감(`spend`)만 하고, 「이 국면에 값을 치렀다」는 제 원장(`ReplayFeatureLedger`)에 적는다.
+     */
+    @Test
+    fun theReplayAnalysisKeepsItsOwnTicketLedger() {
+        listOf("markOneShot", "clearOneShot", "isOneShotActive", "isPaidForMove", "paidAtMove", "expireOneShotsAtMove").forEach { name ->
+            assertFalse(
+                "다시보기 분석이 대국 화면의 1회권 원장(`$name`)을 건드린다 — 수순 번호가 대국 것과 섞인다.",
+                analysis.contains(name) || replay.contains(name),
+            )
+        }
+        assertTrue(
+            "다시보기 분석이 `ReplayFeatureLedger`를 쓰지 않는다 — 값을 치른 국면을 어디에 적는가.",
+            analysis.contains("ReplayFeatureLedger("),
+        )
+    }
+
+    /**
+     * ⚠️ **다시보기가 여는 것은 형세 보기·추천 수 둘뿐이다.** 판 위 착수 평가 색(`FeatureId.MoveReview`)은 여전히 판이
+     * 스스로 가른다([theReplayScreenDoesNotReopenThePremiumGate]) — 분석 파일이 그것까지 판정하기 시작하면 같은 권한에
+     * 지급 경로가 둘이 된다(함정 14). 그리고 판정은 6계층에 맡긴다: `FeatureAccessPolicy`를 직접 부르지 않고 셸이 내린
+     * `LocalPremiumUiState`의 `resolve`를 쓴다(대국 화면과 같은 길).
+     */
+    @Test
+    fun theReplayAnalysisOpensOnlyEvalAndTopMoves() {
+        listOf("FeatureId.MoveReview", "FeatureId.Undo", "FeatureId.BoardScan", "FeatureAccessPolicy").forEach { name ->
+            assertFalse(
+                "다시보기 분석이 `$name`을 본다 — 여는 것은 형세 보기·추천 수 둘뿐이고, 판정은 `premium.resolve`가 한다.",
+                analysis.contains(name),
+            )
+        }
+    }
+
+    /**
+     * ⚠️ **1회권은 결과가 나온 뒤에 차감한다.** 엔진이 바쁘면 분석은 기다리지 않고 포기하므로(`EngineOperationBusy`),
+     * 누르는 순간 차감하면 아무것도 못 보고 한 장이 나간다. 차감(`consumables.spend`)은 정산 함수 한 곳에만 있어야 하고,
+     * 누르는 길(`fun tap`)에는 없어야 한다.
+     */
+    @Test
+    fun theTicketIsChargedOnlyWhenTheResultArrives() {
+        assertEquals(
+            "다시보기 분석에서 `consumables.spend(`를 부르는 곳이 하나가 아니다 — 차감은 정산(`settleTicket`) 한 곳뿐이어야 한다.",
+            1,
+            Regex("""consumables\.spend\(""").findAll(analysis).count(),
+        )
+        val tapBody = analysis.substringAfter("fun tap(").substringBefore("val shownEstimate")
+        assertFalse(
+            "누르는 길(`fun tap`)이 1회권을 차감한다 — 엔진이 바쁘면 못 보고 한 장이 나간다. 결과가 나온 뒤에 정산할 것.",
+            tapBody.contains("spend("),
+        )
+    }
+
+    /**
+     * ⚠️ **판에 보여 줄 것이 없으면 차감하지 않는다.** 끝난 국면에서는 엔진의 추천이 통과뿐이라 판에 올릴 후보가 없는데,
+     * 다시보기는 바로 그 마지막 수에서 열린다 — 가장 먼저 눌리는 자리에서 아무것도 못 보고 한 장이 나갔다
+     * (2026-10-05 에뮬레이터 실측). 정산(`settleTicket`)은 결과를 살펴보는 `conclude` 한 곳에서만 부른다.
+     */
+    @Test
+    fun theTicketIsNotChargedWhenThereIsNothingToShow() {
+        assertEquals(
+            "`settleTicket(`을 부르는 곳이 하나가 아니다 — 결과가 비었는지 보지 않고 정산하는 길이 생겼다.",
+            2, // 정의 하나 + 호출 하나
+            Regex("""settleTicket\(""").findAll(analysis).count(),
+        )
+        val concludeBody = analysis.substringAfter("fun conclude(").substringBefore("LaunchedEffect(")
+        listOf("settleTicket(", "isNullOrEmpty()", "hasSomethingToShow()").forEach { piece ->
+            assertTrue(
+                "`conclude`에 `$piece`가 없다 — 보여 줄 것이 있는지 본 뒤에만 정산해야 한다.",
+                concludeBody.contains(piece),
+            )
+        }
     }
 
     /**

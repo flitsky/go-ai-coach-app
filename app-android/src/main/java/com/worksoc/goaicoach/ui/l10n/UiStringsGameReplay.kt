@@ -342,3 +342,56 @@ internal fun pointsText(points: Double): String {
     val rounded = (points * 10).roundToInt() / 10.0
     return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
 }
+
+/**
+ * 다시보기의 형세 보기·추천 수(백로그 #218)가 **판에 아무것도 올리지 못했을 때** 띄우는 토스트 셋.
+ *
+ * ⚠️ **두 줄 안에 끝낸다.** 안드로이드 12부터 글자 토스트는 두 줄에서 잘린다 — 사유 한 줄 + "1회권은 차감되지 않았습니다" 한 줄로
+ * 이어 붙였더니 사유가 두 줄을 다 쓰고 **정작 표 얘기가 "…"로 잘렸다**(2026-10-05 에뮬레이터). 그래서 표를 걸었던 사람에게는
+ * 문장을 따로 둔다: 표 얘기가 **앞에** 온다.
+ *
+ * `ticketKept`는 1회권을 걸고 눌렀는가다. 차감은 결과가 나온 뒤에 하므로(`ReplayFeatureLedger`) 한 장도 나가지 않았다 —
+ * 말해 주지 않으면 사용자는 잔량을 확인하러 가야 한다.
+ */
+
+/** 엔진이 바빠서 답을 못 받았다. 실패가 아니다 — 엔진이 다른 일을 하고 있으면 분석은 기다리지 않고 포기한다(`EngineOperationBusy`). */
+internal fun gameReplayAnalysisBusyFor(language: UiLanguage, ticketKept: Boolean): String =
+    when (language) {
+        UiLanguage.Korean ->
+            if (ticketKept) "엔진이 바빠 1회권을 쓰지 않았습니다. 잠시 뒤 다시 눌러 주세요." else "엔진이 바쁩니다. 잠시 뒤 다시 눌러 주세요."
+        UiLanguage.English ->
+            if (ticketKept) "The engine is busy, so no ticket was used. Tap again shortly." else "The engine is busy. Please tap again shortly."
+        UiLanguage.Japanese ->
+            if (ticketKept) "エンジンが処理中のため、1回券は使われていません。もう一度押してください。" else "エンジンが処理中です。少し待ってもう一度押してください。"
+        UiLanguage.ChineseSimplified ->
+            if (ticketKept) "引擎正忙，未消耗单次券。请稍后再点一次。" else "引擎正忙。请稍后再点一次。"
+    }
+
+/** 답을 내지 못했다. 예외 원문(영어)은 보이지 않는다 — 사용자가 할 일은 다시 누르기뿐이다. */
+internal fun gameReplayAnalysisFailedFor(language: UiLanguage, ticketKept: Boolean): String =
+    when (language) {
+        UiLanguage.Korean ->
+            if (ticketKept) "분석하지 못해 1회권을 쓰지 않았습니다. 다시 눌러 주세요." else "이 국면을 분석하지 못했습니다. 다시 눌러 주세요."
+        UiLanguage.English ->
+            if (ticketKept) "Could not analyze, so no ticket was used. Please tap again." else "Could not analyze this position. Please tap again."
+        UiLanguage.Japanese ->
+            if (ticketKept) "分析できなかったため、1回券は使われていません。もう一度押してください。" else "この局面を分析できませんでした。もう一度押してください。"
+        UiLanguage.ChineseSimplified ->
+            if (ticketKept) "未能分析，未消耗单次券。请再点一次。" else "未能分析此局面。请再点一次。"
+    }
+
+/**
+ * 추천 수를 물었는데 **판 위에 올릴 후보가 없다.** 끝난 국면에서는 엔진의 추천이 통과뿐이라 그렇다 — 다시보기는 마지막 수에서
+ * 열리므로 가장 먼저 눌리는 자리다. 말해 주지 않으면 버튼이 고장 난 것으로 읽힌다.
+ */
+internal fun gameReplayNoTopMovesFor(language: UiLanguage, ticketKept: Boolean): String =
+    when (language) {
+        UiLanguage.Korean ->
+            if (ticketKept) "표시할 추천 수가 없어 1회권을 쓰지 않았습니다." else "이 국면엔 표시할 추천 수가 없습니다."
+        UiLanguage.English ->
+            if (ticketKept) "No recommended move to show, so no ticket was used." else "No recommended move to show for this position."
+        UiLanguage.Japanese ->
+            if (ticketKept) "表示できる推奨手がないため、1回券は使われていません。" else "この局面には表示できる推奨手がありません。"
+        UiLanguage.ChineseSimplified ->
+            if (ticketKept) "没有可显示的推荐着法，未消耗单次券。" else "此局面没有可显示的推荐着法。"
+    }

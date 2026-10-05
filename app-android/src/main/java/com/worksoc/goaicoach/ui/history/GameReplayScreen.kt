@@ -46,7 +46,6 @@ import com.worksoc.goaicoach.application.gamehistory.canMeasureScoreSwings
 import com.worksoc.goaicoach.application.gamehistory.canStartBranchedGameAt
 import com.worksoc.goaicoach.application.gamehistory.deriveReplayMoveEvaluations
 import com.worksoc.goaicoach.application.gamehistory.deriveScoreSwingHighlights
-import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -93,6 +92,10 @@ import com.worksoc.goaicoach.ui.play.ScoreTimelineGraph
  * `showMoveReview`만 켜 두고 프리미엄 판정은 건드리지 않는다 — 여는 순간 대국 화면에서 파는
  * 기능을 뒷문으로 내주는 것이 된다(함정 14). 무료로 주는 것은 아래 **변곡점 목록**이고,
  * 그건 `#156`의 목적이 명시한 지표다(2026-09-20 리메이크 — "실착"에서 "변곡점"으로).
+ *
+ * ## 「형세 보기」·「추천 수」는 `ReplayAnalysis.kt`가 맡는다 (백로그 #218)
+ * 지금 보고 있는 수순의 국면을 엔진에 물어 영역과 추천 수를 판 위에 올린다. 누가 무엇으로 여는지(구독·광고 1시간·1회권)와
+ * 엔진에 묻는 일은 전부 그 파일에 있고, 이 화면은 결과([ReplayAnalysisUi])를 판과 버튼 줄에 건넬 뿐이다.
  */
 @Composable
 internal fun GameReplayScreen(
@@ -110,6 +113,13 @@ internal fun GameReplayScreen(
      * `null`이면 버튼 자체를 그리지 않는다 — 배선되지 않은 자리에 죽은 버튼을 두지 않는다.
      */
     onBranchFromHere: ((GameState) -> Unit)?,
+    /**
+     * 「형세 보기」·「추천 수」가 지나간 국면을 묻는 엔진 창구(백로그 #218).
+     *
+     * ⚠️ **게이트(1회권·광고·구독)와 분석 상태는 이 파일에 두지 않는다** — `ReplayAnalysis.kt`가 갖는다. 이 화면은
+     * 그 결과를 판과 버튼 줄에 건네기만 한다(프리미엄 판정을 직접 보지 않는다는 `GameReplayContractTest`의 그물은 그대로다).
+     */
+    analysisEngine: ReplayAnalysisEngine,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -152,6 +162,12 @@ internal fun GameReplayScreen(
     var isScoreExpanded by remember { mutableStateOf(true) }
 
     val state = timeline.stateAt(moveNumber)
+    val analysis = rememberReplayAnalysis(
+        engine = analysisEngine,
+        replayKey = entry.id,
+        moveNumber = moveNumber,
+        positionAt = timeline::stateAt,
+    )
     val uxOptions = remember(showMoveNumbers) {
         KaTrainUxOptions(
             showMoveNumbers = showMoveNumbers,
@@ -239,12 +255,13 @@ internal fun GameReplayScreen(
         ) {
             GoBoard(
                 gameState = state,
-                candidateMoves = emptyList(),
+                // 추천 수·영역은 `ReplayAnalysis.kt`가 **볼 자격이 있을 때만** 건넨다 — 판은 받은 것을 그대로 그린다(#218).
+                candidateMoves = analysis.candidateMoves,
                 moveReviews = moveEvaluations,
-                ownershipEstimate = null,
+                ownershipEstimate = analysis.ownership,
                 uxOptions = uxOptions,
                 inputEnabled = false,
-                engineActivityIndicator = null,
+                engineActivityIndicator = analysis.activity,
                 modifier = Modifier.fillMaxSize(),
                 onCoordinateTap = {},
                 isGameEnded = moveNumber == timeline.lastMoveNumber,
@@ -256,6 +273,7 @@ internal fun GameReplayScreen(
             lastMoveNumber = timeline.lastMoveNumber,
             strings = strings,
             showMoveNumbers = showMoveNumbers,
+            analysis = analysis,
             onMoveNumberChange = { next -> moveNumber = next.coerceIn(0, timeline.lastMoveNumber) },
             onToggleMoveNumbers = { showMoveNumbers = !showMoveNumbers },
         )
@@ -367,6 +385,7 @@ private fun ReplayControls(
     lastMoveNumber: Int,
     strings: UiStrings,
     showMoveNumbers: Boolean,
+    analysis: ReplayAnalysisUi,
     onMoveNumberChange: (Int) -> Unit,
     onToggleMoveNumbers: () -> Unit,
 ) {
@@ -453,29 +472,11 @@ private fun ReplayControls(
             )
         }
 
-        // ⚠️ **예비 버튼이다 — 지금은 항상 비활성**(2026-09-19 사용자: "나중에 엔진도 개입시켜서
-        // 적극적으로 리플레이 분석할 수 있게 하고자 합니다"). 이 자리에 실을 기능(그 수순에서
-        // 형세 재분석·추천 수 조회)은 대국 화면과 달리 **지나간 국면을 엔진에 다시 물어야** 해서
-        // 성격이 다르다 — 비동기 분석·대기 표시·캐시가 새로 필요하다(백로그 #156이 남긴 메모).
-        // ⚠️ 라벨은 대국 화면과 같은 표(`UiStrings.featureShortName`)를 그대로 쓴다 — 나중에
-        // 배선할 때 같은 기능은 같은 이름이어야 한다.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
-        ) {
-            ActionButton(
-                label = strings.featureShortName(FeatureId.Eval),
-                enabled = false,
-                onClick = {},
-                modifier = Modifier.weight(1f),
-            )
-            ActionButton(
-                label = strings.featureShortName(FeatureId.TopMoves),
-                enabled = false,
-                onClick = {},
-                modifier = Modifier.weight(1f),
-            )
-        }
+        // 「형세 보기」·「추천 수」(백로그 #218) — **지금 보고 있는 수순의 국면**을 엔진에 물어 판 위에 보인다.
+        // 2026-09-19에 예비 버튼으로 자리만 잡아 둔 것을 살렸다(사용자: "나중에 엔진도 개입시켜서 적극적으로 리플레이 분석").
+        // ⚠️ 게이트·원장·엔진 호출은 전부 `ReplayAnalysis.kt`에 있다 — 여기서 프리미엄 판정을 다시 하지 말 것.
+        // ⚠️ 버튼은 대국 화면과 **같은 컴포넌트·같은 이름표**(`UiStrings.featureShortName`)다 — 같은 기능은 같은 얼굴이어야 한다.
+        ReplayAnalysisButtons(analysis)
     }
 }
 

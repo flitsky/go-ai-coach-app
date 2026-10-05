@@ -947,6 +947,7 @@ private fun GoCoachScreen(
                     sessionStore.clear()
                     dispatch(GameUiEvent.ResumeSavedSession(snapshot.copy(topMovesEnabled = topMovesEnabled)))
                 },
+                engineScoring = engineClient, engineAnalysis = engineClient, // 지나간 국면의 형세·추천 수(백로그 #218)
             )
         }
         ScreenDestination.MyPage -> {

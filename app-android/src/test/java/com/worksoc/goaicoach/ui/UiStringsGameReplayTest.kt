@@ -6,6 +6,8 @@ import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNoteDialogTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryReferenceLabelFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayAnalysisBusyFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayAnalysisFailedFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchBlockedFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchOverwriteMessageFor
@@ -13,6 +15,7 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataForSwingsFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreSwingsFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayNoTopMovesFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayRowBadgeFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSectionFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingChipLabelFor
@@ -63,6 +66,12 @@ class UiStringsGameReplayTest {
                 "참고 기보 라벨" to gameHistoryReferenceLabelFor(language),
                 "한줄평 안내문" to gameHistoryNotePlaceholderFor(language),
                 "한줄평 다이얼로그 제목" to gameHistoryNoteDialogTitleFor(language),
+                "분석 — 엔진 바쁨" to gameReplayAnalysisBusyFor(language, ticketKept = false),
+                "분석 — 엔진 바쁨(1회권 걸었음)" to gameReplayAnalysisBusyFor(language, ticketKept = true),
+                "분석 — 답 없음" to gameReplayAnalysisFailedFor(language, ticketKept = false),
+                "분석 — 답 없음(1회권 걸었음)" to gameReplayAnalysisFailedFor(language, ticketKept = true),
+                "분석 — 판에 올릴 추천 수 없음" to gameReplayNoTopMovesFor(language, ticketKept = false),
+                "분석 — 판에 올릴 추천 수 없음(1회권 걸었음)" to gameReplayNoTopMovesFor(language, ticketKept = true),
             ).forEach { (what, text) ->
                 assertTrue("$language / $what 문구가 비었다", text.isNotBlank())
             }
@@ -70,6 +79,26 @@ class UiStringsGameReplayTest {
                 assertTrue(
                     "$language / $step 이동 라벨이 비었다",
                     gameReplayNavigationLabelFor(language, step).isNotBlank(),
+                )
+            }
+        }
+    }
+
+    /**
+     * ⚠️ **1회권을 걸었던 사람에게는 표 얘기를 한다**(백로그 #218) — 차감은 결과가 나온 뒤라 한 장도 안 나갔다. 사유 뒤에
+     * 한 줄을 덧붙였더니 토스트의 두 줄 제한에 표 얘기가 잘려서, 문장을 따로 뒀다. 두 문장이 같아지면 그 안내가 사라진 것이다.
+     */
+    @Test
+    fun theAnalysisToastsSayTheTicketWasKeptWhenOneWasStaked() {
+        languages.forEach { language ->
+            listOf<Pair<String, (Boolean) -> String>>(
+                "엔진 바쁨" to { kept -> gameReplayAnalysisBusyFor(language, kept) },
+                "답 없음" to { kept -> gameReplayAnalysisFailedFor(language, kept) },
+                "추천 수 없음" to { kept -> gameReplayNoTopMovesFor(language, kept) },
+            ).forEach { (what, text) ->
+                assertTrue(
+                    "$language / $what — 1회권을 걸었을 때의 문구가 걸지 않았을 때와 같다. 표가 안 나갔다는 말이 빠졌다.",
+                    text(true) != text(false),
                 )
             }
         }
