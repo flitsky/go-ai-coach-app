@@ -1,0 +1,17 @@
+{
+ "size": 13,
+ "profile": "rank_9d",
+ "pairs": {
+  "16:16": {
+   "games": 16,
+   "humanWins": 6,
+   "humanWinRate": 0.375,
+   "ci95": [
+    0.18480982554752806,
+    0.613593529020652
+   ],
+   "meanHumanLead": -22.864921803375,
+   "meanMoves": 147.9375
+  }
+ }
+}
