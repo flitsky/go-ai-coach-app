@@ -66,6 +66,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.GoogleBrandBlue
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesTitleFor
@@ -330,7 +331,9 @@ internal fun SettingsScreen(
             // 엔진이 바빠도 열어 둔다 — 다음 엔진 호출부터 적용되므로 진행 중 탐색을 흔들지 않는다.
             SearchTimeSettingsPanel(
                 settings = screenState.searchTimeSettings,
-                showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi(),
+                // 사람 모델이 있는 기기에서는 초고수도 탐색하지 않는다(7단 프로필, 2026-10-06) — 「제한이 길수록 세게 둔다」는 안내는 예전 방식으로
+                // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 기력 측정 대국의 가용성과 같은 답이다.
+                showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi() && !LocalRankMeasureUiState.current.isAvailable,
                 enabled = true,
                 onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
             )

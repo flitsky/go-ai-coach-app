@@ -90,6 +90,8 @@ enum class PlayLevelGroup(
      *
      * ⚠️ **AI 착수에만 쓴다.** 형세 보기·추천 수의 공용 프로필([PlayLevelSetting.toEngineProfile])에는 얹지 않는다 —
      * 상대가 누구냐에 따라 내 추천 수의 깊이가 달라지면 안 된다.
+     * ⚠️ **2026-10-06부터 이것은 폴백의 값이다** — 사람 모델이 있는 기기에서는 고수·초고수도 사람 모델 프로필(3단·7단)로 두고
+     * 탐색하지 않는다(`humanPlayStyle`). 사람 모델을 못 쓰는 엔진(원격·파일 없음)에서만 이 방문 수로 탐색한다.
      */
     fun aiMoveVisits(level: Int): Int =
         if (this == FastBeginner && level.coerceIn(1, maxLevel) == maxLevel) FastBeginnerTopTierAiMoveVisits else visits

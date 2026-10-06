@@ -75,16 +75,16 @@ class HumanMoveSamplerTest {
     }
 
     /**
-     * **캐릭터 가운데** 사람 모델로 두는 것은 빠른 초급의 급 구간 셋뿐이다 — 고수·초고수와 숨겨 둔 그룹은 지금 방식이다.
-     * 급수를 직접 정한 상대(기력 측정 대국, #219)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
+     * 캐릭터 다섯이 모두 사람 모델로 둔다 — 판다 15급 · 돌뫼 9급 · 반상 1급 · 사범 꼬북 3단 · 관장 천원 7단(사용자 2026-10-06, 폰에서 둬 본 뒤).
+     * 숨겨 둔 그룹은 예전 방식이다. 급수를 직접 정한 상대(기력 측정 대국, #219)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
      */
     @Test
     fun onlyTheThreeKyuCharactersHaveAHumanStyle() {
         assertEquals("rank_15k", PlayLevelSetting(level = 1).humanPlayStyle()?.profile)
         assertEquals("rank_9k", PlayLevelSetting(level = 2).humanPlayStyle()?.profile)
-        assertEquals("rank_3k", PlayLevelSetting(level = 3).humanPlayStyle()?.profile)
-        assertNull(PlayLevelSetting(level = 4).humanPlayStyle())
-        assertNull(PlayLevelSetting(level = 5).humanPlayStyle())
+        assertEquals("rank_1k", PlayLevelSetting(level = 3).humanPlayStyle()?.profile)
+        assertEquals("rank_3d", PlayLevelSetting(level = 4).humanPlayStyle()?.profile)
+        assertEquals("rank_7d", PlayLevelSetting(level = 5).humanPlayStyle()?.profile)
         PlayLevelGroup.entries.filter { it != PlayLevelGroup.FastBeginner && it != PlayLevelGroup.CustomRank }.forEach { group ->
             assertNull(PlayLevelSetting(group = group, level = 1).humanPlayStyle(), "$group keeps its current move selection")
         }

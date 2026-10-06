@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import kotlin.random.Random
@@ -20,20 +21,24 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 /**
- * 급수 캐릭터는 사람 모델로 둔다(백로그 #215) — 신경망은 한 번에 하나만 올리므로, AI 차례가 올릴 망을 고른다:
- * 급수 캐릭터(초보·하수·중수)의 차례는 사람 모델, 그 밖의 AI 차례는 주 모델.
+ * 캐릭터는 사람 모델로 둔다(백로그 #215) — 신경망은 한 번에 하나만 올리므로, AI 차례가 올릴 망을 고른다:
+ * 캐릭터 다섯(15급·9급·1급·3단·7단)의 차례는 사람 모델, 그 밖의 AI 차례(숨겨 둔 그룹)는 주 모델.
  *
  * 엔진에 가는 명령의 **순서**를 본다. 갈아 올린 프로세스는 판이 비어 있어서, 판을 맞추기 전에 정책을 물으면 빈 판의 수를 둔다.
  */
 class LocalEngineSessionClientHumanStyleTest {
     private val engine = ParkingCoreApi().apply {
         humanNetworkAvailable = true
-        humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9k" to OnlyE5, "rank_3k" to OnlyE5, "rank_9d" to JudgePlaysOn)
+        humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9k" to OnlyE5, "rank_1k" to OnlyE5, "rank_3d" to OnlyE5, "rank_7d" to OnlyE5, "rank_9d" to JudgePlaysOn)
     }
     private val client = LocalEngineSessionClient(coreApi = engine, currentSessionGeneration = { 0L }, random = Random(7))
 
     private suspend fun turn(level: Int, state: GameState = GameState.empty()) =
         client.runAutoAiTurn(state, PlayLevelSetting(level = level), Profile, SearchTimeSettings(), EngineSearchMode.GtpStatefulFast, isolateSearchCache = false)
+
+    /** 사람 모델로 두지 않는 AI의 차례 — 숨겨 둔 그룹(초급)은 캐릭터가 아니라 예전 방식(주 모델 탐색)으로 둔다. */
+    private suspend fun mainNetworkTurn(state: GameState = GameState.empty()) =
+        client.runAutoAiTurn(state, PlayLevelSetting(group = PlayLevelGroup.Beginner, level = 1), Profile, SearchTimeSettings(), EngineSearchMode.GtpStatefulFast, isolateSearchCache = false)
 
     /** 사람 모델을 올리고 → 판을 맞추고 → 그 급수의 정책을 받아 → 둔다. 탐색(`analyze`)이 없다. */
     @Test
@@ -48,33 +53,38 @@ class LocalEngineSessionClientHumanStyleTest {
         assertEquals(EngineNetwork.Human, result.scoreEstimate?.network, "the snapshot after the move is the human network's provisional value")
     }
 
-    /** 캐릭터마다 프로필이 다르다 — 초보 15급, 하수 9급, 중수 3급(구간의 가운데). */
+    /**
+     * 캐릭터마다 프로필이 다르다 — 판다 15급 · 돌뫼 9급 · 반상 1급 · 사범 꼬북 3단 · 관장 천원 7단(사용자 2026-10-06).
+     * 단 구간 둘도 탐색하지 않는다: 주 모델 탐색은 9단 프로필을 전승으로 이기는 세기라 「3단」·「7단」이 될 수 없다.
+     */
     @Test
-    fun eachKyuCharacterAsksForItsOwnProfile() = runBlocking {
-        turn(level = 1)
-        turn(level = 2)
-        turn(level = 3)
+    fun eachCharacterAsksForItsOwnProfile() = runBlocking {
+        (1..5).forEach { level -> turn(level = level) }
 
-        assertEquals(listOf("humanPolicy rank_15k", "humanPolicy rank_9k", "humanPolicy rank_3k"), engine.calls.filter { it.startsWith("humanPolicy") })
+        assertEquals(
+            listOf("humanPolicy rank_15k", "humanPolicy rank_9k", "humanPolicy rank_1k", "humanPolicy rank_3d", "humanPolicy rank_7d"),
+            engine.calls.filter { it.startsWith("humanPolicy") },
+        )
         assertEquals(1, engine.calls.count { it.startsWith("useNetwork") }, "staying on the human network must not restart the engine every move")
+        assertFalse(engine.calls.contains("analyze"), "no character searches while the human network is available")
     }
 
-    /** 단 구간 캐릭터(고수·초고수)는 주 모델 탐색이다 — 사람 모델이 있어도 올리지 않는다. */
+    /** 캐릭터가 아닌 AI(숨겨 둔 그룹)는 주 모델 탐색이다 — 사람 모델이 있어도 올리지 않는다. */
     @Test
-    fun aDanCharacterNeverLoadsTheHumanNetwork() = runBlocking {
-        turn(level = 5)
+    fun anAiThatIsNotACharacterNeverLoadsTheHumanNetwork() = runBlocking {
+        mainNetworkTurn()
 
         assertFalse(engine.calls.any { it.startsWith("useNetwork") || it.startsWith("humanPolicy") })
         assertTrue(engine.calls.contains("analyze"))
     }
 
-    /** 급수 캐릭터와 두다가 단 구간 캐릭터의 차례가 오면 주 모델로 갈아 올리고 **판부터** 맞춘다. */
+    /** 캐릭터와 두다가 주 모델로 두는 AI의 차례가 오면 주 모델로 갈아 올리고 **판부터** 맞춘다. */
     @Test
-    fun aDanTurnAfterAKyuTurnSwapsBackToTheMainNetworkAndResyncs() = runBlocking {
+    fun aMainNetworkTurnAfterACharacterTurnSwapsBackAndResyncs() = runBlocking {
         turn(level = 1)
         val before = engine.calls.size
 
-        turn(level = 5)
+        mainNetworkTurn()
 
         assertEquals(listOf("useNetwork Main", "configure", "newGame"), engine.calls.drop(before).take(3))
     }
@@ -196,10 +206,10 @@ class LocalEngineSessionClientHumanStyleTest {
         assertTrue(calls.contains("deadStones"))
     }
 
-    /** 주 모델로 두던 판(단 구간 캐릭터)의 계가는 예전 그대로다 — 갈아 올리지도, 판을 다시 맞추지도 않는다. */
+    /** 주 모델로 두던 판의 계가는 예전 그대로다 — 갈아 올리지도, 판을 다시 맞추지도 않는다. */
     @Test
     fun scoringAGameAlreadyOnTheMainNetworkDoesNotResync() = runBlocking {
-        turn(level = 5)
+        mainNetworkTurn()
         val before = engine.calls.size
 
         client.resolveEndgameForState(EndedByTwoPasses, Profile, prePassCandidates = emptyList())
@@ -209,11 +219,14 @@ class LocalEngineSessionClientHumanStyleTest {
     }
 
     /**
-     * 초고수는 **둘 때만** 32방문으로 엔진을 건다. 차례가 끝난 뒤 세션에 돌려주는 프로필은 16방문 그대로다 — 그것이 공용 프로필이
-     * 되어 추천 수·형세가 쓰므로, 상대의 방문 수가 새면 초고수와 둘 때만 내 추천 수가 두 배로 느려진다.
+     * **사람 모델을 못 쓰는 엔진**에서 초고수는 예전처럼 탐색하고, **둘 때만** 32방문으로 엔진을 건다. 차례가 끝난 뒤 세션에 돌려주는
+     * 프로필은 16방문 그대로다 — 그것이 공용 프로필이 되어 추천 수·형세가 쓰므로, 상대의 방문 수가 새면 초고수와 둘 때만 내 추천 수가
+     * 두 배로 느려진다.
      */
     @Test
-    fun theTopTierSearchesWithItsOwnVisitsButHandsBackTheSharedProfile() = runBlocking {
+    fun withoutTheHumanModelTheTopTierSearchesWithItsOwnVisitsButHandsBackTheSharedProfile() = runBlocking {
+        engine.humanNetworkAvailable = false
+
         val result = turn(level = 5)
 
         assertEquals(listOf(32), engine.configuredVisits)
@@ -221,7 +234,9 @@ class LocalEngineSessionClientHumanStyleTest {
     }
 
     @Test
-    fun theOtherMainNetworkTierKeepsSearchingWithSixteenVisits() = runBlocking {
+    fun withoutTheHumanModelTheOtherDanTierKeepsSearchingWithSixteenVisits() = runBlocking {
+        engine.humanNetworkAvailable = false
+
         turn(level = 4)
 
         assertEquals(listOf(16), engine.configuredVisits)
