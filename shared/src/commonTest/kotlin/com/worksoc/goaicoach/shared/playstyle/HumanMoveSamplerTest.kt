@@ -76,7 +76,7 @@ class HumanMoveSamplerTest {
 
     /**
      * **캐릭터 가운데** 사람 모델로 두는 것은 빠른 초급의 급 구간 셋뿐이다 — 고수·초고수와 숨겨 둔 그룹은 지금 방식이다.
-     * 급수를 직접 고른 상대(커스텀 대국, #217)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
+     * 급수를 직접 정한 상대(기력 측정 대국, #219)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
      */
     @Test
     fun onlyTheThreeKyuCharactersHaveAHumanStyle() {

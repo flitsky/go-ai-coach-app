@@ -21,6 +21,13 @@ enum class SeatController(val label: String) {
 enum class HumanGameType(val label: String) {
     Normal("일반"),
     Teaching("티칭 모드"),
+
+    /**
+     * **기력 측정 대국**(백로그 #219)의 사람 좌석 — 자기 기력과 같은 급수의 AI와 두고, 결과가 기력을 옮긴다.
+     * 이 판에서는 형세 보기·추천 수·무르기를 끈다(재는 것은 스스로 둔 수여야 한다).
+     * ⚠️ 이름이 곧 저장 형식이다(좌석 설정의 코덱이 enum 이름을 적는다) — 바꾸지 말 것. 이 값을 모르는 옛 빌드는 `Normal`로 읽는다.
+     */
+    RankMeasure("기력 측정"),
 }
 
 enum class SeatId(
@@ -137,6 +144,13 @@ data class SidePlayerSetup(
     val humanGameType: HumanGameType = HumanGameType.Normal,
     val playLevel: PlayLevelSetting = PlayLevelSetting(),
 )
+
+/**
+ * 이 좌석 배치가 **기력 측정 대국**인가(백로그 #219) — 사람 좌석의 대국 종류가 말한다. 대국 중 도움(형세 보기·추천 수·무르기)을
+ * 끄는 자리들이 이것 하나를 본다. 급수·기력은 6계층(`application.rankmeasure`)의 일이고, 여기는 "이 판이 그런 판인가"만 안다.
+ */
+fun PlayerSetup.isRankMeasure(): Boolean =
+    listOf(black, white).any { side -> side.controller == SeatController.Human && side.humanGameType == HumanGameType.RankMeasure }
 
 /**
  * 이 좌석 배치에 **그룹 기본보다 더 깊이 읽는 AI**(초고수)가 앉아 있는가(백로그 #215) — 그런 AI는 「최대 탐색 시간 제한」이

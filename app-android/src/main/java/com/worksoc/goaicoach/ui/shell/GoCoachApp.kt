@@ -26,7 +26,6 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.botcharacter.isBotCharacterPerkActive
 import com.worksoc.goaicoach.application.botcharacter.matchOpponentCharacter
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
-import com.worksoc.goaicoach.application.customgame.withCustomRankForNextGame
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
@@ -51,6 +50,7 @@ import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.rankmeasure.withEndedRankMeasureGame
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAppStartLog
@@ -82,6 +82,7 @@ import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.DeviceIdentityStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
@@ -116,6 +117,12 @@ import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
 import com.worksoc.goaicoach.ui.history.GameHistoryScreen
 import com.worksoc.goaicoach.ui.home.GoCoachHomeScreen
+import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
+import com.worksoc.goaicoach.ui.home.RankMeasureRecordedEffect
+import com.worksoc.goaicoach.ui.home.beginRankMeasureGame
+import com.worksoc.goaicoach.ui.home.buildRankMeasureUiState
+import com.worksoc.goaicoach.ui.home.leaveRankMeasureGame
+import com.worksoc.goaicoach.ui.home.prepareNextRankMeasureGame
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.ProvideUiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
@@ -135,10 +142,7 @@ import com.worksoc.goaicoach.ui.play.ProvisionalScoreRefineEffect
 import com.worksoc.goaicoach.ui.play.ScoreRecordRemeasureEffect
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
 import com.worksoc.goaicoach.ui.settings.SettingsScreen
-import com.worksoc.goaicoach.ui.setup.CustomGameRecordedEffect
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
-import com.worksoc.goaicoach.ui.setup.LocalCustomGameUiState
-import com.worksoc.goaicoach.ui.setup.buildCustomGameUiState
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
 import com.worksoc.goaicoach.ui.study.StudyScreen
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
@@ -451,6 +455,7 @@ private fun GoCoachScreen(
                     // while the app was backgrounded (see buildEndedGameRestoreDisplayPlan).
                     val endedGameDisplay = prompt.pendingSavedSession?.let(::buildEndedGameRestoreDisplayPlan)
                     if (endedGameDisplay != null) {
+                        prompt.pendingSavedSession?.let { ended -> settingsState = settingsState.withEndedRankMeasureGame(ended) } // 좌석은 일반 설정에 없다(#219)
                         applyFinalScoreWithJudgement(endedGameDisplay)
                         currentDestination = ScreenDestination.InGame
                     }
@@ -614,6 +619,8 @@ private fun GoCoachScreen(
         onForegrounded = { controllers.autoAiTurnController.onAppForegrounded() },
     )
     cancelUndoSync = controllers.undoController::cancelPendingSync
+    // 기력 측정 대국(백로그 #219) — 내 기력과 연승·연패. 본체는 ui/home/RankMeasureUiState.kt에 있다(상태 훅 예산).
+    val rankMeasureUiState = buildRankMeasureUiState(context, isAvailable = engineClient.capabilities.supportsHumanNetwork)
     exitToHome = {
         controllers.autoAiTurnController.cancelInFlightTurn() // 나가면 AI 차례는 물음 없이 멈춘다(#74)
         isGameEnded = true
@@ -623,12 +630,11 @@ private fun GoCoachScreen(
             context, true, scoreState.finalScoreJudgement, gameState, playerSetup,
             scoreState.scoreSnapshots,
         )
+        // 기력 측정 대국이었으면 방금 기록한 판을 기력에 반영하고 일반 대국 설정으로 되돌린다 — 기록 **뒤**, 갈아엎기 **전**(#219).
+        leaveRankMeasureGame(context, selectedLanguage, playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home
     }
-    // 커스텀 대국(백로그 #217) — 다음 판의 상대 급수와 승급 랠리. 본체는 ui/setup/CustomGameUiState.kt에 있다(상태 훅 예산).
-    val customGameUiState = buildCustomGameUiState(context, isAvailable = engineClient.capabilities.supportsHumanNetwork)
-
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
             event = event,
@@ -636,8 +642,8 @@ private fun GoCoachScreen(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = {
-                    // 승급 랠리가 올린 급수는 새 대국을 시작할 때 좌석에 옮겨 적는다 — 「재 대국」은 설정 화면을 거치지 않는다.
-                    playerSetup.withCustomRankForNextGame(customGameUiState.state).takeIf { it != playerSetup }?.let(controllers.settingsController::changePlayerSetup)
+                    // 기력 측정 대국의 「재 대국」은 상대를 지금의 내 기력으로, 판 크기를 그 기력이 둘 수 있는 것으로 맞추고 시작한다(#219).
+                    prepareNextRankMeasureGame(context, selectedLanguage, settingsState.playerSetup, settingsState.boardSize, rankMeasureUiState.latestState(), controllers.settingsController)
                     sessionStore.clear()
                     savedSessionUiState = savedSessionUiState.dismiss()
                     controllers.newGameController::startConfiguredGame.invoke()
@@ -847,42 +853,28 @@ private fun GoCoachScreen(
     OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
 
     // 형세 보기를 켜 둔 채 급수 캐릭터와 두면 AI가 둘 때마다 화면의 형세가 사람 모델의 임시 값이 된다 — 사람 차례에 주 모델로 다시 잰다(백로그 #215).
+    // 기력 측정 대국에서는 형세 보기가 꺼져 있으니 재지 않는다(#219).
     ProvisionalScoreRefineEffect(
-        input = ProvisionalScoreRefineInput(
-            isScoreViewOn = uxOptions.showOwnershipOverlay,
-            shownEstimateNetwork = scoreState.scoreEstimate?.network,
-            isGameEnded = isGameEnded,
-            isEngineReady = isEngineReady,
-            isEngineBusy = isEngineBusy,
-            isPendingUndoSync = isPendingUndoSync,
-            isHumanTurn = playerSetup.seatFor(gameState.nextPlayer).isHuman,
-            attempt = ProvisionalScoreRefineAttempt(runtimeState.sessionGeneration, gameState.moves.size),
-        ),
+        ProvisionalScoreRefineInput(uxOptions.showOwnershipOverlay && !playerSetup.isRankMeasure(), scoreState.scoreEstimate?.network, isGameEnded, isEngineReady, isEngineBusy, isPendingUndoSync, playerSetup.seatFor(gameState.nextPlayer).isHuman, ProvisionalScoreRefineAttempt(runtimeState.sessionGeneration, gameState.moves.size)),
         isEngineBusyNow = { isEngineBusy || engineClient.isEngineOperationInFlight },
         refine = controllers.scoreEstimateController::request,
     )
 
-    // 끝난 커스텀 대국을 승급 랠리에 반영하고, 급수가 오르면 한 줄로 알린다(백로그 #217).
-    CustomGameRecordedEffect(customGameUiState, isGameEnded, scoreState.finalScoreJudgement != null || gameState.moves.lastOrNull() is Move.Resign, runtimeState.sessionGeneration, gameState, botCharacterUiState.collection, premiumUiState.isPurchased)
-
+    // 끝난 판에 거는 효과 둘은 **결과가 난 뒤**에 돈다(함정 88) — 「끝났다」는 표시는 계가보다 먼저 켜진다.
+    val isResultKnown = scoreState.finalScoreJudgement != null || gameState.moves.lastOrNull() is Move.Resign
+    // 끝난 기력 측정 대국을 기력에 반영하고, 기력이 바뀌면 한 줄로 알린다(백로그 #219).
+    RankMeasureRecordedEffect(rankMeasureUiState, isGameEnded, isResultKnown, runtimeState.sessionGeneration, gameState)
     // 대국이 끝나면 그 판의 형세 기록(사람 모델의 임시 값)을 주 모델로 다시 잰다 — 다시보기를 연 동안은 그 화면이 잰다(백로그 #215).
-    ScoreRecordRemeasureEffect(
-        isActive = isGameEnded && isEngineReady && currentDestination != ScreenDestination.GameHistory,
-        isResultKnown = scoreState.finalScoreJudgement != null || gameState.moves.lastOrNull() is Move.Resign,
-        sessionGeneration = runtimeState.sessionGeneration,
-        gameState = gameState,
-        scoreSnapshots = scoreState.scoreSnapshots,
-        engineClient = engineClient,
-        profile = runtimeState.engineProfile,
-        onRemeasured = { remeasured -> scoreState = scoreState.copy(scoreSnapshots = adoptRemeasuredScores(scoreState.scoreSnapshots, remeasured)) },
-    )
+    ScoreRecordRemeasureEffect(isGameEnded && isEngineReady && currentDestination != ScreenDestination.GameHistory, isResultKnown, runtimeState.sessionGeneration, gameState, scoreState.scoreSnapshots, engineClient, runtimeState.engineProfile) { remeasured ->
+        scoreState = scoreState.copy(scoreSnapshots = adoptRemeasuredScores(scoreState.scoreSnapshots, remeasured))
+    }
 
     CompositionLocalProvider(
         LocalPremiumUiState provides premiumUiState,
         LocalConsumableUiState provides consumableUiState,
         // 구독은 프리미엄 배선이 만들어진 **뒤에야** 알 수 있어 여기서 얹는다(#157).
         LocalBotCharacterUiState provides botCharacterUiState.copy(subscriptionActive = premiumUiState.isPurchased),
-        LocalCustomGameUiState provides customGameUiState,
+        LocalRankMeasureUiState provides rankMeasureUiState,
     ) {
     // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
     // 체크인/지급/상태는 전부 ui/monetization/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).
@@ -936,7 +928,13 @@ private fun GoCoachScreen(
             GoCoachHomeScreen(
                 onStartMatchClick = {
                     dispatch(GameUiEvent.DismissResumePrompt)
+                    leaveRankMeasureGame(context, selectedLanguage, playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
                     currentDestination = ScreenDestination.GameSetup
+                },
+                onStartRankMeasureGame = { start ->
+                    dispatch(GameUiEvent.DismissResumePrompt)
+                    beginRankMeasureGame(start, rankMeasureUiState, controllers.settingsController) { dispatch(GameUiEvent.StartConfiguredGame) }
+                    currentDestination = ScreenDestination.InGame
                 },
                 onSettingsClick = { currentDestination = ScreenDestination.Settings },
                 onStudyClick = { currentDestination = ScreenDestination.Study },
@@ -1034,7 +1032,7 @@ private fun GoCoachScreen(
                     FinishedGameFlow.request(screenState.gameState.moves.size)
                     currentDestination = ScreenDestination.GameHistory
                 },
-                onOpenGameSetup = { currentDestination = ScreenDestination.GameSetup },
+                onOpenGameSetup = { leaveRankMeasureGame(context, selectedLanguage, playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController); currentDestination = ScreenDestination.GameSetup },
                 // ⚠️ 대국 화면에는 나가는 길이 **뒤로가기뿐이었다** — 있긴 한데 보이지 않았다
                 // (백로그 #175). 메뉴의 '대국 나가기'는 **뒤로가기와 정확히 같은 길**을 탄다
                 // (2026-09-18 사용자 확정): 대국 중이면 기권을 먼저 묻고, 끝난 판이면 바로 나간다.

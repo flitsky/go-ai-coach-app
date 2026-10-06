@@ -1480,8 +1480,8 @@ internal data class UiStrings(
                 if (character != null) {
                     botCharacterName(character)
                 } else if (customRank != null) {
-                    // 급수를 직접 고른 상대(커스텀 대국, 백로그 #217) — 캐릭터가 없으니 급수가 곧 이름이다.
-                    customGameOpponentLabelFor(language, customRank)
+                    // 급수를 직접 정한 상대(기력 측정 대국 #219 · 나중의 인공지능 캐릭터 #220) — 캐릭터가 없으니 급수가 곧 이름이다.
+                    rankedOpponentLabelFor(language, customRank)
                 } else {
                     val levelText = if (setup.playLevel.group == PlayLevelGroup.FastBeginner) {
                         fastBeginnerTierLabel(setup.playLevel.safeLevel)

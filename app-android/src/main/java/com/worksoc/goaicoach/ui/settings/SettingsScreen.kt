@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.application.auth.state.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
 import com.worksoc.goaicoach.match.hasDeepSearchingAi
+import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
@@ -283,7 +284,8 @@ internal fun SettingsScreen(
             PlayerSetupPanel(
                 state = screenState.playerSetupUi,
                 // 엔진이 바빠도 받는다 — 다음 수부터 적용(2026-09-30, `buildPlayerSetupChangePlan`).
-                enabled = true,
+                // 기력 측정 대국의 좌석은 잠근다(백로그 #219 — `GameMenuSection`과 같은 이유).
+                enabled = !screenState.playerSetup.isRankMeasure(),
                 onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
             )
 

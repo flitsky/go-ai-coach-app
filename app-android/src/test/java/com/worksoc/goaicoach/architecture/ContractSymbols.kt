@@ -205,8 +205,8 @@ internal object ContractSymbols {
         // 사용자 정체성(닉네임) 규칙 — "누구의 세션인가"의 일부라 6계층이다. 2026-09-25 #85가 어댑터에서
         // 올려 새로 생겼고(`UserNicknamePolicy`), 5계층 쪽 참조는 0이다.
         "com.worksoc.goaicoach.application.profile",
-        // 커스텀 대국(백로그 #217) — 급수를 고를 수 있는 범위를 컬렉션·구독(6계층)으로 정하고 연승 상태를 이어 간다.
-        "com.worksoc.goaicoach.application.customgame",
+        // 기력 측정 대국(백로그 #219) — 내 기력과 연승·연패를 이어 가는 세션 상태다. 대국 기록(5계층)을 읽어 반영한다.
+        "com.worksoc.goaicoach.application.rankmeasure",
     )
 
     /**

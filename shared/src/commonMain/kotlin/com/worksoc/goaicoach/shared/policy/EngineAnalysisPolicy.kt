@@ -52,7 +52,7 @@ fun AnalysisLimit.fastCandidateAnalysis(candidateCount: Int = this.candidateCoun
     )
 
 fun PlayLevelSetting.aiMoveSearchMode(): EngineSearchMode =
-    // 커스텀 대국(급수 직접)은 캐릭터와 같은 경로다 — 사람 모델이 없을 때의 폴백도 빠른 초급처럼 GTP로 둔다.
+    // 급수를 직접 정한 상대(기력 측정 대국)는 캐릭터와 같은 경로다 — 사람 모델이 없을 때의 폴백도 빠른 초급처럼 GTP로 둔다.
     if (group == PlayLevelGroup.FastBeginner || group == PlayLevelGroup.CustomRank) {
         EngineSearchMode.GtpStatefulFast
     } else {

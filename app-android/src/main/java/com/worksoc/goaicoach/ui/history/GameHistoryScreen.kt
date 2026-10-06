@@ -439,7 +439,7 @@ internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings)
     val summary = listOf(
         dateOrReferenceLabel,
         "${entry.boardSize}x${entry.boardSize}",
-        // 급수를 직접 고른 상대와 둔 판은 그 급수를 남긴다(백로그 #217 — `사람:AI 5급`).
+        // 급수를 직접 정한 상대와 둔 판(기력 측정 대국, 백로그 #219)은 그 급수를 남긴다 — `사람:AI 5급`.
         seatMatchupLabelWithRanksFor(strings, entry.playerSetup),
         handicapPhrase(strings, entry.handicapCount),
         strings.gameHistoryOutcomeLabel(entry.winner, entry.isResign, entry.margin),

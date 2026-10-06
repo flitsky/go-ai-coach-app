@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.MatchSeatSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.match.turnStatusText
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -321,6 +322,13 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
         input.matchSeats.current.canAcceptBoardInput
 
     /**
+     * **기력 측정 대국에서는 대국 중 도움이 전부 꺼진다**(백로그 #219, 사용자 2026-10-06) — 형세 보기 · 추천 수 · 무르기.
+     * 재는 것은 스스로 둔 수여야 한다. 켜 둔 「매 수 형세」·「매 수 추천」도 이 판에서는 **꺼진 것으로 보이고 눌리지 않는다**
+     * (설정은 그대로 남아 다음 일반 대국에서 다시 켜져 있다). 판이 끝나면 풀린다 — 종국의 영역 표시는 누구에게나 보인다.
+     */
+    val isRankMeasureGame = input.playerSetup.isRankMeasure() && !input.isGameEnded
+
+    /**
      * 코칭 버튼(형세 판단·추천 수)이 지금 눌릴 수 있는가.
      *
      * **두 버튼이 같은 조건을 쓰는 것이 핵심이다**(2026-08-30). 예전에는 추천 수만
@@ -349,7 +357,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
      * 무르기 직후 두 버튼이 잠깐 꺼지는 것도 이 조건이다 — 의도된 동작(refactor backlog #104,
      * `EngineOperationKind.isBlocking` 위 주석).
      */
-    val coachingGateOpen = !input.isGameEnded && !input.isEngineBusy
+    val coachingGateOpen = !input.isGameEnded && !input.isEngineBusy && !isRankMeasureGame
 
     /**
      * **빈 판에서는 형세를 볼 것이 없다**(백로그 #43, 2026-08-30 사용자 제보). 덤만 반영된
@@ -395,6 +403,10 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
      */
     fun coachingButtonEnabled(isFilled: Boolean, canRequest: Boolean): Boolean = isFilled || canRequest
 
+    // 기력 측정 대국에서는 켜 둔 토글도 꺼진 것으로 그린다 — 켜진 채 잠기면 "끌 수 있어야 한다"는 위 규칙과 부딪히고, 실제로도 아무것도 안 나온다.
+    val topMovesShownAsOn = input.topMovesEnabled && !isRankMeasureGame
+    val evalShownAsOn = input.uxOptions.showOwnershipOverlay && !isRankMeasureGame
+
     return listOf(
         GameActionButtonState(
             role = GameActionButtonRole.Pass,
@@ -410,22 +422,22 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             // Always enabled regardless of engine-busy state -- undoLastTurn()
             // (application/undo/UndoController.kt) applies locally immediately
             // and safely, no matter what the engine is doing.
-            enabled = input.gameState.moves.isNotEmpty() && input.matchMode != MatchMode.AiVsAi,
+            enabled = input.gameState.moves.isNotEmpty() && input.matchMode != MatchMode.AiVsAi && !isRankMeasureGame,
             isFilled = false,
         ),
         GameActionButtonState(
             role = GameActionButtonRole.TopMoves,
             label = "Best",
             event = GameUiEvent.ToggleTopMoves,
-            enabled = coachingButtonEnabled(input.topMovesEnabled, canRequestTopMoves),
-            isFilled = input.topMovesEnabled,
+            enabled = coachingButtonEnabled(topMovesShownAsOn, canRequestTopMoves),
+            isFilled = topMovesShownAsOn,
         ),
         GameActionButtonState(
             role = GameActionButtonRole.Eval,
             label = "Eval",
             event = GameUiEvent.ToggleEvalWithGradient,
-            enabled = coachingButtonEnabled(input.uxOptions.showOwnershipOverlay, canRequestEval),
-            isFilled = input.uxOptions.showOwnershipOverlay,
+            enabled = coachingButtonEnabled(evalShownAsOn, canRequestEval),
+            isFilled = evalShownAsOn,
         ),
     )
 }

@@ -33,7 +33,7 @@ data class HumanPlayStyle(
  * 초보와 하수의 차이가 작게 느껴지면 여기 값을 벌린다.
  */
 fun PlayLevelSetting.humanPlayStyle(): HumanPlayStyle? {
-    // 커스텀 대국(백로그 #217) — 고른 급수의 공식 프로필 그대로 둔다. 구간이 한 칸이다.
+    // 급수를 직접 정한 상대(기력 측정 대국, 백로그 #219) — 그 급수의 공식 프로필 그대로 둔다. 구간이 한 칸이다.
     customRank()?.let { rank ->
         val label = "${rank.number}${if (rank.isDan) "d" else "k"}"
         return HumanPlayStyle(profile = rank.profile, weakestRank = label, strongestRank = label)

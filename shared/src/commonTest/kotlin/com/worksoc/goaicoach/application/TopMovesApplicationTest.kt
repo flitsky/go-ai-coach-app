@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.contract.*
 import com.worksoc.goaicoach.application.endgame.*
 import com.worksoc.goaicoach.application.engine.*
 import com.worksoc.goaicoach.application.engine.operation.*
+import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.application.savedgame.*
 import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.application.topmoves.*
@@ -28,6 +29,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
+import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
@@ -1134,6 +1136,62 @@ class TopMovesApplicationTest {
         assertNull(undoCachedAnalysis)
         assertNull(failureDisplay)
         assertNull(discardLog)
+    }
+
+    /**
+     * **기력 측정 대국에서는 추천 수 탐색이 아예 걸리지 않는다**(백로그 #219, 사용자 2026-10-06 — 대국 중 도움 없음).
+     * 버튼을 잠그는 것만으로는 모자라다: 「매 수 추천」·「착수 평가」를 켜 둔 사람에게는 매 턴 **자동으로** 걸리기 때문이다.
+     * 같은 요청이 일반 대국에서는 그대로 걸린다(대조군) — 막힌 이유가 기력 측정 대국이라는 것 하나임을 본다.
+     */
+    @Test
+    fun aRankMeasureGameNeverLaunchesTopMoveAnalysis() {
+        val state = GameState.empty(boardSize = BoardSize.Nine)
+
+        fun launchedFor(playerSetup: PlayerSetup, automatic: Boolean): List<EngineOperationKind> {
+            val operations = mutableListOf<EngineOperationKind>()
+            var analysisState = GameSessionAnalysisState.empty(state)
+            runTopMoveAnalysisApplication(
+                TopMoveAnalysisRunRequest(
+                    engineClient = FakeTopMoveEngineSessionClient(
+                        result = AnalysisResult(status = EngineStatus.ready("analysis complete"), candidates = emptyList(), summary = "raw"),
+                    ),
+                    controllerState = topMoveControllerState(state = state, analysisState = analysisState),
+                    targetState = state,
+                    deep = false,
+                    automatic = automatic,
+                    pendingPostUndoEngineSync = false,
+                    isGameEnded = false,
+                    isEngineReady = true,
+                    isEngineBusy = false,
+                    shouldShowResumePrompt = false,
+                    playerSetup = playerSetup,
+                    showMoveReviewEnabled = true,
+                    analysisCacheEnabled = false,
+                    cachedResultFor = { null },
+                    currentState = { state },
+                    currentAnalysisKey = { analysisState.lastAnalysisKey },
+                    currentSessionGeneration = { 7L },
+                    launchEngineOperation = { operation, block ->
+                        operations += operation.kind
+                        runBlocking { block() }
+                    },
+                    runEngineWork = { block -> block() },
+                    applyLaunchUpdate = { update -> analysisState = update.analysisState },
+                    applyTopMoveAnalysisUpdate = { _, _ -> },
+                    putUndoRestoreCache = { _, _ -> },
+                    putAnalysisCache = { _, _ -> },
+                    applyFailureDisplay = { },
+                    appendEngineOperationDiscardLog = { },
+                    deferAfterBusy = { error("an idle engine must not defer the analysis") },
+                ),
+            )
+            return operations
+        }
+
+        val rankMeasure = rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(18))
+        assertEquals(emptyList(), launchedFor(rankMeasure, automatic = true), "the per-move analysis must not run")
+        assertEquals(emptyList(), launchedFor(rankMeasure, automatic = false), "a tap must not run it either")
+        assertEquals(listOf(EngineOperationKind.TopMoves), launchedFor(PlayerSetup(), automatic = false), "control: a regular game still runs it")
     }
 
     @Test

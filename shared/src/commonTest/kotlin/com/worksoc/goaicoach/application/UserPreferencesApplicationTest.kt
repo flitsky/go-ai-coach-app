@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.application
 import com.worksoc.goaicoach.application.preferences.*
 import com.worksoc.goaicoach.application.session.*
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
+import com.worksoc.goaicoach.match.HumanGameType
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -10,10 +11,12 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.policy.toPlayLevelSetting
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -286,6 +289,48 @@ class UserPreferencesApplicationTest {
             "오토세이브 경로에서 기본값으로 되돌아간 필드가 있다 = 빌더 오버로드 어딘가가 " +
                 "전달을 빠뜨렸다: " + reverted.joinToString(", "),
         )
+    }
+
+    /**
+     * **기력 측정 대국의 설정은 일반 대국 설정을 덮어쓰지 않는다**(백로그 #219). 그 판을 두는 동안의 좌석(사람 대 급수 AI)·판 크기·호선이
+     * 저장되면, 다음에 「대국 하기」를 열었을 때 고른 캐릭터와 걸어 둔 접바둑이 사라져 있다. 그 밖의 설정(탐색 시간 등)은 평소대로 저장한다.
+     */
+    @Test
+    fun autosaveKeepsTheRegularGameSetupWhileARankMeasureGameIsLive() {
+        val regularOpponent = PlayerSetup(white = SidePlayerSetup(SeatController.Ai, playLevel = PlayLevelSetting(level = 3)))
+        val store = RecordingUserPreferencesStore()
+        store.save(UserPreferencesSnapshot(playerSetup = regularOpponent, boardSize = BoardSize.Nineteen, handicapCount = 3, komi = 0.5))
+
+        runUserPreferencesAutosave(
+            request = UserPreferencesAutosaveRequest(
+                settingsState = GameSessionSettingsState(
+                    playerSetup = PlayerSetup(
+                        black = SidePlayerSetup(SeatController.Human, humanGameType = HumanGameType.RankMeasure),
+                        white = SidePlayerSetup(SeatController.Ai, playLevel = KgsRank.kyu(15).toPlayLevelSetting()),
+                    ),
+                    autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+                    searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinTenSeconds),
+                    topMovesEnabled = false,
+                    boardSize = BoardSize.Nine,
+                    handicapCount = 0,
+                    ruleset = Ruleset.Japanese,
+                ),
+                showCoordinates = true,
+                showMoveNumbers = false,
+                showLastMoveRing = true,
+                showOwnershipOverlay = false,
+                isDirectPlayEnabled = true,
+            ),
+            store = store,
+        )
+
+        val saved = store.load()
+        assertEquals(regularOpponent, saved.playerSetup)
+        assertEquals(BoardSize.Nineteen, saved.boardSize)
+        assertEquals(3, saved.handicapCount)
+        assertEquals(0.5, saved.komi)
+        assertEquals(SearchTimeLimit.WithinTenSeconds, saved.searchTimeSettings.limit, "settings that are not the game setup are saved as usual")
+        assertEquals(true, saved.showCoordinates)
     }
 
     @Test

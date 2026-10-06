@@ -28,8 +28,8 @@ data class EngineSessionCapabilities(
     val supportsDeviceBenchmark: Boolean,
     val backend: EngineSessionBackend = EngineSessionBackend.LocalEngine,
     /**
-     * 사람 모델을 올릴 수 있는 엔진인가(백로그 #215·#217) — 그 파일이 이 기기에 있을 때만 참이다. 화면은 이것으로
-     * 커스텀 대국(급수 직접 고르기)을 내보일지 정한다: 없으면 급수를 골라도 그 급수처럼 두지 못한다.
+     * 사람 모델을 올릴 수 있는 엔진인가(백로그 #215·#219) — 그 파일이 이 기기에 있을 때만 참이다. 화면은 이것으로
+     * 기력 측정 대국을 내보일지 정한다: 없으면 상대가 그 급수처럼 두지 못해, 잰 기력이 뜻을 잃는다.
      * 모르면 거짓이다 — 없는 능력을 있다고 답하지 않는다.
      */
     val supportsHumanNetwork: Boolean = false,

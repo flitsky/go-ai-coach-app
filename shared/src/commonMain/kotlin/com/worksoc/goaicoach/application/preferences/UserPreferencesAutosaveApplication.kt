@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application.preferences
 
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
+import com.worksoc.goaicoach.match.isRankMeasure
 
 /**
  * 자동저장 요청. ⚠️ **덤과 계가 규칙은 따로 받지 않는다** — [settingsState]의 값이 곧 저장할 값이다(refactor backlog
@@ -63,7 +64,23 @@ internal fun buildUserPreferencesAutosaveSnapshot(
         // 아직 안 돈 사용자에게 영영 안 돌거나, 반대로 매번 다시 돌아 사용자가 고른 값을 계속
         // 되돌린다. 이 한 줄이 그 둘을 함께 막는다.
         settingsSchemaGeneration = current.settingsSchemaGeneration,
-    )
+    ).keepingRegularGameSetupDuringRankMeasure(request, current)
+
+/**
+ * **기력 측정 대국의 설정은 일반 대국 설정을 덮어쓰지 않는다**(백로그 #219). 기력 측정 대국은 제 좌석(사람 대 그 급수의 AI)·제 판 크기·
+ * 호선으로 두는데, 그것이 살아 있는 설정에 올라와 있는 동안 자동저장이 그대로 적으면 다음에 「대국 하기」를 열었을 때 상대가
+ * 캐릭터가 아니라 급수 AI이고, 걸어 둔 접바둑도 사라져 있다. 그 판을 두는 동안에는 **저장돼 있던 일반 설정**을 그대로 둔다 —
+ * 판을 나가면 셸이 거기서 되돌린다.
+ */
+private fun UserPreferencesSnapshot.keepingRegularGameSetupDuringRankMeasure(
+    request: UserPreferencesAutosaveRequest,
+    current: UserPreferencesSnapshot,
+): UserPreferencesSnapshot =
+    if (request.settingsState.playerSetup.isRankMeasure()) {
+        copy(playerSetup = current.playerSetup, boardSize = current.boardSize, handicapCount = current.handicapCount, komi = current.komi)
+    } else {
+        this
+    }
 
 fun runUserPreferencesAutosave(
     request: UserPreferencesAutosaveRequest,

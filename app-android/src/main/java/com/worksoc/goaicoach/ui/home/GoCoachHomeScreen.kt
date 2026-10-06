@@ -90,6 +90,10 @@ import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureOverwriteWarningFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 
@@ -110,6 +114,11 @@ internal fun GoCoachHomeScreen(
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     /**
+     * 「기력 측정 대국」(백로그 #219)을 시작한다 — 설정 창에서 고른 진영·판 크기(와 최초 1회의 시작 기력)를 준다.
+     * 창과 그 상태는 이 화면이 들고, 셸은 시작하는 일만 한다(셸의 훅 예산, 함정 3).
+     */
+    onStartRankMeasureGame: (RankMeasureStart) -> Unit,
+    /**
      * 백로그 #181 — "대국 하기" 카드 아이콘이 마지막으로 고른 AI 캐릭터를 보여주기 위해 받는다.
      * ⚠️ 새 상태 훅이 아니다 — `GoCoachApp.kt`가 이미 들고 있는 `screenState.playerSetup`(파생값)을
      * 그대로 흘려보낸 것뿐이다(셸의 훅 예산 42/42, 함정 3).
@@ -119,6 +128,11 @@ internal fun GoCoachHomeScreen(
 ) {
     val strings = LocalUiStrings.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
+    // 기력 측정 대국(백로그 #219) — 설정 창과, 진행 중인 대국이 있을 때 먼저 묻는 덮어쓰기 경고(저장 슬롯은 하나라 이 대국도
+    // 그것을 밀어낸다). 제목은 「대국 하기」의 것을 그대로 쓰고, 본문은 끝 문장만 다르다(`rankMeasureOverwriteWarningFor`).
+    val rankMeasure = LocalRankMeasureUiState.current
+    var showRankMeasureDialog by remember { mutableStateOf(false) }
+    var showRankMeasureOverwriteWarning by remember { mutableStateOf(false) }
     val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
     // 백로그 #182 — 구독 여부로 로고·타이틀 색을 가른다. `isPurchased`만 본다(광고 1시간은
     // 제외, [[premium-character-unlock-policy]]와 같은 결). `PremiumSubscriptionCard`가
@@ -295,6 +309,21 @@ internal fun GoCoachHomeScreen(
                 )
             }
 
+            // 「기력 측정 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
+            // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
+            if (rankMeasure.isAvailable) {
+                Spacer(modifier = Modifier.height(AppSpacing.Space16))
+                MenuCard(
+                    title = rankMeasureTitleFor(strings.language),
+                    subtitle = rankMeasureSubtitleFor(strings.language),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    subtitleColor = MaterialTheme.colorScheme.secondary,
+                    onClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
+                    icon = { RankMeasureIcon(rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
+                )
+            }
+
             Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // "대국 기록" (Game History) 카드 — 대국 하기 바로 아래다(백로그 #45, 2026-08-30
@@ -363,6 +392,33 @@ internal fun GoCoachHomeScreen(
                     Text(strings.cancel)
                 }
             },
+        )
+    }
+
+    if (showRankMeasureOverwriteWarning) {
+        AlertDialog(
+            onDismissRequest = { showRankMeasureOverwriteWarning = false },
+            title = { Text(strings.overwriteWarningTitle, fontWeight = FontWeight.Bold) },
+            text = { Text(rankMeasureOverwriteWarningFor(strings.language)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRankMeasureOverwriteWarning = false
+                        showRankMeasureDialog = true
+                    },
+                ) { Text(strings.confirm) }
+            },
+            dismissButton = { TextButton(onClick = { showRankMeasureOverwriteWarning = false }) { Text(strings.cancel) } },
+        )
+    }
+    if (showRankMeasureDialog) {
+        RankMeasureSetupDialog(
+            rankMeasure = rankMeasure,
+            onStart = { start ->
+                showRankMeasureDialog = false
+                onStartRankMeasureGame(start)
+            },
+            onDismiss = { showRankMeasureDialog = false },
         )
     }
 
@@ -621,7 +677,7 @@ internal fun currentAiCharacterOrDefault(playerSetup: PlayerSetup): BotCharacter
     val fastBeginnerLevel = if (aiPlayLevel?.group == PlayLevelGroup.FastBeginner) {
         aiPlayLevel.safeLevel
     } else {
-        // 급수를 직접 고른 상대(커스텀 대국, 백로그 #217)는 그 급수가 속한 구간의 캐릭터 얼굴을 빌린다.
+        // 급수를 직접 정한 상대(백로그 #217 — 지금은 일반 설정에 남지 않지만, 남아 있어도)는 그 급수가 속한 구간의 캐릭터 얼굴을 빌린다.
         aiPlayLevel?.customRank()?.let(::customRankFallbackTier) ?: DefaultAiCharacterLevel
     }
     return BotCharacterCatalog.forPlayLevel(
@@ -775,6 +831,29 @@ private val GameHistoryPreviewGameState: GameState = GameState.empty(
         BoardCoordinate(row = 8, column = 6) to StoneColor.White,
     ),
 )
+
+/**
+ * 「기력 측정 대국」 카드의 아이콘 — **지금의 내 기력**을 글자로 보인다(`20급`). 다른 카드의 판 그림과 같은 자리·같은 크기다.
+ * 새 그림 자산 없이 가는 자리 표시이고, 카드를 열지 않아도 기력이 보인다는 쓸모가 있다.
+ */
+@Composable
+private fun RankMeasureIcon(rankLabel: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(AppRadius.Corner8))
+            .background(MaterialTheme.colorScheme.primary),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = rankLabel,
+            color = MaterialTheme.colorScheme.onPrimary,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+        )
+    }
+}
 
 /**
  * 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린 뒤, **「기록」을

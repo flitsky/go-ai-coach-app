@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.match.hasDeepSearchingAi
+import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -192,7 +193,8 @@ internal fun ExpandedGameMenuSection(
             state = screenState.playerSetupUi,
             // ⚠️ **엔진이 바빠도 잠그지 않는다**(2026-09-30) — AI 대 AI에서는 늘 바빠 「유저」로 되돌릴 수 없었다.
             //   바꾼 좌석은 다음 수부터 적용된다(`buildPlayerSetupChangePlan`).
-            enabled = true,
+            // ⚠️ 기력 측정 대국의 좌석은 잠근다(백로그 #219) — 상대를 캐릭터로 바꾸거나 AI에게 넘기면 그 판은 더는 기력을 재는 판이 아니다.
+            enabled = !screenState.playerSetup.isRankMeasure(),
             onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
         )
 

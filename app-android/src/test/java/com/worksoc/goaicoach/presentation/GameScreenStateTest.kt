@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.session.*
@@ -17,6 +18,7 @@ import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
@@ -24,6 +26,7 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.MoveAnalysisSnapshot
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
@@ -153,6 +156,38 @@ class GameScreenStateTest {
         assertTrue(topMoves.isFilled)
         assertFalse(screenState.actionButtons.first { it.role == GameActionButtonRole.Pass }.enabled)
         assertTrue(screenState.actionButtons.first { it.role == GameActionButtonRole.Eval }.enabled)
+    }
+
+    /**
+     * **기력 측정 대국에서는 형세 보기·추천 수·무르기가 꺼진다**(백로그 #219, 사용자 2026-10-06 「셋 다 끔」) — 도움을 받고 이긴 판은
+     * 기력을 재지 못한다. 설정에 켜 둔 토글도 꺼진 것으로 그린다: 켜진 채 잠기면 "켜 둔 토글은 언제나 끌 수 있어야 한다"와 부딪힌다.
+     * 착수·패스는 그대로다. 판이 끝나면 일반 대국과 같은 규칙으로 돌아간다(복기는 막지 않는다).
+     */
+    @Test
+    fun aRankMeasureGameTurnsOffEvalTopMovesAndUndo() {
+        // 흑(사람)·백이 한 수씩 둔 뒤 — 다시 사람 차례다(패스가 열려 있는지 함께 본다).
+        val humanToPlay = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate(2, 2)))
+            .play(Move.Play(StoneColor.White, BoardCoordinate(6, 6)))
+        val rankMeasure = rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(18))
+        fun buttons(playerSetup: PlayerSetup, isGameEnded: Boolean = false) =
+            buildGameScreenState(
+                defaultInput(gameState = humanToPlay, topMovesEnabled = true, showOwnershipOverlay = true, playerSetup = playerSetup, isGameEnded = isGameEnded),
+            ).actionButtons.associateBy { it.role }
+
+        val measuring = buttons(rankMeasure)
+        listOf(GameActionButtonRole.Eval, GameActionButtonRole.TopMoves, GameActionButtonRole.Undo).forEach { role ->
+            assertFalse("$role must be off in a rank-measure game", requireNotNull(measuring[role]).enabled)
+        }
+        assertFalse(requireNotNull(measuring[GameActionButtonRole.Eval]).isFilled)
+        assertFalse(requireNotNull(measuring[GameActionButtonRole.TopMoves]).isFilled)
+        assertTrue("passing is play, not help", requireNotNull(measuring[GameActionButtonRole.Pass]).enabled)
+
+        val regular = buttons(PlayerSetup())
+        listOf(GameActionButtonRole.Eval, GameActionButtonRole.TopMoves, GameActionButtonRole.Undo).forEach { role ->
+            assertTrue("$role stays as it was in a regular game", requireNotNull(regular[role]).enabled)
+        }
+        assertTrue("an ended rank-measure game shows its toggles as they are", requireNotNull(buttons(rankMeasure, isGameEnded = true)[GameActionButtonRole.TopMoves]).isFilled)
     }
 
     @Test
@@ -549,11 +584,12 @@ class GameScreenStateTest {
         topMovesEnabled: Boolean = false,
         isGameEnded: Boolean = false,
         showOwnershipOverlay: Boolean = true,
+        playerSetup: PlayerSetup = PlayerSetup(),
     ): GameScreenStateInput =
         GameScreenStateInput(
             gameState = gameState,
             matchMode = MatchMode.HumanVsAi,
-            playerSetup = PlayerSetup(),
+            playerSetup = playerSetup,
             autoPlayDelaySetting = AutoPlayDelaySetting.Default,
             searchTimeSettings = SearchTimeSettings(),
             playLevel = PlayLevelSetting(),

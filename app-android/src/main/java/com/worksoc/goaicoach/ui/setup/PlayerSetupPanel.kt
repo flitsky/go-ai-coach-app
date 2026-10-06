@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -34,21 +33,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.clampToOwnedBotCharacter
-import com.worksoc.goaicoach.application.customgame.strongestSelectableCustomRank
-import com.worksoc.goaicoach.application.customgame.withCustomRankForNextGame
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.presentation.PlayerSetupSideUiState
 import com.worksoc.goaicoach.presentation.PlayerSetupUiState
 import com.worksoc.goaicoach.shared.domain.StoneColor
-import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.customRank
-import com.worksoc.goaicoach.shared.policy.toPlayLevelSetting
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -57,9 +52,8 @@ import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
-import com.worksoc.goaicoach.ui.l10n.customGameOpponentLabelFor
-import com.worksoc.goaicoach.ui.l10n.customGamePickRankFor
 import com.worksoc.goaicoach.ui.l10n.deepSearchingCharacterHintFor
+import com.worksoc.goaicoach.ui.l10n.rankedOpponentLabelFor
 import com.worksoc.goaicoach.ui.monetization.BotCharacterPickerDialog
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
 import com.worksoc.goaicoach.ui.monetization.purchaseBotCharacterAndReport
@@ -85,7 +79,6 @@ internal fun PlayerSetupPanel(
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
         ) {
             Text(strings.playerSetup, fontWeight = FontWeight.SemiBold)
-            CustomGameSeatSync(setup = state.setup, enabled = enabled, onPlayerSetupChange = onPlayerSetupChange)
             PlayerSetupSideRow(
                 state = state.black,
                 enabled = enabled,
@@ -223,7 +216,18 @@ private fun PlayerSetupSideRow(
         // 2026-08-29(#10)부터 단계 드롭다운을 **캐릭터 픽커**로 대체했다 — 7.1절대로 캐릭터
         // 하나가 티어 하나에 1:1로 대응하므로 "캐릭터를 고르는 행위 = 난이도 선정"이다. 버튼은
         // 지금 상대를 이름+티어명으로 보여주고, 탭하면 5종 목록(잠긴 것 포함)이 열린다.
-        if (side.controller == SeatController.Ai) {
+        // 급수를 직접 정한 상대(기력 측정 대국, 백로그 #219)는 캐릭터가 아니다 — 아래 캐릭터 버튼에 태우면 3단 상대도 「문하생 판다」로
+        // 보인다(2026-10-06 에뮬레이터: 대국 중 메뉴). 이름표만 보이고 고르는 길은 없다 — 이 좌석은 화면에서 바꾸는 것이 아니다.
+        val rankedOpponent = side.playLevel.customRank().takeIf { side.controller == SeatController.Ai }
+        if (rankedOpponent != null) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.weight(1f))
+                OutlinedButton(onClick = {}, enabled = false) {
+                    Text(rankedOpponentLabelFor(strings.language, rankedOpponent), style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+        if (side.controller == SeatController.Ai && rankedOpponent == null) {
             val fastBeginnerLevel = if (side.playLevel.group == PlayLevelGroup.FastBeginner) {
                 side.playLevel.safeLevel
             } else {
@@ -283,9 +287,6 @@ private fun PlayerSetupSideRow(
                     delay(BotLevelClampRetryIntervalMillis)
                 }
             }
-            // 급수를 직접 고른 상대인가(커스텀 대국, 백로그 #217) — 그렇다면 캐릭터 버튼은 「상대 고르기」로 물러나고
-            // 아래의 급수 버튼이 지금 상대를 말한다. 캐릭터를 고르면 캐릭터 상대로 돌아온다.
-            val customRank = side.playLevel.customRank()
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -295,34 +296,23 @@ private fun PlayerSetupSideRow(
                     onClick = { showPicker = true },
                     enabled = enabled,
                 ) {
-                    if (customRank == null) {
-                        // 좌석 버튼에도 얼굴을 붙인다(#48) — 픽커를 열지 않고도 지금 상대가 누구인지
-                        // 알아보게 하는 것이 목적이다. 여기 오는 캐릭터는 항상 보유한 것이라
-                        // (미보유는 `clampToOwnedBotCharacter`가 걸러낸다) 흑백 처리가 필요 없다.
-                        current?.let { character ->
-                            BotCharacterAvatar(character = character, size = 22.dp)
-                            Spacer(Modifier.width(AppSpacing.Space6))
-                        }
-                        Text(
-                            text = current?.let(strings::botCharacterName)
-                                ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),
-                            style = MaterialTheme.typography.labelLarge,
-                        )
-                    } else {
-                        Text(text = strings.botPickerTitle, style = MaterialTheme.typography.labelLarge)
+                    // 좌석 버튼에도 얼굴을 붙인다(#48) — 픽커를 열지 않고도 지금 상대가 누구인지
+                    // 알아보게 하는 것이 목적이다. 여기 오는 캐릭터는 항상 보유한 것이라
+                    // (미보유는 `clampToOwnedBotCharacter`가 걸러낸다) 흑백 처리가 필요 없다.
+                    current?.let { character ->
+                        BotCharacterAvatar(character = character, size = 22.dp)
+                        Spacer(Modifier.width(AppSpacing.Space6))
                     }
+                    Text(
+                        text = current?.let(strings::botCharacterName)
+                            ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
                 }
             }
-            CustomRankSeatButton(
-                seatColor = state.color,
-                customRank = customRank,
-                enabled = enabled,
-                strongestSelectable = strongestSelectableCustomRank(bots.collection, bots.subscriptionActive),
-                onRankChosen = { rank -> onSideChange(side.copy(playLevel = rank.toPlayLevelSetting())) },
-            )
             if (showPicker) {
                 BotCharacterPickerDialog(
-                    selected = current.takeIf { customRank == null },
+                    selected = current,
                     adInProgress = adInProgress,
                     onSelect = { character ->
                         character.toPlayLevelSetting()?.let { level ->
@@ -397,74 +387,3 @@ private const val BotLevelClampRetryCount: Int = 40
 
 /** 위 재시도 간격. */
 private const val BotLevelClampRetryIntervalMillis: Long = 500
-
-/**
- * 좌석 아래의 **급수 버튼**(커스텀 대국, 백로그 #217) — 누르면 상대의 KGS 급수를 고르는 창이 열린다. 급수를 직접 고른 상대면
- * 채워진 버튼으로 그 급수를 말하고(`커스텀 5급`), 캐릭터 상대면 테두리 버튼으로 「급수 직접 고르기」를 권한다.
- *
- * 사람 모델이 없는 기기에서는 그리지 않는다([CustomGameUiState.isAvailable]) — 급수를 골라도 그 급수처럼 두지 못한다.
- */
-@Composable
-private fun CustomRankSeatButton(
-    seatColor: StoneColor,
-    customRank: KgsRank?,
-    enabled: Boolean,
-    strongestSelectable: KgsRank,
-    onRankChosen: (KgsRank) -> Unit,
-) {
-    val custom = LocalCustomGameUiState.current
-    if (!custom.isAvailable) return
-    val language = LocalUiStrings.current.language
-    var showDialog by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-        val modifier = Modifier.testTag(TestTags.customRankSeatButton(seatColor))
-        if (customRank != null) {
-            Button(onClick = { showDialog = true }, enabled = enabled, modifier = modifier) {
-                Text(customGameOpponentLabelFor(language, customRank), style = MaterialTheme.typography.labelLarge)
-            }
-        } else {
-            OutlinedButton(onClick = { showDialog = true }, enabled = enabled, modifier = modifier) {
-                Text(customGamePickRankFor(language), style = MaterialTheme.typography.labelLarge)
-            }
-        }
-    }
-    if (showDialog) {
-        CustomRankDialog(
-            initialRank = customRank ?: custom.state.rank,
-            strongestSelectable = strongestSelectable,
-            initialAutoAdjust = custom.state.autoAdjustEnabled,
-            onConfirm = { rank, autoAdjust ->
-                showDialog = false
-                // 손으로 고르면 랠리는 처음부터다 — 고른 급수에서 다시 2연승해야 오른다.
-                custom.update(custom.state.copy(rank = rank, autoAdjustEnabled = autoAdjust, consecutiveWins = 0, isRally = false))
-                onRankChosen(rank)
-            },
-            onDismiss = { showDialog = false },
-        )
-    }
-}
-
-/**
- * 좌석의 커스텀 급수를 **지금 고를 수 있는 값**으로 맞춘다(백로그 #217) — 승급 랠리가 올린 다음 판의 급수를 받아 적고,
- * 고를 수 있는 범위를 넘은 급수(구독이 끝났다)는 범위 끝으로 내린다. 무엇으로 맞출지는 `withCustomRankForNextGame`이 정한다.
- *
- * 대국 중에는 손대지 않는다([enabled] — 좌석 설정이 잠겨 있다). 새 대국을 설정 화면을 거치지 않고 시작하는 길(재 대국)은
- * 셸이 시작 직전에 같은 함수로 맞춘다.
- */
-@Composable
-private fun CustomGameSeatSync(
-    setup: PlayerSetup,
-    enabled: Boolean,
-    onPlayerSetupChange: (PlayerSetup) -> Unit,
-) {
-    val custom = LocalCustomGameUiState.current
-    val bots = LocalBotCharacterUiState.current
-    val synced = setup.withCustomRankForNextGame(custom.state, strongestSelectableCustomRank(bots.collection, bots.subscriptionActive))
-    LaunchedEffect(synced, enabled) {
-        if (enabled && synced != setup) onPlayerSetupChange(synced)
-    }
-}

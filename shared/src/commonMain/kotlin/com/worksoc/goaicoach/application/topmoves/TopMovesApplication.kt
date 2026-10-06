@@ -11,6 +11,7 @@ import com.worksoc.goaicoach.application.contract.GameSessionEffect
 import com.worksoc.goaicoach.application.contract.TopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisPreset
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
@@ -160,6 +161,12 @@ internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
     if (request.automatic && request.pendingPostUndoEngineSync) {
         return
     }
+    // ⚠️ **기력 측정 대국에서는 돌지 않는다**(백로그 #219, 사용자 2026-10-06 — 대국 중 도움 없음). 「매 수 추천」·「착수 평가」를
+    // 켜 둔 사용자도 이 판에서는 탐색이 안 걸린다 — 재는 것은 스스로 둔 수여야 한다. 버튼도 같은 조건으로 잠긴다(`GameScreenState`).
+    // 아래 OR 식에 섞지 않고 따로 둔다 — 그 식은 "착수 평가"를 지키는 계약이 글자 그대로 본다(`ReplayRecordingContractTest`).
+    if (request.playerSetup.isRankMeasure()) {
+        return
+    }
     if (
         !shouldRequestTopMoveAnalysis(
             isGameEnded = request.isGameEnded,
@@ -181,8 +188,7 @@ internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
             // 방해하지 않는다.
             // ⚠️ 이 토글은 **표시**를 끄는 것이지 분석을 끄는 것이 아니다 — 실제로 아래 실행부
             // (`TopMoveAnalysisEngine`)는 `topMovesEnabled`로 **후보 표시만** 가른다.
-            topMovesEnabled = request.controllerState.settings.topMovesEnabled ||
-                request.showMoveReviewEnabled,
+            topMovesEnabled = request.controllerState.settings.topMovesEnabled || request.showMoveReviewEnabled,
         )
     ) {
         return
