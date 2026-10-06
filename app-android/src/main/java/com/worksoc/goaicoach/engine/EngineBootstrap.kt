@@ -37,7 +37,8 @@ fun createEngineBootstrap(
     )
     val model = compressedModel.takeIf { it.isFile && it.length() > 0L } ?: bundledModel
     // 사람 모델(백로그 #215) — 있으면 급수 캐릭터가 그것으로 둔다. 없는 것은 사고가 아니다: 그 기기는 지금 방식으로 둔다.
-    // ⚠️ 아직 번들에 싣지 않는다(배포 방식 미정) — 개발 중에는 `adb`로 이 자리에 넣는다. 주 모델과 같은 두 이름을 본다.
+    // 2026-10-06부터 **주 모델과 함께 번들에 싣는다**(사용자 결정 — 두 모델). 위 씨딩이 번들에서 풀어 두고, 개발용 debug 빌드는
+    // 번들에 에셋이 없으므로 `make seed-engine`이 이 자리에 넣는다. 주 모델과 같은 두 이름을 본다.
     val humanModel = listOf(File(katagoDir, HumanModelCompressedName), File(katagoDir, HumanModelName))
         .firstOrNull { it.isFile && it.length() > 0L }
 
@@ -157,6 +158,17 @@ private fun seedBundledKataGoAssetsIfNeeded(
             // 확장자가 떨어진 `model.bin`이고, 푸는 결과도 비압축본(약 100MB)이다.
             assetPath = "katago/model.bin",
             destination = bundledModel,
+        )?.let { messages += it }
+    }
+
+    // 사람 모델(백로그 #215)도 같은 규칙이다 — 둘 중 하나라도 있으면 풀지 않는다(이름의 `.gz` 사정도 주 모델과 같다).
+    // 번들에 없는 빌드에서는 여는 데 실패하고 넘어간다 — 그 기기의 급수 캐릭터는 지금 방식으로 두고 기력 측정 대국 카드는 안 보인다.
+    val humanModel = File(katagoDir, HumanModelName)
+    if (!File(katagoDir, HumanModelCompressedName).isFile && !humanModel.isFile) {
+        seedAssetIfMissing(
+            context = context,
+            assetPath = "katago/human.bin",
+            destination = humanModel,
         )?.let { messages += it }
     }
 

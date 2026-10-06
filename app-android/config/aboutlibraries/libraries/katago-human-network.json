@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:katago-human-network",
+  "artifactVersion": "",
+  "name": "KataGo Human SL neural network b18c384nbt-humanv0",
+  "description": "Neural network weights trained to imitate human play, used by the bundled KataGo engine for rank-matched opponents.",
+  "website": "https://katagotraining.org/extra_networks/",
+  "developers": [
+    {
+      "name": "David J Wu (\"lightvector\")"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "katago-network"
+  ]
+}

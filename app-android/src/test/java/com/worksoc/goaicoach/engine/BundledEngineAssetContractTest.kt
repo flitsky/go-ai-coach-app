@@ -76,6 +76,20 @@ class BundledEngineAssetContractTest {
         )
     }
 
+    /**
+     * 사람 모델도 번들에 싣는다(백로그 #215, 2026-10-06 사용자 결정 — 두 모델). 빠지면 **조용히** 빠진다: 급수 캐릭터는 예전 방식으로
+     * 두고 기력 측정 대국 카드는 보이지 않을 뿐 아무것도 빨개지지 않는다.
+     */
+    @Test
+    fun theHumanModelIsBundledAndSeededToo() {
+        assertTrue("빌드가 사람 모델을 번들에 넣지 않는다.", "\$(FRIEND_ASSET_DIR)/human.bin.gz" in makefile)
+        assertTrue("앱이 사람 모델을 번들에서 풀지 않는다.", "human.bin" in assetNamesTheAppOpens())
+        assertTrue(
+            "앱이 풀어 두는 이름과 엔진이 찾는 이름이 다르다 — 풀어 놓고도 못 쓴다.",
+            bootstrap.contains("internal const val HumanModelName = \"human.bin\""),
+        )
+    }
+
     @Test
     fun theBuildStillBundlesTheCompressedModel() {
         // ⚠️ 빌드 쪽이 `.gz`를 그만 넣으면 위 계약은 여전히 통과하지만(양쪽이 같아지므로)

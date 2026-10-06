@@ -66,6 +66,9 @@ class OpenSourceLicensesContractTest {
         )
         val engineIds = entries.takeWhile { it.isBundledEngine }.map { it.id }
         assertEquals("손 항목이 전부 엔진 구획에, 정해진 순서로 와야 한다", BundledNativeOrder, engineIds)
+        // 번들에 싣는 신경망은 둘이다(백로그 #215) — 사람 모델도 같은 신경망 라이선스의 고지를 단다(그 라이선스가 Human SL Network를 이름으로 든다).
+        val humanNetwork = entries.first { it.id == "bundled.native:katago-human-network" }
+        assertEquals(listOf("KataGo Neural Network License"), humanNetwork.licenses.map { it.name })
         assertEquals("엔진 구획 뒤에 앱 라이브러리가 온다", "androidx.activity:activity", entries[engineIds.size].id)
     }
 

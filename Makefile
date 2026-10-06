@@ -41,6 +41,9 @@ FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
 PLAY_INTERNAL_AAB := dist/go-ai-coach-play-internal.aab
 RELEASE_AAB := dist/go-ai-coach-release.aab
 FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
+# 사람 모델(백로그 #215) — 2026-10-06 사용자 결정으로 **주 모델과 함께 번들에 싣는다**(두 모델). 급수 캐릭터와 기력 측정 대국이 쓴다.
+# 저장소 밖에 둔다(99MB, 실험실과 같은 파일 — `engine-lab/lab/paths.py`). 받는 곳: KataGo GitHub 릴리즈 v1.15.0.
+FRIEND_HUMAN_MODEL_PATH ?= $(HOME)/worksoc/katago/models/b18c384nbt-humanv0.bin.gz
 FRIEND_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg
 FRIEND_ANALYSIS_CONFIG_PATH ?= /Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg
 # 엔진 실험실(`engine-lab/`, 백로그 #214) — 벤치마크 출력 폴더.
@@ -283,11 +286,13 @@ engine-search-mode-benchmark-phone:
 
 prepare-friend-assets:
 	@test -f "$(FRIEND_MODEL_PATH)" || (echo "Friend APK model not found: $(FRIEND_MODEL_PATH)" && exit 1)
+	@test -f "$(FRIEND_HUMAN_MODEL_PATH)" || (echo "Friend APK human model not found: $(FRIEND_HUMAN_MODEL_PATH)" && exit 1)
 	@test -f "$(FRIEND_CONFIG_PATH)" || (echo "Friend APK config not found: $(FRIEND_CONFIG_PATH)" && exit 1)
 	@test -f "$(FRIEND_ANALYSIS_CONFIG_PATH)" || (echo "Friend APK analysis config not found: $(FRIEND_ANALYSIS_CONFIG_PATH)" && exit 1)
 	@rm -rf "$(FRIEND_ASSET_DIR)"
 	@mkdir -p "$(FRIEND_ASSET_DIR)"
 	@cp "$(FRIEND_MODEL_PATH)" "$(FRIEND_ASSET_DIR)/model.bin.gz"
+	@cp "$(FRIEND_HUMAN_MODEL_PATH)" "$(FRIEND_ASSET_DIR)/human.bin.gz"
 	@cp "$(FRIEND_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/gtp_learning.cfg"
 	@cp "$(FRIEND_ANALYSIS_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/analysis_learning.cfg"
 	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"

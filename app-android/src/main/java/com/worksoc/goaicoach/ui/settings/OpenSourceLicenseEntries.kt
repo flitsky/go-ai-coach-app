@@ -34,6 +34,8 @@ internal const val BundledNativeTag = "bundled-native"
 internal val BundledNativeOrder: List<String> = listOf(
     "bundled.native:katago-engine",
     "bundled.native:katago-network",
+    // 사람 모델(백로그 #215, 2026-10-06부터 번들) — 같은 「KataGo Neural Network License」가 "KataGo Human SL Network"를 이름으로 든다.
+    "bundled.native:katago-human-network",
     "bundled.native:eigen",
     "bundled.native:tclap",
     "bundled.native:ghc-filesystem",

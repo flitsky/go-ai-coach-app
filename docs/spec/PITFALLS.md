@@ -92,7 +92,7 @@
 - **5** 산출물(AAB·스크린샷)은 화면 변경이 멎은 뒤에
 - **11** 개발자 섹션 1차는 **release에도 실린다** — 게이트는 런타임 boolean(`DeveloperModeStore`, 버전 10탭). 권한을 만드는 버튼은 `BuildConfig.DEBUG`로 한 겹 더(→ 2차)
 - **25** 빌드타입 블록에서 던지지 말 것 — 검사는 `packageRelease`/`packageReleaseBundle`에. `make`는 검사가 `bump-version`보다 앞
-- **31** `src/friend/assets`는 지우지 말 것 — release AAB의 엔진(98MB, gitignore)
+- **31** `src/friend/assets`는 지우지 말 것 — release AAB의 엔진(주 모델 98MB + 2026-10-06부터 사람 모델 99MB, gitignore)
 - **33** 16KB — ⓐ 우리 `.so` ELF 정렬 + ⓑ 패키징, ⓑ만으론 통과 못 함. 확인은 `PT_LOAD p_align`
 - **34** Play "이전 출시 버전"은 **트랙별** — 번들 둘을 워크트리로 대조하기 전엔 원인을 말하지 말 것
 - **35** `setContent` 앞에 SDK를 깨우지 말 것 — 기동 크래시(`StartupOrderContractTest`)
