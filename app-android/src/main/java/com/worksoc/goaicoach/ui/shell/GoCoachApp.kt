@@ -104,6 +104,7 @@ import com.worksoc.goaicoach.recordFinishedGameOnExit
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticSeverity
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
@@ -855,6 +856,7 @@ private fun GoCoachScreen(
     // 대국이 끝나면 그 판의 형세 기록(사람 모델의 임시 값)을 주 모델로 다시 잰다 — 다시보기를 연 동안은 그 화면이 잰다(백로그 #215).
     ScoreRecordRemeasureEffect(
         isActive = isGameEnded && isEngineReady && currentDestination != ScreenDestination.GameHistory,
+        isResultKnown = scoreState.finalScoreJudgement != null || gameState.moves.lastOrNull() is Move.Resign,
         sessionGeneration = runtimeState.sessionGeneration,
         gameState = gameState,
         scoreSnapshots = scoreState.scoreSnapshots,

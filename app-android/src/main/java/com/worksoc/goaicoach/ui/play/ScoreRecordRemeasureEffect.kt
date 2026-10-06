@@ -22,6 +22,9 @@ import kotlinx.coroutines.delay
  *
  * - **끝난 판에서만 돈다**([isActive]) — 새 대국을 시작하면 이 효과가 취소되고, 잰 데까지는 기록에 남는다.
  *   다시보기를 연 동안에도 멈춘다: 그 화면이 같은 기록을 제 손으로 잰다(`ReplayScoreRemeasureEffect`). 돌아오면 저장소에서 이어받는다.
+ * - ⚠️ **결과가 난 뒤에 시작한다**([isResultKnown]). 「대국이 끝났다」는 표시는 통과-통과 순간에 켜지고 계가는 그 뒤에 끝난다
+ *   (에뮬레이터 37초, 폰 몇 초) — 기록은 결과가 나야 붙는다. 끝났다는 표시만 보고 시작하면 아직 없는 기록을 잠깐 찾다가 포기하고,
+ *   열쇠가 다시 바뀌지 않아 **영영 재지 않는다**(2026-10-06 에뮬레이터에서 실제로 그랬다).
  * - **기록은 저장소의 것을 고친다.** 살아 있는 형세 기록([scoreSnapshots])에는 [onRemeasured]로 받아들이게 한다 —
  *   판정 결과의 「5집 이상 실착」 개수와 형세 그래프가 따라 바뀐다.
  * - 대국을 막지 않는다: 엔진 오퍼레이션으로 올리지 않아(바쁨 표시·버튼 잠금 없음) 재는 동안에도 재대국·대국 설정이 그대로 눌린다.
@@ -31,6 +34,8 @@ import kotlinx.coroutines.delay
 @Composable
 internal fun ScoreRecordRemeasureEffect(
     isActive: Boolean,
+    /** 판정이 났거나 기권으로 끝났는가 — 그래야 대국 기록이 붙는다(`runGameHistoryAppendIfCompleted`와 같은 조건). */
+    isResultKnown: Boolean,
     sessionGeneration: Long,
     gameState: GameState,
     scoreSnapshots: List<ScoreSnapshot>,
@@ -43,8 +48,8 @@ internal fun ScoreRecordRemeasureEffect(
     val latestGameState by rememberUpdatedState(gameState)
     val latestGeneration by rememberUpdatedState(sessionGeneration)
     val latestOnRemeasured by rememberUpdatedState(onRemeasured)
-    LaunchedEffect(isActive, hasProvisionalScores, sessionGeneration, gameState.moves.size) {
-        if (!isActive || !hasProvisionalScores) return@LaunchedEffect
+    LaunchedEffect(isActive, isResultKnown, hasProvisionalScores, sessionGeneration, gameState.moves.size) {
+        if (!isActive || !isResultKnown || !hasProvisionalScores) return@LaunchedEffect
         val moves = gameState.moves
         val store = GameHistoryStore(context)
         // 기록 붙이기는 같은 프레임의 다른 효과가 한다 — 아직이면 잠깐 기다렸다 다시 본다.
