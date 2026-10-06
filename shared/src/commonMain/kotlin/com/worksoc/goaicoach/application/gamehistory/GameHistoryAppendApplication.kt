@@ -31,7 +31,8 @@ import kotlin.random.Random
  * ## 멱등성 — 저장소 자체가 근거다
  * `ui/shell/GoCoachApp.kt`가 "대국 이어하기" 저장과 같은 `LaunchedEffect`에서 호출한다. 그 효과가
  * 관련 없는 이유로 여러 번 재실행돼도 중복 기록되지 않도록, 새 `LaunchedEffect`나 Compose
- * 상태를 더하지 않고 **가장 최근 기록과 (수순 개수·승자·기권 여부)를 견줘** 건너뛴다.
+ * 상태를 더하지 않고 **가장 최근 기록과 (수순 개수·승자·기권 여부)를 견줘** 건너뛴다. 그 셋이 같으면 리플레이 본문의
+ * **수순 전체**까지 견준다(2026-10-06) — 셋만 보면 수순 개수가 우연히 같은 다음 판을 버린다.
  *
  * ## 기권 처리 — 이제 **누가 이겼는지 안다**
  * 기권은 `finalScoreJudgement`를 남기지 않으므로(`resignCurrentGameIfAllowed`가 `isGameEnded`만
@@ -63,10 +64,16 @@ fun runGameHistoryAppendIfCompleted(
     val moveCount = gameState.moves.size
 
     val lastEntry = store.loadAll().lastOrNull()
-    val alreadyRecorded = lastEntry != null &&
+    val looksTheSame = lastEntry != null &&
         lastEntry.moveCount == moveCount &&
         lastEntry.winner == winner &&
         lastEntry.isResign == resigned
+    // 겉모습(수순 개수·승자·기권 여부)이 같아도 **다른 판**일 수 있다 — 같은 상대와 연달아 둔 두 판의 수순 개수가 우연히 같으면
+    // 둘째 판이 "이미 기록됨"으로 버려졌다(2026-10-06 백로그 #219에서 드러남: 기록이 안 붙으니 기력에도 반영되지 않는다).
+    // 본문이 있으면 **수순 전체**로 가른다. 본문이 없는 기록(옛 기록)은 예전처럼 겉모습으로만 본다.
+    // ⚠️ 수순까지 같은 두 판(둘 다 첫 수 전에 기권한 판 따위)은 여전히 하나로 본다 — 판을 가르는 식별자가 없다.
+    val alreadyRecorded = looksTheSame &&
+        (lastEntry?.let { entry -> store.loadReplay(entry.id) }?.let { replay -> replay.moves == gameState.moves } ?: true)
     if (alreadyRecorded) return null
 
     val replay = GameReplayData(

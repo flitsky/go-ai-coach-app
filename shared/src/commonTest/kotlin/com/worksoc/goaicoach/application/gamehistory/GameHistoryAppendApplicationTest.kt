@@ -302,6 +302,30 @@ class GameHistoryAppendApplicationTest {
         assertEquals(1, store.loadAll().size)
     }
 
+    /**
+     * 수순 개수·승자·끝난 방식이 **우연히 같은 다음 판**도 기록된다(2026-10-06, 백로그 #219) — 예전에는 그 셋만 견줘 "이미 기록됨"으로
+     * 버렸다. 9줄에서 같은 상대와 연달아 두면 드물지 않고, 버려진 판은 대국 기록에도 기력 측정에도 남지 않는다.
+     * 같은 판이 다시 넘어온 것은 여전히 한 번만 기록된다(위 테스트).
+     */
+    @Test
+    fun aDifferentGameThatHappensToLookTheSameIsStillRecorded() {
+        val store = FakeGameHistoryStore()
+        val first = passMoves(41) + Move.Pass(StoneColor.White)
+        val second = passMoves(40) + Move.Pass(StoneColor.White) + Move.Pass(StoneColor.Black)
+        runGameHistoryAppendIfCompleted(true, judgement(StoneColor.Black), gameStateWithMoves(first), HumanBlackVsAiWhite, 1_000L, store)
+
+        val recorded = runGameHistoryAppendIfCompleted(
+            true, judgement(StoneColor.Black), gameStateWithMoves(second), HumanBlackVsAiWhite, 2_000L, store,
+        )
+
+        assertTrue(recorded != null, "same move count, same winner, same ending — but a different game")
+        assertEquals(2, store.loadAll().size)
+        assertNull(
+            runGameHistoryAppendIfCompleted(true, judgement(StoneColor.Black), gameStateWithMoves(second), HumanBlackVsAiWhite, 2_050L, store),
+            "the same game handed over again is still recorded once",
+        )
+    }
+
     @Test
     fun aDifferentSubsequentGameIsRecordedAsANewEntry() {
         val store = FakeGameHistoryStore()
