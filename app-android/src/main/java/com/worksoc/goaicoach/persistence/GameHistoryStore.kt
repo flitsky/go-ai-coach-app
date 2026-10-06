@@ -139,6 +139,13 @@ internal class GameHistoryStore internal constructor(
         writeIndex(current.map { entry -> if (entry.id == id) entry.copy(note = trimmed) else entry })
     }
 
+    override fun updateReplay(id: String, replay: GameReplayData) {
+        if (replay.isEmpty) return
+        // 색인이 아는 판만 — 모르는 id로 쓰면 다음 [loadAll]이 고아로 보고 지운다.
+        val entry = loadAll().firstOrNull { it.id == id } ?: return
+        writeAtomically(replayFile(id), GameReplayCodec.encode(replay, BoardSize(entry.boardSize)))
+    }
+
     /**
      * U-4의 두 겹 상한을 건다. ⚠️ **저장소 안에서 건다** — 호출부에 맡기면 경로마다 달라진다.
      */

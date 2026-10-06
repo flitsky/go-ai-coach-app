@@ -138,6 +138,13 @@ data class SidePlayerSetup(
     val playLevel: PlayLevelSetting = PlayLevelSetting(),
 )
 
+/**
+ * 이 좌석 배치에 **그룹 기본보다 더 깊이 읽는 AI**(초고수)가 앉아 있는가(백로그 #215) — 그런 AI는 「최대 탐색 시간 제한」이
+ * 길수록 더 세게 둔다. 설정 화면이 이것으로 안내 한 줄을 띄운다.
+ */
+fun PlayerSetup.hasDeepSearchingAi(): Boolean =
+    listOf(black, white).any { side -> side.controller == SeatController.Ai && side.playLevel.searchesDeeperThanItsGroup }
+
 fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
     if (controller == SeatController.Ai) {
         AiCharacterProfile(playLevel = playLevel)

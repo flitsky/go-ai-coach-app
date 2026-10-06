@@ -65,6 +65,7 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayBranchLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataForSwingsFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreSwingsFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayRemeasuringScoresFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingChipLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingCriterionFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingSectionFor
@@ -121,6 +122,8 @@ internal fun GameReplayScreen(
      */
     analysisEngine: ReplayAnalysisEngine,
     modifier: Modifier = Modifier,
+    /** 이 판의 형세 기록을 주 모델로 다시 재는 중인가(백로그 #215) — 변곡점 제목 옆에 한 마디를 붙인다. 재는 일은 이 화면 밖에서 한다. */
+    isRemeasuringScores: Boolean = false,
 ) {
     val strings = LocalUiStrings.current
 
@@ -225,6 +228,7 @@ internal fun GameReplayScreen(
         ReplayScoreSwingSection(
             canMeasureSwings = canMeasureSwings,
             swings = scoreSwings,
+            isRemeasuringScores = isRemeasuringScores,
             currentMoveNumber = moveNumber,
             strings = strings,
             onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
@@ -538,11 +542,13 @@ private fun ReplayScoreSection(
 private fun ReplayScoreSwingSection(
     canMeasureSwings: Boolean,
     swings: List<ScoreSwingHighlight>,
+    isRemeasuringScores: Boolean,
     currentMoveNumber: Int,
     strings: UiStrings,
     onJumpTo: (Int) -> Unit,
 ) {
     val language = strings.language
+    val remeasuringSuffix = if (isRemeasuringScores) " \u00B7 ${gameReplayRemeasuringScoresFor(language)}" else ""
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -550,7 +556,7 @@ private fun ReplayScoreSwingSection(
         verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
     ) {
         Text(
-            text = "${gameReplayScoreSwingSectionFor(language)} \u00B7 ${gameReplayScoreSwingCriterionFor(language)}",
+            text = "${gameReplayScoreSwingSectionFor(language)} \u00B7 ${gameReplayScoreSwingCriterionFor(language)}$remeasuringSuffix",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.secondary,
         )

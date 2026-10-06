@@ -126,3 +126,18 @@ internal fun botCharacterNameFor(language: UiLanguage, id: BotCharacterId): Stri
 
 internal fun botCharacterDescriptionFor(language: UiLanguage, id: BotCharacterId): String =
     lookup(BotCharacterDescriptions, language, id)
+
+/**
+ * 「최대 탐색 시간 제한」 아래에 붙는 안내 — **더 깊이 읽는 캐릭터**(초고수, 32방문)가 상대일 때만 보인다(백로그 #215).
+ *
+ * 그 캐릭터는 방문을 다 쓰는 데 시간이 든다(S23: 13줄 약 9초 · 19줄 약 15초) — 제한이 짧으면 거기서 잘려 덜 세게 둔다.
+ * 느린 것은 고장이 아니라 설정이고, 그 손잡이가 바로 이 줄이라는 것을 말한다(사용자 2026-10-05: *"너무 늦은 동작은 사용자가
+ * 최대 응답 시간 제한을 조정하면서 플레이하도록 가이드"*). ⚠️ 초 단위 숫자는 적지 않는다 — 기기마다 다르다.
+ */
+internal fun deepSearchingCharacterHintFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "가장 센 상대는 더 깊이 읽습니다 — 이 제한이 길수록 세게 두고, 짧을수록 빨리 둡니다."
+        UiLanguage.English -> "The strongest opponent reads deeper — a longer limit makes it stronger, a shorter one makes it faster."
+        UiLanguage.Japanese -> "最強の相手はより深く読みます — この制限が長いほど強く、短いほど速く打ちます。"
+        UiLanguage.ChineseSimplified -> "最强的对手会算得更深 — 此限制越长棋力越强，越短落子越快。"
+    }

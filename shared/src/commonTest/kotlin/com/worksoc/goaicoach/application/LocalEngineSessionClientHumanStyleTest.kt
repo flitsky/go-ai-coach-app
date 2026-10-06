@@ -208,6 +208,25 @@ class LocalEngineSessionClientHumanStyleTest {
         assertFalse(calls.any { it.startsWith("useNetwork") || it == "newGame" }, "scoring must not replay the game when nothing was swapped: $calls")
     }
 
+    /**
+     * 초고수는 **둘 때만** 32방문으로 엔진을 건다. 차례가 끝난 뒤 세션에 돌려주는 프로필은 16방문 그대로다 — 그것이 공용 프로필이
+     * 되어 추천 수·형세가 쓰므로, 상대의 방문 수가 새면 초고수와 둘 때만 내 추천 수가 두 배로 느려진다.
+     */
+    @Test
+    fun theTopTierSearchesWithItsOwnVisitsButHandsBackTheSharedProfile() = runBlocking {
+        val result = turn(level = 5)
+
+        assertEquals(listOf(32), engine.configuredVisits)
+        assertEquals(16, result.profile.analysisLimit.visits)
+    }
+
+    @Test
+    fun theOtherMainNetworkTierKeepsSearchingWithSixteenVisits() = runBlocking {
+        turn(level = 4)
+
+        assertEquals(listOf(16), engine.configuredVisits)
+    }
+
     private companion object {
         val EndedByTwoPasses: GameState = GameState.empty()
             .play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))

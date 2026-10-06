@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataForSwingsFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreSwingsFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoTopMovesFor
+import com.worksoc.goaicoach.ui.l10n.gameReplayRemeasuringScoresFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayRowBadgeFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSectionFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayScoreSwingChipLabelFor
@@ -53,6 +54,7 @@ class UiStringsGameReplayTest {
                 "형세 절 제목" to gameReplayScoreSectionFor(language),
                 "형세 없음" to gameReplayNoScoreDataFor(language),
                 "변곡점 절 제목" to gameReplayScoreSwingSectionFor(language),
+                "형세 다시 재는 중" to gameReplayRemeasuringScoresFor(language),
                 "형세 기록 없음" to gameReplayNoScoreDataForSwingsFor(language),
                 "변곡점 없음" to gameReplayNoScoreSwingsFor(language),
                 "판정 기준" to gameReplayScoreSwingCriterionFor(language),

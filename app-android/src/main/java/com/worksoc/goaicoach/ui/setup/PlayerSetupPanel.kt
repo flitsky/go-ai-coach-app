@@ -51,6 +51,7 @@ import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.deepSearchingCharacterHintFor
 import com.worksoc.goaicoach.ui.monetization.BotCharacterPickerDialog
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
 import com.worksoc.goaicoach.ui.monetization.purchaseBotCharacterAndReport
@@ -100,6 +101,8 @@ internal fun SearchTimeSettingsPanel(
     settings: SearchTimeSettings,
     enabled: Boolean,
     onSettingsChange: (SearchTimeSettings) -> Unit,
+    /** 더 깊이 읽는 캐릭터(초고수)가 상대인가 — 그렇다면 이 제한이 그 캐릭터의 세기와 빠르기를 정한다는 안내를 붙인다(백로그 #215). */
+    showsDeepSearchHint: Boolean = false,
 ) {
     val strings = LocalUiStrings.current
     Surface(
@@ -117,6 +120,13 @@ internal fun SearchTimeSettingsPanel(
                 enabled = enabled,
                 onSelected = { limit -> onSettingsChange(settings.withLimit(limit)) },
             )
+            if (showsDeepSearchHint) {
+                Text(
+                    text = deepSearchingCharacterHintFor(strings.language),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
         }
     }
 }

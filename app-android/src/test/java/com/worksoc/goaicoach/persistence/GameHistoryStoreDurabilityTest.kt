@@ -10,6 +10,8 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -231,6 +233,41 @@ class GameHistoryStoreDurabilityTest {
         store().appendCompletedGame(entry("2-b"))
 
         assertEquals(listOf(loaded, entry("2-b")), store().loadAll())
+    }
+
+    /**
+     * 급수 캐릭터와 둔 판의 형세 기록을 주 모델로 다시 잰 뒤 **본문만** 바꿔 쓴다(백로그 #215) — 목록은 그대로다.
+     * 임시 값이라는 출처(`HumanNetworkEstimate`)도 저장을 왕복한다: 앱을 닫았다 열어도 마저 잴 판을 알아본다.
+     */
+    @Test
+    fun updatingAReplayReplacesItsBodyAndKeepsTheSnapshotSources() {
+        val provisional = Replay.copy(
+            scoreSnapshots = listOf(
+                ScoreSnapshot(moveNumber = 0, whiteScoreLead = 0.5, source = ScoreSnapshotSource.EngineEstimate),
+                ScoreSnapshot(moveNumber = 1, whiteScoreLead = 3.0, source = ScoreSnapshotSource.HumanNetworkEstimate),
+            ),
+        )
+        store().appendCompletedGame(entry("1-a", hasReplay = true), provisional)
+        assertEquals(provisional.scoreSnapshots, store().loadReplay("1-a")?.scoreSnapshots)
+
+        val remeasured = provisional.copy(
+            scoreSnapshots = provisional.scoreSnapshots.map { it.copy(whiteScoreLead = 1.5, source = ScoreSnapshotSource.EngineEstimate) },
+        )
+        store().updateReplay("1-a", remeasured)
+
+        assertEquals(remeasured.scoreSnapshots, store().loadReplay("1-a")?.scoreSnapshots)
+        assertEquals(listOf(entry("1-a", hasReplay = true)), store().loadAll())
+    }
+
+    /** 색인이 모르는 판(그사이 보존 상한에 밀려 지워진 판)에는 본문을 쓰지 않는다 — 쓰면 다음 읽기가 고아로 보고 지울 파일이다. */
+    @Test
+    fun updatingAReplayOfAnUnknownGameWritesNothing() {
+        store().appendCompletedGame(entry("1-a", hasReplay = true), Replay)
+
+        store().updateReplay("9-z", Replay)
+
+        assertTrue("an unknown id must not create a replay file", !root.resolve("replay/9-z.json").exists())
+        assertEquals(listOf("1-a"), store().loadAll().map { it.id })
     }
 
     private fun entry(id: String, hasReplay: Boolean = false) = GameHistoryEntry(

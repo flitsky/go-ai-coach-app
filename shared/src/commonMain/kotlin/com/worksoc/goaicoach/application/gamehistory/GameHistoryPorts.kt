@@ -22,4 +22,11 @@ interface GameHistoryStorePort {
      * 저장소를 거치지 않는 기록에 대고 불러도 안전해야 한다.
      */
     fun updateNote(id: String, note: String?) {}
+
+    /**
+     * [id] 기록의 리플레이 본문을 바꿔 쓴다(백로그 #215) — 급수 캐릭터와 둔 판의 형세 기록을 주 모델로 다시 잰 뒤에 부른다
+     * (`remeasureScoreRecord`). 목록의 메타데이터는 건드리지 않는다. 그 id가 목록에 없으면(그사이 보존 상한에 밀려 지워졌거나
+     * 번들 참고 기보) 조용히 아무 일도 하지 않는다 — 색인이 모르는 본문 파일을 만들지 않는다.
+     */
+    fun updateReplay(id: String, replay: GameReplayData) {}
 }

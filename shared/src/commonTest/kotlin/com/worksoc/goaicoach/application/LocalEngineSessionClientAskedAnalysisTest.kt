@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -16,6 +17,7 @@ import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -119,6 +121,58 @@ class LocalEngineSessionClientAskedAnalysisTest {
 
         assertEquals(listOf("estimate"), engine.calls.drop(before))
         assertFalse(engine.calls.any { it.startsWith("useNetwork") })
+    }
+
+    /**
+     * 끝난 판의 형세 기록 재측정(보강 ①)은 **배경 조각**이다 — 주 모델을 올리고, 지나간 국면으로 판을 맞추고, 형세를 잰다.
+     * 판을 다른 국면에 두고 가므로, 돌아온 형세 보기는 판부터 다시 맞춘다.
+     */
+    @Test
+    fun remeasuringAPastPositionRunsOnTheMainNetworkAndLeavesTheBoardThere() = runBlocking {
+        val game = kyuCharacterMoves()
+        val before = engine.calls.size
+
+        val estimate = client.remeasureGraphScore(AfterBlackE5, Profile)
+
+        assertEquals(listOf("useNetwork Main", "newGame", "play Black E5", "estimate"), engine.calls.drop(before))
+        assertEquals(EngineNetwork.Main, estimate.network)
+
+        val afterPiece = engine.calls.size
+        client.estimateScoreForState(game, Profile, syncFirst = false)
+        assertEquals(listOf("newGame", "play Black E5", "play White C3", "estimate"), engine.calls.drop(afterPiece))
+    }
+
+    /** 배경 조각은 줄을 서지 않는다 — 엔진이 쓰이고 있으면 곧바로 물러난다(부르는 쪽이 잠시 뒤 다시 건다). */
+    @Test
+    fun aBackgroundPieceGivesUpWhileTheEngineIsInUse() = runBlocking {
+        val game = kyuCharacterMoves()
+        engine.parkAt("estimate")
+        val tapped = async { client.estimateScoreForState(game, Profile, syncFirst = true) }
+        engine.awaitParked()
+
+        assertFailsWith<EngineOperationBusy> { client.remeasureGraphScore(AfterBlackE5, Profile) }
+
+        engine.release()
+        assertEquals(EngineNetwork.Main, tapped.await().network)
+    }
+
+    /**
+     * 거꾸로, 배경 조각이 도는 동안 사용자가 누른 형세 보기는 **거절당하지 않는다** — 그 한 조각(평가 1회)만 기다렸다가 답한다.
+     * 배경 작업이 누른 분석을 "엔진이 바쁘다"로 돌려보내면 보조 기능이 주 기능을 막는 것이다.
+     */
+    @Test
+    fun aTappedEstimateWaitsForABackgroundPieceInsteadOfGivingUp() = runBlocking {
+        val game = kyuCharacterMoves()
+        engine.parkAt("estimate")
+        val piece = async { client.remeasureGraphScore(AfterBlackE5, Profile) }
+        engine.awaitParked()
+
+        val tapped = async { client.estimateScoreForState(game, Profile, syncFirst = false) }
+        engine.release()
+
+        piece.await()
+        assertEquals(EngineNetwork.Main, tapped.await().network)
+        assertEquals(listOf("newGame", "play Black E5", "play White C3", "estimate"), engine.calls.takeLast(4), "the tap must resync: the piece left the board elsewhere")
     }
 
     private companion object {

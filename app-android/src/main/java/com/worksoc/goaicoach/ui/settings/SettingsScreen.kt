@@ -48,6 +48,7 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.auth.state.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame
+import com.worksoc.goaicoach.match.hasDeepSearchingAi
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
@@ -327,6 +328,7 @@ internal fun SettingsScreen(
             // 엔진이 바빠도 열어 둔다 — 다음 엔진 호출부터 적용되므로 진행 중 탐색을 흔들지 않는다.
             SearchTimeSettingsPanel(
                 settings = screenState.searchTimeSettings,
+                showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi(),
                 enabled = true,
                 onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
             )

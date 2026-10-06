@@ -167,7 +167,8 @@ class PlayLevelSettingTest {
 
         assertEquals(MoveSelectionPolicy.BestOnly, policy)
         assertEquals(EngineSearchMode.GtpStatefulFast, PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 5).aiMoveSearchMode())
-        assertEquals(16, limit.visits)
+        // 방문 수만 2026-10-06에 16 → 32로 올렸다(백로그 #215, 사용자: 초고수는 5~9단 구간이라 더 깊이 읽는다). 고르는 법은 그대로다.
+        assertEquals(32, limit.visits)
         assertEquals(1, limit.candidateCount)
         assertEquals(false, limit.includePolicy)
         assertEquals(0..0, policy.candidateIndexRange(candidateCount = 1))
@@ -261,5 +262,35 @@ class PlayLevelSettingTest {
         val tier = MoveSelectionPolicy.BucketedTierSelection(10, 30, 60, "고수", "고수")
         val range = tier.resolveIndexRange(candidateCount = 2, ownMoveIndex = 0, random = Random(1))
         assertEquals(1..1, range)
+    }
+
+    /**
+     * 초고수(빠른 초급 5단계, 5~9단 구간)만 **둘 때** 32방문으로 더 깊이 읽는다(백로그 #215, 사용자 2026-10-06) —
+     * 고수까지는 16방문 그대로다. 숨겨 둔 다른 그룹은 그룹의 방문 수 그대로다.
+     */
+    @Test
+    fun onlyTheTopFastBeginnerTierSearchesDeeperWhenItPlays() {
+        assertEquals(listOf(16, 16, 16, 16, 32), (1..5).map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).aiMoveVisits })
+        assertEquals(listOf(false, false, false, false, true), (1..5).map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).searchesDeeperThanItsGroup })
+        PlayLevelGroup.entries.filter { it != PlayLevelGroup.FastBeginner }.forEach { group ->
+            (1..group.maxLevel).forEach { level -> assertEquals(group.visits, PlayLevelSetting(group, level).aiMoveVisits, "$group $level") }
+        }
+    }
+
+    /**
+     * 더 깊이 읽는 것은 **AI 착수뿐**이다. 형세 보기·추천 수가 쓰는 공용 프로필은 그룹의 방문 수 그대로다 —
+     * 상대가 초고수라고 내 추천 수의 깊이(와 걸리는 시간)가 달라지면 안 된다.
+     */
+    @Test
+    fun theDeeperSearchDoesNotLeakIntoTheSharedCoachingProfile() {
+        val topTier = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 5)
+        val settings = SearchTimeSettings(limit = SearchTimeLimit.WithinTenSeconds)
+
+        assertEquals(16, topTier.toEngineProfile(EngineProfile(), settings).analysisLimit.visits)
+        assertEquals(32, topTier.toAiTurnEngineProfile(EngineProfile(), settings).analysisLimit.visits)
+        assertEquals(32, topTier.aiMoveAnalysisLimitWith(settings).visits)
+        // 시간 상한은 둘 다 사용자의 것이다 — 방문을 다 못 쓰면 거기서 잘린다.
+        assertEquals(10_000L, topTier.toAiTurnEngineProfile(EngineProfile(), settings).analysisLimit.timeMillis)
+        assertEquals(10_000L, topTier.aiMoveAnalysisLimitWith(settings).timeMillis)
     }
 }

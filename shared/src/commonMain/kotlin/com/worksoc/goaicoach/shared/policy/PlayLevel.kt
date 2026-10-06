@@ -60,6 +60,19 @@ enum class PlayLevelGroup(
     ),
     ;
 
+    /**
+     * AI가 [level] 단계로 **둘 때** 쓰는 방문 수(백로그 #215) — 그룹의 [visits]와 다를 수 있다.
+     *
+     * 빠른 초급의 맨 위 단계(초고수, 5~9단 구간)만 [FastBeginnerTopTierAiMoveVisits]로 더 깊이 읽는다(사용자 2026-10-05·06:
+     * 고수는 16방문 그대로, 초고수는 32방문). 방문을 다 쓰려면 시간이 든다 — 「최대 탐색 시간 제한」이 짧으면 거기서 잘린다
+     * (S23: 32방문이 13줄 8.8초 · 19줄 15.4초). 그래서 설정 화면이 제한을 늘려 보라고 안내한다([PlayLevelSetting.searchesDeeperThanItsGroup]).
+     *
+     * ⚠️ **AI 착수에만 쓴다.** 형세 보기·추천 수의 공용 프로필([PlayLevelSetting.toEngineProfile])에는 얹지 않는다 —
+     * 상대가 누구냐에 따라 내 추천 수의 깊이가 달라지면 안 된다.
+     */
+    fun aiMoveVisits(level: Int): Int =
+        if (this == FastBeginner && level.coerceIn(1, maxLevel) == maxLevel) FastBeginnerTopTierAiMoveVisits else visits
+
     fun defaultAnalysisLimit(): AnalysisLimit =
         AnalysisLimit(
             visits = visits,
@@ -170,8 +183,24 @@ data class PlayLevelSetting(
     fun normalized(): PlayLevelSetting =
         if (level == safeLevel) this else copy(level = safeLevel)
 
+    /** AI가 이 단계로 둘 때의 방문 수([PlayLevelGroup.aiMoveVisits]). */
+    val aiMoveVisits: Int = group.aiMoveVisits(safeLevel)
+
+    /**
+     * 이 단계의 AI가 그룹 기본보다 **더 깊이 읽는가** — 그렇다면 「최대 탐색 시간 제한」이 길수록 더 세게 둔다.
+     * 설정 화면이 이 값으로 안내 한 줄을 띄운다.
+     */
+    val searchesDeeperThanItsGroup: Boolean = aiMoveVisits > group.visits
+
     fun analysisLimitWith(searchTimeSettings: SearchTimeSettings): AnalysisLimit =
         searchTimeSettings.applyTo(analysisLimit)
+
+    /**
+     * **AI 착수**의 탐색 한도 — [analysisLimitWith]에 이 단계의 방문 수([aiMoveVisits])를 얹은 것.
+     * AI 착수 경로의 세 자리(엔진 설정 · 후보 분석 한도 · 차례 실행 문맥)가 전부 이것에서 나온다.
+     */
+    fun aiMoveBaseLimitWith(searchTimeSettings: SearchTimeSettings): AnalysisLimit =
+        searchTimeSettings.applyTo(analysisLimit.copy(visits = aiMoveVisits))
 
     fun toEngineProfile(
         base: EngineProfile,
@@ -181,7 +210,23 @@ data class PlayLevelSetting(
             difficulty = group.difficulty,
             analysisLimit = analysisLimitWith(searchTimeSettings),
         )
+
+    /**
+     * **AI 차례 동안만** 엔진에 거는 프로필 — 방문 수가 이 단계의 것이다([aiMoveBaseLimitWith]).
+     * ⚠️ 차례가 끝난 뒤 세션에 남기는 프로필은 [toEngineProfile]이다 — 이것을 남기면 다음 추천 수가 상대의 방문 수로 돈다.
+     */
+    fun toAiTurnEngineProfile(
+        base: EngineProfile,
+        searchTimeSettings: SearchTimeSettings = SearchTimeSettings(),
+    ): EngineProfile =
+        base.copy(
+            difficulty = group.difficulty,
+            analysisLimit = aiMoveBaseLimitWith(searchTimeSettings),
+        )
 }
+
+/** 빠른 초급의 맨 위 단계(초고수)가 둘 때 쓰는 방문 수 — [PlayLevelGroup.aiMoveVisits]. */
+const val FastBeginnerTopTierAiMoveVisits: Int = 32
 
 sealed class MoveSelectionPolicy {
     abstract val description: String

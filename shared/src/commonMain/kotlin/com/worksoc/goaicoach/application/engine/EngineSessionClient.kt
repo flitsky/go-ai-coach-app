@@ -220,6 +220,22 @@ interface EngineScoringClient {
         profile: EngineProfile,
         syncFirst: Boolean,
     ): ScoreEstimate
+
+    /**
+     * 끝난 판의 지나간 국면 [state]의 형세를 **주 모델로, 매 수 형세 기록과 같은 깊이로** 다시 잰다(백로그 #215 보강 ①) —
+     * 급수 캐릭터와 둔 판의 형세 기록은 사람 모델의 임시 값이라, 대국이 끝난 뒤 한 국면씩 이것으로 바꿔 쓴다
+     * (`remeasureScoreRecord`).
+     *
+     * **배경 작업의 한 조각이다.** 엔진이 다른 일을 하고 있으면 기다리지 않고 [EngineOperationBusy]를 던진다 — 부르는 쪽이
+     * 잠시 뒤 다시 건다. 거꾸로 이 조각이 도는 동안 사용자가 누른 분석은 포기하지 않고 이 한 조각(평가 1회)만 기다린다.
+     * 엔진 판을 [state]로 바꿔 놓는다(분석 계열과 같다).
+     *
+     * 기본 구현은 물어본 형세 추정이다 — 올릴 신경망이 하나뿐인 엔진(원격·스텁)에는 다시 잴 임시 값이 애초에 생기지 않는다.
+     */
+    suspend fun remeasureGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate = estimateScoreForState(state = state, profile = profile, syncFirst = true)
 }
 
 /**

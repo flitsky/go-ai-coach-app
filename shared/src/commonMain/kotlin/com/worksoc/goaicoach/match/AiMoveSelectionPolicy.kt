@@ -28,7 +28,7 @@ object AiMoveSelectionPolicy {
     ): AnalysisLimit =
         when (searchMode) {
             EngineSearchMode.GtpStatefulFast -> {
-                val baseLimit = playLevel.analysisLimitWith(searchTimeSettings)
+                val baseLimit = playLevel.aiMoveBaseLimitWith(searchTimeSettings)
                 val count = if (playLevel.selectionPolicy is MoveSelectionPolicy.BestOnly) 1 else baseLimit.candidateCount
                 baseLimit.fastCandidateAnalysis(candidateCount = count)
             }

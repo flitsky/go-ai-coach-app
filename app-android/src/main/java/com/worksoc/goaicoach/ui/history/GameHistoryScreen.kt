@@ -164,9 +164,14 @@ internal fun GameHistoryScreen(
                 onStartBranchedGame(branchedSnapshotOf(entry, replay, state))
             }
         }
+        // 급수 캐릭터와 둔 판의 형세 기록(사람 모델의 임시 값)을 다시보기를 연 동안 주 모델로 마저 잰다(백로그 #215).
+        val isRemeasuringScores = ReplayScoreRemeasureEffect(entry, replay, engineScoring) { remeasuredEntry, remeasured ->
+            if (opened?.first?.id == remeasuredEntry.id) opened = remeasuredEntry to remeasured
+        }
         GameReplayScreen(
             entry = entry,
             replay = replay,
+            isRemeasuringScores = isRemeasuringScores,
             onBackClick = {
                 opened = null
                 if (cameFromGame) {

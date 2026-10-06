@@ -137,6 +137,8 @@ class LocalEngineSessionClient(
      *   ([estimateScoreForState]). 받는 쪽이 기존의 "잠시 뒤"·"엔진이 바쁘다" 흐름으로 보낸다 — 기다리게 하면 AI가 생각하는
      *   동안 누른 형세가 그 탐색이 끝날 때까지 멈춘다.
      * - **목표마다 따로**: 캐시 최적화([optimizePositionAnalysisCache]) — 목표와 목표 사이에 기다리던 AI 차례가 돈다.
+     * - **배경 조각**([backgroundPiece]): 끝난 판의 형세 기록 재측정([remeasureGraphScore]) — 엔진이 쓰이고 있으면 포기하고,
+     *   도는 동안에는 위의 「곧바로 포기」하는 쪽이 이 조각(평가 1회)만 기다린다. 사용자가 누른 분석이 배경 작업 때문에 거절당하지 않는다.
      * - **잡지 않는다**: [forceResetEngine](함정 71 — 멈춘 오퍼레이션을 풀려고 부르는 함수다), [capabilities], 캐시 통계 둘.
      *
      * ## 멈춘 오퍼레이션이 모두를 얼리지 않는 이유 — 오퍼레이션 마감은 따로 두지 않는다(함정 71)
@@ -159,6 +161,10 @@ class LocalEngineSessionClient(
      * 눈대중은 [isEngineOperationInFlight]다.
      */
     private val operationLock = Mutex()
+
+    /** 지금 락을 쥔 것이 배경 작업의 한 조각인가([backgroundPiece]) — 아무 스레드에서나 읽는다. */
+    @kotlin.concurrent.Volatile
+    private var backgroundPieceInFlight = false
 
     override val isEngineOperationInFlight: Boolean
         get() = operationLock.isLocked
@@ -413,6 +419,16 @@ class LocalEngineSessionClient(
             ).also { if (syncNow) boardLeftByAnalysis = AnalysisBoard.At(state) }
         }
 
+    override suspend fun remeasureGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate =
+        backgroundPiece("remeasureGraphScore") {
+            // 지나간 국면으로 판을 옮긴다 — 분석 계열과 같은 표시를 남겨, 돌아온 대국의 형세 보기가 판부터 맞추게 한다.
+            boardLeftByAnalysis = AnalysisBoard.Unknown
+            coreSession.remeasureGraphScore(state, profile).also { boardLeftByAnalysis = AnalysisBoard.At(state) }
+        }
+
     override suspend fun resolveEndgameForState(
         state: GameState,
         profile: EngineProfile,
@@ -461,16 +477,44 @@ class LocalEngineSessionClient(
         return operationLock.withLock { holding(operation, block) }
     }
 
-    /** [operationLock]이 비어 있을 때만 쥐고 [block]을 돈다. 누가 쥐고 있으면 기다리지 않고 [EngineOperationBusy]. */
+    /**
+     * [operationLock]이 비어 있을 때만 쥐고 [block]을 돈다. 누가 쥐고 있으면 기다리지 않고 [EngineOperationBusy] —
+     * 단, 쥔 것이 **배경 작업의 한 조각**([backgroundPiece])이면 그 조각만 기다린다. 배경 작업이 사용자가 누른 분석을
+     * "엔진이 바쁘다"로 돌려보내면 보조 기능이 주 기능을 막는 것이다. 조각은 평가 1회라 기다림이 짧다.
+     * (조각이 끝난 직후 다른 오퍼레이션이 먼저 쥐면 그것까지 기다리게 된다 — 줄은 선착순이라 드물고, 기다릴 뿐 틀리지 않는다.)
+     */
     private suspend fun <T> serializedOrBusy(
         operation: String,
         block: suspend () -> T,
     ): T {
         refuseReentry(operation)
-        if (!operationLock.tryLock()) throw EngineOperationBusy(operation)
+        if (!operationLock.tryLock()) {
+            if (!backgroundPieceInFlight) throw EngineOperationBusy(operation)
+            operationLock.lock()
+        }
         try {
             return holding(operation, block)
         } finally {
+            operationLock.unlock()
+        }
+    }
+
+    /**
+     * **배경 작업의 한 조각**(백로그 #215 — 끝난 판의 형세 기록 재측정). 엔진이 조금이라도 쓰이고 있으면 포기한다
+     * ([EngineOperationBusy]) — 배경 작업은 줄을 서지 않는다. 도는 동안에는 표지를 세워, 포기하던 쪽([serializedOrBusy])이
+     * 이 조각만큼은 기다리게 한다. 기다리는 쪽([serialized])은 늘 그렇듯 줄을 선다.
+     */
+    private suspend fun <T> backgroundPiece(
+        operation: String,
+        block: suspend () -> T,
+    ): T {
+        refuseReentry(operation)
+        if (!operationLock.tryLock()) throw EngineOperationBusy(operation)
+        backgroundPieceInFlight = true
+        try {
+            return holding(operation, block)
+        } finally {
+            backgroundPieceInFlight = false
             operationLock.unlock()
         }
     }

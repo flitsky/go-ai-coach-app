@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.ui.l10n.UiStringsJapanese
 import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
 import com.worksoc.goaicoach.ui.l10n.botCharacterDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.botCharacterNameFor
+import com.worksoc.goaicoach.ui.l10n.deepSearchingCharacterHintFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -158,5 +159,19 @@ class UiStringsBotCharacterTest {
                 )
             }
         }
+    }
+
+    /**
+     * 「최대 탐색 시간 제한」 아래의 안내(백로그 #215) — 더 깊이 읽는 캐릭터가 상대일 때 그 제한이 세기와 빠르기를 정한다고 말한다.
+     * ⚠️ **초 단위 숫자를 적지 않는다** — 걸리는 시간은 기기마다 달라서, 적는 순간 어느 기기에서는 거짓이 된다.
+     */
+    @Test
+    fun theDeepSearchHintExistsInEveryLanguageAndPromisesNoSeconds() {
+        UiLanguage.entries.forEach { language ->
+            val hint = deepSearchingCharacterHintFor(language)
+            assertTrue("$language 안내가 비었다", hint.isNotBlank())
+            assertFalse("$language 안내에 숫자가 있다: $hint", hint.any { it.isDigit() })
+        }
+        assertEquals(UiLanguage.entries.size, UiLanguage.entries.map { deepSearchingCharacterHintFor(it) }.toSet().size)
     }
 }

@@ -604,7 +604,8 @@ class GameAutomationApplicationTest {
         )
 
         assertEquals(EngineSearchMode.GtpStatefulFast, context.searchMode)
-        assertEquals(16, context.analysisLimit.visits)
+        // 초고수는 둘 때 32방문이다(백로그 #215, 2026-10-06) — 시간 상한은 사용자의 것 그대로라, 짧으면 거기서 잘린다.
+        assertEquals(32, context.analysisLimit.visits)
         assertEquals(3_000L, context.analysisLimit.timeMillis)
         assertEquals(1, context.analysisLimit.candidateCount)
         assertEquals(false, context.analysisLimit.includePolicy)

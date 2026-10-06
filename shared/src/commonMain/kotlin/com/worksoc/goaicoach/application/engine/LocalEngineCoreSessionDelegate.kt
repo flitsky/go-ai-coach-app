@@ -151,6 +151,9 @@ internal class LocalEngineCoreSessionDelegate(
     ): AutoAiTurnResult {
         val aiPlayer = currentState.nextPlayer
         val turnProfile = playLevel.toEngineProfile(currentProfile, searchTimeSettings)
+        // 엔진에는 **이 단계의 방문 수**로 건다(초고수는 더 깊이 읽는다 — `PlayLevelGroup.aiMoveVisits`). 세션에 돌려주는 프로필은
+        // [turnProfile] 그대로다: 돌려준 것이 공용 프로필이 되어 추천 수·형세가 쓰므로, 상대의 방문 수가 거기 새면 안 된다.
+        val aiSearchProfile = playLevel.toAiTurnEngineProfile(currentProfile, searchTimeSettings)
         // 급수 캐릭터는 사람 모델로 둔다(백로그 #215) — 그 모델이 기기에 있고, 앞서 실패한 적이 없을 때.
         val humanStyle = playLevel.humanPlayStyle()?.takeIf { coreApi.supportsHumanNetwork && !humanStyleUnavailable }
         if (humanStyle != null) {
@@ -166,7 +169,7 @@ internal class LocalEngineCoreSessionDelegate(
         }
         // 그 밖의 AI 차례는 주 모델로 둔다 — 급수 캐릭터와 두던 엔진이면 여기서 갈아 올린다. 판은 바로 아래에서 맞춘다.
         bringMainNetwork()
-        coreApi.configure(turnProfile)
+        coreApi.configure(aiSearchProfile)
         coreApi.syncToGameState(currentState)
         val aiMoveGateway = LocalAiMoveEngineGateway(coreApi)
         val outcome = applyAiTurn(
@@ -181,7 +184,7 @@ internal class LocalEngineCoreSessionDelegate(
             // 진짜 실패로 genMove에 떨어지기 전에 엔진을 다시 맞춘다(refactor backlog #74, 설계 F2) — 실패한
             // GTP 요청은 프로세스를 내린 뒤라, 그대로 genMove하면 새 프로세스가 빈 판의 수를 낸다.
             prepareFallback = {
-                coreApi.configure(turnProfile)
+                coreApi.configure(aiSearchProfile)
                 coreApi.syncToGameState(currentState)
             },
         )
@@ -324,6 +327,16 @@ internal class LocalEngineCoreSessionDelegate(
             coreApi.syncToGameState(state)
         }
         return coreApi.estimateScore(profile.analysisLimit)
+    }
+
+    /** 지나간 국면의 형세를 주 모델로, 매 수 형세 기록과 같은 깊이로 — `EngineScoringClient.remeasureGraphScore`. */
+    suspend fun remeasureGraphScore(
+        state: GameState,
+        profile: EngineProfile,
+    ): ScoreEstimate {
+        bringMainNetwork()
+        coreApi.syncToGameState(state)
+        return coreApi.estimateScore(scoreGraphAnalysisLimit(profile))
     }
 
     suspend fun resolveEndgameForState(

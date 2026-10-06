@@ -409,7 +409,11 @@ internal class ParkingCoreApi : EngineCoreApi {
         return EngineStatus.ready("initialized")
     }
 
+    /** `configure`가 받은 프로필의 방문 수 — 받은 순서대로(백로그 #215: AI 차례는 그 단계의 방문 수로 엔진을 건다). */
+    val configuredVisits = mutableListOf<Int>()
+
     override suspend fun configure(profile: EngineProfile): EngineStatus {
+        lock.withLock { configuredVisits += profile.analysisLimit.visits }
         record("configure")
         return EngineStatus.ready("configured")
     }

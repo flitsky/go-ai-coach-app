@@ -26,7 +26,8 @@ class AiMoveSelectionPolicyTest {
             searchMode = EngineSearchMode.GtpStatefulFast,
         )
 
-        assertEquals(16, limit.visits)
+        // 초고수는 둘 때 32방문이다(백로그 #215, 2026-10-06 — `PlayLevelGroup.aiMoveVisits`).
+        assertEquals(32, limit.visits)
         assertEquals(1, limit.candidateCount)
         assertEquals(false, limit.includePolicy)
     }

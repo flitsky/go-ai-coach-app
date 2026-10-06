@@ -38,6 +38,7 @@ import com.worksoc.goaicoach.application.engine.EngineStartupRunRequest
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.engine.operation.EngineOperationLifecycleController
 import com.worksoc.goaicoach.application.engine.runEngineStartupApplication
+import com.worksoc.goaicoach.application.gamehistory.adoptRemeasuredScores
 import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted
 import com.worksoc.goaicoach.application.orchestration.GameSessionDisplayStateApplier
 import com.worksoc.goaicoach.application.preferences.UserPreferencesAutosaveRequest
@@ -129,6 +130,7 @@ import com.worksoc.goaicoach.ui.monetization.buildPremiumUiState
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.GoCoachContent
 import com.worksoc.goaicoach.ui.play.ProvisionalScoreRefineEffect
+import com.worksoc.goaicoach.ui.play.ScoreRecordRemeasureEffect
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
 import com.worksoc.goaicoach.ui.settings.SettingsScreen
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
@@ -848,6 +850,17 @@ private fun GoCoachScreen(
         ),
         isEngineBusyNow = { isEngineBusy || engineClient.isEngineOperationInFlight },
         refine = controllers.scoreEstimateController::request,
+    )
+
+    // 대국이 끝나면 그 판의 형세 기록(사람 모델의 임시 값)을 주 모델로 다시 잰다 — 다시보기를 연 동안은 그 화면이 잰다(백로그 #215).
+    ScoreRecordRemeasureEffect(
+        isActive = isGameEnded && isEngineReady && currentDestination != ScreenDestination.GameHistory,
+        sessionGeneration = runtimeState.sessionGeneration,
+        gameState = gameState,
+        scoreSnapshots = scoreState.scoreSnapshots,
+        engineClient = engineClient,
+        profile = runtimeState.engineProfile,
+        onRemeasured = { remeasured -> scoreState = scoreState.copy(scoreSnapshots = adoptRemeasuredScores(scoreState.scoreSnapshots, remeasured)) },
     )
 
     CompositionLocalProvider(

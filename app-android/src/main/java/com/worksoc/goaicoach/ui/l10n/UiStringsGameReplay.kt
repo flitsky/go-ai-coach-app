@@ -261,6 +261,18 @@ internal fun gameReplayNoScoreDataFor(language: UiLanguage): String = NoScoreDat
  * ⚠️ **개수를 문구에 박지 않는다** — [ScoreSwingMaxCount] 하나가 정본이고 네 언어가 그 값을 따라온다.
  * 버튼이 그보다 적게 뜨는 판이 많으므로 "최대"가 빠지면 안 된다.
  */
+/**
+ * 변곡점 제목 옆에 잠깐 붙는 한 마디 — 급수 캐릭터와 둔 판의 형세 기록을 주 모델로 다시 재는 동안(백로그 #215).
+ * 재는 대로 변곡점 칩이 바뀌므로, 화면이 저 혼자 달라지는 까닭을 말해 준다. 끝나면 사라진다.
+ */
+internal fun gameReplayRemeasuringScoresFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "형세 다시 재는 중…"
+        UiLanguage.English -> "Re-checking scores…"
+        UiLanguage.Japanese -> "形勢を再計測中…"
+        UiLanguage.ChineseSimplified -> "正在重新评估形势…"
+    }
+
 internal fun gameReplayScoreSwingSectionFor(
     language: UiLanguage,
     maxCount: Int = ScoreSwingMaxCount,
