@@ -74,6 +74,8 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.customRank
+import com.worksoc.goaicoach.shared.policy.customRankFallbackTier
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
@@ -619,7 +621,8 @@ internal fun currentAiCharacterOrDefault(playerSetup: PlayerSetup): BotCharacter
     val fastBeginnerLevel = if (aiPlayLevel?.group == PlayLevelGroup.FastBeginner) {
         aiPlayLevel.safeLevel
     } else {
-        DefaultAiCharacterLevel
+        // 급수를 직접 고른 상대(커스텀 대국, 백로그 #217)는 그 급수가 속한 구간의 캐릭터 얼굴을 빌린다.
+        aiPlayLevel?.customRank()?.let(::customRankFallbackTier) ?: DefaultAiCharacterLevel
     }
     return BotCharacterCatalog.forPlayLevel(
         PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),

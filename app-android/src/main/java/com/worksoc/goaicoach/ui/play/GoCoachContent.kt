@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningInitialMoveCount
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningMaxMoveCount
+import com.worksoc.goaicoach.application.customgame.customGameMatchup
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
@@ -53,6 +54,7 @@ import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.customGameOpponentLineFor
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuButton
 
 @Composable
@@ -187,6 +189,10 @@ internal fun GoCoachContent(
                 onReviewFinishedGame()
             },
             reviewMistakeCount = reviewMistakeCount,
+            // 급수를 직접 고른 상대와 둔 판이면 그 급수를 남긴다(백로그 #217). 좌석은 다음 대국을 시작할 때까지 둔 급수 그대로다.
+            opponentLine = screenState.playerSetup.customGameMatchup()?.let { matchup ->
+                customGameOpponentLineFor(strings.language, matchup.opponentRank)
+            },
         )
     }
 

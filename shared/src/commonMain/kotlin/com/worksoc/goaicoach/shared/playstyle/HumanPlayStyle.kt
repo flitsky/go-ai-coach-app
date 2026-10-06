@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.shared.playstyle
 
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
+import com.worksoc.goaicoach.shared.policy.customRank
 
 /**
  * 5계층 — **급수 캐릭터가 사람처럼 두는 기풍**(백로그 #215). 캐릭터의 성향을 담는 도메인(#212)의 첫 칸이다.
@@ -32,6 +33,11 @@ data class HumanPlayStyle(
  * 초보와 하수의 차이가 작게 느껴지면 여기 값을 벌린다.
  */
 fun PlayLevelSetting.humanPlayStyle(): HumanPlayStyle? {
+    // 커스텀 대국(백로그 #217) — 고른 급수의 공식 프로필 그대로 둔다. 구간이 한 칸이다.
+    customRank()?.let { rank ->
+        val label = "${rank.number}${if (rank.isDan) "d" else "k"}"
+        return HumanPlayStyle(profile = rank.profile, weakestRank = label, strongestRank = label)
+    }
     if (group != PlayLevelGroup.FastBeginner) return null
     return when (safeLevel) {
         1 -> HumanPlayStyle(profile = "rank_15k", weakestRank = "18k", strongestRank = "12k")

@@ -63,6 +63,7 @@ import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryReferenceLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchOverwriteMessageFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayRowBadgeFor
+import com.worksoc.goaicoach.ui.l10n.seatMatchupLabelWithRanksFor
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.note
 import java.text.SimpleDateFormat
@@ -438,7 +439,8 @@ internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings)
     val summary = listOf(
         dateOrReferenceLabel,
         "${entry.boardSize}x${entry.boardSize}",
-        strings.seatMatchupLabel(entry.playerSetup),
+        // 급수를 직접 고른 상대와 둔 판은 그 급수를 남긴다(백로그 #217 — `사람:AI 5급`).
+        seatMatchupLabelWithRanksFor(strings, entry.playerSetup),
         handicapPhrase(strings, entry.handicapCount),
         strings.gameHistoryOutcomeLabel(entry.winner, entry.isResign, entry.margin),
     ).joinToString(" \u00B7 ")

@@ -26,6 +26,7 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.botcharacter.isBotCharacterPerkActive
 import com.worksoc.goaicoach.application.botcharacter.matchOpponentCharacter
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
+import com.worksoc.goaicoach.application.customgame.withCustomRankForNextGame
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.debugreport.DebugReportMirrorPort
 import com.worksoc.goaicoach.application.debugreport.UserNoticePort
@@ -134,7 +135,10 @@ import com.worksoc.goaicoach.ui.play.ProvisionalScoreRefineEffect
 import com.worksoc.goaicoach.ui.play.ScoreRecordRemeasureEffect
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
 import com.worksoc.goaicoach.ui.settings.SettingsScreen
+import com.worksoc.goaicoach.ui.setup.CustomGameRecordedEffect
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
+import com.worksoc.goaicoach.ui.setup.LocalCustomGameUiState
+import com.worksoc.goaicoach.ui.setup.buildCustomGameUiState
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
 import com.worksoc.goaicoach.ui.study.StudyScreen
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
@@ -622,6 +626,9 @@ private fun GoCoachScreen(
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home
     }
+    // 커스텀 대국(백로그 #217) — 다음 판의 상대 급수와 승급 랠리. 본체는 ui/setup/CustomGameUiState.kt에 있다(상태 훅 예산).
+    val customGameUiState = buildCustomGameUiState(context, isAvailable = engineClient.capabilities.supportsHumanNetwork)
+
     fun dispatch(event: GameUiEvent) {
         dispatchGameUiEvent(
             event = event,
@@ -629,6 +636,8 @@ private fun GoCoachScreen(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = {
+                    // 승급 랠리가 올린 급수는 새 대국을 시작할 때 좌석에 옮겨 적는다 — 「재 대국」은 설정 화면을 거치지 않는다.
+                    playerSetup.withCustomRankForNextGame(customGameUiState.state).takeIf { it != playerSetup }?.let(controllers.settingsController::changePlayerSetup)
                     sessionStore.clear()
                     savedSessionUiState = savedSessionUiState.dismiss()
                     controllers.newGameController::startConfiguredGame.invoke()
@@ -853,6 +862,9 @@ private fun GoCoachScreen(
         refine = controllers.scoreEstimateController::request,
     )
 
+    // 끝난 커스텀 대국을 승급 랠리에 반영하고, 급수가 오르면 한 줄로 알린다(백로그 #217).
+    CustomGameRecordedEffect(customGameUiState, isGameEnded, scoreState.finalScoreJudgement != null || gameState.moves.lastOrNull() is Move.Resign, runtimeState.sessionGeneration, gameState, botCharacterUiState.collection, premiumUiState.isPurchased)
+
     // 대국이 끝나면 그 판의 형세 기록(사람 모델의 임시 값)을 주 모델로 다시 잰다 — 다시보기를 연 동안은 그 화면이 잰다(백로그 #215).
     ScoreRecordRemeasureEffect(
         isActive = isGameEnded && isEngineReady && currentDestination != ScreenDestination.GameHistory,
@@ -870,6 +882,7 @@ private fun GoCoachScreen(
         LocalConsumableUiState provides consumableUiState,
         // 구독은 프리미엄 배선이 만들어진 **뒤에야** 알 수 있어 여기서 얹는다(#157).
         LocalBotCharacterUiState provides botCharacterUiState.copy(subscriptionActive = premiumUiState.isPurchased),
+        LocalCustomGameUiState provides customGameUiState,
     ) {
     // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
     // 체크인/지급/상태는 전부 ui/monetization/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).

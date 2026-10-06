@@ -74,7 +74,10 @@ class HumanMoveSamplerTest {
         assertTrue(!HumanMoveSampler.shouldPass(HumanPolicy("rank_9d", mapOf(point(0) to 0.6), passProbability = null)))
     }
 
-    /** 사람 모델로 두는 것은 빠른 초급의 급 구간 셋뿐이다 — 고수·초고수와 다른 그룹은 지금 방식이다. */
+    /**
+     * **캐릭터 가운데** 사람 모델로 두는 것은 빠른 초급의 급 구간 셋뿐이다 — 고수·초고수와 숨겨 둔 그룹은 지금 방식이다.
+     * 급수를 직접 고른 상대(커스텀 대국, #217)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
+     */
     @Test
     fun onlyTheThreeKyuCharactersHaveAHumanStyle() {
         assertEquals("rank_15k", PlayLevelSetting(level = 1).humanPlayStyle()?.profile)
@@ -82,7 +85,7 @@ class HumanMoveSamplerTest {
         assertEquals("rank_3k", PlayLevelSetting(level = 3).humanPlayStyle()?.profile)
         assertNull(PlayLevelSetting(level = 4).humanPlayStyle())
         assertNull(PlayLevelSetting(level = 5).humanPlayStyle())
-        PlayLevelGroup.entries.filter { it != PlayLevelGroup.FastBeginner }.forEach { group ->
+        PlayLevelGroup.entries.filter { it != PlayLevelGroup.FastBeginner && it != PlayLevelGroup.CustomRank }.forEach { group ->
             assertNull(PlayLevelSetting(group = group, level = 1).humanPlayStyle(), "$group keeps its current move selection")
         }
     }

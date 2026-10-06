@@ -45,6 +45,11 @@ internal fun FinalJudgementDialog(
      * ⚠️ 기본값을 두지 않는다(함정 40) — 빠뜨리면 조용히 배지가 영영 안 뜬다.
      */
     reviewMistakeCount: Int?,
+    /**
+     * 그 판의 상대를 말하는 한 줄(백로그 #217) — 급수를 직접 고른 상대와 둔 판에만 있다(`상대: 커스텀 5급`).
+     * 캐릭터와 둔 판은 `null`이고 지금까지와 똑같다.
+     */
+    opponentLine: String? = null,
 ) {
     val highlightsReview = reviewMistakeBadgeLabel(reviewMistakeCount) != null
     // ⚠️ 이 팝업이 떠 있는 동안 첫돌이 가이드를 **기록하지 않는다** — 뒤에 깔린 채 "봤음"으로
@@ -57,6 +62,7 @@ internal fun FinalJudgementDialog(
             Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
                 Text(judgement.resultText(strings))
                 Text(judgement.gameModeLine(strings))
+                opponentLine?.let { Text(it) }
                 Text(judgement.scoringRuleLine(strings))
                 Text(judgement.removedStonesLine(strings))
                 judgement.blackLine(strings)?.let { Text(it) }

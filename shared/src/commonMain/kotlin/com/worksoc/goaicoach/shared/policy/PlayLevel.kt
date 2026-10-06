@@ -58,6 +58,26 @@ enum class PlayLevelGroup(
         candidateCount = 24,
         analysisPreset = AnalysisPreset.Balanced,
     ),
+
+    /**
+     * **커스텀 대국** — KGS 급수를 직접 고른 상대(백로그 #217). 단계 번호가 곧 급수의 칸이다([KgsRank.step]: 1 = 20급 … 29 = 9단).
+     * 착수는 그 급수의 사람 모델 프로필이 낸다(`shared.playstyle.humanPlayStyle`) — 캐릭터(빠른 초급)와 같은 엔진 경로다.
+     * 탐색 예산은 빠른 초급과 같다: 형세·추천 수의 공용 프로필이 상대에 따라 달라지지 않게.
+     *
+     * ⚠️ **이름이 곧 저장 형식이다**(함정 1) — 이어하기·대국 기록·설정에 `"CustomRank"`로 적힌다. 바꾸지 말 것.
+     * ⚠️ 이 그룹을 모르는 옛 빌드는 빠른 초급으로 읽고 단계를 5로 자른다(`PlayerSetupJsonCodec`) — 다운그레이드한 기기에서만
+     * 일어나고, 그때 상대는 초고수가 된다.
+     */
+    CustomRank(
+        label = "커스텀",
+        shortLabel = "CR",
+        maxLevel = KgsRank.StrongestStep,
+        difficulty = DifficultyProfile.Beginner,
+        visits = 16,
+        timeMillis = SearchTimeProfile.B16.defaultMillis,
+        candidateCount = 8,
+        analysisPreset = AnalysisPreset.Lite,
+    ),
     ;
 
     /**
@@ -136,6 +156,8 @@ enum class PlayLevelGroup(
                 4 -> MoveSelectionPolicy.PercentileRange(0, 40, "Casual 후보 상위 40%")
                 else -> MoveSelectionPolicy.BestOnly
             }
+            // 사람 모델을 못 쓰는 기기(파일 없음·원격·스텁)에서의 폴백 — 그 급수가 속한 캐릭터 구간의 고르는 법을 빌린다.
+            CustomRank -> FastBeginner.selectionPolicy(customRankFallbackTier(KgsRank.ofStepCoerced(safeLevel)))
             Advanced -> when (safeLevel) {
                 1 -> MoveSelectionPolicy.PercentileRange(30, 70, "Intermediate 후보 중위권")
                 2 -> MoveSelectionPolicy.PercentileRange(20, 50, "Intermediate 후보 상위 중간권")
@@ -160,7 +182,9 @@ data class PlayLevelSetting(
      * 봇 캐릭터 픽커가 캐릭터 이름 옆에 이 값을 병기해 어느 쪽이 센 상대인지 드러낸다(백로그 #9 확정).
      */
     val tierLabel: String =
-        (selectionPolicy as? MoveSelectionPolicy.BucketedTierSelection)?.tierName
+        // 급수를 직접 고른 상대는 그 급수가 이름이다("5급"·"3단") — "12단계"로 적으면 12단과 헷갈린다.
+        customRank()?.let { rank -> "${rank.number}${if (rank.isDan) "단" else "급"}" }
+            ?: (selectionPolicy as? MoveSelectionPolicy.BucketedTierSelection)?.tierName
             // 5단계(초고수)는 BestOnly라 위 분기를 안 타지만, 이름은 여전히 필요하다.
             ?: if (group == PlayLevelGroup.FastBeginner) "초고수" else "${safeLevel}단계"
 
@@ -224,6 +248,22 @@ data class PlayLevelSetting(
             analysisLimit = aiMoveBaseLimitWith(searchTimeSettings),
         )
 }
+
+/**
+ * 급수가 속한 **캐릭터 구간**의 단계(1~5) — 캐릭터 5명이 맡는 범위 그대로다(U-59: 12~18급 · 6~12급 · 1~6급 · 1~5단 · 5~9단).
+ * 구간이 맞닿는 급수(12급·6급·5단)는 **센 쪽 캐릭터**에 넣고, 캐릭터 범위 밖인 19·20급은 초보에 넣는다.
+ *
+ * 쓰는 곳이 둘이다 — 사람 모델이 없을 때의 폴백 고르는 법([PlayLevelGroup.selectionPolicy])과, 급수를 직접 고를 수 있는
+ * 범위를 보유 캐릭터로 정하는 일(`application.customgame`).
+ */
+fun customRankFallbackTier(rank: KgsRank): Int =
+    when {
+        rank >= KgsRank.dan(5) -> 5
+        rank >= KgsRank.dan(1) -> 4
+        rank >= KgsRank.kyu(6) -> 3
+        rank >= KgsRank.kyu(12) -> 2
+        else -> 1
+    }
 
 /** 빠른 초급의 맨 위 단계(초고수)가 둘 때 쓰는 방문 수 — [PlayLevelGroup.aiMoveVisits]. */
 const val FastBeginnerTopTierAiMoveVisits: Int = 32

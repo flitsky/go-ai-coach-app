@@ -511,10 +511,11 @@ class PortSignatureContractTest {
         val ROOT: String = ContractSymbols.MAIN_ACTIVITY.substringBeforeLast('.')
 
         /**
-         * 기준선의 계약 수 — `*Port` 인터페이스 19개 + 명시 등록 1개(`PositionAnalysisCacheStore`), `#73` 실측과 같다.
+         * 기준선의 계약 수 — `*Port` 인터페이스 20개 + 명시 등록 1개(`PositionAnalysisCacheStore`). `#73` 실측(19 + 1)에
+         * `CustomGameStorePort`(커스텀 대국의 상태 저장, 백로그 #217 — 2026-10-06)가 더해졌다.
          * 포트를 새로 만들거나 지우면 여기를 고친다.
          */
-        const val EXPECTED_CONTRACT_COUNT = 20
+        const val EXPECTED_CONTRACT_COUNT = 21
 
         /**
          * 허용한 **함수 타입 매개변수** 자리. ⓐ의 유일한 예외(원자적 갱신의 순수 변환)이고, 모양은 판정기가 재지만

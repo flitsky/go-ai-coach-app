@@ -19,4 +19,7 @@ internal object TestTags {
      */
     fun seatControllerPill(color: StoneColor, controller: SeatController): String =
         "seat_controller_${color.name}_${controller.name}"
+
+    /** 좌석 아래의 급수 버튼(커스텀 대국, 백로그 #217) — 흑·백 좌석에 하나씩 있어 글자만으로는 못 가른다. */
+    fun customRankSeatButton(color: StoneColor): String = "custom_rank_seat_${color.name}"
 }

@@ -97,19 +97,23 @@ internal class GoCoachProcessRuntime(
     val engineClient: EngineSessionClient =
         // 원격 후보가 있으면 우선 쓰고, 어떤 이유로든(엔드포인트가 비활성 등) 후보를 못
         // 고르면 항상 로컬로 폴백한다.
-        remoteClient ?: LocalEngineSessionClient(
-            coreApi = DeferredEngineCoreApi(coreApiDeferred),
-            currentSessionGeneration = sessionGenerationRelay::current,
-            capabilitiesProvider = {
-                EngineSessionCapabilities(
-                    // 준비 전에는 `null`이라 false다 — 없는 능력을 열어주지 않는다.
-                    supportsDeviceBenchmark = engineBootstrap?.mode == EngineMode.LocalProcess,
-                    backend = EngineSessionBackend.LocalEngine,
-                )
-            },
-            positionAnalysisCacheStore = positionAnalysisCacheStore,
-            diagnosticEventLog = diagnosticEventLog,
-        )
+        remoteClient ?: DeferredEngineCoreApi(coreApiDeferred).let { deferredCoreApi ->
+            LocalEngineSessionClient(
+                coreApi = deferredCoreApi,
+                currentSessionGeneration = sessionGenerationRelay::current,
+                capabilitiesProvider = {
+                    EngineSessionCapabilities(
+                        // 준비 전에는 `null`이라 false다 — 없는 능력을 열어주지 않는다.
+                        supportsDeviceBenchmark = engineBootstrap?.mode == EngineMode.LocalProcess,
+                        backend = EngineSessionBackend.LocalEngine,
+                        // 엔진이 준비되기 전에는 거짓이다(`DeferredEngineCoreApi.supportsHumanNetwork`) — 준비되면 진짜 답으로 바뀐다.
+                        supportsHumanNetwork = deferredCoreApi.supportsHumanNetwork,
+                    )
+                },
+                positionAnalysisCacheStore = positionAnalysisCacheStore,
+                diagnosticEventLog = diagnosticEventLog,
+            )
+        }
 
     private val bootstrapScope = CoroutineScope(SupervisorJob() + mainDispatcher + CoroutineName("EngineBootstrap"))
     private var bootstrapStarted = false

@@ -32,6 +32,7 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
+import com.worksoc.goaicoach.shared.policy.customRank
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -1475,8 +1476,12 @@ internal data class UiStrings(
             SeatController.Human -> controllerLabel(SeatController.Human)
             SeatController.Ai -> {
                 val character = BotCharacterCatalog.forPlayLevel(setup.playLevel)
+                val customRank = setup.playLevel.customRank()
                 if (character != null) {
                     botCharacterName(character)
+                } else if (customRank != null) {
+                    // 급수를 직접 고른 상대(커스텀 대국, 백로그 #217) — 캐릭터가 없으니 급수가 곧 이름이다.
+                    customGameOpponentLabelFor(language, customRank)
                 } else {
                     val levelText = if (setup.playLevel.group == PlayLevelGroup.FastBeginner) {
                         fastBeginnerTierLabel(setup.playLevel.safeLevel)
