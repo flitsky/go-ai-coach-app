@@ -34,6 +34,7 @@ import com.worksoc.goaicoach.application.gamehistory.findRecordedGame
 import com.worksoc.goaicoach.application.orchestration.GameSettingsController
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureAdjustment
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureChange
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.StrongestStartingRank
 import com.worksoc.goaicoach.application.rankmeasure.chooseStartingRank
@@ -41,6 +42,7 @@ import com.worksoc.goaicoach.application.rankmeasure.rankMeasureBoardSizeFor
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureBoardSizesFor
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
+import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePromotionSteps
 import com.worksoc.goaicoach.application.rankmeasure.runRankMeasureAdjustment
 import com.worksoc.goaicoach.application.rankmeasure.started
 import com.worksoc.goaicoach.application.rankmeasure.withRankForNextMeasureGame
@@ -59,9 +61,12 @@ import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardChangedFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardLimitNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardSizeLabelFor
-import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeNoticeFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeMessageFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeRanksFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeTitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureChooseStartingRankFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureCurrentRankFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureKyuCapNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureNoAssistNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOfficialNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasurePeakRankFor
@@ -101,6 +106,12 @@ internal data class RankMeasureUiState(
      * 이미 반영한 판이거나 기력 측정 대국이 아니면 `null`이라, 언제 불러도 한 판을 두 번 세지 않는다.
      */
     val countLatestRecordedGame: () -> RankMeasureAdjustment? = { null },
+    /**
+     * 아직 사용자에게 알리지 않은 **기력 변동**(승급·강급·이미 9단) — [RankMeasureChangeDialog]가 팝업으로 띄운다
+     * (사용자 2026-10-07: 몇 급이 올랐는지 알 수 있게 팝업으로). 판을 반영한 쪽이 올려 두고, 사용자가 닫으면 비운다.
+     */
+    val pendingChange: RankMeasureChange? = null,
+    val dismissChange: () -> Unit = {},
 )
 
 internal val LocalRankMeasureUiState = staticCompositionLocalOf { RankMeasureUiState() }
@@ -112,6 +123,13 @@ internal fun buildRankMeasureUiState(
 ): RankMeasureUiState {
     val store = remember(context) { RankMeasureStore(context) }
     var state by remember(store) { mutableStateOf(store.load()) }
+    var pendingChange by remember { mutableStateOf<RankMeasureChange?>(null) }
+    // 판 하나를 반영한 결과를 화면에 올린다 — 기력이 바뀌었으면(또는 이미 9단이라고 알릴 일이면) 팝업으로 띄울 것을 남긴다.
+    fun adopt(adjustment: RankMeasureAdjustment): RankMeasureAdjustment {
+        state = adjustment.state
+        if (adjustment.change != RankMeasureChange.None) pendingChange = adjustment.change
+        return adjustment
+    }
     return RankMeasureUiState(
         state = state,
         isAvailable = isAvailable,
@@ -123,14 +141,14 @@ internal fun buildRankMeasureUiState(
         countRecordedGame = { gameState ->
             val recorded = runEngineIo { GameHistoryStore(context).findRecordedGame(gameState.moves) }
             recorded?.let { (entry, _) ->
-                runRankMeasureAdjustment(entry, store)?.also { adjustment -> state = adjustment.state }
+                runRankMeasureAdjustment(entry, store)?.let(::adopt)
             }
         },
         countLatestRecordedGame = {
-            GameHistoryStore(context).loadAll().lastOrNull()?.let { entry ->
-                runRankMeasureAdjustment(entry, store)?.also { adjustment -> state = adjustment.state }
-            }
+            GameHistoryStore(context).loadAll().lastOrNull()?.let { entry -> runRankMeasureAdjustment(entry, store)?.let(::adopt) }
         },
+        pendingChange = pendingChange,
+        dismissChange = { pendingChange = null },
     )
 }
 
@@ -196,7 +214,7 @@ internal fun prepareNextRankMeasureGame(
  * 기력 측정 대국을 **나간다** — 일반 대국에서 부르면 아무 일도 하지 않는다.
  *
  * 1. 방금 기록된 판을 기력에 반영한다. 뒤로 가기로 기권한 판은 나가는 순간에 기록되고 곧 화면에서 사라지므로 여기서 센다
- *    (이미 센 판이면 건너뛴다). 기력이 바뀌면 한 줄로 알린다.
+ *    (이미 센 판이면 건너뛴다). 기력이 바뀌면 나간 자리(홈)에서 팝업이 뜬다([RankMeasureChangeDialog]).
  * 2. 살아 있는 설정을 **저장돼 있던 일반 대국 설정**(상대 캐릭터 · 판 크기 · 접바둑 · 덤)으로 되돌린다 — 「대국 하기」가 급수 AI와
  *    호선으로 열리지 않게. 기력 측정 대국의 설정은 자동저장이 건너뛰므로 저장분은 그 전의 것 그대로다.
  *
@@ -204,8 +222,6 @@ internal fun prepareNextRankMeasureGame(
  * 그 판이 캐릭터와 둔 판으로 기록된다.
  */
 internal fun leaveRankMeasureGame(
-    context: Context,
-    language: UiLanguage,
     playerSetup: PlayerSetup,
     rankMeasure: RankMeasureUiState,
     preferencesStore: UserPreferencesStorePort,
@@ -213,8 +229,6 @@ internal fun leaveRankMeasureGame(
 ) {
     if (!playerSetup.isRankMeasure()) return
     rankMeasure.countLatestRecordedGame()
-        ?.let { adjustment -> rankMeasureChangeNoticeFor(language, adjustment.change) }
-        ?.let { message -> Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
     val regular = preferencesStore.load()
     settings.changePlayerSetup(regular.playerSetup)
     settings.changeBoardSize(regular.boardSize)
@@ -223,7 +237,7 @@ internal fun leaveRankMeasureGame(
 }
 
 /**
- * 대국이 끝나 결과가 나면 그 판을 기력에 반영하고, 기력이 바뀌면 한 줄로 알린다.
+ * 대국이 끝나 결과가 나면 그 판을 기력에 반영한다. 기력이 바뀌면 팝업이 뜬다([RankMeasureChangeDialog]).
  *
  * ⚠️ **결과가 난 뒤에 돈다**([isResultKnown], 함정 88) — 「끝났다」는 표시는 계가보다 먼저 켜지고, 기록은 결과가 나야 붙는다.
  * 기록 붙이기는 같은 프레임의 다른 효과가 하므로 잠깐 다시 찾는다.
@@ -237,20 +251,57 @@ internal fun RankMeasureRecordedEffect(
     sessionGeneration: Long,
     gameState: GameState,
 ) {
-    val context = LocalContext.current
-    val language = LocalUiStrings.current.language
     val latest by rememberUpdatedState(rankMeasure)
     LaunchedEffect(isGameEnded, isResultKnown, sessionGeneration, gameState.moves.size) {
         if (!isGameEnded || !isResultKnown) return@LaunchedEffect
-        var adjustment: RankMeasureAdjustment? = null
         repeat(RecordedGameLookupTries) { attempt ->
-            if (adjustment != null) return@repeat
             if (attempt > 0) delay(RecordedGameLookupRetryMillis)
-            adjustment = latest.countRecordedGame(gameState)
+            if (latest.countRecordedGame(gameState) != null) return@LaunchedEffect
         }
-        val message = adjustment?.let { rankMeasureChangeNoticeFor(language, it.change) } ?: return@LaunchedEffect
-        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
+}
+
+/**
+ * **기력 변동 팝업**(사용자 2026-10-07) — 승급·강급을 한 줄 알림이 아니라 팝업으로 알린다: 어디서 어디로(`15급 → 9급`),
+ * 왜·몇 단계(`61집 차로 이겨 6단계 올랐습니다`). 알릴 것이 없으면 아무것도 그리지 않는다.
+ *
+ * 홈과 대국 화면이 함께 부른다 — 계가로 끝난 판은 대국 화면에서, 뒤로 가기로 기권한 판은 나간 뒤 홈에서 뜬다.
+ * ⚠️ 대국 화면은 **판정 결과 창이 닫힌 뒤에** 부른다: 다이얼로그는 저마다 별도 윈도우라 함께 뜨면 위아래가 정해지지 않는다(함정 7).
+ */
+@Composable
+internal fun RankMeasureChangeDialog(rankMeasure: RankMeasureUiState) {
+    val change = rankMeasure.pendingChange ?: return
+    val strings = LocalUiStrings.current
+    val language = strings.language
+    val title = rankMeasureChangeTitleFor(language, change) ?: return
+    // 크게 이겼는데 1단에서 멈췄으면 단계 수가 집 수 차이보다 적다 — 그 까닭을 한 줄 덧붙인다.
+    val stoppedAtOneDan = change is RankMeasureChange.Promoted && !change.from.isDan && rankMeasurePromotionSteps(change.margin) > change.steps
+    AlertDialog(
+        onDismissRequest = rankMeasure.dismissChange,
+        title = { Text(title, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+                rankMeasureChangeRanksFor(language, change)?.let { ranks ->
+                    Text(
+                        text = ranks,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.testTag(RankMeasureChangeRanksTag),
+                    )
+                }
+                rankMeasureChangeMessageFor(language, change)?.let { message -> Text(message) }
+                if (stoppedAtOneDan) {
+                    Text(
+                        text = rankMeasureKyuCapNoteFor(language),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = rankMeasure.dismissChange) { Text(strings.confirm) } },
+    )
 }
 
 /**
@@ -381,6 +432,7 @@ internal const val RankMeasureCurrentRankTag = "rank-measure-current-rank"
 internal const val RankMeasureWeakerTag = "rank-measure-weaker"
 internal const val RankMeasureStrongerTag = "rank-measure-stronger"
 internal const val RankMeasureStartTag = "rank-measure-start"
+internal const val RankMeasureChangeRanksTag = "rank-measure-change-ranks"
 
 private val ChoiceButtonPadding = PaddingValues(horizontal = AppSpacing.Space8)
 

@@ -107,13 +107,17 @@ internal fun rankMeasureStrongerFor(language: UiLanguage): String =
         UiLanguage.ChineseSimplified -> "提高"
     }
 
-/** 오르내리는 규칙 — 2연승이면 오르고 이어서 이길 때마다 또 오르고, 2연패마다 한 단계 내린다(사용자 2026-10-06). */
+/**
+ * 오르내리는 규칙(사용자 2026-10-07) — 급 구간은 이길 때마다 집 수 차이 10집에 한 단계(최소 한 단계, 1단까지), 단 구간은 최근 5판 중
+ * 3승이면 한 단, 어느 구간이든 2연패하면 한 단계 내림. ⚠️ 규칙(`adjustRankAfterResult`)과 한 글자도 어긋나면 안 된다 —
+ * 사용자가 화면에서 읽는 것이 규칙이다.
+ */
 internal fun rankMeasureRulesFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "2연승하면 기력이 오르고, 그 뒤로는 이길 때마다 또 오릅니다. 2연패하면 한 단계 내려갑니다. 이기고 지기를 되풀이하는 곳이 내 기력입니다."
-        UiLanguage.English -> "Two wins in a row raise your rank, and every win after that raises it again. Two losses in a row lower it one step. Where you keep trading wins and losses is your rank."
-        UiLanguage.Japanese -> "2連勝で棋力が上がり、その後は勝つたびにさらに上がります。2連敗で一段階下がります。勝ったり負けたりを繰り返すところが、あなたの棋力です。"
-        UiLanguage.ChineseSimplified -> "两连胜时棋力提升，此后每胜一局再提升。两连败时降低一档。胜负交替出现的位置就是你的棋力。"
+        UiLanguage.Korean -> "급 구간은 이길 때마다 오릅니다 — 이긴 집 수 차이 10집마다 한 단계(최소 한 단계, 1단까지). 단 구간은 최근 5판 중 3판을 이기면 한 단 오릅니다. 어느 구간이든 2연패하면 한 단계 내려갑니다."
+        UiLanguage.English -> "In the kyu ranks every win raises your rank — one step for every 10 points you win by (at least one step, up to 1 dan). In the dan ranks you go up one dan when you win 3 of your last 5 games. Anywhere, two losses in a row lower you one step."
+        UiLanguage.Japanese -> "級では勝つたびに上がります — 勝った目数差10目ごとに1段階（最低1段階、1段まで）。段では直近5局のうち3勝で1段上がります。どの区間でも2連敗で1段階下がります。"
+        UiLanguage.ChineseSimplified -> "级位区间每胜一局都会提升 — 每赢10目提升一档（至少一档，最高到1段）。段位区间在最近5局中赢3局时升一段。无论哪个区间，两连败降一档。"
     }
 
 /** 대국 중 도움이 꺼진다는 안내 — 형세 보기·추천 수·무르기(사용자 2026-10-06). */
@@ -190,33 +194,101 @@ internal fun rankMeasureStartFor(language: UiLanguage): String =
         UiLanguage.ChineseSimplified -> "开始对局"
     }
 
-/** 대국이 끝난 뒤의 한 줄 — 기력이 바뀌었을 때만 알린다. 그대로면 `null`. */
-internal fun rankMeasureChangeNoticeFor(language: UiLanguage, change: RankMeasureChange): String? =
+/**
+ * **기력 변동 팝업**의 제목(사용자 2026-10-07: *"몇 급이 승급되었는지 사용자가 인지할 수 있도록 팝업으로"*). 그대로면 `null` — 팝업이 없다.
+ */
+internal fun rankMeasureChangeTitleFor(language: UiLanguage, change: RankMeasureChange): String? =
     when (change) {
         RankMeasureChange.None -> null
-        is RankMeasureChange.Promoted -> kgsRankLabelFor(language, change.to).let { rankLabel ->
-            when (language) {
-                UiLanguage.Korean -> "연승! 기력이 ${rankLabel}으로 올랐습니다."
-                UiLanguage.English -> "Win streak! Your rank rose to $rankLabel."
-                UiLanguage.Japanese -> "連勝！棋力が${rankLabel}に上がりました。"
-                UiLanguage.ChineseSimplified -> "连胜！棋力升至$rankLabel。"
-            }
+        is RankMeasureChange.Promoted -> when (language) {
+            UiLanguage.Korean -> if (change.to.isDan) "승단!" else "승급!"
+            UiLanguage.English -> "Promoted!"
+            UiLanguage.Japanese -> if (change.to.isDan) "昇段！" else "昇級！"
+            UiLanguage.ChineseSimplified -> if (change.to.isDan) "升段！" else "升级！"
         }
-        is RankMeasureChange.Demoted -> kgsRankLabelFor(language, change.to).let { rankLabel ->
-            when (language) {
-                UiLanguage.Korean -> "2연패 — 기력이 ${rankLabel}으로 내려갑니다."
-                UiLanguage.English -> "Two losses in a row — your rank drops to $rankLabel."
-                UiLanguage.Japanese -> "2連敗 — 棋力が${rankLabel}に下がります。"
-                UiLanguage.ChineseSimplified -> "两连败 — 棋力降至$rankLabel。"
-            }
+        is RankMeasureChange.Demoted -> when (language) {
+            UiLanguage.Korean -> if (change.from.isDan) "강단" else "강급"
+            UiLanguage.English -> "Demoted"
+            UiLanguage.Japanese -> if (change.from.isDan) "降段" else "降級"
+            UiLanguage.ChineseSimplified -> if (change.from.isDan) "降段" else "降级"
         }
         RankMeasureChange.AtTheTop -> when (language) {
-            UiLanguage.Korean -> "연승! 이미 가장 높은 기력입니다."
-            UiLanguage.English -> "Win streak! You are already at the highest rank."
-            UiLanguage.Japanese -> "連勝！すでに最高の棋力です。"
-            UiLanguage.ChineseSimplified -> "连胜！你已是最高棋力。"
+            UiLanguage.Korean -> "최고 기력"
+            UiLanguage.English -> "Top rank"
+            UiLanguage.Japanese -> "最高棋力"
+            UiLanguage.ChineseSimplified -> "最高棋力"
         }
     }
+
+/** 팝업 한가운데의 큰 줄 — 어디서 어디로. `15급 → 9급`. 기력이 안 바뀐 알림(이미 9단)에는 없다. */
+internal fun rankMeasureChangeRanksFor(language: UiLanguage, change: RankMeasureChange): String? =
+    when (change) {
+        is RankMeasureChange.Promoted -> "${kgsRankLabelFor(language, change.from)} → ${kgsRankLabelFor(language, change.to)}"
+        is RankMeasureChange.Demoted -> "${kgsRankLabelFor(language, change.from)} → ${kgsRankLabelFor(language, change.to)}"
+        RankMeasureChange.None, RankMeasureChange.AtTheTop -> null
+    }
+
+/**
+ * 팝업의 설명 — **왜, 몇 단계** 움직였는가. 급 구간의 승급은 이긴 집 수 차이와 오른 단계 수를 말하고, 단 구간의 승단은 최근 전적을 말한다.
+ * ⚠️ 단계 수는 **실제로 오른 만큼**이다(`RankMeasureChange.Promoted.steps`) — 1단에서 멈췄으면 식의 값보다 작다.
+ */
+internal fun rankMeasureChangeMessageFor(language: UiLanguage, change: RankMeasureChange): String? =
+    when (change) {
+        RankMeasureChange.None -> null
+        is RankMeasureChange.Promoted -> change.margin.let { wonBy ->
+            when {
+                change.from.isDan -> when (language) {
+                    UiLanguage.Korean -> "최근 5판 중 3판을 이겨 한 단 올랐습니다."
+                    UiLanguage.English -> "You won 3 of your last 5 games and moved up one dan."
+                    UiLanguage.Japanese -> "直近5局のうち3勝して1段上がりました。"
+                    UiLanguage.ChineseSimplified -> "最近5局中赢了3局，升一段。"
+                }
+                wonBy == null -> when (language) {
+                    UiLanguage.Korean -> "이겨서 ${change.steps}단계 올랐습니다."
+                    UiLanguage.English -> "You won and moved up ${stepsInEnglish(change.steps)}."
+                    UiLanguage.Japanese -> "勝って${change.steps}段階上がりました。"
+                    UiLanguage.ChineseSimplified -> "获胜，提升${change.steps}档。"
+                }
+                else -> marginText(wonBy).let { margin ->
+                    when (language) {
+                        UiLanguage.Korean -> "${margin}집 차로 이겨 ${change.steps}단계 올랐습니다."
+                        UiLanguage.English -> "You won by $margin points and moved up ${stepsInEnglish(change.steps)}."
+                        UiLanguage.Japanese -> "${margin}目差で勝ち、${change.steps}段階上がりました。"
+                        UiLanguage.ChineseSimplified -> "以${margin}目之差获胜，提升${change.steps}档。"
+                    }
+                }
+            }
+        }
+        is RankMeasureChange.Demoted -> when (language) {
+            UiLanguage.Korean -> "2연패로 한 단계 내려갑니다."
+            UiLanguage.English -> "Two losses in a row — you move down one step."
+            UiLanguage.Japanese -> "2連敗で1段階下がります。"
+            UiLanguage.ChineseSimplified -> "两连败，降一档。"
+        }
+        RankMeasureChange.AtTheTop -> when (language) {
+            UiLanguage.Korean -> "최근 5판 중 3판을 이겼습니다. 이미 가장 높은 기력입니다."
+            UiLanguage.English -> "You won 3 of your last 5 games. You are already at the highest rank."
+            UiLanguage.Japanese -> "直近5局のうち3勝しました。すでに最高の棋力です。"
+            UiLanguage.ChineseSimplified -> "最近5局中赢了3局。你已是最高棋力。"
+        }
+    }
+
+/** 크게 이겼지만 1단에서 멈췄을 때 덧붙이는 한 줄 — 단계 수가 집 수 차이보다 적은 까닭을 말한다. */
+internal fun rankMeasureKyuCapNoteFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "급 구간의 승급은 1단까지입니다. 1단부터는 최근 5판 중 3판을 이기면 오릅니다."
+        UiLanguage.English -> "Kyu-range promotions stop at 1 dan. From there you go up by winning 3 of your last 5 games."
+        UiLanguage.Japanese -> "級での昇級は1段までです。1段からは直近5局のうち3勝で上がります。"
+        UiLanguage.ChineseSimplified -> "级位区间的提升最高到1段。从1段起，最近5局中赢3局才会提升。"
+    }
+
+/** 집 수 차이의 표기 — `61`, `61.5`(반집이 있을 때만 소수). */
+private fun marginText(margin: Double): String {
+    val magnitude = kotlin.math.abs(margin)
+    return if (magnitude == kotlin.math.floor(magnitude)) magnitude.toInt().toString() else magnitude.toString()
+}
+
+private fun stepsInEnglish(steps: Int): String = if (steps == 1) "1 step" else "$steps steps"
 
 /** 다음 판의 판 크기가 기력 때문에 바뀌었을 때의 한 줄 — 「재 대국」이 말없이 다른 판으로 시작하지 않게. */
 internal fun rankMeasureBoardChangedFor(language: UiLanguage, rank: KgsRank, boardSize: BoardSize): String {

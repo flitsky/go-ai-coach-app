@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.shared.policy.toPlayLevelSetting
  * 6계층 — **기력 측정 대국**(백로그 #219): 내 기력을 알아보고, 비슷한 상대와 되풀이해 두며 배운다.
  *
  * 사람 한 명이 **자기 기력과 같은 급수의 AI**와 둔다. 이기면 오르고 지면 내려서, 이기고 지기를 되풀이하는 급수가 곧 그 사람의
- * 실력 구간이다(사용자 2026-10-06). 상대는 그 급수의 사람 모델 프로필이 둔다 — 캐릭터(#215)와 같은 엔진 경로다
+ * 실력 구간이다(사용자 2026-10-06). 오르내리는 규칙은 [adjustRankAfterResult]에 있다(사용자 2026-10-07). 상대는 그 급수의 사람 모델 프로필이 둔다 — 캐릭터(#215)와 같은 엔진 경로다
  * (`PlayLevelGroup.CustomRank` · `shared.playstyle.humanPlayStyle`).
  *
  * ## 무엇이 어디에 사는가
@@ -48,15 +48,14 @@ data class RankMeasureState(
      * 스스로 고른 시작 급수는 거기서 한 판 이기기 전에는 기록이 아니다 — 고른 것이지 잰 것이 아니다.
      */
     val peakRank: KgsRank? = null,
-    /** 지금까지의 연승 수 — 랠리에 들어가기 전 2연승을 세는 데 쓴다. 지면 0으로 돌아간다. */
-    val consecutiveWins: Int = 0,
-    /**
-     * **승급 랠리** 중인가. 2연승하면 한 칸 올리며 랠리에 들어가고, 랠리 중에는 **이길 때마다** 또 올린다.
-     * 한 번 지면 랠리가 끝나고, 그 급수에서 다시 2연승해야 랠리가 된다.
-     */
-    val isRally: Boolean = false,
-    /** 지금까지의 연패 수 — 2연패마다 한 칸 내리고 다시 0부터 센다. 이기면 0으로 돌아간다. */
+    /** 지금까지의 연패 수 — 2연패마다 한 단계 내리고 다시 0부터 센다. 이기면 0으로 돌아간다. 급·단 구간이 함께 쓴다. */
     val consecutiveLosses: Int = 0,
+    /**
+     * **단 구간의 최근 전적** — 지금의 단에서 둔 판의 승패(이겼으면 `true`), 오래된 것부터 최대 [RankMeasureDanWindow]판.
+     * 승단은 이 가운데 [RankMeasureDanWinsToPromote]판을 이겼을 때다. 단이 바뀌면(오르든 내리든) 비우고 새로 센다 —
+     * 다른 단에서 이긴 판을 지금 단의 전적으로 치지 않는다. 급 구간에서는 늘 비어 있다.
+     */
+    val recentDanResults: List<Boolean> = emptyList(),
     /**
      * 기력에 **이미 반영한** 마지막 판의 기록 id — 같은 판을 두 번 세지 않는다. 끝난 판의 화면은 여러 번 다시 그려지고,
      * 계가한 판은 앱을 껐다 켜도 그대로 복원된다(함정 88).
@@ -70,11 +69,18 @@ data class RankMeasureState(
 /** 스스로 고를 수 있는 시작 기력의 범위 — 20급부터 1급까지(사용자 2026-10-06). 단은 이겨서 오른다. */
 val StrongestStartingRank: KgsRank = KgsRank.kyu(1)
 
-/** 랠리에 들어가는 데 필요한 연승 수. */
-const val RankMeasureRallyWins: Int = 2
+/** 급 구간에서 한 단계 더 오르는 데 필요한 집 수 차이 — 10집마다 한 단계(사용자 2026-10-07). */
+const val RankMeasureMarginPerStep: Double = 10.0
 
-/** 한 칸 내리는 데 필요한 연패 수. */
+/** 한 단계 내리는 데 필요한 연패 수 — 급·단 구간 공통(사용자 2026-10-07). */
 const val RankMeasureDemotionLosses: Int = 2
+
+/** 단 구간의 승단을 가리는 최근 전적의 판 수와, 그 가운데 이겨야 하는 판 수 — 「최근 5판 중 3판」(사용자 2026-10-07). */
+const val RankMeasureDanWindow: Int = 5
+const val RankMeasureDanWinsToPromote: Int = 3
+
+/** 급 구간의 빠른 승급이 닿는 끝 — 아무리 크게 이겨도 1단에서 멈추고, 그 위는 단 구간의 규칙으로 오른다(사용자 2026-10-07). */
+val RankMeasureKyuPromotionCap: KgsRank = KgsRank.dan(1)
 
 /**
  * 최초 1회의 기력 선택. 이미 측정을 시작했으면 아무것도 바꾸지 않는다 — 그 뒤로는 이기고 지는 것만이 기력을 옮긴다.
@@ -87,15 +93,16 @@ fun RankMeasureState.chooseStartingRank(chosen: KgsRank): RankMeasureState =
 fun RankMeasureState.started(): RankMeasureState = if (hasStarted) this else copy(hasStarted = true)
 
 /**
- * 한 번에 움직이는 칸 수 — **판이 작을수록 크게**(실험실 #216: 3급 차 센 쪽 승률이 19줄 77% · 13줄 70% · 9줄 60%).
- * 9줄에서 한 급만 움직이면 세기가 거의 안 변한다.
+ * 급 구간에서 **한 판 이겼을 때 오르는 단계 수**(사용자 2026-10-07) — 이긴 집 수 차이를 10으로 나눈 몫, 최소 1.
+ * 61집 차로 이기면 6단계(15급 → 9급), 아슬아슬하게 이겨도 1단계다. 크게 이길수록 제 급수를 빨리 찾아간다.
+ *
+ * ⚠️ 판 크기로 가르지 않는다 — 어느 판이든 같은 식이다(예전의 「9줄 3급 · 13줄 2급 · 19줄 1급」은 스레드가 넣었던 규칙이고
+ * 사용자가 일관되지 않다고 거뒀다). 큰 판은 집 차이가 커서 한 번에 더 많이 오른다 — 그것까지가 이 규칙이다.
+ *
+ * @param margin 이긴 집 수 차이. 집 차이가 없는 승리(상대의 기권 — 지금 AI는 기권하지 않는다)는 `null`이고 1단계로 친다.
  */
-fun rankMeasureStepFor(boardSize: BoardSize): Int =
-    when {
-        boardSize.value >= 19 -> 1
-        boardSize.value >= 13 -> 2
-        else -> 3
-    }
+fun rankMeasurePromotionSteps(margin: Double?): Int =
+    if (margin == null) 1 else (kotlin.math.abs(margin) / RankMeasureMarginPerStep).toInt().coerceAtLeast(1)
 
 /**
  * 그 기력에서 둘 수 있는 판 크기(사용자 2026-10-06) — 기력이 오를수록 큰 판으로 좁힌다: 20~11급은 9·13·19줄 전부,
@@ -168,14 +175,22 @@ fun GameSessionSettingsState.withEndedRankMeasureGame(snapshot: SavedGameSnapsho
         copy(playerSetup = snapshot.playerSetup, boardSize = snapshot.gameState.boardSize, handicapCount = 0, komi = snapshot.gameState.komi)
     }
 
-/** 끝난 판이 기력을 어떻게 옮겼는가 — 사용자에게 알릴 일이다. */
+/** 끝난 판이 기력을 어떻게 옮겼는가 — 사용자에게 **팝업으로** 알릴 일이다(몇 단계 움직였는지까지). */
 sealed interface RankMeasureChange {
-    /** 그대로다(한 판 이겼거나 한 판 졌다 — 아직 2연승·2연패가 아니다). */
+    /** 그대로다(졌지만 아직 2연패가 아니거나, 단 구간에서 아직 5판 중 3승이 아니다). */
     data object None : RankMeasureChange
 
-    data class Promoted(val to: KgsRank) : RankMeasureChange
+    /**
+     * 올랐다. 급 구간에서 왔으면 한 판의 승리가 올린 것이고([margin]이 그 판의 집 수 차이), 단 구간에서 왔으면 최근 전적이 올린 것이다.
+     * @property margin 그 판을 이긴 집 수 차이 — 집 차이가 없는 승리면 `null`.
+     */
+    data class Promoted(val from: KgsRank, val to: KgsRank, val margin: Double?) : RankMeasureChange {
+        /** 실제로 오른 단계 수 — 1단에서 멈췄으면 식의 값보다 작다. */
+        val steps: Int get() = to.step - from.step
+    }
 
-    data class Demoted(val to: KgsRank) : RankMeasureChange
+    /** 2연패로 한 단계 내렸다. */
+    data class Demoted(val from: KgsRank, val to: KgsRank) : RankMeasureChange
 
     /** 오를 차례였지만 이미 9단이다. */
     data object AtTheTop : RankMeasureChange
@@ -188,55 +203,71 @@ data class RankMeasureAdjustment(
 )
 
 /**
- * 끝난 기력 측정 대국 한 판을 기력에 반영한다(사용자 2026-10-06).
+ * 끝난 기력 측정 대국 한 판을 기력에 반영한다 — **사용자가 정한 규칙**(2026-10-07)이다.
  *
- * - **올림은 랠리다**: 2연승이면 올리고, 오른 급수에서도 연승이 이어진 것으로 보아 **이길 때마다 또 올린다.**
- *   한 번 지면 랠리가 끝나고, 그 급수에서 다시 2연승해야 랠리가 된다.
- * - **내림은 2연패마다 한 칸이다**: 2연패하면 내리고 연패 수를 다시 0부터 센다. 내림에는 랠리가 없다 — 오르기는 쉽고 내려가기는 느리다.
- * - 한 번에 움직이는 폭은 판 크기별이다([rankMeasureStepFor]). 20급 아래·9단 위로는 가지 않는다.
- * - 이기고 지기를 번갈아 하면 어느 쪽도 2연속이 안 되어 **그 급수에 머문다** — 그 급수가 실력 구간이다.
+ * - **급 구간의 승급**: 이길 때마다 오른다. 오르는 폭은 이긴 집 수 차이를 10으로 나눈 몫, 최소 1([rankMeasurePromotionSteps]).
+ *   아무리 크게 이겨도 **1단에서 멈춘다**([RankMeasureKyuPromotionCap]).
+ * - **단 구간의 승단**: 그 단에서 둔 **최근 5판 중 3판**을 이기면 한 단 오른다. 집 수 차이는 보지 않는다.
+ * - **강급·강단**: 어느 구간이든 **2연패**하면 한 단계 내린다(1단에서 내리면 1급). 내린 뒤에는 다시 0부터 센다.
+ * - 20급 아래·9단 위로는 가지 않는다. 무승부(승자 모름)는 세지 않는다.
+ *
+ * ⚠️ 여기에 조건·폭·예외를 더하려면 **사용자에게 먼저 묻는다** — 이 규칙은 한 번 스레드가 임의로 바꿔 넣었다가(판 크기별 폭)
+ * 사용자가 폰에서 보고서야 안 적이 있다(2026-10-07: *"승강급은 일관된 룰이 있어야 한다. 임의로 정했다면 꼭 말해 줘야 한다"*).
+ * 스레드가 메운 빈 곳은 셋이다: 집 차이가 없는 승리는 1단계 · 단 구간의 최근 전적은 그 단에서 둔 판만 세고 단이 바뀌면 비운다 ·
+ * 9단에서 승단 조건을 채우면 전적을 비우고 「이미 가장 높다」고 알린다.
  *
  * @param playedRank 방금 끝난 판의 상대 급수(그 판의 좌석에서 읽는다 — [RankMeasureState.rank]가 아니다). 지금 기력과 다르면
- *   연승·연패도 기력도 건드리지 않는다.
+ *   연패·전적도 기력도 건드리지 않는다.
+ * @param margin 이긴 집 수 차이 — 급 구간의 승급 폭을 정한다. 졌거나 집 차이가 없으면 쓰지 않는다.
  * @param userWon 사용자가 이겼는가. 무승부이거나 승자를 모르면 `null` — 아무것도 바꾸지 않는다.
  */
 fun adjustRankAfterResult(
     state: RankMeasureState,
     playedRank: KgsRank,
-    boardSize: BoardSize,
+    margin: Double?,
     userWon: Boolean?,
 ): RankMeasureAdjustment {
     if (userWon == null) return RankMeasureAdjustment(state)
     // 기력은 **그 기력으로 둔 판**만 옮긴다. 정상 흐름에서는 둘이 늘 같다(판을 열 때 좌석을 내 기력에 맞추고, 기력은 판을 반영할 때만
-    // 바뀐다) — 다르다면 뒤늦게 반영된 옛 판이다. 그것을 지금의 연승·연패에 섞으면 20급을 이긴 판이 12급인 사람을 17급으로 "올린다"
+    // 바뀐다) — 다르다면 뒤늦게 반영된 옛 판이다. 그것을 지금의 전적에 섞으면 20급을 이긴 판이 12급인 사람의 기력을 옮긴다
     // (2026-10-06 에뮬레이터 — 저장분을 손으로 고친 판에서 드러났다). 이긴 급수는 그래도 잰 급수라 최고 기력에는 든다.
     if (playedRank != state.rank) {
         return RankMeasureAdjustment(if (userWon) state.copy(peakRank = maxOfNullable(state.peakRank, playedRank)) else state)
     }
-    val step = rankMeasureStepFor(boardSize)
+    val rank = state.rank
 
     if (!userWon) {
         val losses = state.consecutiveLosses + 1
-        val afterLoss = state.copy(consecutiveWins = 0, isRally = false, consecutiveLosses = losses)
-        if (losses < RankMeasureDemotionLosses) return RankMeasureAdjustment(afterLoss)
-        val target = playedRank.weakerBy(step)
-        val settled = afterLoss.copy(consecutiveLosses = 0, rank = target)
-        return RankMeasureAdjustment(settled, if (target < playedRank) RankMeasureChange.Demoted(target) else RankMeasureChange.None)
+        if (losses < RankMeasureDemotionLosses) {
+            return RankMeasureAdjustment(state.copy(consecutiveLosses = losses, recentDanResults = state.recentDanResultsWith(won = false)))
+        }
+        val target = rank.weakerBy(1)
+        val settled = state.copy(rank = target, consecutiveLosses = 0, recentDanResults = emptyList())
+        return RankMeasureAdjustment(settled, if (target < rank) RankMeasureChange.Demoted(from = rank, to = target) else RankMeasureChange.None)
     }
 
-    val wins = state.consecutiveWins + 1
     // 이긴 급수는 잰 급수다 — 최고 기력에 든다.
-    val afterWin = state.copy(consecutiveWins = wins, consecutiveLosses = 0, peakRank = maxOfNullable(state.peakRank, playedRank))
-    if (!state.isRally && wins < RankMeasureRallyWins) return RankMeasureAdjustment(afterWin)
+    val afterWin = state.copy(consecutiveLosses = 0, peakRank = maxOfNullable(state.peakRank, rank))
+    if (!rank.isDan) {
+        val target = minOf(rank.strongerBy(rankMeasurePromotionSteps(margin)), RankMeasureKyuPromotionCap)
+        val promoted = afterWin.copy(rank = target, peakRank = maxOfNullable(afterWin.peakRank, target), recentDanResults = emptyList())
+        return RankMeasureAdjustment(promoted, RankMeasureChange.Promoted(from = rank, to = target, margin = margin))
+    }
 
-    val rally = afterWin.copy(isRally = true)
-    val target = playedRank.strongerBy(step)
-    return if (target > playedRank) {
-        RankMeasureAdjustment(rally.copy(rank = target, peakRank = maxOfNullable(rally.peakRank, target)), RankMeasureChange.Promoted(target))
+    val recent = state.recentDanResultsWith(won = true)
+    if (recent.count { it } < RankMeasureDanWinsToPromote) return RankMeasureAdjustment(afterWin.copy(recentDanResults = recent))
+    val target = rank.strongerBy(1)
+    val settled = afterWin.copy(recentDanResults = emptyList())
+    return if (target > rank) {
+        RankMeasureAdjustment(settled.copy(rank = target, peakRank = maxOfNullable(settled.peakRank, target)), RankMeasureChange.Promoted(from = rank, to = target, margin = null))
     } else {
-        RankMeasureAdjustment(rally, RankMeasureChange.AtTheTop)
+        RankMeasureAdjustment(settled, RankMeasureChange.AtTheTop)
     }
 }
+
+/** 단 구간이면 최근 전적에 이번 판을 더한 것(최대 [RankMeasureDanWindow]판), 급 구간이면 빈 목록. */
+private fun RankMeasureState.recentDanResultsWith(won: Boolean): List<Boolean> =
+    if (rank.isDan) (recentDanResults + won).takeLast(RankMeasureDanWindow) else emptyList()
 
 private fun maxOfNullable(current: KgsRank?, candidate: KgsRank): KgsRank =
     if (current == null || candidate > current) candidate else current
@@ -257,7 +288,7 @@ fun runRankMeasureAdjustment(
         // 기록이 붙었다는 것은 그 판을 시작했다는 것이다 — 어떤 길로 왔든 여기서 최초 1회의 선택은 끝난다.
         state = current.started(),
         playedRank = matchup.opponentRank,
-        boardSize = BoardSize(entry.boardSize),
+        margin = entry.margin,
         userWon = userWon,
     )
     val counted = adjustment.copy(state = adjustment.state.copy(lastCountedGameId = entry.id))

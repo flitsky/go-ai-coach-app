@@ -631,7 +631,7 @@ private fun GoCoachScreen(
             scoreState.scoreSnapshots,
         )
         // 기력 측정 대국이었으면 방금 기록한 판을 기력에 반영하고 일반 대국 설정으로 되돌린다 — 기록 **뒤**, 갈아엎기 **전**(#219).
-        leaveRankMeasureGame(context, selectedLanguage, playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
+        leaveRankMeasureGame(playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home
     }
@@ -928,7 +928,7 @@ private fun GoCoachScreen(
             GoCoachHomeScreen(
                 onStartMatchClick = {
                     dispatch(GameUiEvent.DismissResumePrompt)
-                    leaveRankMeasureGame(context, selectedLanguage, playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
+                    leaveRankMeasureGame(playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
                     currentDestination = ScreenDestination.GameSetup
                 },
                 onStartRankMeasureGame = { start ->
@@ -1032,7 +1032,7 @@ private fun GoCoachScreen(
                     FinishedGameFlow.request(screenState.gameState.moves.size)
                     currentDestination = ScreenDestination.GameHistory
                 },
-                onOpenGameSetup = { leaveRankMeasureGame(context, selectedLanguage, playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController); currentDestination = ScreenDestination.GameSetup },
+                onOpenGameSetup = { leaveRankMeasureGame(playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController); currentDestination = ScreenDestination.GameSetup },
                 // ⚠️ 대국 화면에는 나가는 길이 **뒤로가기뿐이었다** — 있긴 한데 보이지 않았다
                 // (백로그 #175). 메뉴의 '대국 나가기'는 **뒤로가기와 정확히 같은 길**을 탄다
                 // (2026-09-18 사용자 확정): 대국 중이면 기권을 먼저 묻고, 끝난 판이면 바로 나간다.

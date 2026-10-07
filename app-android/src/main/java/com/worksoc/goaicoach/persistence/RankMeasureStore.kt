@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanWindow
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureStorePort
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -40,9 +41,9 @@ internal object RankMeasureCodec {
             .put("rankStep", state.rank.step)
             .put("hasStarted", state.hasStarted)
             .put("peakRankStep", state.peakRank?.step ?: JSONObject.NULL)
-            .put("consecutiveWins", state.consecutiveWins)
-            .put("rally", state.isRally)
             .put("consecutiveLosses", state.consecutiveLosses)
+            // 단 구간의 최근 전적 — 오래된 것부터 `W`·`L` 한 글자씩(최대 5판).
+            .put("recentDanResults", state.recentDanResults.joinToString("") { won -> if (won) "W" else "L" })
             .put("lastCountedGameId", state.lastCountedGameId ?: JSONObject.NULL)
             .toString()
 
@@ -54,9 +55,11 @@ internal object RankMeasureCodec {
             hasStarted = json.optBoolean("hasStarted", false),
             // 깨진 값은 「측정 기록 없음」으로 읽는다 — 0으로 읽어 20급을 최고 기력으로 만들어 내지 않는다.
             peakRank = json.optInt("peakRankStep", 0).takeIf { it >= KgsRank.Weakest.step }?.let(KgsRank::ofStepCoerced),
-            consecutiveWins = json.optInt("consecutiveWins", 0).coerceAtLeast(0),
-            isRally = json.optBoolean("rally", false),
             consecutiveLosses = json.optInt("consecutiveLosses", 0).coerceAtLeast(0),
+            // 모르는 글자는 버린다. 옛 저장분의 `consecutiveWins`·`rally`(2026-10-06의 랠리 규칙)는 읽지 않는다 — 규칙이 바뀌었다.
+            recentDanResults = json.optString("recentDanResults", "")
+                .mapNotNull { letter -> when (letter) { 'W' -> true; 'L' -> false; else -> null } }
+                .takeLast(RankMeasureDanWindow),
             lastCountedGameId = json.optString("lastCountedGameId", "").takeIf { it.isNotBlank() && !json.isNull("lastCountedGameId") },
         )
     }

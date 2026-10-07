@@ -1,6 +1,11 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureChange
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanWindow
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanWinsToPromote
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDemotionLosses
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureKyuPromotionCap
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureMarginPerStep
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -15,9 +20,12 @@ import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardChangedFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardLimitNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardSizeLabelFor
-import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeNoticeFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeMessageFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeRanksFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureChangeTitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureChooseStartingRankFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureCurrentRankFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureKyuCapNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureNoAssistNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOfficialNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOverwriteWarningFor
@@ -64,15 +72,26 @@ class UiStringsRankMeasureTest {
             rankMeasureBoardLimitNoteFor(language, KgsRank.dan(1)),
             rankMeasureStartFor(language),
             rankMeasureBoardChangedFor(language, KgsRank.kyu(9), BoardSize(13)),
-        ) + listOf(RankMeasureChange.Promoted(KgsRank.kyu(4)), RankMeasureChange.Demoted(KgsRank.kyu(6)), RankMeasureChange.AtTheTop)
-            .mapNotNull { change -> rankMeasureChangeNoticeFor(language, change) }
+            rankMeasureKyuCapNoteFor(language),
+        ) + popupChanges.flatMap { change ->
+            listOfNotNull(rankMeasureChangeTitleFor(language, change), rankMeasureChangeRanksFor(language, change), rankMeasureChangeMessageFor(language, change))
+        }
+
+    /** 팝업이 그리는 다섯 경우 — 급 구간 승급(집 차이 있음·없음) · 승단 · 강급 · 이미 9단. */
+    private val popupChanges: List<RankMeasureChange> = listOf(
+        RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(9), margin = 61.0),
+        RankMeasureChange.Promoted(from = KgsRank.kyu(5), to = KgsRank.kyu(4), margin = null),
+        RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = null),
+        RankMeasureChange.Demoted(from = KgsRank.dan(1), to = KgsRank.kyu(1)),
+        RankMeasureChange.AtTheTop,
+    )
 
     @Test
     fun everyRankMeasureStringExistsInEveryLanguageWithoutFallingBackToKorean() {
         assertTrue("자기검증 — 한국어 문구에는 한글이 있어야 한다", everyStringIn(UiLanguage.Korean).all { it.containsHangul() })
         UiLanguage.entries.forEach { language ->
             val strings = everyStringIn(language)
-            assertEquals("$language: 문구 수가 다르다(알림 셋이 전부 문구를 가져야 한다)", 25, strings.size)
+            assertEquals("$language: 문구 수가 다르다(팝업의 다섯 경우가 전부 문구를 가져야 한다)", 37, strings.size)
             strings.forEach { text ->
                 assertTrue("$language 문구가 비었다", text.isNotBlank())
                 if (language != UiLanguage.Korean) assertFalse("$language: 한글이 남았다 — $text", text.containsHangul())
@@ -105,12 +124,52 @@ class UiStringsRankMeasureTest {
         assertTrue(rankMeasureOfficialNoteFor(UiLanguage.English).contains("not a certified rank"))
     }
 
-    /** 기력이 그대로면 알리지 않는다 — 한 판 이기고 진 것마다 알림이 뜨면 정작 바뀐 순간이 묻힌다. */
+    /**
+     * **팝업은 몇 단계 움직였는지를 말한다**(사용자 2026-10-07) — 사용자가 든 예: 15급에서 61집 차로 이기면 6단계 올라 9급.
+     * 단 구간의 승단은 집 수가 아니라 최근 전적을 말하고, 강급은 2연패를 말한다. 기력이 그대로면 팝업이 없다.
+     */
     @Test
-    fun anUnchangedRankIsNotAnnounced() {
-        UiLanguage.entries.forEach { language -> assertNull(rankMeasureChangeNoticeFor(language, RankMeasureChange.None)) }
-        assertEquals("연승! 기력이 15급으로 올랐습니다.", rankMeasureChangeNoticeFor(UiLanguage.Korean, RankMeasureChange.Promoted(KgsRank.kyu(15))))
-        assertEquals("2연패 — 기력이 3단으로 내려갑니다.", rankMeasureChangeNoticeFor(UiLanguage.Korean, RankMeasureChange.Demoted(KgsRank.dan(3))))
+    fun thePopupSaysHowManyStepsAndWhy() {
+        val sixSteps = RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(9), margin = 61.0)
+        assertEquals("승급!", rankMeasureChangeTitleFor(UiLanguage.Korean, sixSteps))
+        assertEquals("15급 → 9급", rankMeasureChangeRanksFor(UiLanguage.Korean, sixSteps))
+        assertEquals("61집 차로 이겨 6단계 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, sixSteps))
+        assertEquals("You won by 61 points and moved up 6 steps.", rankMeasureChangeMessageFor(UiLanguage.English, sixSteps))
+
+        val halfPoint = RankMeasureChange.Promoted(from = KgsRank.kyu(2), to = KgsRank.kyu(1), margin = 6.5)
+        assertEquals("6.5집 차로 이겨 1단계 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, halfPoint))
+        assertEquals("You won by 6.5 points and moved up 1 step.", rankMeasureChangeMessageFor(UiLanguage.English, halfPoint))
+
+        val toTwoDan = RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = null)
+        assertEquals("승단!", rankMeasureChangeTitleFor(UiLanguage.Korean, toTwoDan))
+        assertEquals("최근 5판 중 3판을 이겨 한 단 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, toTwoDan))
+
+        val backToKyu = RankMeasureChange.Demoted(from = KgsRank.dan(1), to = KgsRank.kyu(1))
+        assertEquals("강단", rankMeasureChangeTitleFor(UiLanguage.Korean, backToKyu))
+        assertEquals("1단 → 1급", rankMeasureChangeRanksFor(UiLanguage.Korean, backToKyu))
+        assertEquals("2연패로 한 단계 내려갑니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, backToKyu))
+
+        UiLanguage.entries.forEach { language ->
+            assertNull(rankMeasureChangeTitleFor(language, RankMeasureChange.None))
+            assertNull(rankMeasureChangeMessageFor(language, RankMeasureChange.None))
+            assertNull(rankMeasureChangeRanksFor(language, RankMeasureChange.AtTheTop))
+        }
+    }
+
+    /**
+     * 설정 창의 규칙 문구는 규칙과 **같은 숫자**를 말한다 — 10집 · 최소 한 단계 · 1단까지 · 5판 중 3판 · 2연패.
+     * 화면에서 읽은 것과 실제 동작이 다르면 그것이 가장 나쁜 결함이다(2026-10-07: 창에 없는 폭으로 올라 사용자가 물었다).
+     */
+    @Test
+    fun theRulesTextStatesTheSameNumbersAsTheRule() {
+        val rules = rankMeasureRulesFor(UiLanguage.Korean)
+        listOf("10집마다 한 단계", "최소 한 단계", "1단까지", "최근 5판 중 3판", "2연패하면 한 단계").forEach { phrase ->
+            assertTrue("규칙 문구에 없다: $phrase", rules.contains(phrase))
+        }
+        assertEquals(10.0, RankMeasureMarginPerStep, 0.0)
+        assertEquals(KgsRank.dan(1), RankMeasureKyuPromotionCap)
+        assertEquals(5 to 3, RankMeasureDanWindow to RankMeasureDanWinsToPromote)
+        assertEquals(2, RankMeasureDemotionLosses)
     }
 
     /** 좌석 요약·대국 기록에 그 판의 급수가 남는다 — 캐릭터와 둔 판의 줄은 예전 그대로다. */

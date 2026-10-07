@@ -411,6 +411,8 @@ internal fun GoCoachHomeScreen(
             dismissButton = { TextButton(onClick = { showRankMeasureOverwriteWarning = false }) { Text(strings.cancel) } },
         )
     }
+    // 기력 변동 팝업(사용자 2026-10-07) — 뒤로 가기로 기권한 판은 나온 뒤 여기서 알린다(2연패 강급 등).
+    RankMeasureChangeDialog(rankMeasure)
     if (showRankMeasureDialog) {
         RankMeasureSetupDialog(
             rankMeasure = rankMeasure,

@@ -19,9 +19,8 @@ class RankMeasureCodecTest {
             rank = KgsRank.dan(2),
             hasStarted = true,
             peakRank = KgsRank.dan(3),
-            consecutiveWins = 3,
-            isRally = true,
             consecutiveLosses = 1,
+            recentDanResults = listOf(true, false, true),
             lastCountedGameId = "1791-42",
         )
 
@@ -47,6 +46,14 @@ class RankMeasureCodecTest {
         assertEquals(0, RankMeasureCodec.decode("""{"consecutiveLosses":-2}""")?.consecutiveLosses)
         assertNull(RankMeasureCodec.decode("""{"peakRankStep":null,"lastCountedGameId":null}""")?.peakRank)
         assertNull("a broken peak reads as no record, not as 20 kyu", RankMeasureCodec.decode("""{"peakRankStep":"??"}""")?.peakRank)
+        // 단 구간의 최근 전적 — 모르는 글자는 버리고, 다섯 판을 넘으면 최근 다섯만 남긴다.
+        assertEquals(listOf(true, false, true), RankMeasureCodec.decode("""{"recentDanResults":"W?LxW"}""")?.recentDanResults)
+        assertEquals(listOf(false, true, true, false, true), RankMeasureCodec.decode("""{"recentDanResults":"WWLWWLW"}""")?.recentDanResults)
+        // 2026-10-06의 랠리 규칙이 남긴 필드(연승 수·랠리 표시)는 읽지 않는다 — 규칙이 바뀌었다. 기력과 연패는 그대로 읽는다.
+        assertEquals(
+            RankMeasureState(rank = KgsRank.kyu(12), hasStarted = true, consecutiveLosses = 1),
+            RankMeasureCodec.decode("""{"schema":1,"rankStep":9,"hasStarted":true,"consecutiveWins":2,"rally":true,"consecutiveLosses":1}"""),
+        )
         assertNull("not JSON at all", RankMeasureCodec.decode("rank=5k"))
     }
 

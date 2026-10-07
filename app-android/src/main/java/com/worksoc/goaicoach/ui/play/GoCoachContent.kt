@@ -51,6 +51,8 @@ import com.worksoc.goaicoach.ui.board.fittedBoardMaxHeightPx
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
+import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
+import com.worksoc.goaicoach.ui.home.RankMeasureChangeDialog
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
@@ -195,6 +197,10 @@ internal fun GoCoachContent(
             },
         )
     }
+
+    // 기력 변동 팝업(백로그 #219, 사용자 2026-10-07) — **판정 결과 창이 닫힌 뒤에** 띄운다. 둘은 별도 윈도우라 함께 뜨면
+    // 위아래가 정해지지 않는다(함정 7). 기력 측정 대국이 아니면 띄울 것이 없어 아무것도 그리지 않는다.
+    if (finalJudgementToShow == null) RankMeasureChangeDialog(LocalRankMeasureUiState.current)
 
     // ⚠️ 판을 한 화면에 맞추려고 **세 높이**를 잰다(백로그 #139 1차, 계산은 `fittedBoardMaxHeightPx`).
     //   · 뷰포트 — `verticalScroll` **앞**에서 잰다. 스크롤 안에서는 잴 높이가 없다(함정 45).
