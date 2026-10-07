@@ -24,6 +24,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.HumanNetworkJudgeProfile
 import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.playstyle.HopelessPosition
 import com.worksoc.goaicoach.shared.playstyle.HumanMoveSampler
 import com.worksoc.goaicoach.shared.playstyle.HumanPlayStyle
 import com.worksoc.goaicoach.shared.playstyle.humanPlayStyle
@@ -51,6 +52,12 @@ internal class LocalEngineCoreSessionDelegate(
      * 수마다 다시 시도하면 수마다 프로세스를 두 번 갈아 올린다(사람 모델로 → 실패 → 주 모델로). 앱을 다시 켜면 처음부터 다시 본다.
      */
     private var humanStyleUnavailable = false
+
+    /**
+     * 진영마다 **가망 없는 상태가 이어진 차례 수**와 그것을 센 직후의 수순 길이(백로그 #213, [HopelessPosition]).
+     * 수순 길이로 「이어진 판」인지 가린다 — 그 뒤로 상대가 정확히 한 수 둔 판이어야 한다. 새 대국·무르기·이어하기면 어긋나서 처음부터 센다.
+     */
+    private val hopelessStreaks = mutableMapOf<StoneColor, HopelessStreak>()
 
     suspend fun startSession(
         profile: EngineProfile,
@@ -226,7 +233,11 @@ internal class LocalEngineCoreSessionDelegate(
         swapTo(EngineNetwork.Human)
         coreApi.configure(turnProfile)
         coreApi.syncToGameState(currentState)
-        val move = chooseHumanStyleMove(currentState, aiPlayer, coreApi.humanPolicy(style.profile))
+        // 가망 없는 상태가 두 차례 이어졌으면 두지 않고 **통과한다**(사용자 2026-10-07) — 상대 집 안에 뜻 없는 수를 이어 두지 않는다.
+        // 상대가 계가를 고르면 거기서 끝나고, 더 두기를 고르면 다음 차례에 다시 본다(여전히 가망 없으면 또 통과).
+        val streak = hopelessStreaks[aiPlayer]?.takeIf { it.countedAtMoveCount + 1 == currentState.moves.size }
+        val givesUp = (streak?.turns ?: 0) >= HopelessPosition.ConsecutiveTurns
+        val move = if (givesUp) Move.Pass(aiPlayer) else chooseHumanStyleMove(currentState, aiPlayer, coreApi.humanPolicy(style.profile))
         val afterAi = MatchReferee.playOrThrow(currentState, move)
         val status = coreApi.playMove(move)
         val moveText = move.describe(currentState.boardSize)
@@ -240,6 +251,8 @@ internal class LocalEngineCoreSessionDelegate(
             currentCoroutineContext().ensureActive()
             null
         }
+        val hopeless = estimate != null && HopelessPosition.isHopelessFor(aiPlayer, estimate, afterAi)
+        hopelessStreaks[aiPlayer] = HopelessStreak(turns = if (hopeless) (streak?.turns ?: 0) + 1 else 0, countedAtMoveCount = afterAi.moves.size)
         return AutoAiTurnResult(
             turnOutcome = TurnOutcome(
                 gameState = afterAi,
@@ -262,7 +275,11 @@ internal class LocalEngineCoreSessionDelegate(
         aiPlayer: StoneColor,
         own: HumanPolicy,
     ): Move {
-        if (HumanMoveSampler.shouldAskJudgeAboutPass(own) &&
+        // **상대가 통과했으면 심판에게 묻는다**(사용자 2026-10-07) — 약한 프로필은 통과를 떠올리지 않아서, 사람이 「끝났다」고 통과해도
+        // 묻지도 않고 계속 뒀다(폰: 사용자가 열다섯 번 통과하는 동안 AI는 매번 뒀고, 심판은 첫 통과 직후에 이미 통과를 권했다 — E10).
+        // 심판이 아직 둘 곳이 있다고 보면 그대로 둔다 — 이른 통과를 봐주지 않는다.
+        val opponentPassed = state.moves.lastOrNull() is Move.Pass
+        if ((HumanMoveSampler.shouldAskJudgeAboutPass(own) || opponentPassed) &&
             HumanMoveSampler.shouldPass(coreApi.humanPolicy(HumanNetworkJudgeProfile))
         ) {
             return Move.Pass(aiPlayer)
@@ -375,6 +392,9 @@ internal class LocalEngineCoreSessionDelegate(
 
 /** 사람 정책에서 뽑은 자리가 둘 수 없는 자리일 때 다시 뽑는 횟수 — 넘으면 통과한다. */
 private const val MaxHumanStyleDraws = 8
+
+/** 한 진영의 「가망 없는 상태」가 이어진 차례 수와, 그것을 센 직후의 수순 길이([LocalEngineCoreSessionDelegate]). */
+private data class HopelessStreak(val turns: Int, val countedAtMoveCount: Int)
 
 /**
  * 신경망을 갈아 올릴 때 **엔진 판의 행방**을 적는 쪽(백로그 #215) — `LocalEngineSessionClient`의 `boardLeftByAnalysis`다.

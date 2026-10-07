@@ -9,7 +9,11 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
+import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
+import com.worksoc.goaicoach.shared.enginecontract.OwnershipPoint
+import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
@@ -121,6 +125,87 @@ class LocalEngineSessionClientHumanStyleTest {
 
         assertEquals(listOf("humanPolicy rank_15k", "humanPolicy rank_9d"), engine.calls.filter { it.startsWith("humanPolicy") })
         assertEquals(Move.Play(StoneColor.Black, E5), result.turnOutcome.gameState.moves.single())
+    }
+
+    /**
+     * **상대가 통과했으면 심판에게 묻는다**(사용자 2026-10-07) — 약한 프로필은 통과를 떠올리지 않아서, 사람이 「끝났다」고 통과해도
+     * 묻지도 않고 계속 뒀다(폰: 사용자가 열다섯 번 통과하는 동안 AI가 매번 뒀다). 심판이 통과가 1위라고 하면 같이 통과해 판을 끝낸다.
+     */
+    @Test
+    fun whenTheOpponentPassesTheJudgeIsAskedEvenIfTheWeakProfileNeverThinksOfPassing() = runBlocking {
+        val userPassed = GameState.empty().play(Move.Play(StoneColor.Black, E5)).play(Move.Pass(StoneColor.White))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePasses)
+
+        val result = turn(level = 1, state = userPassed)
+
+        assertEquals(listOf("humanPolicy rank_15k", "humanPolicy rank_9d", "play Black pass"), engine.calls.filter { it.startsWith("humanPolicy") || it.startsWith("play Black") }.takeLast(3))
+        assertEquals(Move.Pass(StoneColor.Black), result.turnOutcome.gameState.moves.last())
+    }
+
+    /** 심판이 아직 둘 곳이 있다고 보면 그대로 둔다 — 상대의 이른 통과를 봐주지 않는다. */
+    @Test
+    fun anEarlyPassByTheOpponentIsNotAnswered() = runBlocking {
+        val userPassed = GameState.empty().play(Move.Play(StoneColor.Black, E5)).play(Move.Pass(StoneColor.White))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
+
+        val result = turn(level = 1, state = userPassed)
+
+        assertEquals(Move.Play(StoneColor.Black, C3), result.turnOutcome.gameState.moves.last())
+    }
+
+    /**
+     * **가망 없는 상태가 두 차례 이어지면 통과한다**(사용자 2026-10-07) — AI 집 0 · 상대 승률 99% 이상 · 30집 넘게 뒤짐.
+     * 상대 집 안에 뜻 없는 수를 이어 두지 않는다. 셋째 차례에는 정책을 묻지도 않는다.
+     */
+    @Test
+    fun afterTwoHopelessTurnsTheCharacterPassesInsteadOfPlaying() = runBlocking {
+        engine.scriptedEstimate = HopelessForBlack
+        engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
+        val afterFirst = turn(level = 1).turnOutcome.gameState.play(Move.Play(StoneColor.White, G7))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
+        val afterSecond = turn(level = 1, state = afterFirst).turnOutcome.gameState.play(Move.Play(StoneColor.White, G3))
+        val before = engine.calls.size
+
+        val third = turn(level = 1, state = afterSecond)
+
+        assertEquals(Move.Pass(StoneColor.Black), third.turnOutcome.gameState.moves.last())
+        assertFalse(engine.calls.drop(before).any { it.startsWith("humanPolicy") }, "a character that gives up does not ask where to play")
+        assertTrue(engine.calls.drop(before).contains("play Black pass"))
+    }
+
+    /** 한 번이라도 가망이 생기면 처음부터 다시 센다 — 가망 없음·회복·가망 없음은 2연속이 아니다. */
+    @Test
+    fun aRecoveryStartsTheHopelessCountOver() = runBlocking {
+        engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
+        engine.scriptedEstimate = HopelessForBlack
+        val afterFirst = turn(level = 1).turnOutcome.gameState.play(Move.Play(StoneColor.White, G7))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
+        engine.scriptedEstimate = null
+        val afterSecond = turn(level = 1, state = afterFirst).turnOutcome.gameState.play(Move.Play(StoneColor.White, G3))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC7, "rank_9d" to JudgePlaysOn)
+        engine.scriptedEstimate = HopelessForBlack
+
+        val third = turn(level = 1, state = afterSecond)
+
+        assertEquals(Move.Play(StoneColor.Black, C7), third.turnOutcome.gameState.moves.last())
+    }
+
+    /**
+     * 센 것은 **그 판이 이어질 때만** 유효하다 — 새 대국·무르기·이어하기처럼 수순이 이어지지 않으면 처음부터 센다.
+     * 앞 판에서 가망 없었다고 새 판의 첫 수를 통과하면 안 된다.
+     */
+    @Test
+    fun theHopelessCountDoesNotCarryOverToAnotherGame() = runBlocking {
+        engine.scriptedEstimate = HopelessForBlack
+        engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
+        val afterFirst = turn(level = 1).turnOutcome.gameState.play(Move.Play(StoneColor.White, G7))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
+        turn(level = 1, state = afterFirst)
+        engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
+
+        val newGame = turn(level = 1)
+
+        assertEquals(Move.Play(StoneColor.Black, E5), newGame.turnOutcome.gameState.moves.single())
     }
 
     /** 통과를 떠올리지도 않은 수에서는 9단 정책을 묻지 않는다 — 대국 대부분의 수가 평가 1회로 끝난다. */
@@ -250,6 +335,29 @@ class LocalEngineSessionClientHumanStyleTest {
         val Profile = EngineProfile()
         val E5 = BoardCoordinate.fromLabel("E5", BoardSize.Nine)
         val C3 = BoardCoordinate.fromLabel("C3", BoardSize.Nine)
+
+        val C7 = BoardCoordinate.fromLabel("C7", BoardSize.Nine)
+        val G3 = BoardCoordinate.fromLabel("G3", BoardSize.Nine)
+        val G7 = BoardCoordinate.fromLabel("G7", BoardSize.Nine)
+
+        /** 둘 자리가 하나뿐인 정책 — 무엇이 뽑힐지 주사위와 무관하다. */
+        val OnlyC3 = HumanPolicy("any", mapOf(C3 to 1.0), passProbability = 0.0)
+        val OnlyC7 = HumanPolicy("any", mapOf(C7 to 1.0), passProbability = 0.0)
+
+        /** 흑에게 가망 없는 형세 — 백 승률 99.5%, 백이 69집 앞서고, 판 전체가 백 쪽으로 기울어 흑의 집이 없다. */
+        val HopelessForBlack = ScoreEstimate(
+            status = EngineStatus.ready("estimated"),
+            whiteWinRate = 0.995,
+            whiteScoreLead = 69.0,
+            ownership = OwnershipEstimate(
+                blackLikelyPoints = 0,
+                whiteLikelyPoints = 81,
+                neutralOrUnclearPoints = 0,
+                threshold = 0.6,
+                points = (0 until 9).flatMap { row -> (0 until 9).map { column -> OwnershipPoint(BoardCoordinate(row, column), 0.9) } },
+            ),
+            summary = "estimated",
+        )
 
         /** 둘 자리가 하나뿐인 정책 — 무엇이 뽑힐지 주사위와 무관하다. */
         val OnlyE5 = HumanPolicy("any", mapOf(E5 to 1.0), passProbability = 0.0)

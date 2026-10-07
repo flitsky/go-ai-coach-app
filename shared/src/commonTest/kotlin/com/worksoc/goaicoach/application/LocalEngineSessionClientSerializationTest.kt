@@ -465,8 +465,12 @@ internal class ParkingCoreApi : EngineCoreApi {
         )
     }
 
+    /** 있으면 형세 추정이 이것을 답한다(올라가 있는 망만 덧적는다) — 가망 없는 판처럼 형세가 뜻을 갖는 테스트가 쓴다. */
+    var scriptedEstimate: ScoreEstimate? = null
+
     override suspend fun estimateScore(limit: AnalysisLimit): ScoreEstimate {
         record("estimate")
+        scriptedEstimate?.let { return it.copy(network = network) }
         return ScoreEstimate(status = EngineStatus.ready("estimated"), whiteScoreLead = 1.5, whiteWinRate = 0.55, summary = "estimated", network = network)
     }
 
