@@ -53,6 +53,21 @@ class GameExitRecordingContractTest {
         )
     }
 
+    /**
+     * **대국 중의 뒤로 가기는 대국 화면의 「기권」 버튼과 같은 일을 한다**(사용자 2026-10-07) — 판이 그 자리에서 끝난다.
+     * 기권 확인 뒤에 무조건 나가 버리면, 2연패로 기력이 내려간 것을 알리는 팝업을 볼 자리가 없다(폰에서 그렇게 지나갔다).
+     * 나가는 것은 **기권이 들어가지 않았을 때**(AI가 두는 순간·AI끼리 두는 판)의 폴백뿐이다.
+     */
+    @Test
+    fun aBackKeyResignationEndsTheGameInPlaceInsteadOfLeaving() {
+        val confirm = shell.substringAfter("if (showResignConfirmFromBack)").substringBefore("dismissButton")
+        assertTrue("뒤로 가기 기권 확인이 기권을 보내지 않는다.", confirm.contains("dispatch(GameUiEvent.ResignCurrentGame)"))
+        assertTrue(
+            "뒤로 가기 기권이 판을 끝낸 뒤에도 무조건 메인으로 나간다 — 기권 버튼과 동작이 갈리고 기력 변동 팝업을 못 본다.",
+            confirm.contains("if (!isGameEnded) exitToHome()") && confirm.lines().none { it.trim() == "exitToHome()" },
+        )
+    }
+
     /** 주석을 걷어낸 코드만 남긴다 — 처방이 KDoc에도 적혀 있어 걷어내지 않으면 거짓 통과한다. */
     private fun codeOnly(source: String): String = source
         .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")

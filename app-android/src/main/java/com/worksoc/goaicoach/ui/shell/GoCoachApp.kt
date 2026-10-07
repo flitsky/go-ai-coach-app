@@ -799,8 +799,11 @@ private fun GoCoachScreen(
                 TextButton(
                     onClick = {
                         showResignConfirmFromBack = false
+                        // 대국 중의 뒤로 가기는 대국 화면의 「기권」 버튼과 **같은 일**을 한다(사용자 2026-10-07) — 판이 그 자리에서 끝나고
+                        // 결과와 기력 변동 팝업이 거기서 뜬다. 메인으로 나가는 것은 끝난 판에서 한 번 더 누를 때다.
+                        // 기권이 들어가지 않았으면(AI가 두는 순간이거나 AI끼리 두는 판 — 기권할 사람 차례가 아니다) 예전처럼 판을 멈추고 나간다.
                         dispatch(GameUiEvent.ResignCurrentGame)
-                        exitToHome()
+                        if (!isGameEnded) exitToHome()
                     },
                 ) {
                     Text(strings.resign)
@@ -1036,6 +1039,7 @@ private fun GoCoachScreen(
                 // ⚠️ 대국 화면에는 나가는 길이 **뒤로가기뿐이었다** — 있긴 한데 보이지 않았다
                 // (백로그 #175). 메뉴의 '대국 나가기'는 **뒤로가기와 정확히 같은 길**을 탄다
                 // (2026-09-18 사용자 확정): 대국 중이면 기권을 먼저 묻고, 끝난 판이면 바로 나간다.
+                // ⚠️ 2026-10-07부터 그 기권은 **판을 그 자리에서 끝낸다**(대국 화면의 「기권」 버튼과 같다) — 나가려면 끝난 판에서 한 번 더.
                 // ⚠️ **여기서 팝업을 새로 만들지 말 것** — 위 `BackHandler`가 쓰는
                 //   `showResignConfirmFromBack` 하나를 공유해야 두 입구가 같은 말을 한다.
                 //   따로 만들면 문구·동작이 갈리고, 이 파일의 상태 훅 예산도 여유가 없다.
