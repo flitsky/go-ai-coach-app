@@ -1,0 +1,318 @@
+{
+ "games": 414,
+ "rules": {
+  "all": {
+   "user: 승률≤1% · 내 집 0 · 2수": {
+    "fired": 24,
+    "wrong": 1,
+    "close": 1,
+    "coverage": 0.09905660377358491,
+    "movesLeft": 13.0,
+    "finalLead": -71.90100559999999
+   },
+   "승률≤1% · 내 집 0 · 3수": {
+    "fired": 19,
+    "wrong": 0,
+    "close": 1,
+    "coverage": 0.08018867924528301,
+    "movesLeft": 8,
+    "finalLead": -87.5919749
+   },
+   "승률≤1% · 2수": {
+    "fired": 447,
+    "wrong": 39,
+    "close": 120,
+    "coverage": 1.0,
+    "movesLeft": 30,
+    "finalLead": -17.8010099
+   },
+   "승률≤1% · 점수≤−20 · 2수": {
+    "fired": 256,
+    "wrong": 14,
+    "close": 9,
+    "coverage": 1.0,
+    "movesLeft": 35.0,
+    "finalLead": -42.608661
+   },
+   "승률≤1% · 점수≤−30 · 2수": {
+    "fired": 200,
+    "wrong": 8,
+    "close": 4,
+    "coverage": 0.8632075471698113,
+    "movesLeft": 36.0,
+    "finalLead": -60.83608305
+   },
+   "승률≤1% · 점수≤−30 · 3수": {
+    "fired": 195,
+    "wrong": 8,
+    "close": 4,
+    "coverage": 0.8443396226415094,
+    "movesLeft": 35,
+    "finalLead": -61.6764534
+   },
+   "승률≤1% · 점수≤−40 · 2수": {
+    "fired": 160,
+    "wrong": 7,
+    "close": 4,
+    "coverage": 0.6933962264150944,
+    "movesLeft": 34.5,
+    "finalLead": -73.02717525
+   },
+   "점수≤−30 · 2수": {
+    "fired": 203,
+    "wrong": 10,
+    "close": 5,
+    "coverage": 0.8632075471698113,
+    "movesLeft": 38,
+    "finalLead": -57.0177707
+   },
+   "점수≤−40 · 2수": {
+    "fired": 162,
+    "wrong": 7,
+    "close": 5,
+    "coverage": 0.6981132075471698,
+    "movesLeft": 35.0,
+    "finalLead": -72.5288862
+   }
+  },
+  "9": {
+   "user: 승률≤1% · 내 집 0 · 2수": {
+    "fired": 13,
+    "wrong": 0,
+    "close": 1,
+    "coverage": 0.3793103448275862,
+    "movesLeft": 13,
+    "finalLead": -44.290189
+   },
+   "승률≤1% · 내 집 0 · 3수": {
+    "fired": 10,
+    "wrong": 0,
+    "close": 1,
+    "coverage": 0.27586206896551724,
+    "movesLeft": 12.0,
+    "finalLead": -45.1642799
+   },
+   "승률≤1% · 2수": {
+    "fired": 95,
+    "wrong": 6,
+    "close": 46,
+    "coverage": 1.0,
+    "movesLeft": 13,
+    "finalLead": -8.50950579
+   },
+   "승률≤1% · 점수≤−20 · 2수": {
+    "fired": 32,
+    "wrong": 0,
+    "close": 1,
+    "coverage": 1.0,
+    "movesLeft": 11.0,
+    "finalLead": -33.4358138
+   },
+   "승률≤1% · 점수≤−30 · 2수": {
+    "fired": 22,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.7586206896551724,
+    "movesLeft": 6.0,
+    "finalLead": -38.8460041
+   },
+   "승률≤1% · 점수≤−30 · 3수": {
+    "fired": 20,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.6896551724137931,
+    "movesLeft": 5.0,
+    "finalLead": -38.8460041
+   },
+   "승률≤1% · 점수≤−40 · 2수": {
+    "fired": 14,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.4827586206896552,
+    "movesLeft": 5.5,
+    "finalLead": -45.7911483
+   },
+   "점수≤−30 · 2수": {
+    "fired": 22,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.7586206896551724,
+    "movesLeft": 8.0,
+    "finalLead": -38.8460041
+   },
+   "점수≤−40 · 2수": {
+    "fired": 14,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.4827586206896552,
+    "movesLeft": 5.5,
+    "finalLead": -45.7911483
+   }
+  },
+  "13": {
+   "user: 승률≤1% · 내 집 0 · 2수": {
+    "fired": 11,
+    "wrong": 1,
+    "close": 0,
+    "coverage": 0.08196721311475409,
+    "movesLeft": 9,
+    "finalLead": -162.609042
+   },
+   "승률≤1% · 내 집 0 · 3수": {
+    "fired": 9,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.07377049180327869,
+    "movesLeft": 6,
+    "finalLead": -167.230599
+   },
+   "승률≤1% · 2수": {
+    "fired": 248,
+    "wrong": 19,
+    "close": 59,
+    "coverage": 1.0,
+    "movesLeft": 30.0,
+    "finalLead": -18.97988215
+   },
+   "승률≤1% · 점수≤−20 · 2수": {
+    "fired": 141,
+    "wrong": 6,
+    "close": 3,
+    "coverage": 1.0,
+    "movesLeft": 30,
+    "finalLead": -47.0133998
+   },
+   "승률≤1% · 점수≤−30 · 2수": {
+    "fired": 109,
+    "wrong": 3,
+    "close": 0,
+    "coverage": 0.8360655737704918,
+    "movesLeft": 30,
+    "finalLead": -67.8493258
+   },
+   "승률≤1% · 점수≤−30 · 3수": {
+    "fired": 106,
+    "wrong": 3,
+    "close": 0,
+    "coverage": 0.819672131147541,
+    "movesLeft": 29.0,
+    "finalLead": -68.52196839999999
+   },
+   "승률≤1% · 점수≤−40 · 2수": {
+    "fired": 86,
+    "wrong": 2,
+    "close": 0,
+    "coverage": 0.680327868852459,
+    "movesLeft": 25.0,
+    "finalLead": -77.53027080000001
+   },
+   "점수≤−30 · 2수": {
+    "fired": 111,
+    "wrong": 4,
+    "close": 1,
+    "coverage": 0.8360655737704918,
+    "movesLeft": 30,
+    "finalLead": -66.6321413
+   },
+   "점수≤−40 · 2수": {
+    "fired": 87,
+    "wrong": 2,
+    "close": 1,
+    "coverage": 0.680327868852459,
+    "movesLeft": 26,
+    "finalLead": -77.312244
+   }
+  },
+  "19": {
+   "user: 승률≤1% · 내 집 0 · 2수": {
+    "fired": 0,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.0,
+    "movesLeft": null,
+    "finalLead": null
+   },
+   "승률≤1% · 내 집 0 · 3수": {
+    "fired": 0,
+    "wrong": 0,
+    "close": 0,
+    "coverage": 0.0,
+    "movesLeft": null,
+    "finalLead": null
+   },
+   "승률≤1% · 2수": {
+    "fired": 104,
+    "wrong": 14,
+    "close": 15,
+    "coverage": 1.0,
+    "movesLeft": 74.0,
+    "finalLead": -30.12711445
+   },
+   "승률≤1% · 점수≤−20 · 2수": {
+    "fired": 83,
+    "wrong": 8,
+    "close": 5,
+    "coverage": 1.0,
+    "movesLeft": 74,
+    "finalLead": -47.401386
+   },
+   "승률≤1% · 점수≤−30 · 2수": {
+    "fired": 69,
+    "wrong": 5,
+    "close": 4,
+    "coverage": 0.9672131147540983,
+    "movesLeft": 73,
+    "finalLead": -62.9011718
+   },
+   "승률≤1% · 점수≤−30 · 3수": {
+    "fired": 69,
+    "wrong": 5,
+    "close": 4,
+    "coverage": 0.9672131147540983,
+    "movesLeft": 72,
+    "finalLead": -62.9011718
+   },
+   "승률≤1% · 점수≤−40 · 2수": {
+    "fired": 60,
+    "wrong": 5,
+    "close": 4,
+    "coverage": 0.819672131147541,
+    "movesLeft": 65.5,
+    "finalLead": -75.41192240000001
+   },
+   "점수≤−30 · 2수": {
+    "fired": 70,
+    "wrong": 6,
+    "close": 4,
+    "coverage": 0.9672131147540983,
+    "movesLeft": 78.0,
+    "finalLead": -62.2888126
+   },
+   "점수≤−40 · 2수": {
+    "fired": 61,
+    "wrong": 5,
+    "close": 4,
+    "coverage": 0.8360655737704918,
+    "movesLeft": 68,
+    "finalLead": -74.7471349
+   }
+  }
+ },
+ "lateMoves": {
+  "9": {
+   "n": 138,
+   "median": 0.0,
+   "max": 7
+  },
+  "13": {
+   "n": 309,
+   "median": 0,
+   "max": 19
+  },
+  "19": {
+   "n": 77,
+   "median": 0,
+   "max": 10
+  }
+ }
+}
