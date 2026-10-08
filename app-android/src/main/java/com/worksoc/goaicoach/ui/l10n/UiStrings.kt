@@ -756,11 +756,13 @@ internal data class UiStrings(
      * [featureButtonLabel]의 주석이다. [featureButtonLabel]은 지우지 않는다 — 화면 낭독기용
      * `contentDescription`으로 계속 쓴다.
      */
-    fun featureButtonMark(access: FeatureAccess, remaining: Int): String? =
+    fun featureButtonMark(access: FeatureAccess, remaining: Int, freeRemaining: Int = 0): String? =
         when {
             access is FeatureAccess.Allowed && access.via == AllowedVia.Purchase -> UnlimitedMark
             access is FeatureAccess.Allowed && access.via == AllowedVia.AdGrant -> TimeLimitedMark
             access is FeatureAccess.Allowed -> null
+            // 이 판의 무료 사용이 남아 있으면 그것부터 말한다(백로그 #228) — 다음 탭이 쓰는 것이 1회권이 아니라 무료분이다.
+            freeRemaining > 0 -> freeAnalysisMarkFor(language, freeRemaining)
             remaining > 0 -> remaining.toString()
             else -> null
         }

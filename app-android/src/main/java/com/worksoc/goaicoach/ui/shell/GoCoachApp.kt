@@ -24,6 +24,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.analysis.UndoAnalysisRestoreCache
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.botcharacter.isBotCharacterPerkActive
+import com.worksoc.goaicoach.application.botcharacter.isFreeAnalysisMatch
 import com.worksoc.goaicoach.application.botcharacter.matchOpponentCharacter
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
@@ -848,7 +849,7 @@ private fun GoCoachScreen(
     }
 
     // 소모품 재고/단발성 상태 배선의 본체는 ui/monetization/ConsumableUiState.kt에 있다(위와 같은 이유).
-    val consumableUiState = buildConsumableUiState(context) { next -> premiumState = next }
+    val consumableUiState = buildConsumableUiState(context, runtimeState.matchGeneration, isFreeAnalysisMatch(playerSetup)) { next -> premiumState = next }
 
     // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/monetization/PremiumUiState.kt에 있다(위와 같은 이유).
     PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, characterPerkActive, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }

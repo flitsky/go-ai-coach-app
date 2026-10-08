@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.application.consumable.ConsumableStorePort
 import com.worksoc.goaicoach.application.consumable.runConsumableSpend
 import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
 import com.worksoc.goaicoach.application.premium.state.PremiumState
 import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
@@ -69,6 +70,14 @@ internal data class ConsumableUiState(
      * 모순으로 드러났다(#56). 재고를 저장소에 직접 쓰는 경로를 새로 만들면 여기도 함께 부를 것.
      */
     val refresh: () -> Unit = {},
+    /**
+     * **이 판의 무료 사용**(백로그 #228) — 캐릭터와 두는 대국에서 형세 보기·추천 수를 기능마다 3회씩 무료로 쓴다.
+     * 남은 횟수와, 한 번 쓰는 길. 무료 사용이 없는 판(기력 측정 대국 · AI끼리 · 사람끼리)이면 늘 0이다.
+     * 1회권보다 **먼저** 쓴다 — 순서는 `GamePlaySection`의 `featureGated`가 지킨다(무료 3회 → 1회권 → 업셀).
+     */
+    val freeUsesRemaining: (FeatureId) -> Int = { 0 },
+    /** 무료 사용 한 번을 쓴다 — 썼으면 `true`. 남은 것이 없으면 아무 일도 하지 않고 `false`. */
+    val useFree: (FeatureId) -> Boolean = { false },
 ) {
     fun countOf(item: ConsumableItem): Int = inventory.countOf(item.id)
 
@@ -140,6 +149,10 @@ internal val LocalConsumableUiState = staticCompositionLocalOf { ConsumableUiSta
 @Composable
 internal fun buildConsumableUiState(
     context: Context,
+    /** 지금 대국의 세대 — 무료 사용(#228)을 「한 판」 단위로 세는 잣대다. 무르기에는 그대로이고 새 대국·이어하기에서 오른다. */
+    matchGeneration: Long,
+    /** 이 판이 무료 사용을 주는 판인가 — 캐릭터와 두는 대국(`isFreeAnalysisMatch`). */
+    isFreeAnalysisMatch: Boolean,
     onPremiumChanged: (PremiumState) -> Unit,
 ): ConsumableUiState {
     val store: ConsumableStorePort = remember(context) { ConsumableInventoryStore(context) }
@@ -147,6 +160,8 @@ internal fun buildConsumableUiState(
     var inventory by remember(store) { mutableStateOf(store.load()) }
     // 전이 규칙은 [OneShotLedger]에 있다 — 여기서는 그 값을 상태로 들고만 있는다(#44).
     var ledger by remember { mutableStateOf(OneShotLedger()) }
+    // 이 판에서 무료로 쓴 횟수(#228) — 전이 규칙은 [MatchFreeUses]에 있고, 여기서는 값만 든다. 저장하지 않는다.
+    var freeUses by remember { mutableStateOf(MatchFreeUses()) }
 
     return ConsumableUiState(
         inventory = inventory,
@@ -170,6 +185,12 @@ internal fun buildConsumableUiState(
             expired
         },
         refresh = { inventory = store.load() },
+        freeUsesRemaining = { featureId -> if (isFreeAnalysisMatch) freeUses.remaining(featureId, matchGeneration) else 0 },
+        useFree = { featureId ->
+            val available = isFreeAnalysisMatch && freeUses.remaining(featureId, matchGeneration) > 0
+            if (available) freeUses = freeUses.afterUsing(featureId, matchGeneration)
+            available
+        },
     )
 }
 

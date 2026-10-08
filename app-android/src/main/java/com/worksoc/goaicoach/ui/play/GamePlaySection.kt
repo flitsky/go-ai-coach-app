@@ -88,6 +88,7 @@ import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.freeAnalysisUsedToastFor
 import com.worksoc.goaicoach.ui.l10n.rematchActionFor
 import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
@@ -882,7 +883,9 @@ private fun GameActionButtonHost(
     // 잠금 테두리 판단에도 같은 기준을 써야 한다. 껐다고 테두리가 돌아오면 "누르면 또
     // 나간다"고 잘못 알리게 된다 — 실제로는 무료로 통과한다.
     fun tapIsFree(featureId: FeatureId): Boolean =
-        consumables.isOneShotActive(featureId) || consumables.isPaidForMove(featureId, moveCount)
+        consumables.isOneShotActive(featureId) || consumables.isPaidForMove(featureId, moveCount) ||
+            // 이 판의 무료 사용이 남아 있으면 이번 탭은 값이 없다(백로그 #228) — 잠금 테두리를 두르지 않는다.
+            consumables.freeUsesRemaining(featureId) > 0
     // 버튼을 눌렀을 때 띄우는 토스트 하나. 잔량과 안내를 **한 토스트로 합친다** — 따로 띄우면
     // 안드로이드가 둘을 큐잉해 첫 사용 때 토스트가 연달아 두 번 뜬다(2026-08-29 실기 확인).
     // 안내("매 수마다 보려면 메뉴에서")는 대국 한 판에 한 번만 붙고, 수순이 리셋되면 다시 붙는다.
@@ -945,7 +948,17 @@ private fun GameActionButtonHost(
             }
             is FeatureAccess.Locked -> {
                 val ticket = featureId?.let(consumables::ticketFor)
+                // ⚠️ 남은 횟수는 **쓰기 전에** 읽는다 — 쓴 뒤에 읽으면 이미 줄어든 값이라 토스트가 한 번 적게 말한다.
+                val freeLeft = featureId?.let(consumables.freeUsesRemaining) ?: 0
                 when {
+                    // **이 판의 무료 사용이 먼저다**(백로그 #228, 사용자 2026-10-08) — 캐릭터와 두는 대국에서 기능마다 3회.
+                    // 1회권보다 앞에 둔다: 표가 있는 사람도 무료분부터 쓰고, 표가 없는 새 사용자는 광고 없이 써 본다.
+                    // 구독·광고 1시간으로 열려 있으면 위의 `Allowed` 분기로 가므로 여기서 횟수가 닳지 않는다.
+                    featureId != null && freeLeft > 0 && consumables.useFree(featureId) -> {
+                        consumables.markOneShot(featureId, moveCount)
+                        action()
+                        toastForTap(freeAnalysisUsedToastFor(strings.language, freeLeft - 1))
+                    }
                     // 확인 팝업 없이 바로 쓴다(2026-08-29 사용자 재확정) — 오탭 여지가 낮고
                     // 오탭 비용도 작아 빠른 진행을 택했다. "말없이 쓰지 않는다"는 원래 취지는
                     // 사용 직후 토스트로 잔량을 알리는 것으로 지킨다.
@@ -1046,6 +1059,7 @@ private fun GameActionButtonHost(
                         strings.featureButtonMark(
                             access = evalAccess,
                             remaining = consumables.countOf(ConsumableCatalog.EvalOnce),
+                            freeRemaining = consumables.freeUsesRemaining(FeatureId.Eval),
                         )
                     } else {
                         null
@@ -1069,6 +1083,7 @@ private fun GameActionButtonHost(
                     mark = strings.featureButtonMark(
                         access = topMovesAccess,
                         remaining = consumables.countOf(ConsumableCatalog.TopMovesOnce),
+                        freeRemaining = consumables.freeUsesRemaining(FeatureId.TopMoves),
                     ),
                     onEvent = { event -> featureGated(topMovesAccess, FeatureId.TopMoves, turningOn = !topMovesAction.isFilled) { onEvent(event) } },
                     modifier = modifier.guideTarget(GuideTarget.TopMoves),
