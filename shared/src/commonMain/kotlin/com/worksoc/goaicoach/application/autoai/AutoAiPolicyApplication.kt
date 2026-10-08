@@ -101,8 +101,13 @@ fun buildAutoAiTurnRequestPlan(
      * 전에. 막는 대신 선택 팝업이 반드시 떠야 한다(`GamePlaySection`의 「엔진 응답 지연」) — 안 뜨면 AI가 멈춘다.
      */
     isAwaitingTimeoutChoice: Boolean = false,
+    /**
+     * AI가 기권을 제안해 사용자의 답을 기다리는 중이면 건너뛴다(백로그 #213) — 사용자가 고르기 전에 AI가 두어 버리면
+     * 「기권 받기」가 뜻을 잃는다. 막는 대신 제안 팝업이 반드시 떠야 한다(`AiResignationOfferHost`) — 안 뜨면 AI가 멈춘다.
+     */
+    isAwaitingResignationChoice: Boolean = false,
 ): AutoAiTurnRequestPlan {
-    if (isAutoAiTurnPending || isAwaitingTimeoutChoice) {
+    if (isAutoAiTurnPending || isAwaitingTimeoutChoice || isAwaitingResignationChoice) {
         return AutoAiTurnRequestPlan.Skip
     }
     if (
@@ -137,6 +142,7 @@ fun GameSessionControllerState.toAutoAiTurnRequestPlan(
         gameState = gameState,
         autoPlayDelaySetting = settings.autoPlayDelaySetting,
         isAwaitingTimeoutChoice = isAwaitingAutoAiTurnTimeoutChoice,
+        isAwaitingResignationChoice = isAwaitingAiResignationChoice,
     )
 
 internal fun buildAutoAiTurnScheduleValidationPlan(

@@ -18,4 +18,6 @@ data class AutoAiTurnDisplayPlan(
     val shouldResolveEndgame: Boolean,
     val endgamePrePassCandidates: List<CandidateMove>,
     val nextAnalysisState: GameState?,
+    /** 이 수를 둔 AI가 기권을 제안하는가(백로그 #213) — 엔진 쪽 판단(`AutoAiTurnResult.offersResignation`)을 그대로 싣는다. */
+    val offersResignation: Boolean = false,
 )

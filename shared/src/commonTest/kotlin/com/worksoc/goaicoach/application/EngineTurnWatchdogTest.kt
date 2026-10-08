@@ -251,4 +251,32 @@ class EngineTurnWatchdogTest {
             "이미 보고한 시도는 다시 걸어도 보고한 채다 — 한 시도에 팝업은 한 번",
         )
     }
+
+    /**
+     * AI의 기권 제안에 답하는 동안(backlog #213)은 도는 엔진 작업이 없다 — 팝업 앞에서 오래 망설여도 「엔진 응답 지연」이 뜨지 않고,
+     * 「계속 두기」를 고른 뒤의 탐색은 그 순간부터 잰다.
+     */
+    @Test
+    fun waitingForTheUsersAnswerToAResignationOfferIsNotAStall() {
+        val limit = SearchTimeLimit.WithinOneSecond
+        val threshold = engineTurnWatchdogTimeoutMillisFor(limit)
+        fun fires(attempt: EngineTurnWatchdogAttempt, nowMillis: Long) =
+            isEngineTurnWatchdogTriggered(isAiTurn = true, elapsedSinceTurnStartMillis = attempt.elapsedMillis(nowMillis), searchTimeLimit = limit)
+
+        var attempt = EngineTurnWatchdogAttempt(baseMillis = 1_000L, completionSeq = 4)
+        // 사용자가 한도의 세 배를 망설인다 — 틱마다 기준이 밀려 한 번도 한도를 넘기지 않는다.
+        var now = 1_000L
+        while (now < 1_000L + threshold * 3) {
+            now += 1_000L
+            attempt = attempt.heldForTheUsersAnswer(now)
+            assertFalse(fires(attempt, now), "답을 기다리는 동안 와치독이 걸렸다 — now=$now")
+        }
+        assertFalse(attempt.isReported)
+
+        // 「계속 두기」 — 그 뒤의 탐색은 마지막으로 기다린 틱부터 잰다. 정말 멎으면 한도 뒤에 뜬다.
+        assertFalse(fires(attempt, now + threshold - 1))
+        assertTrue(fires(attempt, now + threshold))
+        // 기준은 뒤로 가지 않는다(시계가 어긋난 틱).
+        assertEquals(now, attempt.heldForTheUsersAnswer(now - 5_000L).baseMillis)
+    }
 }

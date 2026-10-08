@@ -54,6 +54,18 @@ class GameUiEventDispatchTest {
         assertEquals(listOf("retry", "restart"), calls)
     }
 
+    /** 「상대가 기권을 제안합니다」 팝업의 두 버튼(backlog #213) — 고른 답이 그대로 간다. */
+    @Test
+    fun dispatchAiResignationAnswersCarryTheChoice() {
+        val answers = mutableListOf<Boolean>()
+        val handlers = handlers(answerAiResignation = { accepted -> answers += accepted })
+
+        dispatchGameUiEvent(GameUiEvent.AnswerAiResignation(accepted = true), handlers)
+        dispatchGameUiEvent(GameUiEvent.AnswerAiResignation(accepted = false), handlers)
+
+        assertEquals(listOf(true, false), answers)
+    }
+
     @Test
     fun dispatchPlayAtAndPassSubmitMoveForCurrentPlayer() {
         val submitted = mutableListOf<Move>()
@@ -216,6 +228,7 @@ class GameUiEventDispatchTest {
         changeHandicapCount: (Int) -> Unit = {},
         forceResetEngine: () -> Unit = {},
         retryTimedOutAiTurn: () -> Unit = {},
+        answerAiResignation: (Boolean) -> Unit = {},
     ): GameUiEventHandlers =
         buildGameUiEventHandlers(
             currentPlayer = currentPlayer,
@@ -245,5 +258,6 @@ class GameUiEventDispatchTest {
             reportEngineTurnWatchdogTriggered = { _, _ -> },
             forceResetEngine = forceResetEngine,
             retryTimedOutAiTurn = retryTimedOutAiTurn,
+            answerAiResignation = answerAiResignation,
         )
 }

@@ -172,6 +172,8 @@ internal fun GoCoachContent(
             // '예' = **나도 통과**. 종국 판정은 규칙(`MatchReferee`)이 하고 이 팝업은 하지 않는다.
             onPassAgain = { onEvent(GameUiEvent.Pass) },
         )
+        // **AI의 기권 제안**(백로그 #213) — 가망 없는 판에서 AI가 한 번 묻는다. 답이 올 때까지 AI는 두지 않는다.
+        AiResignationOfferHost(screenState = screenState, onAnswer = { accepted -> onEvent(GameUiEvent.AnswerAiResignation(accepted)) })
     }
 
     if (finalJudgementToShow != null && benchmarkProgress == null && benchmarkResult == null) {

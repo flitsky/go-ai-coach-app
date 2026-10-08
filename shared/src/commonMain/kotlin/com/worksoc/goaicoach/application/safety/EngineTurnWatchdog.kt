@@ -175,6 +175,14 @@ data class EngineTurnWatchdogAttempt(
         } else {
             this
         }
+
+    /**
+     * AI가 기권을 제안해 **사용자의 답을 기다리는 틱**이다(backlog #213) — 그동안 도는 엔진 작업이 없으니 멎음으로 세지 않고
+     * 기준을 [nowMillis]로 민다. 세면 팝업 앞에서 망설이는 사이 「엔진 응답 지연」이 겹쳐 뜨고, 「계속 두기」를 고른 순간에도 이미
+     * 한도를 넘긴 채다. 답이 나면 그 순간부터 새로 잰다(다음 틱의 경과는 틱 간격 이하다).
+     */
+    fun heldForTheUsersAnswer(nowMillis: Long): EngineTurnWatchdogAttempt =
+        copy(baseMillis = maxOf(baseMillis, nowMillis))
 }
 
 /** AI 차례에서 [elapsedSinceTurnStartMillis]가 와치독 한도를 넘겼는지 판정한다. */

@@ -24,6 +24,11 @@ internal sealed interface GameUiEvent {
     data object AcceptCacheOptimizationPrompt : GameUiEvent
     data object DismissCacheOptimizationPrompt : GameUiEvent
 
+    /** AI의 기권 제안에 대한 답(백로그 #213) — 받아들이면 AI가 기권해 대국이 끝나고, 아니면 계속 둔다. */
+    data class AnswerAiResignation(
+        val accepted: Boolean,
+    ) : GameUiEvent
+
     data class ResumeSavedSession(
         val snapshot: SavedGameSnapshot,
     ) : GameUiEvent
@@ -111,6 +116,7 @@ internal data class GameUiEventHandlers(
     val reportEngineTurnWatchdogTriggered: (elapsedMillis: Long, thresholdMillis: Long) -> Unit,
     val forceResetEngine: () -> Unit,
     val retryTimedOutAiTurn: () -> Unit,
+    val answerAiResignation: (Boolean) -> Unit,
 )
 
 internal fun buildGameUiEventHandlers(
@@ -141,6 +147,7 @@ internal fun buildGameUiEventHandlers(
     reportEngineTurnWatchdogTriggered: (elapsedMillis: Long, thresholdMillis: Long) -> Unit,
     forceResetEngine: () -> Unit,
     retryTimedOutAiTurn: () -> Unit,
+    answerAiResignation: (Boolean) -> Unit,
 ): GameUiEventHandlers =
     GameUiEventHandlers(
         currentPlayer = currentPlayer,
@@ -170,6 +177,7 @@ internal fun buildGameUiEventHandlers(
         reportEngineTurnWatchdogTriggered = reportEngineTurnWatchdogTriggered,
         forceResetEngine = forceResetEngine,
         retryTimedOutAiTurn = retryTimedOutAiTurn,
+        answerAiResignation = answerAiResignation,
     )
 
 internal fun dispatchGameUiEvent(
@@ -195,6 +203,7 @@ internal fun dispatchGameUiEvent(
         GameUiEvent.DismissResumePrompt -> handlers.dismissResumePrompt()
         GameUiEvent.AcceptCacheOptimizationPrompt -> handlers.acceptCacheOptimizationPrompt()
         GameUiEvent.DismissCacheOptimizationPrompt -> handlers.dismissCacheOptimizationPrompt()
+        is GameUiEvent.AnswerAiResignation -> handlers.answerAiResignation(event.accepted)
         is GameUiEvent.ResumeSavedSession -> handlers.restoreSavedSession(event.snapshot)
         is GameUiEvent.PlayAt -> handlers.submitMove(Move.Play(handlers.currentPlayer(), event.coordinate))
         is GameUiEvent.SubmitMove -> handlers.submitMove(event.move)

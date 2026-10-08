@@ -386,7 +386,7 @@ class GameScreenStateTest {
      */
     @Test
     fun awaitingEngineTimeoutChoiceFollowsTheCurrentGenerationAndPosition() {
-        fun screenFor(generation: Long, timedOut: AutoAiTurnTimeout?): GameScreenState {
+        fun screenFor(generation: Long, timedOut: AutoAiTurnTimeout?, resignationOffer: AutoAiTurnTimeout? = null): GameScreenState {
             val gameState = GameState.empty()
             val controller = GameSessionControllerState(
                 core = GameSessionCoreState(
@@ -416,7 +416,7 @@ class GameScreenStateTest {
                 ),
                 benchmark = EngineBenchmarkUiState(benchmarkText = "bench"),
                 savedSession = SavedSessionUiState(),
-                autoAiTurn = AutoAiTurnUiState(timedOut = timedOut),
+                autoAiTurn = AutoAiTurnUiState(timedOut = timedOut, resignationOffer = resignationOffer),
                 positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
             )
             return GoCoachScreenStateAssembler.assemble(
@@ -447,6 +447,16 @@ class GameScreenStateTest {
         assertFalse(
             "수순 길이가 다르면(다른 국면) 기다리지 않는다",
             screenFor(generation = 7L, timedOut = mark.copy(moveCount = 1)).isAwaitingEngineTimeoutChoice,
+        )
+
+        // AI의 기권 제안(backlog #213)도 같은 표시 방식이다 — 제안이 선 국면에서만 팝업이 답을 기다린다. 둘은 서로 섞이지 않는다.
+        assertTrue(screenFor(generation = 7L, timedOut = null, resignationOffer = mark).isAwaitingAiResignationChoice)
+        assertFalse(screenFor(generation = 7L, timedOut = null, resignationOffer = mark).isAwaitingEngineTimeoutChoice)
+        assertFalse(screenFor(generation = 7L, timedOut = mark).isAwaitingAiResignationChoice)
+        assertFalse("세대가 오르면 저절로 풀린다", screenFor(generation = 8L, timedOut = null, resignationOffer = mark).isAwaitingAiResignationChoice)
+        assertFalse(
+            "제안은 AI의 다음 차례에 선다 — 그 전 국면에서는 기다리지 않는다",
+            screenFor(generation = 7L, timedOut = null, resignationOffer = mark.copy(moveCount = 2)).isAwaitingAiResignationChoice,
         )
     }
 

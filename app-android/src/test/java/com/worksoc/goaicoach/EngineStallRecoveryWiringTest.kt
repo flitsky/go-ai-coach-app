@@ -642,6 +642,7 @@ class EngineStallRecoveryWiringTest {
                     controllers.autoAiTurnController.restartEngineForStalledTurn(context.engineClient::forceResetEngine)
                 },
                 retryTimedOutAiTurn = controllers.autoAiTurnController::retryTimedOutTurn,
+                answerAiResignation = controllers.autoAiTurnController::answerResignationOffer,
             ),
         )
     }

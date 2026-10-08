@@ -13,6 +13,8 @@ import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
 import com.worksoc.goaicoach.application.undo.UndoController
+import com.worksoc.goaicoach.match.hasHumanSeat
+import com.worksoc.goaicoach.shared.domain.GameState
 
 /**
  * 착수 흐름 컨트롤러 그룹 — TopMoves(추천수)/Undo(무르기)/AutoAiTurn(AI 자동 착수)/HumanMove
@@ -126,7 +128,16 @@ internal fun wireAutoAiTurnController(
         applyAutoAiTurnCancelled = { cancel: AutoAiTurnScheduleValidationPlan -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().applyAutoAiTurnScheduleValidationPlan(cancel)) },
         recordTurnMove = { player, nowMillis, nextPlayer -> context.turnTimeState().recordMove(player = player, nowMillis = nowMillis, nextPlayer = nextPlayer) },
         applyTurnTimeUpdate = { update: TurnTimeMoveUpdate -> context.setTurnTimeState(update.after) },
-        applyTurnDisplay = { display: AutoAiTurnDisplayPlan -> if (display.shouldResolveEndgame) context.activateEndgameJudgementReview(); context.displayStateApplier.applyAutoAiTurnDisplayPlan(display) },
+        applyTurnDisplay = { display: AutoAiTurnDisplayPlan ->
+            if (display.shouldResolveEndgame) context.activateEndgameJudgementReview()
+            // AI가 기권을 제안하면 **다음 AI 차례**(사용자가 한 수 둔 뒤)에 묻는다(백로그 #213) — 받아들였을 때 AI가 제 차례에 기권할 수 있게.
+            // 답할 사람이 없는 판(AI끼리)에서는 묻지 않는다.
+            if (display.offersResignation && context.playerSetup().hasHumanSeat()) {
+                val position = AutoAiTurnTimeout(context.runtimeState().sessionGeneration, display.gameState.moves.size + 1)
+                context.setAutoAiTurnUiState(context.autoAiTurnUiState().offerResignation(position))
+            }
+            context.displayStateApplier.applyAutoAiTurnDisplayPlan(display)
+        },
         applyTurnFailureDisplay = { error: Throwable -> context.displayStateApplier.applyAutoAiTurnFailureDisplayPlan(buildAutoAiTurnFailureDisplayPlan(error)) },
         completeAutoAiTurnRun = { context.setAutoAiTurnUiState(context.autoAiTurnUiState().completeAutoAiTurnRun()) },
         appendEngineOperationDiscardLog = context.lifecycleController::appendDiscardLog,
@@ -146,6 +157,9 @@ internal fun wireAutoAiTurnController(
         // 기다리는 사이 앱이 멈췄는지 재는 것도 포그라운드 세대가 사는 수명 컨트롤러가 한다(#204).
         startEngineWaitWatch = context.lifecycleController::startEngineWaitWatch,
         markAutoAiTurnInterruptedRetry = { position: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().markInterruptedRetry(position)) },
+        settleResignationOffer = { context.setAutoAiTurnUiState(context.autoAiTurnUiState().answerResignationOffer(context.runtimeState().sessionGeneration)) },
+        // 사람의 기권(`resignCurrentGameIfAllowed`)과 같은 끝맺음이다 — 기권이 붙은 판을 올리고 대국을 끝낸다. 계가는 없다.
+        applyAiResignation = { resigned: GameState -> context.setGameState(resigned); context.setIsGameEnded(true) },
     )
 
 internal fun wireHumanMoveController(

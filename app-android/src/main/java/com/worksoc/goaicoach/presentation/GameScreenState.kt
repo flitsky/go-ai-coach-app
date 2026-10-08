@@ -65,6 +65,11 @@ internal data class GameScreenState(
      * ⚠️ 이 값이 `true`인 동안 AI 차례의 조용한 재시도가 막혀 있으므로, 팝업이 안 뜨면 AI가 멈춘다.
      */
     val isAwaitingEngineTimeoutChoice: Boolean = false,
+    /**
+     * AI가 기권을 제안해 사용자의 답을 기다리는 중인가(백로그 #213). 제안 팝업(`AiResignationOfferHost`)이 이것으로 뜬다 —
+     * ⚠️ 이 값이 `true`인 동안 AI는 두지 않으므로, 팝업이 안 뜨면 AI가 멈춘다.
+     */
+    val isAwaitingAiResignationChoice: Boolean = false,
 ) {
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
@@ -116,6 +121,7 @@ internal data class GameScreenStateInput(
     val engineActivityIndicator: EngineActivityIndicator? = null,
     val engineTurnWaitCompletionSeq: Int = 0,
     val isAwaitingEngineTimeoutChoice: Boolean = false,
+    val isAwaitingAiResignationChoice: Boolean = false,
 )
 
 internal fun buildGameScreenStateInput(
@@ -183,6 +189,7 @@ internal fun buildGameScreenStateInput(
         engineActivityIndicator = engineActivityIndicator,
         engineTurnWaitCompletionSeq = engineTurnWaitCompletionSeq,
         isAwaitingEngineTimeoutChoice = controller.isAwaitingAutoAiTurnTimeoutChoice,
+        isAwaitingAiResignationChoice = controller.isAwaitingAiResignationChoice,
     )
 
 internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState {
@@ -252,6 +259,7 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         setupKomi = input.setupKomi,
         setupRuleset = input.setupRuleset,
         isAwaitingEngineTimeoutChoice = input.isAwaitingEngineTimeoutChoice,
+        isAwaitingAiResignationChoice = input.isAwaitingAiResignationChoice,
     )
 }
 

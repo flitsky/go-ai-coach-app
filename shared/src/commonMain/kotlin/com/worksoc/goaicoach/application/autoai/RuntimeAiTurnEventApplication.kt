@@ -91,8 +91,25 @@ internal fun runtimeAiTurnSuccessLog(
         detail = "move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
             "selected=${display.lastMoveText.runtimeLogSnippet(80)} turnElapsedMs=$turnElapsedMs " +
             "turnTime=${turnTimeUpdate?.runtimeText()?.runtimeLogSnippet(140) ?: "not_recorded"} " +
+            // AI가 이 수 뒤에 기권을 제안하는가(backlog #213) — 팝업은 사용자가 한 수 둔 뒤에 뜨므로 리포트에서 둘을 잇는 고리다.
+            "offersResignation=${display.offersResignation} " +
             "before=${turnState.runtimeBoardSummary()} after=${display.gameState.runtimeBoardSummary()} " +
             "summary=${display.candidateText.runtimeLogSnippet(900)}",
+    )
+
+/**
+ * AI의 기권 제안에 사용자가 답했다(backlog #213) — 받아들였으면 AI의 기권으로 판이 끝나고, 거절했으면 AI가 그대로 둔다.
+ * 답은 화면에서만 오므로, 이 줄이 없으면 리포트만으로는 판이 왜 끝났는지(또는 왜 다시 묻지 않는지) 알 길이 없다.
+ */
+internal fun runtimeAiResignationAnswerLog(
+    context: RuntimeLogContext,
+    accepted: Boolean,
+): String =
+    context.event(
+        name = "ai_resignation_answer",
+        phase = "ai_turn",
+        transition = if (accepted) "end_game_by_ai_resignation" else "request_ai_turn",
+        detail = "accepted=$accepted",
     )
 
 internal fun runtimeAiTurnEndgameDetectedLog(

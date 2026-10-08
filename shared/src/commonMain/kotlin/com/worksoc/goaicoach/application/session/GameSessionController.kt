@@ -47,6 +47,16 @@ data class GameSessionControllerState(
             moveCount = gameState.moves.size,
         )
 
+    /**
+     * 이 국면에서 AI의 기권 제안에 대한 사용자의 답을 기다리는 중인가(백로그 #213). AI가 둘 차례이고, 답이 올 때까지 AI는 두지 않는다.
+     * 세대·수순 길이가 바뀌면 저절로 `false`다.
+     */
+    val isAwaitingAiResignationChoice: Boolean
+        get() = autoAiTurn.isAwaitingResignationChoice(
+            sessionGeneration = core.runtimeState.sessionGeneration,
+            moveCount = gameState.moves.size,
+        )
+
     fun withCore(next: GameSessionCoreState): GameSessionControllerState =
         copy(core = next)
 

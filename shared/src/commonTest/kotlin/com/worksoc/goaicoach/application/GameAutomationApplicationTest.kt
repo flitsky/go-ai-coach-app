@@ -234,6 +234,70 @@ class GameAutomationApplicationTest {
         )
     }
 
+    /** AI의 기권 제안에 사용자가 답하기 전에는 AI 차례를 예약하지 않는다(backlog #213) — 먼저 두어 버리면 「기권 받기」가 뜻을 잃는다. */
+    @Test
+    fun autoAiTurnRequestPlanSkipsWhileTheResignationOfferAwaitsAnAnswer() {
+        val plan = buildAutoAiTurnRequestPlan(
+            isGameEnded = false,
+            isEngineReady = true,
+            isEngineBusy = false,
+            isAutoAiTurnPending = false,
+            shouldShowResumePrompt = false,
+            playerSetup = PlayerSetup(
+                black = SidePlayerSetup(controller = SeatController.Ai),
+                white = SidePlayerSetup(controller = SeatController.Human),
+            ),
+            gameState = GameState.empty(),
+            autoPlayDelaySetting = AutoPlayDelaySetting.Default,
+            isAwaitingResignationChoice = true,
+        )
+
+        assertEquals(AutoAiTurnRequestPlan.Skip, plan)
+    }
+
+    /** 세션이 AI 차례를 붙드는 것은 **제안이 선 그 국면**(세대·수순 길이)에서만이다 — 다른 국면의 제안은 AI를 막지 않는다. */
+    @Test
+    fun controllerStateHoldsTheAiTurnOnlyAtTheOfferedPosition() {
+        val controller = automationControllerState()
+        val generation = controller.core.runtimeState.sessionGeneration
+        val here = AutoAiTurnTimeout(sessionGeneration = generation, moveCount = controller.gameState.moves.size)
+
+        val waiting = controller.withAutoAiTurn(AutoAiTurnUiState().offerResignation(here))
+        assertTrue(waiting.isAwaitingAiResignationChoice)
+        assertEquals(AutoAiTurnRequestPlan.Skip, waiting.toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false))
+
+        // 제안은 AI의 다음 차례에 선다 — 그 전(사용자가 둘 국면)에는 기다리지 않는다.
+        val notYet = controller.withAutoAiTurn(AutoAiTurnUiState().offerResignation(here.copy(moveCount = here.moveCount + 2)))
+        assertFalse(notYet.isAwaitingAiResignationChoice)
+        assertTrue(notYet.toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false) is AutoAiTurnRequestPlan.Schedule)
+
+        // 다른 대국(세대)의 제안은 효력이 없다.
+        val staleGame = controller.withAutoAiTurn(AutoAiTurnUiState().offerResignation(here.copy(sessionGeneration = generation + 1)))
+        assertFalse(staleGame.isAwaitingAiResignationChoice)
+    }
+
+    /** 한 판에 한 번만 묻는다(사용자 2026-10-07: 「AI가 한번 기권을 제시」) — 이미 제안했거나 답을 받은 대국에서는 표시가 다시 서지 않는다. */
+    @Test
+    fun theResignationOfferIsMadeOncePerGame() {
+        val first = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 41)
+        val later = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 43)
+
+        val offered = AutoAiTurnUiState().offerResignation(first)
+        assertEquals(first, offered.resignationOffer)
+        assertEquals(first, offered.offerResignation(later).resignationOffer, "답을 기다리는 제안을 다음 수의 제안이 밀어내지 않는다")
+        assertTrue(offered.isAwaitingResignationChoice(sessionGeneration = 7L, moveCount = 41))
+        assertFalse(offered.isAwaitingResignationChoice(sessionGeneration = 7L, moveCount = 40))
+
+        val answered = offered.answerResignationOffer(sessionGeneration = 7L)
+        assertNull(answered.resignationOffer)
+        assertFalse(answered.isAwaitingResignationChoice(sessionGeneration = 7L, moveCount = 41))
+        assertNull(answered.offerResignation(later).resignationOffer, "답한 대국에서는 다시 묻지 않는다")
+
+        // 새 대국(세대가 바뀜)에서는 다시 물을 수 있다.
+        val nextGame = AutoAiTurnTimeout(sessionGeneration = 8L, moveCount = 30)
+        assertEquals(nextGame, answered.offerResignation(nextGame).resignationOffer)
+    }
+
     @Test
     fun autoAiTriggerEffectWaitsForUndoQuietWindowBeforeRequestingTurn() = runBlocking {
         val delays = mutableListOf<Long>()

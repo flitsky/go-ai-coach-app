@@ -159,6 +159,10 @@ fun PlayerSetup.isRankMeasure(): Boolean =
 fun PlayerSetup.hasDeepSearchingAi(): Boolean =
     listOf(black, white).any { side -> side.controller == SeatController.Ai && side.playLevel.searchesDeeperThanItsGroup }
 
+/** 사람이 앉은 좌석이 있는가 — AI의 기권 제안처럼 **사람이 답해야 하는 일**은 사람이 있는 판에서만 묻는다(백로그 #213). */
+fun PlayerSetup.hasHumanSeat(): Boolean =
+    listOf(black, white).any { side -> side.controller == SeatController.Human }
+
 fun SidePlayerSetup.aiCharacterProfile(): AiCharacterProfile? =
     if (controller == SeatController.Ai) {
         AiCharacterProfile(playLevel = playLevel)

@@ -139,6 +139,7 @@ fun buildAutoAiTurnDisplayPlan(
             emptyList()
         },
         nextAnalysisState = nextState.takeUnless { shouldResolveEndgame },
+        offersResignation = result.offersResignation,
     )
 }
 

@@ -42,6 +42,15 @@ data class AutoAiTurnUiState(
      * 국면(세대·수순 길이)이 바뀌면 저절로 효력을 잃고, 사용자가 팝업에서 고르면([clearTimedOut]) 지운다.
      */
     val interruptedRetry: AutoAiTurnTimeout? = null,
+    /**
+     * AI가 **기권을 제안해** 사용자의 답(받아들이기 / 계속 두기)을 기다리는 국면(백로그 #213, 사용자 2026-10-07).
+     * 그 국면은 **AI가 둘 차례**다 — 받아들이면 AI가 제 차례에 기권하고(규칙상 기권은 제 차례에만 둔다), 거절하면 AI가 그대로 둔다.
+     * 표시가 맞는 동안 AI 차례를 요청하지 않는다(`buildAutoAiTurnRequestPlan`) — 사용자가 고르기 전에 AI가 두어 버리지 않게.
+     * 세대·수순 길이가 바뀌면(무르기·새 대국) 저절로 효력을 잃는다.
+     */
+    val resignationOffer: AutoAiTurnTimeout? = null,
+    /** 기권 제안에 사용자가 이미 답한 대국의 세대 — **한 판에 한 번만** 묻는다(거절한 판에서 수마다 다시 묻지 않는다). */
+    val resignationAnsweredGeneration: Long? = null,
 ) {
     fun markScheduled(): AutoAiTurnUiState =
         copy(isPending = true)
@@ -80,6 +89,28 @@ data class AutoAiTurnUiState(
             copy(failureStreak = streak)
         }
     }
+
+    /**
+     * AI가 기권을 제안한다 — [position]은 사용자가 답할 국면, 곧 **AI의 다음 차례**다. 이 대국에서 이미 제안했거나 답을 받았으면
+     * 그대로 둔다(한 판에 한 번).
+     */
+    fun offerResignation(position: AutoAiTurnTimeout): AutoAiTurnUiState =
+        if (resignationAnsweredGeneration == position.sessionGeneration || resignationOffer?.sessionGeneration == position.sessionGeneration) {
+            this
+        } else {
+            copy(resignationOffer = position)
+        }
+
+    /** 사용자가 기권 제안에 답했다 — 표시를 지우고, 이 대국([sessionGeneration])에서는 다시 묻지 않는다. */
+    fun answerResignationOffer(sessionGeneration: Long): AutoAiTurnUiState =
+        copy(resignationOffer = null, resignationAnsweredGeneration = sessionGeneration)
+
+    /** 지금 이 국면(세대·수순 길이)에서 기권 제안에 대한 사용자의 답을 기다리는 중인가. */
+    fun isAwaitingResignationChoice(
+        sessionGeneration: Long,
+        moveCount: Int,
+    ): Boolean =
+        resignationOffer == AutoAiTurnTimeout(sessionGeneration = sessionGeneration, moveCount = moveCount)
 
     /** 지금 이 국면(세대·수순 길이)에서 시간 초과 뒤 사용자의 선택을 기다리는 중인가. */
     fun isAwaitingTimeoutChoice(

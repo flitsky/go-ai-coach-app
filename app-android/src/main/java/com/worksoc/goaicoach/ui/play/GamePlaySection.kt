@@ -164,6 +164,8 @@ internal fun GamePlaySection(
     // 상태 B(시간 초과·반복 실패 뒤 선택을 기다림)에서는 도는 작업이 없다 — 와치독이 다시 걸려 한 번 더 보고하면
     // 진단 로그에 없는 멈춤이 찍힌다(#109 검수). 선택이 나면 #74의 다시 걸기가 새로 잰다.
     val liveAwaitingEngineTimeoutChoice = rememberUpdatedState(screenState.isAwaitingEngineTimeoutChoice)
+    // AI의 기권 제안에 답하는 동안도 도는 작업이 없다(backlog #213) — 와치독은 답이 난 순간부터 다시 잰다.
+    val liveAwaitingAiResignationChoice = rememberUpdatedState(screenState.isAwaitingAiResignationChoice)
     // 대국 시계가 멈춘 순간의 완료 순번(backlog #202) — 멈춘 사이 끝난 시도(백그라운드 취소)를 복귀 때 알아채려고
     // 든다. ⚠️ 차례 시작 시각을 키로 걸지 말 것 — 시계의 `resume`이 그 시각을 옮겨 여기서 든 값이 복귀 순간 사라진다.
     var watchdogCompletionSeqAtPause by remember { mutableStateOf<Int?>(null) }
@@ -192,6 +194,10 @@ internal fun GamePlaySection(
             previousTickMillis = now
             watchdogAttempt = watchdogAttempt.observe(nowMillis = now, completionSeq = liveEngineTurnWaitCompletionSeq.value)
             if (liveAwaitingEngineTimeoutChoice.value) continue
+            if (liveAwaitingAiResignationChoice.value) {
+                watchdogAttempt = watchdogAttempt.heldForTheUsersAnswer(now)
+                continue
+            }
             if (!watchdogAttempt.isReported) {
                 // 이 시도의 시작(차례 시작, 다시 건 시각, 또는 앞 시도가 끝난 순간)부터의 경과 — 시계(착수 시간)는
                 // 이것과 무관하게 차례 시작부터 잰다.

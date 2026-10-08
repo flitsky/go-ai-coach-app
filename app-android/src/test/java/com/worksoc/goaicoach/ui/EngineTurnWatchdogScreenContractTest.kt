@@ -115,6 +115,32 @@ class EngineTurnWatchdogScreenContractTest {
     }
 
     /**
+     * backlog #213 — AI의 기권 제안에 답하는 동안은 도는 엔진 작업이 없다. 와치독이 그 시간을 세면 팝업 앞에서 망설이는 사이
+     * 「엔진 응답 지연」이 겹쳐 뜨고, 「계속 두기」를 고른 순간에도 이미 한도를 넘긴 채다 — 틱마다 기준을 밀고 건너뛴다.
+     */
+    @Test
+    fun theWatchdogHoldsItsBaseWhileTheResignationOfferAwaitsAnAnswer() {
+        assertTrue(
+            "기권 제안 대기가 `rememberUpdatedState`로 살아 있지 않다 — 효과 안에서 붙잡힌 값은 바뀌지 않는다.",
+            Regex("""val\s+liveAwaitingAiResignationChoice\s*=\s*rememberUpdatedState\(\s*screenState\.isAwaitingAiResignationChoice\s*\)""")
+                .containsMatchIn(screen),
+        )
+        val observe = watchdogEffect.indexOf("watchdogAttempt.observe(")
+        val hold = watchdogEffect.indexOfOrFail(
+            Regex(
+                """if\s*\(\s*liveAwaitingAiResignationChoice\.value\s*\)\s*\{\s*""" +
+                    """watchdogAttempt\s*=\s*watchdogAttempt\.heldForTheUsersAnswer\(now\)\s*continue\s*\}""",
+            ),
+            "기권 제안에 답하는 동안 와치독이 기준을 밀며 건너뛰지 않는다 — 팝업 위에 「엔진 응답 지연」이 겹쳐 뜬다(#213).",
+        )
+        val reportedGate = watchdogEffect.indexOfOrFail(
+            Regex("""if\s*\(\s*!\s*watchdogAttempt\.isReported\s*\)"""),
+            "루프가 `watchdogAttempt.isReported`로 이 시도의 보고 여부를 보지 않는다(#109 ⓑ).",
+        )
+        assertTrue("기권 제안 건너뛰기는 `observe` 뒤, 보고 검사 앞에 있어야 한다.", hold in (observe + 1) until reportedGate)
+    }
+
+    /**
      * backlog #202 — 멈춘 사이(앱이 백그라운드) 끝난 시도를 복귀 때 알아챈다. 효과가 멈춤으로 다시 걸릴 때 그 순간의 완료
      * 순번을 들고, 복귀로 다시 걸릴 때 `resumedAfterPause`로 첫 시도를 고친 **뒤에** 루프에 들어가야 한다. 든 값을 차례
      * 시작 시각으로 키 걸면 시계의 `resume`이 그 시각을 옮겨 복귀 순간 값이 사라진다.
