@@ -93,6 +93,27 @@ class AppParityTest(unittest.TestCase):
         self.assertIn("candidate.move is Move.Play", text)
         self.assertIn("if (playLevel.selectionPolicy is MoveSelectionPolicy.BestOnly) 1 else baseLimit.candidateCount", text)
 
+    def test_lost_game_conduct(self) -> None:
+        """국면의 경계와 기권 제안·통과의 숫자 — E10 보조(`phases.py`)가 이 값으로 기보를 건다."""
+        text = source("hopeless_position")
+
+        def constant(name: str) -> float:
+            match = re.search(rf"const val {name}: (?:Double|Int) = ([0-9.]+)", text)
+            self.assertIsNotNone(match, f"{name} 상수가 없다 — 이름이 바뀌었다")
+            return float(match.group(1))
+
+        self.assertEqual(constant("MiddleStartsAt"), ap.PHASE_MIDDLE_STARTS_AT)
+        self.assertEqual(constant("LateStartsAt"), ap.PHASE_LATE_STARTS_AT)
+        self.assertEqual(constant("EndgameStartsAt"), ap.PHASE_ENDGAME_STARTS_AT)
+        self.assertEqual(constant("MiddleDeficitShare"), ap.RESIGN_MIDDLE_DEFICIT_SHARE)
+        self.assertEqual(constant("LateDeficitShare"), ap.RESIGN_LATE_DEFICIT_SHARE)
+        self.assertEqual(constant("ReadingsBeforeOffer"), ap.RESIGN_READINGS_BEFORE_OFFER)
+        self.assertEqual(constant("MaxOwnWinRate"), ap.PASS_MAX_OWN_WIN_RATE)
+        self.assertEqual(constant("LostTurnsBeforePass"), ap.PASS_LOST_TURNS)
+        # 근거는 **상대가 둔 뒤**의 형세이고, 값마다 제가 재어진 국면의 문턱을 쓴다 — 실험실도 그렇게 건다.
+        self.assertIn("state.moves[index].player != player", text)
+        self.assertIn("deficitBar(GamePhase.at(moveNumber, state.boardSize), state.boardSize)", text)
+
 
 if __name__ == "__main__":
     unittest.main()

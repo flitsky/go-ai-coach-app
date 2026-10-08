@@ -58,6 +58,16 @@ GTP_STARTUP_OVERRIDES: dict[str, str] = {
 ANALYSIS_NUM_ANALYSIS_THREADS = 1
 ANALYSIS_SEARCH_THREADS = 4
 
+# 진 판을 AI가 끝내는 법(`HopelessPosition.kt`, 백로그 #213·#221) — 국면은 수순 길이 ÷ 판의 자리 수로 가른다.
+PHASE_MIDDLE_STARTS_AT = 0.3
+PHASE_LATE_STARTS_AT = 0.6
+PHASE_ENDGAME_STARTS_AT = 0.8
+RESIGN_MIDDLE_DEFICIT_SHARE = 0.15  # 중반: 상대 착수 뒤 형세가 판의 이만큼 이상 뒤진다
+RESIGN_LATE_DEFICIT_SHARE = 0.10  # 후반
+RESIGN_READINGS_BEFORE_OFFER = 5  # 그 상태가 연속 몇 회면 기권을 제안하나
+PASS_MAX_OWN_WIN_RATE = 0.01  # 종반: 내 승률이 이 값 이하인 채
+PASS_LOST_TURNS = 2  # AI의 수 몇 번이면 통과하나
+
 # 위 값을 확인하는 앱 소스(저장소 루트 기준).
 SOURCES = {
     "play_level": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/PlayLevel.kt",
@@ -70,6 +80,7 @@ SOURCES = {
     "gtp_client": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoGtpAnalysisClient.kt",
     "parser": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoAnalysisParser.kt",
     "protocol": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoProtocolCommands.kt",
+    "hopeless_position": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/playstyle/HopelessPosition.kt",
 }
 
 
