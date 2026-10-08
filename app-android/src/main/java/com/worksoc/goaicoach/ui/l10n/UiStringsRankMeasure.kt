@@ -249,6 +249,15 @@ internal fun rankMeasureChangeMessageFor(language: UiLanguage, change: RankMeasu
                     UiLanguage.Japanese -> "勝って${change.steps}段階上がりました。"
                     UiLanguage.ChineseSimplified -> "获胜，提升${change.steps}档。"
                 }
+                // 기권한 순간의 형세는 어림값이다 — 「약」을 붙여 계가한 집 수 차이와 가른다.
+                change.byResignation -> marginText(wonBy).let { margin ->
+                    when (language) {
+                        UiLanguage.Korean -> "상대가 약 ${margin}집 뒤진 형세에서 기권해 ${change.steps}단계 올랐습니다."
+                        UiLanguage.English -> "Your opponent resigned about $margin points behind — you moved up ${stepsInEnglish(change.steps)}."
+                        UiLanguage.Japanese -> "相手が約${margin}目負けの形勢で投了し、${change.steps}段階上がりました。"
+                        UiLanguage.ChineseSimplified -> "对手在落后约${margin}目时认输，提升${change.steps}档。"
+                    }
+                }
                 else -> marginText(wonBy).let { margin ->
                     when (language) {
                         UiLanguage.Korean -> "${margin}집 차로 이겨 ${change.steps}단계 올랐습니다."

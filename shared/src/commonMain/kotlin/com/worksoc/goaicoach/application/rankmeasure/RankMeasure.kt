@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application.rankmeasure
 
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
+import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
 import com.worksoc.goaicoach.match.HumanGameType
@@ -13,6 +14,7 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.customRank
 import com.worksoc.goaicoach.shared.policy.toPlayLevelSetting
+import kotlin.math.floor
 
 /**
  * 6계층 — **기력 측정 대국**(백로그 #219): 내 기력을 알아보고, 비슷한 상대와 되풀이해 두며 배운다.
@@ -184,7 +186,13 @@ sealed interface RankMeasureChange {
      * 올랐다. 급 구간에서 왔으면 한 판의 승리가 올린 것이고([margin]이 그 판의 집 수 차이), 단 구간에서 왔으면 최근 전적이 올린 것이다.
      * @property margin 그 판을 이긴 집 수 차이 — 집 차이가 없는 승리면 `null`.
      */
-    data class Promoted(val from: KgsRank, val to: KgsRank, val margin: Double?) : RankMeasureChange {
+    data class Promoted(
+        val from: KgsRank,
+        val to: KgsRank,
+        val margin: Double?,
+        /** 상대(AI)가 기권해 이긴 판인가 — 그러면 [margin]은 계가한 집 수 차이가 아니라 **기권한 순간의 형세 점수차**다. */
+        val byResignation: Boolean = false,
+    ) : RankMeasureChange {
         /** 실제로 오른 단계 수 — 1단에서 멈췄으면 식의 값보다 작다. */
         val steps: Int get() = to.step - from.step
     }
@@ -220,12 +228,14 @@ data class RankMeasureAdjustment(
  *   연패·전적도 기력도 건드리지 않는다.
  * @param margin 이긴 집 수 차이 — 급 구간의 승급 폭을 정한다. 졌거나 집 차이가 없으면 쓰지 않는다.
  * @param userWon 사용자가 이겼는가. 무승부이거나 승자를 모르면 `null` — 아무것도 바꾸지 않는다.
+ * @param byResignation 상대가 기권해 이겼는가 — 그때 [margin]은 기권한 순간의 형세 점수차다([resignationMarginFor]).
  */
 fun adjustRankAfterResult(
     state: RankMeasureState,
     playedRank: KgsRank,
     margin: Double?,
     userWon: Boolean?,
+    byResignation: Boolean = false,
 ): RankMeasureAdjustment {
     if (userWon == null) return RankMeasureAdjustment(state)
     // 기력은 **그 기력으로 둔 판**만 옮긴다. 정상 흐름에서는 둘이 늘 같다(판을 열 때 좌석을 내 기력에 맞추고, 기력은 판을 반영할 때만
@@ -251,7 +261,7 @@ fun adjustRankAfterResult(
     if (!rank.isDan) {
         val target = minOf(rank.strongerBy(rankMeasurePromotionSteps(margin)), RankMeasureKyuPromotionCap)
         val promoted = afterWin.copy(rank = target, peakRank = maxOfNullable(afterWin.peakRank, target), recentDanResults = emptyList())
-        return RankMeasureAdjustment(promoted, RankMeasureChange.Promoted(from = rank, to = target, margin = margin))
+        return RankMeasureAdjustment(promoted, RankMeasureChange.Promoted(from = rank, to = target, margin = margin, byResignation = byResignation))
     }
 
     val recent = state.recentDanResultsWith(won = true)
@@ -273,12 +283,32 @@ private fun maxOfNullable(current: KgsRank?, candidate: KgsRank): KgsRank =
     if (current == null || candidate > current) candidate else current
 
 /**
+ * **상대가 기권한 판의 집 수 차이** — 기권한 순간의 형세 점수차(그 판의 마지막 형세 기록)를 [winner] 기준으로 돌려준다.
+ *
+ * 기권으로 끝난 판에는 계가한 집 수 차이가 없다. 그대로 두면 AI의 기권 제안(백로그 #213)을 받아들인 사람은 1단계만 오르고,
+ * 거절하고 끝까지 둔 사람은 집 수 차이만큼 오른다 — 뜻 없는 판을 끝까지 두는 쪽이 이득이 된다. 그래서 기권한 순간의 형세를 집 수
+ * 차이로 친다(스레드가 정했다 — 사용자에게 알렸다). 집 단위로 내린 값이고, 형세 기록이 없거나 그 형세가 이긴 쪽에게 한 집도 유리하지
+ * 않으면 `null`(1단계).
+ */
+fun resignationMarginFor(replay: GameReplayData?, winner: StoneColor): Double? {
+    val whiteLead = replay?.scoreSnapshots
+        ?.lastOrNull { snapshot -> snapshot.source.isNetworkEstimate }
+        ?.whiteScoreLead
+        ?: return null
+    // 형세는 어림값이라 소수는 뜻이 없다 — 집 단위로 내린다(팝업이 말하는 숫자와 승급 폭이 같은 값에서 나오게).
+    return floor(if (winner == StoneColor.White) whiteLead else -whiteLead).takeIf { it > 0.0 }
+}
+
+/**
  * 끝나서 기록된 판([entry])을 기력에 반영하고 저장한다. 기력 측정 대국이 아니거나 **이미 반영한 판**이면 아무 일도 하지 않고 `null`
  * ([RankMeasureState.lastCountedGameId]) — 여러 번 불러도 한 판은 한 번만 센다.
+ *
+ * @param replay 그 판의 다시보기 본문 — 상대가 기권한 판의 집 수 차이를 여기서 읽는다([resignationMarginFor]). 없으면 1단계로 친다.
  */
 fun runRankMeasureAdjustment(
     entry: GameHistoryEntry,
     store: RankMeasureStorePort,
+    replay: GameReplayData? = null,
 ): RankMeasureAdjustment? {
     val matchup = entry.playerSetup.rankMeasureMatchup() ?: return null
     val current = store.load()
@@ -288,8 +318,9 @@ fun runRankMeasureAdjustment(
         // 기록이 붙었다는 것은 그 판을 시작했다는 것이다 — 어떤 길로 왔든 여기서 최초 1회의 선택은 끝난다.
         state = current.started(),
         playedRank = matchup.opponentRank,
-        margin = entry.margin,
+        margin = if (entry.isResign) resignationMarginFor(replay, matchup.userColor) else entry.margin,
         userWon = userWon,
+        byResignation = entry.isResign,
     )
     val counted = adjustment.copy(state = adjustment.state.copy(lastCountedGameId = entry.id))
     store.save(counted.state)

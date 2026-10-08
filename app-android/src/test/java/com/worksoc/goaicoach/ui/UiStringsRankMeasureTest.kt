@@ -77,10 +77,11 @@ class UiStringsRankMeasureTest {
             listOfNotNull(rankMeasureChangeTitleFor(language, change), rankMeasureChangeRanksFor(language, change), rankMeasureChangeMessageFor(language, change))
         }
 
-    /** 팝업이 그리는 다섯 경우 — 급 구간 승급(집 차이 있음·없음) · 승단 · 강급 · 이미 9단. */
+    /** 팝업이 그리는 여섯 경우 — 급 구간 승급(집 차이 있음·없음·상대의 기권) · 승단 · 강급 · 이미 9단. */
     private val popupChanges: List<RankMeasureChange> = listOf(
         RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(9), margin = 61.0),
         RankMeasureChange.Promoted(from = KgsRank.kyu(5), to = KgsRank.kyu(4), margin = null),
+        RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(11), margin = 41.0, byResignation = true),
         RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = null),
         RankMeasureChange.Demoted(from = KgsRank.dan(1), to = KgsRank.kyu(1)),
         RankMeasureChange.AtTheTop,
@@ -91,7 +92,7 @@ class UiStringsRankMeasureTest {
         assertTrue("자기검증 — 한국어 문구에는 한글이 있어야 한다", everyStringIn(UiLanguage.Korean).all { it.containsHangul() })
         UiLanguage.entries.forEach { language ->
             val strings = everyStringIn(language)
-            assertEquals("$language: 문구 수가 다르다(팝업의 다섯 경우가 전부 문구를 가져야 한다)", 37, strings.size)
+            assertEquals("$language: 문구 수가 다르다(팝업의 여섯 경우가 전부 문구를 가져야 한다)", 40, strings.size)
             strings.forEach { text ->
                 assertTrue("$language 문구가 비었다", text.isNotBlank())
                 if (language != UiLanguage.Korean) assertFalse("$language: 한글이 남았다 — $text", text.containsHangul())
@@ -139,6 +140,13 @@ class UiStringsRankMeasureTest {
         val halfPoint = RankMeasureChange.Promoted(from = KgsRank.kyu(2), to = KgsRank.kyu(1), margin = 6.5)
         assertEquals("6.5집 차로 이겨 1단계 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, halfPoint))
         assertEquals("You won by 6.5 points and moved up 1 step.", rankMeasureChangeMessageFor(UiLanguage.English, halfPoint))
+
+        // 상대(AI)가 기권한 판(backlog #213) — 계가한 집 수 차이가 아니라 기권한 순간의 형세라는 것을 말한다(「약」).
+        val aiResigned = RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(11), margin = 41.0, byResignation = true)
+        assertEquals("상대가 약 41집 뒤진 형세에서 기권해 4단계 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, aiResigned))
+        assertEquals("Your opponent resigned about 41 points behind — you moved up 4 steps.", rankMeasureChangeMessageFor(UiLanguage.English, aiResigned))
+        // 형세 기록이 없는 기권승은 집 수를 말하지 않는다.
+        assertEquals("이겨서 1단계 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, aiResigned.copy(to = KgsRank.kyu(14), margin = null)))
 
         val toTwoDan = RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = null)
         assertEquals("승단!", rankMeasureChangeTitleFor(UiLanguage.Korean, toTwoDan))

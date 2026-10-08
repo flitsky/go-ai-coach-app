@@ -140,12 +140,13 @@ internal fun buildRankMeasureUiState(
         },
         countRecordedGame = { gameState ->
             val recorded = runEngineIo { GameHistoryStore(context).findRecordedGame(gameState.moves) }
-            recorded?.let { (entry, _) ->
-                runRankMeasureAdjustment(entry, store)?.let(::adopt)
+            recorded?.let { (entry, replay) ->
+                runRankMeasureAdjustment(entry, store, replay)?.let(::adopt)
             }
         },
         countLatestRecordedGame = {
-            GameHistoryStore(context).loadAll().lastOrNull()?.let { entry -> runRankMeasureAdjustment(entry, store)?.let(::adopt) }
+            val history = GameHistoryStore(context)
+            history.loadAll().lastOrNull()?.let { entry -> runRankMeasureAdjustment(entry, store, history.loadReplay(entry.id))?.let(::adopt) }
         },
         pendingChange = pendingChange,
         dismissChange = { pendingChange = null },

@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.application.rankmeasure
 
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
+import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.GameSessionSettingsState
@@ -12,6 +13,7 @@ import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -19,6 +21,8 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.toPlayLevelSetting
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -370,6 +374,62 @@ class RankMeasureTest {
         assertTrue(store.load().hasStarted)
     }
 
+    /**
+     * 상대(AI)가 기권한 판에는 계가한 집 수 차이가 없다 — **기권한 순간의 형세 점수차**를 집 수 차이로 친다(backlog #213).
+     * AI의 기권 제안을 받아들인 사람이, 거절하고 끝까지 둔 사람보다 덜 오르지 않게 하려는 것이다.
+     */
+    @Test
+    fun aWinByTheOpponentsResignationCountsTheScoreLeadAtThatMoment() {
+        val store = InMemoryRankMeasureStore(RankMeasureState(rank = KgsRank.kyu(15), hasStarted = true))
+        val aiResigned = entry(rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(15)), winner = StoneColor.Black, isResign = true)
+        val replay = GameReplayData(
+            moves = listOf(Move.Resign(StoneColor.White)),
+            scoreSnapshots = listOf(
+                ScoreSnapshot(moveNumber = 40, whiteScoreLead = -12.0, source = ScoreSnapshotSource.HumanNetworkEstimate),
+                ScoreSnapshot(moveNumber = 46, whiteScoreLead = -41.7, whiteWinRate = 0.0, source = ScoreSnapshotSource.HumanNetworkEstimate),
+            ),
+        )
+
+        val adjustment = runRankMeasureAdjustment(aiResigned, store, replay)
+
+        assertEquals(
+            RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(11), margin = 41.0, byResignation = true),
+            adjustment?.change,
+        )
+        assertEquals(KgsRank.kyu(11), store.load().rank)
+    }
+
+    /** 형세 기록이 없는 기권승은 한 단계다 — 그래도 기권으로 이긴 판이라는 것은 남는다(팝업 문구가 갈린다). */
+    @Test
+    fun aResignedWinWithoutAScoreRecordIsOneStep() {
+        val store = InMemoryRankMeasureStore(RankMeasureState(rank = KgsRank.kyu(15), hasStarted = true))
+        val aiResigned = entry(rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(15)), winner = StoneColor.Black, isResign = true)
+
+        val adjustment = runRankMeasureAdjustment(aiResigned, store)
+
+        assertEquals(
+            RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(14), margin = null, byResignation = true),
+            adjustment?.change,
+        )
+    }
+
+    @Test
+    fun theResignationMarginIsTheLastNetworkEstimateSeenFromTheWinner() {
+        fun replay(vararg snapshots: ScoreSnapshot) = GameReplayData(moves = listOf(Move.Pass(StoneColor.Black)), scoreSnapshots = snapshots.toList())
+        val whiteAheadBy30 = ScoreSnapshot(moveNumber = 50, whiteScoreLead = 30.0, source = ScoreSnapshotSource.EngineEstimate)
+
+        assertEquals(30.0, resignationMarginFor(replay(whiteAheadBy30), winner = StoneColor.White))
+        assertNull(resignationMarginFor(replay(whiteAheadBy30), winner = StoneColor.Black), "이긴 쪽이 형세로는 지고 있었다면 집 수 차이로 치지 않는다")
+        assertNull(resignationMarginFor(replay(), winner = StoneColor.White))
+        // 어림값의 소수는 버린다 — 39.6집은 39집(3단계)이지 40집(4단계)이 아니다. 한 집도 안 되면 집 수 차이로 치지 않는다.
+        assertEquals(39.0, resignationMarginFor(replay(whiteAheadBy30.copy(whiteScoreLead = 39.6)), winner = StoneColor.White))
+        assertNull(resignationMarginFor(replay(whiteAheadBy30.copy(whiteScoreLead = 0.4)), winner = StoneColor.White))
+        assertNull(resignationMarginFor(null, winner = StoneColor.White))
+        // 돌 수만 센 국소 계가는 형세가 아니다 — 그 앞의 신경망 평가를 읽는다.
+        val localCount = ScoreSnapshot(moveNumber = 52, whiteScoreLead = 3.0, source = ScoreSnapshotSource.LocalAreaEstimate)
+        assertEquals(30.0, resignationMarginFor(replay(whiteAheadBy30, localCount), winner = StoneColor.White))
+    }
+
     private val Judgement = FinalScoreJudgement(
         winner = StoneColor.White,
         margin = 3.5,
@@ -386,7 +446,7 @@ class RankMeasureTest {
 
     private fun custom(rank: KgsRank) = SidePlayerSetup(controller = SeatController.Ai, playLevel = rank.toPlayLevelSetting())
 
-    private fun entry(playerSetup: PlayerSetup, winner: StoneColor?, margin: Double? = null) = GameHistoryEntry(
+    private fun entry(playerSetup: PlayerSetup, winner: StoneColor?, margin: Double? = null, isResign: Boolean = false) = GameHistoryEntry(
         id = "game",
         playedAtMillis = 1L,
         boardSize = 19,
@@ -398,6 +458,7 @@ class RankMeasureTest {
         humanColor = null,
         winner = winner,
         margin = margin,
+        isResign = isResign,
     )
 
     private class InMemoryRankMeasureStore(private var state: RankMeasureState) : RankMeasureStorePort {
