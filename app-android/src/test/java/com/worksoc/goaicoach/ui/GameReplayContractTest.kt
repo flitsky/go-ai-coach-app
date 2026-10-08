@@ -425,16 +425,22 @@ class GameReplayContractTest {
     }
 
     /**
-     * ⚠️ **요약 바로 연다 — 누르면 큰 그래프가 열린다**(백로그 #226, 사용자 2026-10-08: *"기본은 지금 눌렀을 때 보이는 것으로, 누르면
-     * 화면의 1/3쯤으로 키우고 세부 정보도 보이고, 좌우로 스크롤하면 수순이 이동"*). 2026-09-19의 「펼친 채로 먼저」를 사용자가 뒤집었다 —
-     * 그때의 그래프는 작았고(화면 폭의 1/4), 지금 것은 판의 자리를 크게 빌려서 기본으로 두지 않는다.
+     * ⚠️ **요약 + 판 전체의 그래프로 연다 — 누르면 큰 그래프가 열린다**(백로그 #226, 사용자 2026-10-08).
+     * 기본은 요약 정보(흑 사석 · 형세·승률 · 백 사석)와 **시작부터 종국까지의 그래프**이고, 누르면 화면의 1/3쯤으로 커지며 좌우로 넘겨 수순을 옮긴다.
+     * ⚠️ 처음 구현은 기본을 **요약 바만**으로 뒀다 — 사용자가 폰에서 보고 바로잡았다(*"요약정보 + 기본 그래프 전체 요약"*). 요약 바만 남기지 말 것.
      */
     @Test
-    fun theScoreSectionStartsAsTheSummaryBarAndOpensTheBigGraphOnTap() {
+    fun theScoreSectionStartsAsTheSummaryPlusTheWholeGameGraphAndOpensTheBigGraphOnTap() {
         assertTrue(
-            "`isScoreExpanded`가 `false`로 시작하지 않는다 — 기본은 요약 바다(#226).",
+            "큰 그래프가 처음부터 열려 있다 — 기본은 요약과 판 전체의 작은 그래프다(#226).",
             replay.contains("var isScoreExpanded by remember { mutableStateOf(false) }"),
         )
+        assertTrue("기본 화면에 판 전체의 그래프(`ReplayScoreOverviewGraph`)가 없다 — 요약 바만 남았다(#226).", replay.contains("ReplayScoreOverviewGraph("))
+        assertTrue(
+            "판 전체의 그래프가 지금 수순까지만 받는다 — 시작부터 종국까지를 그려야 한다(#226).",
+            replay.substringAfter("ReplayScoreOverviewGraph(").substringBefore(")").contains("snapshots = replay.scoreSnapshots"),
+        )
+        assertTrue("기본 화면에 요약 정보(접힌 `ScoreTimelineGraph`)가 없다(#226).", replay.contains("isExpanded = false,"))
         assertTrue("펼쳤을 때 다시보기 전용의 큰 그래프(`ReplayScoreGraphPanel`)를 그리지 않는다(#226).", replay.contains("ReplayScoreGraphPanel("))
         assertTrue("큰 그래프가 수순을 옮기는 길(`onSeek`)이 이어져 있지 않다 — 넘겨도 판이 따라오지 않는다(#226).", replay.contains("onSeek = onSeek"))
         val graph = source(RepoPaths.uiFile("ReplayScoreGraph.kt").path)

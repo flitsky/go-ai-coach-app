@@ -159,9 +159,10 @@ internal fun GameReplayScreen(
     // 이어진다. 처음부터 보려면 `⏮`가 한 번이다.
     var moveNumber by remember(entry.id) { mutableIntStateOf(timeline.lastMoveNumber) }
     var showMoveNumbers by remember { mutableStateOf(false) }
-    // ⚠️ **요약 바로 연다**(백로그 #226, 사용자 2026-10-08) — 기본은 작은 요약 바(흑 사석 · 형세·승률 · 백 사석)이고,
-    // 누르면 화면의 1/3쯤 되는 큰 그래프가 세부 정보와 함께 열린다(가로로 넘기면 수순이 따라간다 — `ReplayScoreGraph.kt`).
-    // 2026-09-19에는 「펼친 채로 먼저」였다 — 그때의 그래프는 작아서 늘 펼쳐 둘 만했고, 지금 것은 판의 자리를 크게 빌린다.
+    // ⚠️ **요약 + 판 전체의 그래프로 연다**(백로그 #226, 사용자 2026-10-08) — 기본은 요약 정보(흑 사석 · 형세·승률 · 백 사석)와
+    // 시작부터 종국까지의 작은 그래프이고, 누르면 화면의 1/3쯤 되는 큰 그래프가 세부 정보와 함께 열린다(가로로 넘기면 수순이 따라간다 —
+    // `ReplayScoreGraph.kt`). 「펼친 채로 먼저」(2026-09-19 — 위치를 한눈에 훑는 것은 이 그래프의 몫이다)는 그대로다.
+    // ⚠️ 이 값은 **큰 그래프가 열려 있는가**다. 처음에는 기본을 요약 바만으로 뒀다가(스레드가 사용자의 말을 잘못 읽었다) 같은 날 바로잡았다.
     var isScoreExpanded by remember { mutableStateOf(false) }
 
     val state = timeline.stateAt(moveNumber)
@@ -536,16 +537,24 @@ private fun ReplayScoreSection(
                 onClose = { onExpandedChange(false) },
             )
         } else {
-            // 기본은 요약 바다 — 같은 컴포넌트의 접힌 모양을 그대로 쓴다(누르면 위의 큰 그래프가 열린다).
-            ScoreTimelineGraph(
-                snapshots = upToNow,
-                capturedByBlack = capturedByBlack,
-                capturedByWhite = capturedByWhite,
-                whiteWinRate = upToNow.lastOrNull()?.whiteWinRate,
-                isExpanded = false,
-                onExpandedChange = { onExpandedChange(true) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // 기본 — 요약 정보(대국 화면과 같은 컴포넌트의 접힌 모양) 아래에 판 전체의 그래프. 어느 쪽을 눌러도 위의 큰 그래프가 열린다.
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4)) {
+                ScoreTimelineGraph(
+                    snapshots = upToNow,
+                    capturedByBlack = capturedByBlack,
+                    capturedByWhite = capturedByWhite,
+                    whiteWinRate = upToNow.lastOrNull()?.whiteWinRate,
+                    isExpanded = false,
+                    onExpandedChange = { onExpandedChange(true) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                ReplayScoreOverviewGraph(
+                    snapshots = replay.scoreSnapshots,
+                    moveNumber = moveNumber,
+                    lastMoveNumber = lastMoveNumber,
+                    onOpen = { onExpandedChange(true) },
+                )
+            }
         }
     }
 }
