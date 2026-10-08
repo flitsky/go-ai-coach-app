@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -45,7 +47,10 @@ import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
+import com.worksoc.goaicoach.application.gamehistory.WinRatePeriod
+import com.worksoc.goaicoach.application.gamehistory.WinRateShortGameMaxMoveCount
 import com.worksoc.goaicoach.application.gamehistory.buildBranchedGameSnapshot
+import com.worksoc.goaicoach.application.gamehistory.gameHistoryWinRate
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
@@ -63,7 +68,13 @@ import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryReferenceLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchOverwriteMessageFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayRowBadgeFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.seatMatchupLabelWithRanksFor
+import com.worksoc.goaicoach.ui.l10n.winRateNoGamesFor
+import com.worksoc.goaicoach.ui.l10n.winRatePeriodLabelFor
+import com.worksoc.goaicoach.ui.l10n.winRateRegularGamesLabelFor
+import com.worksoc.goaicoach.ui.l10n.winRateSummaryFor
+import com.worksoc.goaicoach.ui.l10n.winRateWhatCountsFor
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.note
 import java.text.SimpleDateFormat
@@ -321,6 +332,10 @@ internal fun GameHistoryScreen(
             }
         }
 
+        // 승률(백로그 #227) — 목록 위에 붙박인다. 「10수 이하 기록 제외하기」의 체크와 무관하게 늘 같은 잣대로 센다
+        // (목록에 무엇을 보일지와 승률에 무엇을 셀지는 다른 물음이다).
+        GameHistoryWinRatePanel(entries = entries, language = strings.language)
+
         if (visibleEntries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
@@ -346,6 +361,65 @@ internal fun GameHistoryScreen(
         }
     }
 }
+
+/**
+ * **승률 요약**(백로그 #227, 사용자 피드백 2026-10-08) — 기간(최근 10판 · 최근 한 달 · 누적)을 고르면 그 기간의 전적을 보인다.
+ * 일반 대국과 기력 측정 대국을 따로 적는다. 무엇을 세는지는 `gameHistoryWinRate`가 정한다(사람 대 AI · 11수 이상 · 결과를 아는 판).
+ *
+ * ⚠️ 번들 참고 기보는 여기서 뺀다 — 사용자가 둔 판이 아니고, 그 id는 이 층만 안다.
+ * 고른 기간은 이 화면 안에서만 든다(#208의 체크박스와 같은 이유 — 셸 상태 훅 예산과 자동저장 함정).
+ */
+@Composable
+private fun GameHistoryWinRatePanel(
+    entries: List<GameHistoryEntry>,
+    language: UiLanguage,
+) {
+    var period by rememberSaveable { mutableStateOf(WinRatePeriod.LastTenGames) }
+    val rate = remember(entries, period) {
+        gameHistoryWinRate(entries.filter { it.id != ReferenceGameHistoryId }, period, System.currentTimeMillis())
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = AppSpacing.Space16)
+            .padding(bottom = AppSpacing.Space8)
+            .testTag(GameHistoryWinRateTag),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+            WinRatePeriod.entries.forEach { option ->
+                FilterChip(
+                    selected = period == option,
+                    onClick = { period = option },
+                    label = { Text(winRatePeriodLabelFor(language, option), style = MaterialTheme.typography.labelMedium) },
+                )
+            }
+        }
+        val regular = winRateSummaryFor(language, rate.regular)
+        val rankMeasure = winRateSummaryFor(language, rate.rankMeasure)
+        if (regular == null && rankMeasure == null) {
+            Text(text = winRateNoGamesFor(language), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+        }
+        regular?.let { WinRateLine(label = winRateRegularGamesLabelFor(language), summary = it) }
+        rankMeasure?.let { WinRateLine(label = rankMeasureTitleFor(language), summary = it) }
+        Text(
+            text = winRateWhatCountsFor(language, WinRateShortGameMaxMoveCount),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.secondary,
+        )
+    }
+    HorizontalDivider()
+}
+
+@Composable
+private fun WinRateLine(label: String, summary: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8), verticalAlignment = Alignment.CenterVertically) {
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+        Text(text = summary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+internal const val GameHistoryWinRateTag = "game-history-win-rate"
 
 /** 「N수 이하 기록 제외하기」의 N(백로그 #208, 사용자 2026-10-01). 이 수 **이하**인 판을 숨긴다. */
 internal const val ShortGameMaxMoveCount: Int = 10
