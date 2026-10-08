@@ -13,22 +13,35 @@ class BoardLineStyleTest {
     private val thirteen = 78f
     private val nineteen = 53f
 
-    /** 예전 값(1.5픽셀 고정)보다 어느 판에서나 굵다 — 피드백이 가리킨 것이 그것이다. */
+    /**
+     * **사용자가 폰(S23)에서 보고 정한 값**(2026-10-08) — 9줄 3픽셀, 13줄·19줄 2.4픽셀. 처음 값(4.1 · 2.8픽셀)은 「너무 굵다」였다.
+     * 예전의 1.5픽셀 고정보다는 어느 판에서나 굵다.
+     */
     @Test
-    fun theGridLinesAreThickerThanTheOldFixedHairlineOnEveryBoard() {
+    fun theGridLinesAreWhatTheUserChoseOnThePhone() {
+        assertEquals(3.0f, BoardLineStyle.gridLineWidthPx(nine, density), 0.06f)
+        assertEquals(2.4f, BoardLineStyle.gridLineWidthPx(thirteen, density), 0.02f)
+        assertEquals(2.4f, BoardLineStyle.gridLineWidthPx(nineteen, density), 0.02f)
         listOf(nine, thirteen, nineteen).forEach { spacing ->
-            assertTrue("칸 $spacing", BoardLineStyle.gridLineWidthPx(spacing, density) >= 1.5f * 1.8f)
+            assertTrue("칸 $spacing", BoardLineStyle.gridLineWidthPx(spacing, density) > 1.5f)
         }
     }
 
-    /** 칸이 넓으면 선도 굵다(비례). 칸이 좁은 19줄에서는 1dp 하한이 받친다 — 비례만으로는 0.66dp가 된다. */
+    /** 화점은 사용자가 그대로 둔 값이다 — 9줄 반지름 13픽셀, 19줄 7픽셀(S23). */
     @Test
-    fun theLineScalesWithTheCellAndNeverGoesBelowOneDp() {
-        assertEquals(118f * 0.035f, BoardLineStyle.gridLineWidthPx(nine, density), 1e-4f)
-        assertEquals(density, BoardLineStyle.gridLineWidthPx(nineteen, density), 1e-4f)
+    fun theStarPointsAreWhatTheUserKept() {
+        assertEquals(13.0f, BoardLineStyle.starPointRadiusPx(nine, density), 0.05f)
+        assertEquals(7.0f, BoardLineStyle.starPointRadiusPx(nineteen, density), 0.05f)
+    }
+
+    /** 칸이 넓으면 선도 굵다(비례). 칸이 좁은 13줄·19줄에서는 dp 하한이 받친다 — 비례만으로는 19줄이 0.47dp가 된다. */
+    @Test
+    fun theLineScalesWithTheCellAndNeverGoesBelowTheDpFloor() {
+        assertEquals(118f * BoardLineStyle.GridLineShare, BoardLineStyle.gridLineWidthPx(nine, density), 1e-4f)
+        assertEquals(BoardLineStyle.MinGridLineDp * density, BoardLineStyle.gridLineWidthPx(nineteen, density), 1e-4f)
         assertTrue(BoardLineStyle.gridLineWidthPx(nine, density) > BoardLineStyle.gridLineWidthPx(nineteen, density))
         // 밀도가 낮은 화면에서도 하한은 dp로 선다.
-        assertEquals(1f, BoardLineStyle.gridLineWidthPx(spacingPx = 20f, density = 1f), 1e-4f)
+        assertEquals(BoardLineStyle.MinGridLineDp, BoardLineStyle.gridLineWidthPx(spacingPx = 20f, density = 1f), 1e-4f)
     }
 
     /**
@@ -43,10 +56,10 @@ class BoardLineStyleTest {
 
         assertEquals(tinyCell * BoardLineStyle.MaxGridLineShare, line, 1e-4f)
         assertEquals(tinyCell * BoardLineStyle.MaxStarPointRadiusShare, star, 1e-4f)
-        assertTrue("선이 1dp보다 가늘다", line < density)
+        assertTrue("선이 하한(dp)보다 가늘다", line < BoardLineStyle.MinGridLineDp * density)
         assertTrue("화점이 돌(칸의 절반 가까이)보다 훨씬 작다", star < tinyCell * 0.2f)
         // 대국 화면의 19줄(칸 약 19dp)에서는 하한이 그대로 선다.
-        assertEquals(density, BoardLineStyle.gridLineWidthPx(53f, density), 1e-4f)
+        assertEquals(BoardLineStyle.MinGridLineDp * density, BoardLineStyle.gridLineWidthPx(53f, density), 1e-4f)
         assertEquals(2.5f * density, BoardLineStyle.starPointRadiusPx(53f, density), 1e-4f)
     }
 

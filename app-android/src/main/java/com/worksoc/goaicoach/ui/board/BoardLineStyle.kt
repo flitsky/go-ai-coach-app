@@ -10,14 +10,16 @@ package com.worksoc.goaicoach.ui.board
  * ⚠️ **dp 하한은 칸이 아주 좁은 판에서는 물러선다**([MaxGridLineShare] · [MaxStarPointRadiusShare]). 같은 그리기를 홈 메뉴 카드의
  * 작은 판(68dp)과 대국 설정의 미리보기 판도 쓴다 — 거기서 1dp 선·2.5dp 화점을 고집하면 칸의 1/7이 선이고 화점이 돌만 해진다.
  *
- * 값은 스레드가 정했다(사용자에게 알렸다 — 바꿀 때는 이 숫자들만 고친다). 실물 바둑판은 선이 칸의 약 4.5%, 화점 지름이 약 18%다.
+ * **선의 굵기는 사용자가 폰(S23)에서 보고 정했다**(2026-10-08): 9줄 3픽셀 · 13줄·19줄 2.4픽셀 — 처음 값(칸의 3.5% · 하한 1dp → 4.1 · 2.8픽셀)은
+ * *"너무 굵다"*. 그 세 값을 한 식으로 낸 것이 아래의 2.5% · 하한 0.85dp다(판마다 따로 적지 않는다 — 판 크기·화면이 달라도 같은 식).
+ * 화점(9줄 13픽셀 · 19줄 7픽셀)은 처음 값 그대로 두었다. 테두리 비율은 스레드가 정했다.
  */
 internal object BoardLineStyle {
     /** 격자선의 굵기 ÷ 칸 간격. */
-    const val GridLineShare: Float = 0.035f
+    const val GridLineShare: Float = 0.025f
 
     /** 격자선의 굵기 하한(dp) — 19줄처럼 칸이 좁아도 이보다 가늘어지지 않는다. */
-    const val MinGridLineDp: Float = 1f
+    const val MinGridLineDp: Float = 0.85f
 
     /** 그 하한이 넘지 못하는 선 — 칸 간격의 이만큼. 아주 작은 판(메뉴 카드의 그림)에서는 하한보다 이것이 먼저다. */
     const val MaxGridLineShare: Float = 0.08f
