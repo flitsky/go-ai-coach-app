@@ -10,8 +10,12 @@
 
 > ## 📍 **1.2.0 번들이 나와 있다 (2026-10-08) — 인터널 트랙 테스트 대기** · 프로덕션은 1.1.0(사용자 확인 2026-10-08)
 >
-> `dist/go-ai-coach-release.aab` — **versionCode 10200 · versionName 1.2.0 · 204MB**(213,957,332바이트, sha256 `7ea29495…c8851d923`,
+> `dist/go-ai-coach-release.aab` — **versionCode 10200 · versionName 1.2.0 · 204MB**(213,957,322바이트, sha256 `29f0bfc41d565ec7ecfb5190d843b2d2deb732ce91d6cc8aa675f39c7b205c62`,
 > `ANDROID_SERIAL=<기기> make bundle-aab VERSION=1.2.0` — ⚠️ 기기가 둘 이상 연결돼 있으면 `doctor`가 대상을 고르라며 멈춘다).
+> ⚠️ **같은 날 17:17에 다시 만든 것이다** — 첫 번들(sha256 `7ea29495…`) 뒤에 종국의 「무승부」 깜빡임을 고쳤고(`f25b4ed8`), 인터널 트랙에 올리기 전이라 **같은 번호로** 다시 만들었다(사용자 지시).
+> 같은 번호로는 `make bundle-aab`이 안 된다(`bump-version`이 더 큰 번호만 통과시킨다) — 그 단계만 빼고 같은 순서로 돌린다:
+> `ANDROID_SERIAL=<기기> make doctor verify-admob-keys ensure-debug-engine prepare-friend-assets && ./gradlew :app-android:bundleRelease` → `app-android/build/outputs/bundle/release/app-android-release.aab`을 `dist/`로 복사.
+> ⚠️ **트랙에 한 번이라도 올린 뒤에는 이 길을 쓰지 않는다** — 그때는 번호를 올린다(`VERSION=1.2.1`).
 > **두 모델을 실은 첫 번들이다**(#215): `assets/katago/model.bin` 105.5MB + `human.bin` 107.2MB — 1.1.0의 109MB에서 약 두 배.
 > ⚠️ **Play Console에 올린 뒤 「받는 크기」를 여기 적을 것** — 기기에 내려가는 크기는 콘솔만 안다. 200MB를 넘으면 모바일 데이터로 설치할 때 안내 창이 뜬다(막지는 않는다).
 > 확인한 것: 서명됨(`jar verified`) · 실 AdMob 앱 ID 있음 · 구글 테스트 ID 0건 · 네이티브 5개 전부 16KB 정렬 · arm64-v8a 단일 ABI.
