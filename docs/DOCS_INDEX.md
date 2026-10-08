@@ -40,7 +40,7 @@
 | `docs/engine/` | 엔진 **딥다이브 + 검증 실험 리뷰 + 재현 케이스** | 정책은 항상 최신, 실험 리뷰는 근거 원본으로 유지 | "엔진 딥다이브·검증" |
 | `work/` (저장소 **루트**, `docs/`의 형제 폴더) | **작업 축** — 계획·이력·방법론·자산. 제품이 무엇인가(`spec/`)나 엔진이 어떻게 동작하는가(`engine/`)와 달리 **어떻게 일해 왔고 일할 것인가**와 그 산출물을 담는다. ⚠️ **2026-09-13에 `docs/work/`에서 저장소 최상위로 승격했다** — `docs/`는 순수 제품/엔진 문서만 관리하고, 앱 고도화 일감·자산은 전부 `work/`가 관리한다는 경계를 명확히 하기 위함(사용자 결정). 아래 "루트 자산 폴더의 흡수" 절 참고 | 아래 **여섯**으로 나뉜다 | "작업 축" |
 | `work/plans/` | 기능별 **마스터플랜** — 출시 실행, 수익화, 계정/로그인, UX 개편. 2026-09-06까지 저장소 루트의 전용 폴더에 흩어져 있던 것을 모았다 | **완결일이 없다** — 그 기능이 살아 있는 동안 계속 덮어써진다. 시간축으로 정렬되는 `roadmap/`과 그 점에서 갈린다 | "기능별 마스터플랜" |
-| `work/roadmap/` | 앱 **고도화 계획과 진행 이력** + 진행 중인 리팩토링 로드맵 | 파일명이 `시작일-완결일_이름.md`라 **이름순 정렬이 곧 시간순**이다. 폴더 `work/roadmap/README.md`가 규칙과 현재 목록을 담는다 | "앱 고도화 트랙" |
+| `work/roadmap/` | **활성 백로그 한 파일**(맨 위 — 지금 `261008-_ACTIVE_BACKLOG.md`) + 그 아래 `archive/`(끝난 세대·보류 목록·아이디어 풀) | 2026-10-08 사용자 결정 — 맨 위에는 활성 백로그만 둔다. 파일명이 `시작일-완결일_이름.md`라 **이름순 정렬이 곧 시간순**이다. `work/roadmap/archive/README.md`가 규칙과 전수 목록을 담는다 | "앱 고도화 트랙" |
 | `work/history/` | 프로젝트 대화·작업 히스토리, 종료된 트랙, 초기 리서치, 마켓 등록 기록 | 계속 append. **레거시 보관처** | "프로젝트 히스토리" |
 | `work/knowhow-docs/` | AI 스레드 협업 방법론(코드베이스 비종속 이식용 가이드) | 표준 문서, 새 프로젝트로 복사해 이식 | "작업 방법론 문서" |
 | `work/artwork/` | 봇 캐릭터 **원화**(768px PNG 5장, 2026-09-06 사용자 제공) | 자산 원본. 앱에 들어가는 것은 여기서 `scripts/make-bot-avatars.py`가 뽑은 투명 WebP다 — 원화를 갈면 그 스크립트를 다시 돌린다 | "기능별 마스터플랜" |
@@ -173,7 +173,7 @@
 | `PREMIUM_MODE.md` | 프리미엄/수익화 모드 마스터플랜(광고 1시간 활성화, 영구 결제). Step별 진행 로그가 계속 append됨 |
 | `LOGIN_AND_ACCOUNT_SYSTEM.md` | 최초 실행 온보딩 + 계정 시스템(Firebase 익명/Google/이메일 인증) 마스터플랜. [ARCHITECTURE.md](./ARCHITECTURE.md) 6계층(세션/연속성)의 실행 문서 |
 | `UX_IMPROVEMENT.md` | UX 개편(보드 스케일링, 패널, 직접 착수 흐름) 마스터플랜 **v1.0.0 와이어프레임은 이 문서 부록 A**로 합쳐졌다(2026-09-06) |
-| `REMOTE_ENGINE_AND_LAYERING.md` | 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵. 2026-09-23에 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`에서 **개명·이동**했다 — Stage F-2가 사용자 승인 대기라 **완결일을 적을 수 없어** 기능축이 맞다. ⚠️ 계층 정렬 축(Stage A~C)의 실측 정본은 `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다. Stage F 전용 킥오프는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` |
+| `REMOTE_ENGINE_AND_LAYERING.md` | 원격 엔진(Stage D/E)·물리적 분산(Stage F, DePIN) 로드맵. 2026-09-23에 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`에서 **개명·이동**했다 — Stage F-2가 사용자 승인 대기라 **완결일을 적을 수 없어** 기능축이 맞다. ⚠️ 계층 정렬 축(Stage A~C)의 실측 정본은 `work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다. Stage F 전용 킥오프는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` |
 
 ⚠️ **`PREMIUM_MODE.md`·`LOGIN_AND_ACCOUNT_SYSTEM.md`·`UX_IMPROVEMENT.md` 셋은 2026-09-06 조사에서
 **사실상 완결(갱신 정지)** 로 확인됐고, `UX_IMPROVEMENT.md`는 본문이 현재 화면과 어긋난다
@@ -194,21 +194,21 @@
 
 ## 앱 고도화 트랙과 초기 리서치 (`work/roadmap/`, `work/history/`)
 
-### `work/roadmap/` — 목록의 정본은 그 폴더의 `README.md`다
+### `work/roadmap/` — 맨 위에는 활성 백로그 하나, 나머지는 `archive/` (목록의 정본은 `work/roadmap/archive/README.md`)
 
 ⚠️ **이 인덱스는 roadmap 문서를 하나씩 등재하지 않는다**(2026-09-23 결정). 같은 표를 여기와
-`work/roadmap/README.md` 두 곳에서 손으로 유지하던 기간에 **이쪽이 드리프트했다** — 신설 문서가
+roadmap 폴더의 `README.md`(지금은 `work/roadmap/archive/README.md`) 두 곳에서 손으로 유지하던 기간에 **이쪽이 드리프트했다** — 신설 문서가
 빠지고, 개명·이동된 문서의 옛 이름이 남았다. 갱신 지점을 하나로 줄여 그 재발 표면을 없앴다.
 
-- **전수 목록과 각 문서의 성격** → `work/roadmap/README.md` 「지금 있는 문서」 표
-- **새 스레드의 진입점** → `work/roadmap/260930-_ACTIVE_BACKLOG.md`
+- **전수 목록과 각 문서의 성격** → `work/roadmap/archive/README.md` 「지금 있는 문서」 표
+- **새 스레드의 진입점** → `work/roadmap/261008-_ACTIVE_BACKLOG.md` — 그 폴더 맨 위의 **유일한 파일**이다(2026-10-08 사용자 결정: 끝난 세대·보류 목록·아이디어 풀은 전부 `work/roadmap/archive/`로)
   (`HANDOVER.md` §0의 고정 프롬프트가 가리키는 파일이다)
 - **파일 이름 규칙** `시작일-완결일_이름.md` — 이름순 정렬이 곧 시간순이고,
   완결일 자리가 비어 있으면(`260923-_`) 진행 중이라는 뜻이다. 규칙 원문도 그 `README.md`에 있다
 
 ⚠️ **그래도 "반드시 등재한다"는 운영 원칙은 살아 있다** — 등재처가 이 인덱스에서
-`work/roadmap/README.md`로 옮겨졌을 뿐이다. 그 폴더에 새 문서를 만들면 **그 자리에서** 그
-`README.md`의 표에 한 줄 넣는다. 2026-09-23에 신설된 아키텍처 진단서가 하루도 안 돼 양쪽 어디에도
+roadmap 폴더의 `README.md`(지금은 `work/roadmap/archive/README.md`)로 옮겨졌을 뿐이다. 세대를 닫거나 문서를 넣으면 **그 자리에서** 그
+`README.md`의 표에 한 줄 넣는다(새 문서는 만들기 전에 묻는다 — 활성 백로그의 규칙 6). 2026-09-23에 신설된 아키텍처 진단서가 하루도 안 돼 양쪽 어디에도
 없었던 것이 이 규칙이 필요한 이유다.
 
 ### `work/history/` — 초기 리서치
@@ -410,13 +410,13 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | 옛 이름 (`docs/refactoring/` 시절) | 지금 어디에 | 왜 그쪽인가 |
 | --- | --- | --- |
 | `LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md` | `work/plans/REMOTE_ENGINE_AND_LAYERING.md` (개명·이동) | Stage F-2(피어 신뢰·정산)가 사용자 승인 대기라 **완결일을 적을 수 없다** → 시간축(`roadmap/`)이 아니라 기능축(`plans/`) |
-| `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` | `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` (개명) | 날짜 접두사가 없어 폴더의 **이름순 = 시간순** 정렬을 혼자 깨고 있었다 |
+| `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md` | `work/roadmap/archive/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` (개명) | 날짜 접두사가 없어 폴더의 **이름순 = 시간순** 정렬을 혼자 깨고 있었다 |
 
 ⚠️ **두 문서 다 "착수 전"이 아니다**(2026-09-23 기준). MQ 킥오프의 6절 파이썬 프로토타입은
 2026-08-29에 완료돼 `main`에 들어와 있고(`engine-lab/remote/mq-prototype/`), 남은 것은
 **앱 이식**(개발자 토글 UI, `EngineCoreApiFactory`에 새 transport 추가)뿐이며 그것이 별도 승인
 대기다. 계층 정렬 축(Stage A~C)의 실측 정본은
-`work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다.
+`work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`로 넘어갔다.
 
 ## 엔진 딥다이브·검증 (`docs/engine/`)
 

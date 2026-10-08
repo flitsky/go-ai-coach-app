@@ -13,8 +13,8 @@
 
 1. `docs/ARCHITECTURE.md` — **원칙**. 7계층의 정의와 그 이유. 앱 비종속이라 코드 이동과 무관하게 유효하다.
 2. `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md`(**이 문서**) — **정본 매핑**. *"지금 무엇이 어디 있는가"* 와 *"물리 분리까지 무엇이 남았는가"*. 코드가 움직이면 여기가 따라 움직인다.
-3. `work/plans/REMOTE_ENGINE_AND_LAYERING.md` — **실행 Stage 로그**. Stage A~E의 착수·완료 기록이 시간 순으로 쌓인다(Stage F는 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`로 분리 — 이 파일 자체도 2026-09-23에 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`에서 개명됐다). ⚠️ **2026-09-23에 개명·이동했다** — 옛 이름 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`로 찾으면 없다. 계층 정렬(Stage A~C)의 정본은 아래 4번으로 넘어갔고, 그 문서에 살아 있는 축은 원격 엔진(Stage D~F)이다.
-4. `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **2026-09-23 실측 기록·처방·함정 A~J**. *"그날 재어 보니 이랬다"* 를 남기는 문서라 **본문은 그 시점 그대로 두고 갱신하지 않는다.** 실측 결론만 이 문서로 흡수한다. 함정 A~J는 `docs/spec/PITFALLS.md`에 **67~76번으로 편입**됐고 번호 쪽이 정본이다.
+3. `work/plans/REMOTE_ENGINE_AND_LAYERING.md` — **실행 Stage 로그**. Stage A~E의 착수·완료 기록이 시간 순으로 쌓인다(Stage F는 `work/roadmap/archive/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`로 분리 — 이 파일 자체도 2026-09-23에 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`에서 개명됐다). ⚠️ **2026-09-23에 개명·이동했다** — 옛 이름 `work/roadmap/LAYERED_ARCHITECTURE_REFACTORING_PLAN_260803_1500.md`로 찾으면 없다. 계층 정렬(Stage A~C)의 정본은 아래 4번으로 넘어갔고, 그 문서에 살아 있는 축은 원격 엔진(Stage D~F)이다.
+4. `work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **2026-09-23 실측 기록·처방·함정 A~J**. *"그날 재어 보니 이랬다"* 를 남기는 문서라 **본문은 그 시점 그대로 두고 갱신하지 않는다.** 실측 결론만 이 문서로 흡수한다. 함정 A~J는 `docs/spec/PITFALLS.md`에 **67~76번으로 편입**됐고 번호 쪽이 정본이다.
 
 ⚠️ **넷이 서로 다른 폴더에 있다**(`docs/`·`docs/spec/`·`work/plans/`·`work/roadmap/`). 파일명만으로는 못 찾는 경우가 있으니 위 경로 그대로 연다.
 
@@ -64,7 +64,7 @@
 
 **재편 여부**: 기존 2계층(Engine Core API Domain, 계약 정의만)에 기존 4계층(Middleware/Cache Domain)의 **전송** 절반(원격 게이트웨이/트랜스포트)을 합쳤다. "계약을 정의하는 것"과 "그 계약을 실제로 어떻게 도달시키는가(로컬 stdio냐 원격 HTTP냐)"가 개념적으로 같은 책임이라고 보기 때문이다. **260804 정리**: `EngineCoreApi`의 로컬/원격 구현체를 전부 `engine-android` 모듈로 물리적으로 모았다(그 전엔 원격 구현체가 app-android/middleware에 있었음) — app-android(3~7계층) 작업 시 엔진 내부 구현을 아예 안 봐도 되도록, 그리고 향후 원격/DePIN 확장의 물리적 근간이 되도록. 이 이동을 가능케 하려고 `RemotePositionAnalysisTransport`/`Request`/`Response`(전부 `:shared`-safe 타입만 사용)도 `:shared`로 옮겼다 — app-android(Gateway)와 engine-android(Http 구현체)가 순환 의존 없이 같은 계약을 공유하기 위함.
 
-**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3 — refactor backlog #110부터 그 조립은 `GoCoachProcessRuntime`이 한다) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`engine-lab/remote/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `work/roadmap/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
+**핵심 갭(해소됨, 260803 Stage D)**: `KataGoProcessEngineAdapter`(로컬)와 `RemoteEngineCoreApiAdapter`(원격)가 이제 `EngineCoreApi` 전체에 대해 대등한 계약을 만족한다(계약 테스트로 검증). 3계층의 후보 선택/신뢰도 판단(`selectRemoteEngineCandidate`)도 260804 Stage E-1/E-2에서 마련됐다 — 아래 3계층 절 참고. **260818 갱신**: 이 원격 경로는 이제 `MainActivity`에 `BuildConfig.DEBUG` 한정으로 배선돼 있다(Stage E-3 — refactor backlog #110부터 그 조립은 `GoCoachProcessRuntime`이 한다) — `local.properties`의 `debug.remoteEngineUrl`을 맥북 참조 서버(`engine-lab/remote/run-katago-remote-analysis-server.py`)로 가리키면 실제 대국이 그 서버를 왕복한다(에뮬레이터 e2e 검증 완료). 기본값은 꺼짐이며, 앱 시작 시 한 번만 원격/로컬을 고르고 런타임 실패를 감지해 되돌리지 않는 한계가 남아 있다. 그 재설계와 MQ 전송 전환은 `work/roadmap/archive/260818-_REMOTE_ENGINE_MQ_TRANSPORT.md`가 이어받았다 — Stage F(실제 물리 분산) 영역이라 앱 이식은 여전히 별도 승인 필요.
 
 ### 3계층 — Extended API (엔진 서비스)
 
@@ -95,7 +95,7 @@
 - `shared/.../application/premium/port/PremiumStatePorts.kt`·`PurchasePort.kt`·`AdRewardPort.kt`(α: 순수 포트) ↔ `app-android/.../persistence/PremiumStateStore.kt`(SharedPreferences 어댑터), `app-android/.../platform/AndroidBillingClient.kt` 등 SDK 어댑터
 - `app-android/.../platform/AndroidPlatformPorts.kt` — 가벼운 플랫폼 포트(클립보드, 토스트) 공용 파일
 - **`app-android/src/main/java/com/worksoc/goaicoach/persistence/`(2026-09-23 기준 23개 파일)** — **기기 영속 저장**. `GameSessionStore.kt`·`GameHistoryStore.kt`·`UserPreferencesStore.kt`·`AttendanceStore.kt`·`BotCollectionStore.kt` 등. 전부 `org.json`/`Context`/`java.io.File`에 결합된 어댑터라 그대로 `:shared`로 옮길 수 있는 파일이 0개다.
-  ⚠️ **2026-09-23에 4계층 정의에 편입했다.** 그 전까지 이 23개 파일은 **어느 계층에도 배정돼 있지 않았고**, 매핑에 없는 패키지에는 계층 규칙이 적용되지 않는다 — 즉 사각지대였다. 편입 근거는 `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §3("4계층에 기기 영속 저장을 포함한다").
+  ⚠️ **2026-09-23에 4계층 정의에 편입했다.** 그 전까지 이 23개 파일은 **어느 계층에도 배정돼 있지 않았고**, 매핑에 없는 패키지에는 계층 규칙이 적용되지 않는다 — 즉 사각지대였다. 편입 근거는 `work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §3("4계층에 기기 영속 저장을 포함한다").
 - **`shared/.../shared/vision/BoardVisionModels.kt`(α: 순수 포트/모델 — `BoardVisionScannerPort`, `BoardCornerPoints`, `DetectedBoard`) ↔ `app-android/src/main/java/com/worksoc/goaicoach/vision/`(3개 파일: `AndroidBoardVisionScanner.kt`·`AndroidBitmapPerspectiveTransformer.kt`·`GridStoneDetector.kt`, `android.graphics.Bitmap` 어댑터)** — 다른 4계층 항목과 **정확히 같은 포트/어댑터 짝**이다. 2026-09-23 매핑 편입(위 `persistence/`와 같은 이유).
 
 **재편 여부**: 기존 모델에는 이 계층이 없었고 "포트/어댑터 분리 원칙"이라는 (구)4계층 문서의 부칙으로만 존재했다. 2026-07-30에 3계층과 대등한 정식 서비스 계층으로 승격했고, **2026-09-23에 정의를 "외부 SDK 연동 + 기기 영속 저장"으로 확장**했다 — 둘 다 "앱 밖의 무언가(SDK든 파일시스템이든)에 닿는 어댑터"라는 같은 성격이고, 분리해 두면 persistence가 모델 밖에 떠 있게 되기 때문이다(자세한 논거는 `docs/ARCHITECTURE.md` 4계층 절과 진단서 §3).
@@ -223,7 +223,7 @@
 - **`application/` 안에 17개 패키지 강결합 사이클(SCC)이 있다**(2026-09-23 실측, Tarjan). `analysis, autoai, debugreport, diagnostic, endgame, engine, engine.operation, humanmove, preferences, runtime, savedgame, score, session, startgame, topmoves, undo` + `middleware`. **3계층으로 선언된 `application/engine`과 5계층으로 선언된 `application/session`이 같은 사이클 안에 있다** — 사이클 안에서는 어느 쪽이 상위인지 정의되지 않으므로, 이 구간에 대해 7계층 서사는 참도 거짓도 아니고 **성립하지 않는다.**
   ✅ 2026-09-28(refactor backlog #49): 사이클이 0이 된 뒤(`#32`) **사이클 아래쪽**의 두 모듈(`:core:domain`·`:core:enginecontract`)만 뗐다 — 아래 경고가 말하는 `application/` 안쪽 분리가 아니다. `application/` 안은 여전히 한 모듈이다.
   ⚠️ **그래서 지금 "모듈 분리"를 제안하면 안 된다.** `application/engine`만 떼어내는 순간 session·score·match·runtime·endgame이 딸려오고, 그것들이 다시 engine을 참조해 **Gradle 순환 의존으로 빌드가 멈춘다. 사이클을 먼저 끊지 않은 모듈화는 컴파일에서 죽는다.** 모듈 경계는 이 문제를 **원리적으로 보지 못한다**(목표 그래프에서 17패키지가 전부 한 모듈 안에 들어가기 때문).
-  ⚠️ 위 두 줄은 **2026-09-23 실측값**이고, 엣지 추출·SCC 계산 **방법과 원자료는 `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §1에 있다.** 수치가 의심스러우면 거기 적힌 방법으로 다시 잰다 — 재생산 절차를 이 문서에 복사하지 않는다(낡으면 두 곳이 어긋난다).
+  ⚠️ 위 두 줄은 **2026-09-23 실측값**이고, 엣지 추출·SCC 계산 **방법과 원자료는 `work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §1에 있다.** 수치가 의심스러우면 거기 적힌 방법으로 다시 잰다 — 재생산 절차를 이 문서에 복사하지 않는다(낡으면 두 곳이 어긋난다).
 - 4계층(외부 연동)이 포트(α)만 있고 안정화 서비스 본체가 얇다.
 - 6계층(세션/연속성)이 로그인·과금·보유(출석·소모품·캐릭터) 각자의 필요만 채우고 있고, 범용 개념(게스트→실계정 승격·다중 기기 정책)이 없다.
 - androidTest(Robolectric/계측) 커버리지가 기본 검증 경로에 없다(`make test`에 안 묶여 있음 — 의도적, M-04 제약). 컴파일+JVM 단위 테스트가 기본 검증이다. **260816**: `AppLaunchSmokeTest.kt`(실제 `MainActivity`→`createEngineBootstrap`→`GoCoachApp` 경로)가 `@Ignore` 스켈레톤에서 활성 테스트로 전환됐다. **260817**: `SavedSessionPromptSmokeTest.kt` 신설로 "saved-session-prompt" 경로도 완료. 더 넓은 이벤트 디스패치 커버리지만 여전히 열려 있다.
@@ -232,7 +232,7 @@
 
 우선순위 순서가 아니라 계층별로 정리한 것이며, 착수 순서는 별도 착수 계획서에서 정한다.
 
-⚠️ **착수 계획서는 `work/roadmap/`에 `시작일-완결일_이름.md` 형태로 둔다**(완결 전에는 뒤를 비운다 — 예: `260930-_ACTIVE_BACKLOG.md`, 완결 후 예: `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md`). 2026-07-30판이 지시하던 *"`refactoring/`에 `YYMMDD HHhMMm` 타임스탬프 관례로 추가"* 는 **따르면 안 된다** — `docs/refactoring/` 폴더는 2026-08-17에 삭제됐고 `docs/DOCS_INDEX.md`가 **"되살리지 말 것"** 으로 못박았다. 시분 타임스탬프 관례도 그때 함께 폐기됐다.
+⚠️ **착수 계획서는 `work/roadmap/`에 `시작일-완결일_이름.md` 형태로 둔다**(완결 전에는 뒤를 비운다 — 예: `261008-_ACTIVE_BACKLOG.md`, 완결 후 예: `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md`). 2026-10-08부터 그 폴더의 맨 위에는 활성 백로그 하나만 두고, 완결·보류 문서는 `work/roadmap/archive/`에 둔다. 2026-07-30판이 지시하던 *"`refactoring/`에 `YYMMDD HHhMMm` 타임스탬프 관례로 추가"* 는 **따르면 안 된다** — `docs/refactoring/` 폴더는 2026-08-17에 삭제됐고 `docs/DOCS_INDEX.md`가 **"되살리지 말 것"** 으로 못박았다. 시분 타임스탬프 관례도 그때 함께 폐기됐다.
 
 1. ~~**2계층 — 로컬/원격 계약 대등화**~~ — 완료(260803 Stage D, 260804 물리적 모듈 통합). `RemoteEngineCoreApiAdapter`가 `EngineCoreApi` 전체를 구현하고, 로컬(`KataGoProcessEngineAdapter`)과 실패/타임아웃/재시도 신뢰도가 동등함을 계약 테스트로 검증했으며, 둘 다 `engine-android` 모듈에 물리적으로 함께 있다.
 2. ~~**3계층 — `RemoteEngineSessionClient` 도입**~~ — 최소 형태 완료(260804 Stage E-1/E-2). 여러 원격/피어 후보 중 선택·신뢰도 판단을 흡수하는 자리(`selectRemoteEngineCandidate`)는 마련됐지만, 지금은 후보가 1개뿐이라 판단이 얕다. 후보가 실제로 여러 개가 되는 시점(DePIN 방향)에 응답시간/성공률 비교, "피어 평판/정산 기록"의 자리를 채워야 한다.
@@ -250,13 +250,13 @@
      - **재발 방지**: `LayeringContractTest.sharedCommonMainAvoidsImplicitlyImportedJvmApis` 신설 — import 문이 아니라 `System.`/`System::`/`Thread.`/`Runtime.`/`synchronized(` **이름 자체**를 `shared/commonMain` 전체에서 막는다. 기본 테스트 루프에 포함되므로 iOS 타깃을 켜지 않아도 걸린다.
 6. ~~**6계층 — 기능 엔타이틀먼트 정책 도입**~~ — 완료(260814). `application/premium/state/PremiumState.kt`의 `isUndoClaimed: Boolean`을 `claimedFeatures: Set<FeatureId>`로 일반화하고(`persistence/PremiumStateStore.kt`에 구버전 불리언 하위호환 마이그레이션 포함), `application/premium/state/FeatureAccessPolicy.kt`를 신설해 `ui/play/GamePlaySection.kt`(형세보기/추천수/무르기)·`ui/setup/KaTrainUxPanels.kt`(착수평가)에 각자 하드코딩돼 있던 3곳의 판정을 이 함수 하나로 통합했다. **의도적으로 남겨둔 것**: 클레임 전용 다이얼로그(`ui/play/GamePlaySection.kt`의 `showUndoClaimDialog`)를 `PremiumUpsellDialog`에 `Claim` 선택지로 통합하는 UI 단순화는 이번 범위에서 제외 — 클레임 가능 기능이 아직 무르기 하나뿐이라 지금 합치는 건 과설계로 판단, 두 번째 클레임형 기능이 생기면 재검토.
 7. **6계층 — 세션/연속성 공식화**: `work/plans/LOGIN_AND_ACCOUNT_SYSTEM.md` Step 4(실계정 승격, Firestore 동기화)를 이 계층의 정식 구현으로 진행 — **단, 익명 로그인 자체가 2026-08-05에 영구 폐기 결정됐으므로("재설치마다 허수 계정이 쌓이는 문제를 이전 앱에서 실제로 겪음") 그 문서의 "익명→실계정 승격" 경로 자체가 성립하지 않는다. 이 항목은 착수 전에 목표를 다시 정의해야 한다** — 예를 들어 "게스트(로컬 ID)→실계정 승격"처럼 익명 인증을 전제하지 않는 형태로. 기기 식별자 기반 다중 기기 정책도 이 재정의와 함께 결정.
-8. **계층 강제 수단을 문자열 스캔에서 컴파일러 쪽으로 옮기기**: 위 「알려진 갭」의 세 항목(죽은 안전망, import 방향 위반 730건, 17패키지 SCC)이 같은 뿌리를 가리킨다 — 규칙이 소스 텍스트를 훑는 형태라 코드보다 빨리 낡는다. 처방(패키지 FQN으로 계층을 드러내기 → PSI 기반 규칙 → 최후에 모듈)과 그 순서·함정은 `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §3·§5에 있다. **코드가 실제로 옮겨지기 전까지 테스트를 먼저 조이지 않는다** — 아직 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
+8. **계층 강제 수단을 문자열 스캔에서 컴파일러 쪽으로 옮기기**: 위 「알려진 갭」의 세 항목(죽은 안전망, import 방향 위반 730건, 17패키지 SCC)이 같은 뿌리를 가리킨다 — 규칙이 소스 텍스트를 훑는 형태라 코드보다 빨리 낡는다. 처방(패키지 FQN으로 계층을 드러내기 → PSI 기반 규칙 → 최후에 모듈)과 그 순서·함정은 `work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` §3·§5에 있다. **코드가 실제로 옮겨지기 전까지 테스트를 먼저 조이지 않는다** — 아직 분리되지 않은 것을 분리된 것처럼 강제하면 오탐만 늘어난다.
 9. ~~**문서 정리 후속 작업**~~ — **완료(260817)**. `docs/refactoring/`(리팩토링 축이 이미 종료됨)과 `docs/archive/` 전체(55개 파일, 1.2MB)를 저장소에서 제거했다. "삭제 대신 보관" 원칙을 뒤집는 결정이라 `docs/DOCS_INDEX.md` "문서 보존 정책" 절에 사유와 복원 방법을 기록했다. 유일한 예외는 실측 데이터로 계속 인용되던 `ENGINE_STRENGTH_RESEARCH.md`로, `docs/engine/`로 이동 보존했다.
 
 ## 관련 문서
 
 - 레이어 원칙 자체(앱 비종속): `docs/ARCHITECTURE.md`
-- 2026-09-23 실측 기록·처방·함정 A~J: `work/roadmap/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **봉인 문서다**(그 시점 기록). 실측 결론은 이 문서가 흡수하되 그쪽 본문은 갱신하지 않는다.
+- 2026-09-23 실측 기록·처방·함정 A~J: `work/roadmap/archive/260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **봉인 문서다**(그 시점 기록). 실측 결론은 이 문서가 흡수하되 그쪽 본문은 갱신하지 않는다.
 - 엔진 탐색 방식·레벨 정책·캐시 운영 상세: `docs/ENGINE.md`
 - 프리미엄/결제 로드맵: `work/plans/PREMIUM_MODE.md`
 - 인증/온보딩 로드맵: `work/plans/LOGIN_AND_ACCOUNT_SYSTEM.md`
@@ -264,5 +264,5 @@
 - 그 원칙을 초도 발행에 구체 적용한 전략/체크리스트: `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md`
 - 함정 번호 정본(영구불변, 재사용 없음): `docs/spec/PITFALLS.md` — 진단서 §4의 함정 A~J가 **67~76번**으로 들어가 있다
 - 원격 엔진 Stage 로그(계층 정렬 Stage A~C는 위 진단서로 이관): `work/plans/REMOTE_ENGINE_AND_LAYERING.md`
-- 지금 무엇을 할 것인가(활성 백로그): `work/roadmap/260930-_ACTIVE_BACKLOG.md`
-- 이 7계층 모델이 정착하기까지의 리팩토링 과정: 날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 삭제됐다(git 히스토리로만 보존). **진행 중인 로드맵은 `work/roadmap/`에 있다** — `docs/refactoring/` 폴더는 없어졌고 되살리지 않는다(`docs/DOCS_INDEX.md` 「문서 보존 정책」).
+- 지금 무엇을 할 것인가(활성 백로그): `work/roadmap/261008-_ACTIVE_BACKLOG.md`
+- 이 7계층 모델이 정착하기까지의 리팩토링 과정: 날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 삭제됐다(git 히스토리로만 보존). **진행 중인 로드맵은 `work/roadmap/`(보류·완결분은 그 아래 `archive/`)에 있다** — `docs/refactoring/` 폴더는 없어졌고 되살리지 않는다(`docs/DOCS_INDEX.md` 「문서 보존 정책」).

@@ -152,10 +152,10 @@
 
 | 번호 | 원래 있던 곳 |
 | --- | --- |
-| 1~44 | `work/roadmap/260906-260911_RELEASE_AND_EARLY_FEEDBACK.md` 「부록 A」 (2026-09-11 동결) |
-| 45~50 | `work/roadmap/260911-260916_GAMEPLAY_UX_AND_POLICY_COMPLIANCE.md` |
-| 51~57 | `work/roadmap/260917-260919_SUBSCRIPTION_LAUNCH_AND_GAMEPLAY_FLOW.md` |
-| 58~66 | `work/roadmap/260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
+| 1~44 | `work/roadmap/archive/260906-260911_RELEASE_AND_EARLY_FEEDBACK.md` 「부록 A」 (2026-09-11 동결) |
+| 45~50 | `work/roadmap/archive/260911-260916_GAMEPLAY_UX_AND_POLICY_COMPLIANCE.md` |
+| 51~57 | `work/roadmap/archive/260917-260919_SUBSCRIPTION_LAUNCH_AND_GAMEPLAY_FLOW.md` |
+| 58~66 | `work/roadmap/archive/260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md` |
 
 ⚠️ **부록 A의 원래 순서는 번호순이 아니었다**(`… 13 15 16 18 17 14 19 …` — 14·17이 뒤에 끼어
 있었다). 여기서는 **번호순으로 정렬**했고, 옮기면서 1~66이 빠짐없는지 세어 확인했다.
