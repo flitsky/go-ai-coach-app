@@ -154,23 +154,43 @@ class LocalEngineSessionClientHumanStyleTest {
     }
 
     /**
-     * **가망 없는 상태가 두 차례 이어지면 통과한다**(사용자 2026-10-07) — AI 집 0 · 상대 승률 99% 이상 · 30집 넘게 뒤짐.
-     * 상대 집 안에 뜻 없는 수를 이어 두지 않는다. 셋째 차례에는 정책을 묻지도 않는다.
+     * **대국 중반에는 통과하지 않는다 — 가망이 없으면 기권을 제안한다**(사용자 2026-10-07). AI 집 0 · 상대 승률 99% 이상 · 30집 넘게
+     * 뒤진 채 2수면 그 차례의 결과가 기권 제안을 싣고, AI는 계속 둔다(묻는 것은 세션이 한다 — 한 판에 한 번).
      */
     @Test
-    fun afterTwoHopelessTurnsTheCharacterPassesInsteadOfPlaying() = runBlocking {
+    fun inTheMiddleOfAHopelessGameTheCharacterOffersToResignAndKeepsPlaying() = runBlocking {
         engine.scriptedEstimate = HopelessForBlack
         engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
-        val afterFirst = turn(level = 1).turnOutcome.gameState.play(Move.Play(StoneColor.White, G7))
+        val first = turn(level = 1)
         engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
-        val afterSecond = turn(level = 1, state = afterFirst).turnOutcome.gameState.play(Move.Play(StoneColor.White, G3))
+        val second = turn(level = 1, state = first.turnOutcome.gameState.play(Move.Play(StoneColor.White, G7)))
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC7, "rank_9d" to JudgePlaysOn)
+
+        val third = turn(level = 1, state = second.turnOutcome.gameState.play(Move.Play(StoneColor.White, G3)))
+
+        assertFalse(first.offersResignation, "one hopeless turn is not enough")
+        assertTrue(second.offersResignation)
+        assertEquals(Move.Play(StoneColor.Black, C7), third.turnOutcome.gameState.moves.last(), "no passing in the middle of the game")
+    }
+
+    /**
+     * **통과는 종국에서만** — 진 판이 2수 이어지고 판의 80%를 뒀으면 두지 않고 통과한다(9줄은 65수부터). 통과할 때는 정책을 묻지도 않는다.
+     */
+    @Test
+    fun inTheEndgameALostGameIsPassedOut() = runBlocking {
+        engine.scriptedEstimate = HopelessForBlack
+        val sixtyFourMoves = GameState.empty().copy(moves = List(64) { index -> Move.Pass(if (index % 2 == 0) StoneColor.Black else StoneColor.White) })
+        engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
+        val first = turn(level = 1, state = sixtyFourMoves)
+        engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
+        val second = turn(level = 1, state = first.turnOutcome.gameState.play(Move.Play(StoneColor.White, G7)))
         val before = engine.calls.size
 
-        val third = turn(level = 1, state = afterSecond)
+        val third = turn(level = 1, state = second.turnOutcome.gameState.play(Move.Play(StoneColor.White, G3)))
 
         assertEquals(Move.Pass(StoneColor.Black), third.turnOutcome.gameState.moves.last())
-        assertFalse(engine.calls.drop(before).any { it.startsWith("humanPolicy") }, "a character that gives up does not ask where to play")
-        assertTrue(engine.calls.drop(before).contains("play Black pass"))
+        assertFalse(engine.calls.drop(before).any { it.startsWith("humanPolicy") }, "a character that passes out does not ask where to play")
+        assertFalse(second.offersResignation, "in the endgame the game is passed out, not resigned")
     }
 
     /** 한 번이라도 가망이 생기면 처음부터 다시 센다 — 가망 없음·회복·가망 없음은 2연속이 아니다. */
@@ -187,12 +207,12 @@ class LocalEngineSessionClientHumanStyleTest {
 
         val third = turn(level = 1, state = afterSecond)
 
-        assertEquals(Move.Play(StoneColor.Black, C7), third.turnOutcome.gameState.moves.last())
+        assertFalse(third.offersResignation)
     }
 
     /**
      * 센 것은 **그 판이 이어질 때만** 유효하다 — 새 대국·무르기·이어하기처럼 수순이 이어지지 않으면 처음부터 센다.
-     * 앞 판에서 가망 없었다고 새 판의 첫 수를 통과하면 안 된다.
+     * 앞 판에서 가망 없었다고 새 판의 첫 수에 기권을 제안하면 안 된다.
      */
     @Test
     fun theHopelessCountDoesNotCarryOverToAnotherGame() = runBlocking {
@@ -200,12 +220,13 @@ class LocalEngineSessionClientHumanStyleTest {
         engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
         val afterFirst = turn(level = 1).turnOutcome.gameState.play(Move.Play(StoneColor.White, G7))
         engine.humanPolicies = mapOf("rank_15k" to OnlyC3, "rank_9d" to JudgePlaysOn)
-        turn(level = 1, state = afterFirst)
+        assertTrue(turn(level = 1, state = afterFirst).offersResignation)
         engine.humanPolicies = mapOf("rank_15k" to OnlyE5, "rank_9d" to JudgePlaysOn)
 
         val newGame = turn(level = 1)
 
         assertEquals(Move.Play(StoneColor.Black, E5), newGame.turnOutcome.gameState.moves.single())
+        assertFalse(newGame.offersResignation)
     }
 
     /** 통과를 떠올리지도 않은 수에서는 9단 정책을 묻지 않는다 — 대국 대부분의 수가 평가 1회로 끝난다. */

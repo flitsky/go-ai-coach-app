@@ -24,9 +24,9 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.HumanNetworkJudgeProfile
 import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import com.worksoc.goaicoach.shared.playstyle.HopelessPosition
 import com.worksoc.goaicoach.shared.playstyle.HumanMoveSampler
 import com.worksoc.goaicoach.shared.playstyle.HumanPlayStyle
+import com.worksoc.goaicoach.shared.playstyle.LosingStreak
 import com.worksoc.goaicoach.shared.playstyle.humanPlayStyle
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
@@ -54,10 +54,10 @@ internal class LocalEngineCoreSessionDelegate(
     private var humanStyleUnavailable = false
 
     /**
-     * 진영마다 **가망 없는 상태가 이어진 차례 수**와 그것을 센 직후의 수순 길이(백로그 #213, [HopelessPosition]).
-     * 수순 길이로 「이어진 판」인지 가린다 — 그 뒤로 상대가 정확히 한 수 둔 판이어야 한다. 새 대국·무르기·이어하기면 어긋나서 처음부터 센다.
+     * 진영마다 **진 판이 이어진 차례 수**(백로그 #213, [LosingStreak]) — 종국의 통과와 중반의 기권 제안이 이것을 본다.
+     * 진영마다 따로 센다: AI끼리 두는 판에서 한 진영의 기록이 다른 진영의 차례에 읽히면 이기는 쪽이 통과한다.
      */
-    private val hopelessStreaks = mutableMapOf<StoneColor, HopelessStreak>()
+    private val losingStreaks = mutableMapOf<StoneColor, LosingStreak>()
 
     suspend fun startSession(
         profile: EngineProfile,
@@ -233,11 +233,10 @@ internal class LocalEngineCoreSessionDelegate(
         swapTo(EngineNetwork.Human)
         coreApi.configure(turnProfile)
         coreApi.syncToGameState(currentState)
-        // 가망 없는 상태가 두 차례 이어졌으면 두지 않고 **통과한다**(사용자 2026-10-07) — 상대 집 안에 뜻 없는 수를 이어 두지 않는다.
-        // 상대가 계가를 고르면 거기서 끝나고, 더 두기를 고르면 다음 차례에 다시 본다(여전히 가망 없으면 또 통과).
-        val streak = hopelessStreaks[aiPlayer]?.takeIf { it.countedAtMoveCount + 1 == currentState.moves.size }
-        val givesUp = (streak?.turns ?: 0) >= HopelessPosition.ConsecutiveTurns
-        val move = if (givesUp) Move.Pass(aiPlayer) else chooseHumanStyleMove(currentState, aiPlayer, coreApi.humanPolicy(style.profile))
+        // **통과는 종국에서만** 한다(사용자 2026-10-07) — 진 판이 이어졌고 판의 80%를 뒀으면 상대 집 안에 뜻 없는 수를 잇지 않고 통과한다.
+        // 대국 중반에는 통과하지 않는다: 가망이 없으면 통과가 아니라 기권을 제안한다(아래 `offersResignation`).
+        val streak = losingStreaks[aiPlayer]?.takeIf { it.continuesAt(currentState) } ?: LosingStreak()
+        val move = if (streak.passesAt(currentState)) Move.Pass(aiPlayer) else chooseHumanStyleMove(currentState, aiPlayer, coreApi.humanPolicy(style.profile))
         val afterAi = MatchReferee.playOrThrow(currentState, move)
         val status = coreApi.playMove(move)
         val moveText = move.describe(currentState.boardSize)
@@ -251,8 +250,8 @@ internal class LocalEngineCoreSessionDelegate(
             currentCoroutineContext().ensureActive()
             null
         }
-        val hopeless = estimate != null && HopelessPosition.isHopelessFor(aiPlayer, estimate, afterAi)
-        hopelessStreaks[aiPlayer] = HopelessStreak(turns = if (hopeless) (streak?.turns ?: 0) + 1 else 0, countedAtMoveCount = afterAi.moves.size)
+        val nextStreak = streak.after(aiPlayer, estimate, afterAi)
+        losingStreaks[aiPlayer] = nextStreak
         return AutoAiTurnResult(
             turnOutcome = TurnOutcome(
                 gameState = afterAi,
@@ -263,6 +262,8 @@ internal class LocalEngineCoreSessionDelegate(
             scoreEstimate = estimate,
             profile = turnProfile,
             playLevel = playLevel,
+            // 가망이 없으면 **기권을 제안한다**(사용자 2026-10-07) — 다음 AI 차례에 세션이 사용자에게 묻는다. 한 판에 한 번만 묻는 것은 세션이 지킨다.
+            offersResignation = nextStreak.offersResignation(afterAi),
         )
     }
 
@@ -392,9 +393,6 @@ internal class LocalEngineCoreSessionDelegate(
 
 /** 사람 정책에서 뽑은 자리가 둘 수 없는 자리일 때 다시 뽑는 횟수 — 넘으면 통과한다. */
 private const val MaxHumanStyleDraws = 8
-
-/** 한 진영의 「가망 없는 상태」가 이어진 차례 수와, 그것을 센 직후의 수순 길이([LocalEngineCoreSessionDelegate]). */
-private data class HopelessStreak(val turns: Int, val countedAtMoveCount: Int)
 
 /**
  * 신경망을 갈아 올릴 때 **엔진 판의 행방**을 적는 쪽(백로그 #215) — `LocalEngineSessionClient`의 `boardLeftByAnalysis`다.
