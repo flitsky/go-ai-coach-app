@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -69,6 +70,7 @@ import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.botCharacterStrengthFor
 import kotlinx.coroutines.launch
 
 /**
@@ -438,13 +440,25 @@ private fun BotCharacterCard(
                 MaterialTheme.colorScheme.onSurface
             },
         )
+        // 실력 표기(백로그 #224) — 이름 바로 아래. 소개 글보다 이것이 고르는 근거라 더 또렷하게 둔다.
+        botCharacterStrengthFor(strings.language, character)?.let { strength ->
+            Text(
+                text = strength,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         Text(
             text = strings.botCharacterDescription(character),
             // ⚠️ **이 카드에서 유일하게 가중치를 가진 줄이다**(#64 ⓑ). 소개는 분위기이고 힌트는
             // 할 일이라, 자리가 모자라면 **줄어야 하는 쪽은 이쪽**이다. `fill = false`라 남는
             // 자리를 억지로 채우지도 않는다.
             modifier = Modifier.weight(1f, fill = false),
-            style = MaterialTheme.typography.bodySmall,
+            // 소개는 작게(#224, 사용자: "이 텍스트는 작게") — 실력 표기가 그 위에서 고르는 근거를 말한다.
+            style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,

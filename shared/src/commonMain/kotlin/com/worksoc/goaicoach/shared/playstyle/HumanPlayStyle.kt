@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.shared.playstyle
 
+import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.customRank
@@ -21,7 +22,13 @@ data class HumanPlayStyle(
     val profile: String,
     val weakestRank: String,
     val strongestRank: String,
-)
+) {
+    /**
+     * 이 기풍이 흉내 내는 급수 — [profile]에서 읽는다(백로그 #224: 상대 고르기 화면이 캐릭터의 실력을 「15급 수준」으로 보인다).
+     * 급수를 글자로 따로 적지 않는다 — 밸런스 패치로 [profile]을 고치면 화면의 표기가 함께 따라온다.
+     */
+    val rank: KgsRank? get() = KgsRank.all.firstOrNull { it.profile == profile }
+}
 
 /**
  * 이 단계의 캐릭터가 사람 모델로 둔다면 그 기풍, 아니면 `null`.

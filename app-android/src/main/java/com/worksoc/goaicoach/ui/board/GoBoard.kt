@@ -886,6 +886,37 @@ private fun GameState.currentMoveNumberAt(coordinate: BoardCoordinate): Int? {
     return if (latestMoveIndex >= 0) latestMoveIndex + 1 else null
 }
 
+/**
+ * **한 칸짜리 바둑판 위의 돌** — 대국 설정 화면에서 「흑」·「백」 글자 옆에 붙는 그림(backlog #225, 사용자 피드백 2026-10-08:
+ * *"한 칸의 바둑판을 그린 뒤 그 위에 바둑돌을 그려 그래픽으로 표현"*).
+ *
+ * 판의 색·선의 굵기·돌 그리기를 **대국 화면의 판과 같은 것**으로 쓴다([GoBoardColors] · [BoardLineStyle] · `drawStone`) —
+ * 따로 그리면 판의 모양을 고칠 때 이 그림만 옛 모양으로 남는다. 교차점 하나(가로·세로 선이 만나는 자리)에 돌이 놓인 모습이다.
+ */
+@Composable
+internal fun BoardCellStoneMark(
+    stone: StoneColor,
+    modifier: Modifier = Modifier,
+    colors: GoBoardColors = GoBoardColors.Default,
+) {
+    Canvas(
+        modifier = modifier
+            .background(colors.boardBackgroundActive, RoundedCornerShape(AppRadius.Corner6))
+            .border(AppBorderWidth.Hairline, colors.boardBorder, RoundedCornerShape(AppRadius.Corner6)),
+    ) {
+        // 칸 하나가 이 그림 전체다 — 선은 가운데를 지나 가장자리까지 간다(판의 한복판 교차점처럼).
+        val cell = size.minDimension
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val lineWidth = BoardLineStyle.gridLineWidthPx(cell, density)
+        drawLine(colors.gridLine, Offset(0f, center.y), Offset(size.width, center.y), strokeWidth = lineWidth)
+        drawLine(colors.gridLine, Offset(center.x, 0f), Offset(center.x, size.height), strokeWidth = lineWidth)
+        drawStone(center = center, radius = cell * BoardCellStoneRadiusShare, stone = stone, isGameEnded = false)
+    }
+}
+
+/** 한 칸짜리 판에서 돌의 반지름 ÷ 칸 — 대국 화면의 돌(0.42)보다 조금 작게 두어 뒤의 선이 보이게 한다. */
+private const val BoardCellStoneRadiusShare = 0.36f
+
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
     geometry: BoardGeometry,
     boardSize: BoardSize,

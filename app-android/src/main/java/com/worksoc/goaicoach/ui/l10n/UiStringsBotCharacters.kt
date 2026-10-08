@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.ui.l10n
 
+import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
+import com.worksoc.goaicoach.shared.playstyle.humanPlayStyle
 
 /**
  * 봇 캐릭터 5종의 **표시 이름과 소개 문구**(백로그 #32, 이름 체계는 이후 도장 서열 개편으로 교체).
@@ -70,43 +72,61 @@ private val BotCharacterNames: Map<String, Map<UiLanguage, String>> = mapOf(
     ),
 )
 
+/**
+ * 캐릭터 소개 — 상대 고르기 카드에서 실력 표기([botCharacterStrengthFor]) 아래에 **작게** 붙는 한 줄(백로그 #224).
+ *
+ * ⚠️ **캐릭터는 그 급수의 사람처럼 둔다**(#215). 2026-10-08까지 남아 있던 옛 문구는 탐색 후보의 버킷 비율을 말하던 것이라
+ * 사실이 아니게 됐다 — 관장 천원의 *"언제나 최선의 수만 둡니다"*(지금은 7단 프로필), 돌뫼의 *"절반쯤은 제대로 둡니다"*.
+ * **급수 숫자를 여기 적지 않는다** — 숫자는 `HumanPlayStyle.rank`에서 읽어 따로 보인다. 여기 적으면 밸런스 패치 때 갈린다.
+ * ⚠️ **1단계를 얕잡아 말하지 않는다**(2026-08-31 사용자 지시 — `UiStringsBotCharacterTest.theEntryOpponentIsNeverIntroducedAsWeak`).
+ */
 private val BotCharacterDescriptions: Map<String, Map<UiLanguage, String>> = mapOf(
-    // ⚠️ **1단계를 약한 상대로 소개하지 않는다(2026-08-31 사용자 지시).** 실제 기력이 일반
-    // 중급자를 상회해서, 애초에 그래서 호선이 아니라 접바둑 기능을 넣었다 — "일부러 자주
-    // 실수한다"고 적어 두면 첫 판에서 진 사용자가 속았다고 느낀다. 그래서 "최선의 수는 아니지만
-    // 만만치 않다"로 틀을 바꿨고, 5단계의 "언제나 최선의 수만 둡니다"와 대비를 이룬다.
-    // 랜딩(#51)이 세운 "상대를 얕잡아 말하지 않는다" 원칙과 같은 축이다.
     "fast_beginner_1" to mapOf(
-        UiLanguage.Korean to "최선의 수를 두지는 못하지만, 결코 만만치 않은 상대예요.",
-        UiLanguage.English to "Doesn't always find the best move, but a capable opponent.",
-        UiLanguage.Japanese to "最善手とはいきませんが、決して侮れない相手です。",
-        UiLanguage.ChineseSimplified to "未必能下出最佳一手，但实力不容小觑。",
+        UiLanguage.Korean to "바둑을 막 익힌 사람처럼 둡니다. 첫 대국 상대로 좋아요.",
+        UiLanguage.English to "Plays like someone who has just learned the game. A good first opponent.",
+        UiLanguage.Japanese to "碁を覚えたての人のように打ちます。最初の相手にぴったり。",
+        UiLanguage.ChineseSimplified to "像刚学会围棋的人一样下棋。很适合做第一位对手。",
     ),
     "fast_beginner_2" to mapOf(
-        UiLanguage.Korean to "기본기를 익히는 중. 절반쯤은 제대로 둡니다.",
-        UiLanguage.English to "Still learning the basics. Gets it right about half the time.",
-        UiLanguage.Japanese to "基本を習得中。半分くらいはきちんと打ちます。",
-        UiLanguage.ChineseSimplified to "正在打基础。大概有一半下得像样。",
+        UiLanguage.Korean to "기본기를 갖춘 상대예요. 방심은 금물입니다.",
+        UiLanguage.English to "Has the basics down. Don't let your guard down.",
+        UiLanguage.Japanese to "基本は身についています。油断は禁物です。",
+        UiLanguage.ChineseSimplified to "基本功已经扎实。可别大意。",
     ),
     "fast_beginner_3" to mapOf(
-        UiLanguage.Korean to "웬만한 수는 받아칩니다. 방심하면 한 방 먹어요.",
-        UiLanguage.English to "Answers most moves soundly. Drop your guard and you'll pay.",
-        UiLanguage.Japanese to "たいていの手には応じます。油断すると一発くらいます。",
-        UiLanguage.ChineseSimplified to "一般的手都能应对。一旦大意就会挨一下。",
+        UiLanguage.Korean to "유단자 문턱의 실력. 수읽기가 탄탄합니다.",
+        UiLanguage.English to "On the doorstep of dan level. Reads solidly.",
+        UiLanguage.Japanese to "有段者まであと一歩の実力。読みがしっかりしています。",
+        UiLanguage.ChineseSimplified to "离段位只差一步的实力。算路扎实。",
     ),
     "fast_beginner_4" to mapOf(
-        UiLanguage.Korean to "수를 읽고 빈틈을 파고듭니다. 실수는 놓치지 않아요.",
-        UiLanguage.English to "Reads ahead and finds the gaps. Won't miss your mistakes.",
-        UiLanguage.Japanese to "先を読んで隙を突きます。ミスは見逃しません。",
-        UiLanguage.ChineseSimplified to "算路清晰，专找破绽。你的失误逃不掉。",
+        UiLanguage.Korean to "유단자답게 두텁게 두고, 빈틈을 정확히 파고듭니다.",
+        UiLanguage.English to "Plays thick, dan-level Go and finds your gaps.",
+        UiLanguage.Japanese to "有段者らしく厚く打ち、隙を正確に突きます。",
+        UiLanguage.ChineseSimplified to "下得厚实，有段位的水准，专找破绽。",
     ),
     "fast_beginner_5" to mapOf(
-        UiLanguage.Korean to "도장 최강. 언제나 최선의 수만 둡니다.",
-        UiLanguage.English to "The strongest in the dojo. Plays only the best move.",
-        UiLanguage.Japanese to "道場最強。常に最善手だけを打ちます。",
-        UiLanguage.ChineseSimplified to "道场最强。永远只下最佳一手。",
+        UiLanguage.Korean to "도장 최강. 고단자의 감각으로 판 전체를 봅니다.",
+        UiLanguage.English to "The strongest in the dojo. Sees the whole board like a high dan.",
+        UiLanguage.Japanese to "道場最強。高段者の感覚で盤全体を見ます。",
+        UiLanguage.ChineseSimplified to "道场最强。以高段的眼光纵观全局。",
     ),
 )
+
+/**
+ * 캐릭터의 **실력 표기** — 「15급 수준」(백로그 #224, 사용자 피드백 2026-10-08: *"문하생 판다 / (8~10급 수준) …"*).
+ * 급수는 그 캐릭터가 흉내 내는 사람 모델 프로필에서 읽는다(`HumanPlayStyle.rank`). 프로필로 두지 않는 상대면 `null`.
+ */
+internal fun botCharacterStrengthFor(language: UiLanguage, character: BotCharacter): String? {
+    val rank = character.toPlayLevelSetting()?.humanPlayStyle()?.rank ?: return null
+    val label = kgsRankLabelFor(language, rank)
+    return when (language) {
+        UiLanguage.Korean -> "$label 수준"
+        UiLanguage.English -> "about $label"
+        UiLanguage.Japanese -> "${label}相当"
+        UiLanguage.ChineseSimplified -> "约${label}水平"
+    }
+}
 
 /**
  * 표에 없는 id일 때 [BotCharacterId.raw]를 그대로 돌려준다.

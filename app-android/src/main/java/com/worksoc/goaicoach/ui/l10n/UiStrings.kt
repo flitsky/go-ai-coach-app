@@ -1308,18 +1308,32 @@ internal data class UiStrings(
     fun compactHandicapLabel(count: Int): String = "$handicap (${compactHandicapValueLabel(count)})"
 
     /**
-     * 대국 설정 콤팩트 화면 전용 — [rulesetLabel]의 괄호 부연 설명을 뺀 짧은 표기.
+     * 대국 설정 콤팩트 화면의 **계가 칸** — 옆의 칸들(「바둑판 (9x9)」·「덤 (6.5집)」)처럼 "라벨 (값)"으로 적는다: **「계가 (집 계산)」**
+     * (백로그 #225, 사용자 피드백 2026-10-08: *"집계가 → 계가 (계가: 집 계산)"*). 예전에는 값만 「집계가」로 적혀 무엇을 정하는 칸인지
+     * 이름이 없었다.
      */
-    fun compactRulesetLabel(ruleset: Ruleset): String =
+    fun compactRulesetLabel(ruleset: Ruleset): String = "${compactRulesetTitle()} (${compactRulesetValueLabel(ruleset)})"
+
+    /** 계가 칸의 이름. */
+    fun compactRulesetTitle(): String =
+        when (language) {
+            UiLanguage.Korean -> "계가"
+            UiLanguage.English -> "Scoring"
+            UiLanguage.Japanese -> "数え方"
+            UiLanguage.ChineseSimplified -> "计分"
+        }
+
+    /** 계가 칸의 값이자 펼친 목록의 선택지 — 「집 계산」 / 「면적 계산」. 칸의 이름이 「계가」라 값에는 그 말을 되풀이하지 않는다. */
+    fun compactRulesetValueLabel(ruleset: Ruleset): String =
         when (ruleset) {
             Ruleset.Japanese -> when (language) {
-                UiLanguage.Korean -> "집계가"
+                UiLanguage.Korean -> "집 계산"
                 UiLanguage.English -> "Territory"
                 UiLanguage.Japanese -> "地合"
                 UiLanguage.ChineseSimplified -> "数目"
             }
             Ruleset.Chinese -> when (language) {
-                UiLanguage.Korean -> "면적계가"
+                UiLanguage.Korean -> "면적 계산"
                 UiLanguage.English -> "Area"
                 UiLanguage.Japanese -> "面積"
                 UiLanguage.ChineseSimplified -> "数子"

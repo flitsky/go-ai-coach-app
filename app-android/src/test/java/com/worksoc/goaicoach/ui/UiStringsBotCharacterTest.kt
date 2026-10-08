@@ -9,6 +9,7 @@ import com.worksoc.goaicoach.ui.l10n.UiStringsJapanese
 import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
 import com.worksoc.goaicoach.ui.l10n.botCharacterDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.botCharacterNameFor
+import com.worksoc.goaicoach.ui.l10n.botCharacterStrengthFor
 import com.worksoc.goaicoach.ui.l10n.deepSearchingCharacterHintFor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -173,5 +174,45 @@ class UiStringsBotCharacterTest {
             assertFalse("$language 안내에 숫자가 있다: $hint", hint.any { it.isDigit() })
         }
         assertEquals(UiLanguage.entries.size, UiLanguage.entries.map { deepSearchingCharacterHintFor(it) }.toSet().size)
+    }
+
+    /**
+     * 상대 고르기의 **실력 표기**(백로그 #224, 사용자 피드백 2026-10-08) — 캐릭터 다섯이 흉내 내는 급수 그대로다:
+     * 판다 15급 · 돌뫼 9급 · 반상 1급 · 사범 꼬북 3단 · 관장 천원 7단(사용자 2026-10-06). 숫자는 프로필에서 읽는다.
+     */
+    @Test
+    fun theStrengthLineSaysTheRankEachCharacterPlaysAt() {
+        val roster = BotCharacterCatalog.fastBeginnerRoster
+        assertEquals(
+            listOf("15급 수준", "9급 수준", "1급 수준", "3단 수준", "7단 수준"),
+            roster.map { botCharacterStrengthFor(UiLanguage.Korean, it) },
+        )
+        assertEquals(
+            listOf("about 15 kyu", "about 9 kyu", "about 1 kyu", "about 3 dan", "about 7 dan"),
+            roster.map { botCharacterStrengthFor(UiLanguage.English, it) },
+        )
+        UiLanguage.entries.forEach { language ->
+            roster.forEach { character ->
+                val strength = botCharacterStrengthFor(language, character)
+                assertTrue("$language ${character.id.raw}: 실력 표기가 없다", !strength.isNullOrBlank())
+                if (language != UiLanguage.Korean) assertFalse("$language: 한글이 남았다 — $strength", strength!!.containsHangul())
+            }
+        }
+    }
+
+    /**
+     * 소개 글은 **지금 두는 방식**을 말한다(#224) — 캐릭터는 그 급수의 사람처럼 둔다(#215). 옛 문구의 「언제나 최선의 수만」·「절반쯤은
+     * 제대로」는 탐색 후보의 버킷 비율을 말하던 것이라 사실이 아니게 됐다. 급수 숫자는 소개에 적지 않는다(실력 표기가 따로 말한다).
+     */
+    @Test
+    fun theBlurbsNoLongerDescribeTheOldBucketPolicyAndCarryNoRankNumbers() {
+        val gone = listOf("최선의 수만", "절반쯤", "only the best move", "half the time", "最善手だけ", "只下最佳")
+        UiLanguage.entries.forEach { language ->
+            BotCharacterCatalog.fastBeginnerRoster.forEach { character ->
+                val blurb = botCharacterDescriptionFor(language, character.id)
+                gone.forEach { phrase -> assertFalse("$language ${character.id.raw}: 옛 문구가 남았다('$phrase') — $blurb", blurb.contains(phrase, ignoreCase = true)) }
+                assertFalse("$language ${character.id.raw}: 소개에 숫자가 있다 — $blurb", blurb.any { it.isDigit() })
+            }
+        }
     }
 }

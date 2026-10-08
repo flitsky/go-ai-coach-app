@@ -116,7 +116,7 @@ internal fun CompactScoringAndBoardSettingsPanel(
                 modifier = Modifier.weight(1f).fillMaxHeight(),
                 valueText = strings.compactRulesetLabel(ruleset),
                 options = Ruleset.entries,
-                optionLabel = strings::compactRulesetLabel,
+                optionLabel = strings::compactRulesetValueLabel,
                 onSelected = onRulesetChange,
                 enabled = canChangeMatchSetup,
             )

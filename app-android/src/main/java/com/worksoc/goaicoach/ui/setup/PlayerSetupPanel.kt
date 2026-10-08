@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +45,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.policy.customRank
+import com.worksoc.goaicoach.ui.board.BoardCellStoneMark
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -52,6 +54,7 @@ import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.botCharacterStrengthFor
 import com.worksoc.goaicoach.ui.l10n.deepSearchingCharacterHintFor
 import com.worksoc.goaicoach.ui.l10n.rankedOpponentLabelFor
 import com.worksoc.goaicoach.ui.monetization.BotCharacterPickerDialog
@@ -176,18 +179,26 @@ private fun PlayerSetupSideRow(
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = strings.colorLabel(state.color),
-                // ⚠️ **0.38f였고 영어 1.3배에서 `Blac / k`로 깨졌다**(백로그 #107, 2026-09-05 실기).
-                // 색 라벨이 여러 글자인 언어는 영어뿐이고(`Black`/`White` — 나머지는 한 글자),
-                // **한 단어라 끊을 자리가 없어** 줄바꿈이 단어 중간을 자른다.
-                // ⚠️ **내용에 맞춰 재는 방식으로 바꾸지 말 것** — 두 행의 라벨 폭이 서로 달라져
-                // (`Black` ≠ `White`) 아래위 알약이 어긋난다. 비율을 유지하되 넓히는 쪽이 맞다.
-                // ⚠️ 이 값은 **영어 1.3배가 기준**이다. 색 라벨이 더 긴 언어가 생기면 같은 증상이
-                // 돌아온다 — 그때는 이 숫자가 아니라 그 문구를 먼저 볼 것.
+            // 색을 글자로만 말하지 않는다(백로그 #225, 사용자 피드백) — 한 칸짜리 판 위의 돌을 글자 왼쪽에 그린다.
+            // ⚠️ 폭 비율(0.55f)은 **이 묶음**이 갖는다 — 글자만 갖던 것을 그대로 옮겼다. 아래위 두 줄의 알약이 어긋나지 않게 하는 값이다(#107).
+            Row(
                 modifier = Modifier.weight(0.55f),
-                fontWeight = FontWeight.SemiBold,
-            )
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BoardCellStoneMark(stone = state.color, modifier = Modifier.size(SeatStoneMarkSize))
+                Text(
+                    text = strings.colorLabel(state.color),
+                    // ⚠️ **0.38f였고 영어 1.3배에서 `Blac / k`로 깨졌다**(백로그 #107, 2026-09-05 실기).
+                    // 색 라벨이 여러 글자인 언어는 영어뿐이고(`Black`/`White` — 나머지는 한 글자),
+                    // **한 단어라 끊을 자리가 없어** 줄바꿈이 단어 중간을 자른다.
+                    // ⚠️ **내용에 맞춰 재는 방식으로 바꾸지 말 것** — 두 행의 라벨 폭이 서로 달라져
+                    // (`Black` ≠ `White`) 아래위 알약이 어긋난다. 비율을 유지하되 넓히는 쪽이 맞다.
+                    // ⚠️ 이 값은 **영어 1.3배가 기준**이다. 색 라벨이 더 긴 언어가 생기면 같은 증상이
+                    // 돌아온다 — 그때는 이 숫자가 아니라 그 문구를 먼저 볼 것.
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
             SeatControllerPill(
                 label = strings.controllerLabel(SeatController.Human),
                 selected = side.controller == SeatController.Human,
@@ -299,15 +310,22 @@ private fun PlayerSetupSideRow(
                     // 좌석 버튼에도 얼굴을 붙인다(#48) — 픽커를 열지 않고도 지금 상대가 누구인지
                     // 알아보게 하는 것이 목적이다. 여기 오는 캐릭터는 항상 보유한 것이라
                     // (미보유는 `clampToOwnedBotCharacter`가 걸러낸다) 흑백 처리가 필요 없다.
+                    // 얼굴을 크게(백로그 #224, 사용자 피드백: 「캐릭터 이미지가 작다」) — 22dp는 글자 옆의 이모티콘으로 읽혔다.
                     current?.let { character ->
-                        BotCharacterAvatar(character = character, size = 22.dp)
-                        Spacer(Modifier.width(AppSpacing.Space6))
+                        BotCharacterAvatar(character = character, size = SeatButtonAvatarSize)
+                        Spacer(Modifier.width(AppSpacing.Space8))
                     }
-                    Text(
-                        text = current?.let(strings::botCharacterName)
-                            ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),
-                        style = MaterialTheme.typography.labelLarge,
-                    )
+                    Column {
+                        Text(
+                            text = current?.let(strings::botCharacterName)
+                                ?: strings.fastBeginnerTierLabel(fastBeginnerLevel),
+                            style = MaterialTheme.typography.labelLarge,
+                        )
+                        // 이름만으로는 얼마나 센지 알 수 없다 — 급수를 함께 보인다(픽커 카드와 같은 문구).
+                        current?.let { character -> botCharacterStrengthFor(strings.language, character) }?.let { strength ->
+                            Text(text = strength, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
                 }
             }
             if (showPicker) {
@@ -383,6 +401,12 @@ private fun SeatControllerPill(
  * 목적이라 넉넉하지만 유한하게 잡는다 — 에뮬레이터에서 KataGo 기동에 수십 초가 걸리는 것을
  * 관측했다.
  */
+/** 좌석 줄의 「흑」·「백」 글자 옆에 붙는 한 칸짜리 판의 크기(백로그 #225). */
+private val SeatStoneMarkSize = 28.dp
+
+/** 좌석 버튼에 붙는 상대 캐릭터 얼굴의 크기(백로그 #224 — 22dp에서 키웠다). */
+private val SeatButtonAvatarSize = 40.dp
+
 private const val BotLevelClampRetryCount: Int = 40
 
 /** 위 재시도 간격. */
