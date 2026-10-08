@@ -1,0 +1,335 @@
+{
+ "run": "20261007-1358-darwin-arm64-mac-v1",
+ "endgameShare": 0.8,
+ "length": {
+  "9": {
+   "games": 90,
+   "min": 0.35802469135802467,
+   "median": 0.7283950617283951,
+   "max": 1.0493827160493827,
+   "over": 26
+  },
+  "13": {
+   "games": 234,
+   "min": 0.30177514792899407,
+   "median": 0.7958579881656804,
+   "max": 1.0887573964497042,
+   "over": 116
+  },
+  "19": {
+   "games": 90,
+   "min": 0.5124653739612188,
+   "median": 0.7770083102493075,
+   "max": 0.9667590027700831,
+   "over": 31
+  }
+ },
+ "pass": {
+  "all": {
+   "승률 ≤ 1% · 2수 (앱)": {
+    "fired": 169,
+    "wrong": 1,
+    "close": 28,
+    "finalLead": -38.5593505,
+    "movesLeft": 5,
+    "closeDrift": 0.49600729500000096
+   },
+   "승률 ≤ 1% · 1수": {
+    "fired": 170,
+    "wrong": 1,
+    "close": 29,
+    "finalLead": -38.14714605,
+    "movesLeft": 5.0,
+    "closeDrift": 0.5588463760000001
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 101,
+    "wrong": 1,
+    "close": 0,
+    "finalLead": -78.6826376,
+    "movesLeft": 6,
+    "closeDrift": null
+   }
+  },
+  "9": {
+   "승률 ≤ 1% · 2수 (앱)": {
+    "fired": 25,
+    "wrong": 0,
+    "close": 7,
+    "finalLead": -28.6312919,
+    "movesLeft": 2,
+    "closeDrift": 0.7292001199999998
+   },
+   "승률 ≤ 1% · 1수": {
+    "fired": 25,
+    "wrong": 0,
+    "close": 7,
+    "finalLead": -28.6312919,
+    "movesLeft": 2,
+    "closeDrift": 0.4043723800000001
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 13,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -44.290189,
+    "movesLeft": 3,
+    "closeDrift": null
+   }
+  },
+  "13": {
+   "승률 ≤ 1% · 2수 (앱)": {
+    "fired": 113,
+    "wrong": 1,
+    "close": 20,
+    "finalLead": -36.5287412,
+    "movesLeft": 6,
+    "closeDrift": 0.44796418000000005
+   },
+   "승률 ≤ 1% · 1수": {
+    "fired": 114,
+    "wrong": 1,
+    "close": 21,
+    "finalLead": -36.388223350000004,
+    "movesLeft": 6.0,
+    "closeDrift": 0.6734776899999999
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 64,
+    "wrong": 1,
+    "close": 0,
+    "finalLead": -77.9194942,
+    "movesLeft": 7.0,
+    "closeDrift": null
+   }
+  },
+  "19": {
+   "승률 ≤ 1% · 2수 (앱)": {
+    "fired": 31,
+    "wrong": 0,
+    "close": 1,
+    "finalLead": -89.5382128,
+    "movesLeft": 7,
+    "closeDrift": 0.5324904800000017
+   },
+   "승률 ≤ 1% · 1수": {
+    "fired": 31,
+    "wrong": 0,
+    "close": 1,
+    "finalLead": -89.5382128,
+    "movesLeft": 7,
+    "closeDrift": 0.5324904800000017
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 24,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -108.7751887,
+    "movesLeft": 6.5,
+    "closeDrift": null
+   }
+  }
+ },
+ "offer": {
+  "all": {
+   "집 0 · 승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 13,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -73.6956585,
+    "movesLeft": 9,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 10수": {
+    "fired": 143,
+    "wrong": 4,
+    "close": 3,
+    "finalLead": -70.6006922,
+    "movesLeft": 32,
+    "closeDrift": 72.67691461999999
+   },
+   "위 둘 가운데 하나 (앱)": {
+    "fired": 147,
+    "wrong": 4,
+    "close": 3,
+    "finalLead": -70.6006922,
+    "movesLeft": 31,
+    "closeDrift": 72.67691461999999
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 5수": {
+    "fired": 180,
+    "wrong": 6,
+    "close": 4,
+    "finalLead": -63.7546576,
+    "movesLeft": 34.5,
+    "closeDrift": 49.39004262
+   },
+   "승률 ≤ 1% · 점수 ≤ −40집 · 10수": {
+    "fired": 109,
+    "wrong": 1,
+    "close": 3,
+    "finalLead": -87.5498521,
+    "movesLeft": 30,
+    "closeDrift": 72.67691461999999
+   },
+   "점수 ≤ −15집 · 10수 (E3의 주 모델 기준을 사람 모델 값에)": {
+    "fired": 243,
+    "wrong": 11,
+    "close": 8,
+    "finalLead": -42.5627682,
+    "movesLeft": 32,
+    "closeDrift": 16.743206065000003
+   }
+  },
+  "9": {
+   "집 0 · 승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 6,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -58.8358726,
+    "movesLeft": 7.0,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 10수": {
+    "fired": 5,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -45.5439258,
+    "movesLeft": 6,
+    "closeDrift": null
+   },
+   "위 둘 가운데 하나 (앱)": {
+    "fired": 9,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -46.0383708,
+    "movesLeft": 5,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 5수": {
+    "fired": 15,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -42.764862,
+    "movesLeft": 3,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −40집 · 10수": {
+    "fired": 0,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": null,
+    "movesLeft": null,
+    "closeDrift": null
+   },
+   "점수 ≤ −15집 · 10수 (E3의 주 모델 기준을 사람 모델 값에)": {
+    "fired": 21,
+    "wrong": 0,
+    "close": 1,
+    "finalLead": -34.9794106,
+    "movesLeft": 7,
+    "closeDrift": 11.15284494
+   }
+  },
+  "13": {
+   "집 0 · 승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 7,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": -167.230599,
+    "movesLeft": 9,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 10수": {
+    "fired": 77,
+    "wrong": 1,
+    "close": 0,
+    "finalLead": -72.7032727,
+    "movesLeft": 21,
+    "closeDrift": null
+   },
+   "위 둘 가운데 하나 (앱)": {
+    "fired": 77,
+    "wrong": 1,
+    "close": 0,
+    "finalLead": -72.7032727,
+    "movesLeft": 21,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 5수": {
+    "fired": 97,
+    "wrong": 2,
+    "close": 0,
+    "finalLead": -69.5118887,
+    "movesLeft": 26,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −40집 · 10수": {
+    "fired": 61,
+    "wrong": 1,
+    "close": 0,
+    "finalLead": -84.4549379,
+    "movesLeft": 18,
+    "closeDrift": null
+   },
+   "점수 ≤ −15집 · 10수 (E3의 주 모델 기준을 사람 모델 값에)": {
+    "fired": 139,
+    "wrong": 4,
+    "close": 2,
+    "finalLead": -42.5572576,
+    "movesLeft": 24,
+    "closeDrift": 11.985651530000002
+   }
+  },
+  "19": {
+   "집 0 · 승률 ≤ 1% · 점수 ≤ −30집 · 2수": {
+    "fired": 0,
+    "wrong": 0,
+    "close": 0,
+    "finalLead": null,
+    "movesLeft": null,
+    "closeDrift": null
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 10수": {
+    "fired": 61,
+    "wrong": 3,
+    "close": 3,
+    "finalLead": -65.4958599,
+    "movesLeft": 60,
+    "closeDrift": 72.67691461999999
+   },
+   "위 둘 가운데 하나 (앱)": {
+    "fired": 61,
+    "wrong": 3,
+    "close": 3,
+    "finalLead": -65.4958599,
+    "movesLeft": 60,
+    "closeDrift": 72.67691461999999
+   },
+   "승률 ≤ 1% · 점수 ≤ −30집 · 5수": {
+    "fired": 68,
+    "wrong": 4,
+    "close": 4,
+    "finalLead": -63.7546576,
+    "movesLeft": 65.5,
+    "closeDrift": 49.39004262
+   },
+   "승률 ≤ 1% · 점수 ≤ −40집 · 10수": {
+    "fired": 48,
+    "wrong": 0,
+    "close": 3,
+    "finalLead": -88.2536145,
+    "movesLeft": 63.0,
+    "closeDrift": 72.67691461999999
+   },
+   "점수 ≤ −15집 · 10수 (E3의 주 모델 기준을 사람 모델 값에)": {
+    "fired": 83,
+    "wrong": 7,
+    "close": 5,
+    "finalLead": -47.401386,
+    "movesLeft": 72,
+    "closeDrift": 32.88943305
+   }
+  }
+ }
+}
