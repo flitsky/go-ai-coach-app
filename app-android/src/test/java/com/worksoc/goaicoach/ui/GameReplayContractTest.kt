@@ -425,16 +425,20 @@ class GameReplayContractTest {
     }
 
     /**
-     * ⚠️ **슬라이더가 없어진 자리를 형세 그래프가 메운다** — 그래서 접힌 요약 바가 아니라
-     * **펼쳐진 상태로 먼저** 보여야 한다(2026-09-19 사용자: "상단의 '승률' 그래프를 확장
-     * 상태로 먼저 보여지게 하기"). 접었다 펼 수는 있다 — 시작 상태만 이 테스트의 대상이다.
+     * ⚠️ **요약 바로 연다 — 누르면 큰 그래프가 열린다**(백로그 #226, 사용자 2026-10-08: *"기본은 지금 눌렀을 때 보이는 것으로, 누르면
+     * 화면의 1/3쯤으로 키우고 세부 정보도 보이고, 좌우로 스크롤하면 수순이 이동"*). 2026-09-19의 「펼친 채로 먼저」를 사용자가 뒤집었다 —
+     * 그때의 그래프는 작았고(화면 폭의 1/4), 지금 것은 판의 자리를 크게 빌려서 기본으로 두지 않는다.
      */
     @Test
-    fun theScoreGraphStartsExpanded() {
+    fun theScoreSectionStartsAsTheSummaryBarAndOpensTheBigGraphOnTap() {
         assertTrue(
-            "`isScoreExpanded`가 `true`로 시작하지 않는다 — 슬라이더가 빠진 자리를 확장된 " +
-                "형세 그래프가 처음부터 채워야 한다(2026-09-19 사용자).",
-            replay.contains("var isScoreExpanded by remember { mutableStateOf(true) }"),
+            "`isScoreExpanded`가 `false`로 시작하지 않는다 — 기본은 요약 바다(#226).",
+            replay.contains("var isScoreExpanded by remember { mutableStateOf(false) }"),
         )
+        assertTrue("펼쳤을 때 다시보기 전용의 큰 그래프(`ReplayScoreGraphPanel`)를 그리지 않는다(#226).", replay.contains("ReplayScoreGraphPanel("))
+        assertTrue("큰 그래프가 수순을 옮기는 길(`onSeek`)이 이어져 있지 않다 — 넘겨도 판이 따라오지 않는다(#226).", replay.contains("onSeek = onSeek"))
+        val graph = source(RepoPaths.uiFile("ReplayScoreGraph.kt").path)
+        assertTrue("큰 그래프의 높이가 화면의 1/3이 아니다(#226).", graph.contains("const val ReplayScoreGraphScreenShare: Float = 1f / 3f"))
+        assertTrue("큰 그래프가 가로로 넘겨지지 않는다(#226).", graph.contains("horizontalScroll(scrollState)"))
     }
 }

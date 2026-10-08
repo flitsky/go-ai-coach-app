@@ -159,10 +159,10 @@ internal fun GameReplayScreen(
     // 이어진다. 처음부터 보려면 `⏮`가 한 번이다.
     var moveNumber by remember(entry.id) { mutableIntStateOf(timeline.lastMoveNumber) }
     var showMoveNumbers by remember { mutableStateOf(false) }
-    // ⚠️ **처음부터 펼쳐 연다**(2026-09-19 사용자) — 슬라이더를 없애면서 그 역할(위치를
-    // 한눈에 훑는 것)을 이 그래프가 대신하기로 했다. 접힌 요약 바로 여는 것은 슬라이더가
-    // 있던 시절의 기본값이라 이제 안 맞는다. 여전히 눌러서 접을 수는 있다 — 시작 상태만 다르다.
-    var isScoreExpanded by remember { mutableStateOf(true) }
+    // ⚠️ **요약 바로 연다**(백로그 #226, 사용자 2026-10-08) — 기본은 작은 요약 바(흑 사석 · 형세·승률 · 백 사석)이고,
+    // 누르면 화면의 1/3쯤 되는 큰 그래프가 세부 정보와 함께 열린다(가로로 넘기면 수순이 따라간다 — `ReplayScoreGraph.kt`).
+    // 2026-09-19에는 「펼친 채로 먼저」였다 — 그때의 그래프는 작아서 늘 펼쳐 둘 만했고, 지금 것은 판의 자리를 크게 빌린다.
+    var isScoreExpanded by remember { mutableStateOf(false) }
 
     val state = timeline.stateAt(moveNumber)
     val analysis = rememberReplayAnalysis(
@@ -225,24 +225,31 @@ internal fun GameReplayScreen(
         // ⚠️ **광고와 칩 사이의 완충은 이제 이 섹션 간격(`ReplaySectionGap`) 하나가 맡는다** —
         // 예전에 블런더 섹션 자신이 `top = 12.dp`로 더 얹어 두던 것을 걷어냈다. AdMob의
         // 「실수 클릭 유도 배치 금지」는 여전히 지킨다 — 간격이 0이 아니면 충분하다.
-        ReplayScoreSwingSection(
-            canMeasureSwings = canMeasureSwings,
-            swings = scoreSwings,
-            isRemeasuringScores = isRemeasuringScores,
-            currentMoveNumber = moveNumber,
-            strings = strings,
-            onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
-        )
+        // ⚠️ **큰 그래프가 열려 있는 동안은 변곡점 줄과 맨 아래 「새 대국」 버튼을 접는다**(백로그 #226) — 그래프가 화면의 1/3을 쓰는데
+        // 이 화면에는 스크롤 부모가 없어, 그대로 두면 판에 남는 높이가 없다(S23에서 판이 거의 사라졌다). 넘겨 보는 동안 필요한 것은
+        // 그래프·판·이동 버튼이다. 그래프를 닫으면 둘 다 돌아온다.
+        if (!isScoreExpanded) {
+            ReplayScoreSwingSection(
+                canMeasureSwings = canMeasureSwings,
+                swings = scoreSwings,
+                isRemeasuringScores = isRemeasuringScores,
+                currentMoveNumber = moveNumber,
+                strings = strings,
+                onJumpTo = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
+            )
+        }
 
         // ⚠️ **판보다 위다**(2026-09-19) — "흑 사석 · 승률 · 백 사석"을 변곡점 바로 아래,
         // 판 바로 위에 둔다. 형세 그래프(펼치면 나오는 것)도 같은 컴포넌트라 여기 함께 온다.
         ReplayScoreSection(
             replay = replay,
             moveNumber = moveNumber,
+            lastMoveNumber = timeline.lastMoveNumber,
             capturedByBlack = state.capturedBy(StoneColor.Black),
             capturedByWhite = state.capturedBy(StoneColor.White),
             isExpanded = isScoreExpanded,
             onExpandedChange = { isScoreExpanded = it },
+            onSeek = { target -> moveNumber = target.coerceIn(0, timeline.lastMoveNumber) },
             strings = strings,
         )
 
@@ -285,7 +292,7 @@ internal fun GameReplayScreen(
         // ⚠️ **맨 아래다 — 이동 도구와 섞지 않는다.** 위의 네 버튼은 이 화면 안에서 위치를
         // 옮기는 것이고, 이것은 **화면을 떠나 새 대국을 시작하는** 버튼이다. 같은 줄에 두면
         // 「다음 수」 옆에서 잘못 눌린다.
-        onBranchFromHere?.let { startBranch ->
+        onBranchFromHere?.takeIf { !isScoreExpanded }?.let { startBranch ->
             ReplayBranchSection(
                 state = state,
                 moveNumber = moveNumber,
@@ -494,10 +501,12 @@ private fun ReplayControls(
 private fun ReplayScoreSection(
     replay: GameReplayData,
     moveNumber: Int,
+    lastMoveNumber: Int,
     capturedByBlack: Int,
     capturedByWhite: Int,
     isExpanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    onSeek: (Int) -> Unit,
     strings: UiStrings,
 ) {
     val upToNow = remember(replay, moveNumber) {
@@ -514,15 +523,30 @@ private fun ReplayScoreSection(
             )
             return@Column
         }
-        ScoreTimelineGraph(
-            snapshots = upToNow,
-            capturedByBlack = capturedByBlack,
-            capturedByWhite = capturedByWhite,
-            whiteWinRate = upToNow.lastOrNull()?.whiteWinRate,
-            isExpanded = isExpanded,
-            onExpandedChange = onExpandedChange,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (isExpanded) {
+            // 큰 그래프(#226) — 판 전체의 형세를 가로로 넘기며 본다. 넘기면 수순이 따라가고, 위의 세부 정보 줄을 누르면 닫힌다.
+            ReplayScoreGraphPanel(
+                snapshots = replay.scoreSnapshots,
+                moveNumber = moveNumber,
+                lastMoveNumber = lastMoveNumber,
+                capturedByBlack = capturedByBlack,
+                capturedByWhite = capturedByWhite,
+                strings = strings,
+                onSeek = onSeek,
+                onClose = { onExpandedChange(false) },
+            )
+        } else {
+            // 기본은 요약 바다 — 같은 컴포넌트의 접힌 모양을 그대로 쓴다(누르면 위의 큰 그래프가 열린다).
+            ScoreTimelineGraph(
+                snapshots = upToNow,
+                capturedByBlack = capturedByBlack,
+                capturedByWhite = capturedByWhite,
+                whiteWinRate = upToNow.lastOrNull()?.whiteWinRate,
+                isExpanded = false,
+                onExpandedChange = { onExpandedChange(true) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
