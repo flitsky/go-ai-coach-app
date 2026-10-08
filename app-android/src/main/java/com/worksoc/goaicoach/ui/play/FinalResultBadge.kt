@@ -121,6 +121,15 @@ internal fun FinalResultBadge(
 }
 
 /**
+ * 끝난 판의 결과를 **아는가** — 계가 판정이 왔거나, 기권으로 끝났다([FinalResultBadge]가 승자를 찾는 두 길과 같다).
+ *
+ * ⚠️ 양통과로 끝난 판은 판정이 올 때까지 「모른다」. 모르는 판에 배지를 그리면 승자가 없어 「무승부」라고 말한다
+ * (2026-10-08 — 스토어 스크린샷을 찍다 발견. 판정 결과 창이 뜨기 직전 몇 초 동안 그랬다).
+ */
+internal fun isFinalResultKnown(gameState: GameState, judgement: FinalScoreJudgement?): Boolean =
+    judgement != null || gameState.moves.lastOrNull() is Move.Resign
+
+/**
  * 승자 테두리 두께 — [ActiveStateBorder](1.5dp)보다 **굵다.** 종국 화면에서 가장 먼저 눈에
  * 들어와야 하는 것이 이 구간이고, 옆의 좌석 카드 둘은 이때 회색 1dp로 물러나 있다.
  */

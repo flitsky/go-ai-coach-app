@@ -127,7 +127,10 @@ internal fun GameStatusPanel(
         // ⚠️ **0수면 그리지 않는다**(백로그 #191) — 새 대국 준비 구간에도 `isGameEnded`가 참이라 승자 없는 배지가
         //   「무승부」로 떴다. 끝난 판은 수가 반드시 하나 이상이다(기권 1수·양통과 2수) — 0수인데 끝났다는 것이 그 과도 상태다.
         //   `isGameEnded` 자체는 건드리지 않는다(종료 버튼 묶음·계가 오버레이가 그 켜지는 순서에 기댄다).
-        if (shouldShowFinalResultBadge(screenState.isGameEnded, screenState.gameState.moves.size)) {
+        // ⚠️ **결과를 모르면 그리지 않는다**(2026-10-08) — 양통과로 끝난 판은 계가 판정이 몇 초 뒤에 온다(사석을 가려야 한다). 그 사이의
+        //   배지는 승자가 없어 「무승부」로 떴다 — 판정 결과 창이 뜨기 직전에 잠깐. 진짜 무승부는 판정이 **있고** 승자가 없는 판이다.
+        val isResultKnown = isFinalResultKnown(screenState.gameState, screenState.finalScoreJudgement)
+        if (shouldShowFinalResultBadge(screenState.isGameEnded, screenState.gameState.moves.size, isResultKnown)) {
             FinalResultBadge(
                 gameState = screenState.gameState,
                 judgement = screenState.finalScoreJudgement,
@@ -550,5 +553,6 @@ internal val InactiveStateBorder: BorderStroke
 
 private val InactiveStateBorderColor = GameStatusPalette.InactiveStateBorder
 
-/** 결과 배지를 그릴 때인가(#191) — 끝났고, 수가 하나 이상일 때만. */
-internal fun shouldShowFinalResultBadge(isGameEnded: Boolean, moveCount: Int): Boolean = isGameEnded && moveCount > 0
+/** 결과 배지를 그릴 때인가(#191) — 끝났고, 수가 하나 이상이고, **결과를 알 때**만([isFinalResultKnown] — 계가 판정을 기다리는 동안은 아니다). */
+internal fun shouldShowFinalResultBadge(isGameEnded: Boolean, moveCount: Int, isResultKnown: Boolean): Boolean =
+    isGameEnded && moveCount > 0 && isResultKnown
