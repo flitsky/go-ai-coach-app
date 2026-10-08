@@ -266,36 +266,49 @@ class GameAutomationApplicationTest {
         assertTrue(waiting.isAwaitingAiResignationChoice)
         assertEquals(AutoAiTurnRequestPlan.Skip, waiting.toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false))
 
-        // 제안은 AI의 다음 차례에 선다 — 그 전(사용자가 둘 국면)에는 기다리지 않는다.
-        val notYet = controller.withAutoAiTurn(AutoAiTurnUiState().offerResignation(here.copy(moveCount = here.moveCount + 2)))
-        assertFalse(notYet.isAwaitingAiResignationChoice)
-        assertTrue(notYet.toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false) is AutoAiTurnRequestPlan.Schedule)
+        // 다른 국면(수순 길이가 다르다)에 선 제안은 지금 국면에서 AI를 붙들지 않는다.
+        val elsewhere = controller.withAutoAiTurn(AutoAiTurnUiState().offerResignation(here.copy(moveCount = here.moveCount + 2)))
+        assertFalse(elsewhere.isAwaitingAiResignationChoice)
+        assertTrue(elsewhere.toAutoAiTurnRequestPlan(isEngineReady = true, isEngineBusy = false) is AutoAiTurnRequestPlan.Schedule)
 
-        // 다른 대국(세대)의 제안은 효력이 없다.
+        // 세대가 바뀌면(무르기·새 대국) 그 제안은 효력이 없다.
         val staleGame = controller.withAutoAiTurn(AutoAiTurnUiState().offerResignation(here.copy(sessionGeneration = generation + 1)))
         assertFalse(staleGame.isAwaitingAiResignationChoice)
     }
 
-    /** 한 판에 한 번만 묻는다(사용자 2026-10-07: 「AI가 한번 기권을 제시」) — 이미 제안했거나 답을 받은 대국에서는 표시가 다시 서지 않는다. */
+    /**
+     * **한 판에 한 번만 묻는다**(사용자 2026-10-07: 「AI가 한번 기권을 제시」) — 답한 대국에서는 다시 묻지 않는다.
+     * 「한 판」은 대국 세대(`matchGeneration`)다: 무르기는 세션 세대만 올리므로 그 판이고, 새 대국·이어하기는 대국 세대를 올린다.
+     */
     @Test
     fun theResignationOfferIsMadeOncePerGame() {
-        val first = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 41)
-        val later = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 43)
+        val position = AutoAiTurnTimeout(sessionGeneration = 7L, moveCount = 41)
+        assertTrue(AutoAiTurnUiState().canOfferResignation(matchGeneration = 3L))
 
-        val offered = AutoAiTurnUiState().offerResignation(first)
-        assertEquals(first, offered.resignationOffer)
-        assertEquals(first, offered.offerResignation(later).resignationOffer, "답을 기다리는 제안을 다음 수의 제안이 밀어내지 않는다")
+        val offered = AutoAiTurnUiState().offerResignation(position)
+        assertEquals(position, offered.resignationOffer)
         assertTrue(offered.isAwaitingResignationChoice(sessionGeneration = 7L, moveCount = 41))
         assertFalse(offered.isAwaitingResignationChoice(sessionGeneration = 7L, moveCount = 40))
 
-        val answered = offered.answerResignationOffer(sessionGeneration = 7L)
+        val answered = offered.answerResignationOffer(matchGeneration = 3L)
         assertNull(answered.resignationOffer)
         assertFalse(answered.isAwaitingResignationChoice(sessionGeneration = 7L, moveCount = 41))
-        assertNull(answered.offerResignation(later).resignationOffer, "답한 대국에서는 다시 묻지 않는다")
+        assertFalse(answered.canOfferResignation(matchGeneration = 3L), "답한 대국에서는 다시 묻지 않는다")
+        assertTrue(answered.canOfferResignation(matchGeneration = 4L), "새 대국에서는 다시 물을 수 있다")
+    }
 
-        // 새 대국(세대가 바뀜)에서는 다시 물을 수 있다.
-        val nextGame = AutoAiTurnTimeout(sessionGeneration = 8L, moveCount = 30)
-        assertEquals(nextGame, answered.offerResignation(nextGame).resignationOffer)
+    /** 무르기는 그 판이다 — 거절하고 한 수 무른 사람에게 곧바로 다시 묻지 않는다(무르기는 세션 세대만 올린다). */
+    @Test
+    fun undoingDoesNotMakeItAnotherGameForTheResignationOffer() {
+        val controller = automationControllerState()
+        val answered = controller.withAutoAiTurn(controller.autoAiTurn.answerResignationOffer(controller.core.runtimeState.matchGeneration))
+        assertFalse(answered.canOfferAiResignation)
+
+        val afterUndo = answered.withCore(answered.core.copy(runtimeState = answered.core.runtimeState.nextSessionGeneration()))
+        assertFalse(afterUndo.canOfferAiResignation)
+
+        val nextGame = afterUndo.withCore(afterUndo.core.copy(runtimeState = afterUndo.core.runtimeState.nextSessionGeneration().nextMatchGeneration()))
+        assertTrue(nextGame.canOfferAiResignation)
     }
 
     @Test

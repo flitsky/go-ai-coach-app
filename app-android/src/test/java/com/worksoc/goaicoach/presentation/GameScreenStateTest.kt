@@ -455,7 +455,7 @@ class GameScreenStateTest {
         assertFalse(screenFor(generation = 7L, timedOut = mark).isAwaitingAiResignationChoice)
         assertFalse("세대가 오르면 저절로 풀린다", screenFor(generation = 8L, timedOut = null, resignationOffer = mark).isAwaitingAiResignationChoice)
         assertFalse(
-            "제안은 AI의 다음 차례에 선다 — 그 전 국면에서는 기다리지 않는다",
+            "수순 길이가 다르면(다른 국면) 기다리지 않는다",
             screenFor(generation = 7L, timedOut = null, resignationOffer = mark.copy(moveCount = 2)).isAwaitingAiResignationChoice,
         )
     }

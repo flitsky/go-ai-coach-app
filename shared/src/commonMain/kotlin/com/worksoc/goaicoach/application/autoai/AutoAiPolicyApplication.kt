@@ -102,7 +102,7 @@ fun buildAutoAiTurnRequestPlan(
      */
     isAwaitingTimeoutChoice: Boolean = false,
     /**
-     * AI가 기권을 제안해 사용자의 답을 기다리는 중이면 건너뛴다(백로그 #213) — 사용자가 고르기 전에 AI가 두어 버리면
+     * AI가 기권을 제안해 사용자의 답을 기다리는 중이면 건너뛴다(백로그 #213·#221) — 사용자가 고르기 전에 AI가 두어 버리면
      * 「기권 받기」가 뜻을 잃는다. 막는 대신 제안 팝업이 반드시 떠야 한다(`AiResignationOfferHost`) — 안 뜨면 AI가 멈춘다.
      */
     isAwaitingResignationChoice: Boolean = false,

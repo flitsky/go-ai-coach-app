@@ -15,9 +15,11 @@ import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
 import com.worksoc.goaicoach.match.MatchReferee
+import com.worksoc.goaicoach.match.hasHumanSeat
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.playstyle.HopelessPosition
 import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
@@ -91,6 +93,11 @@ class AutoAiTurnController(
      * ⚠️ 기본값을 두지 않는다 — 이것이 빠지면 멈춘 차례가 국면마다 **끝없이** 조용히 다시 돈다.
      */
     private val markAutoAiTurnInterruptedRetry: (AutoAiTurnTimeout) -> Unit,
+    /**
+     * AI가 기권을 제안했다고 적는다 — 그 국면에서 사용자의 답을 기다린다(백로그 #221).
+     * ⚠️ 배선하지 않으면(`null`) **제안하지 않는다** — 빈 람다를 기본값으로 두면 「제안했다」고 믿고 AI 차례를 건너뛰는데 표시는 서지 않아 AI가 멈춘다.
+     */
+    private val offerResignation: ((AutoAiTurnTimeout) -> Unit)? = null,
     /** 기권 제안에 사용자가 답했다고 적는다 — 표시를 지우고 이 대국에서는 다시 묻지 않게 한다(백로그 #213). */
     private val settleResignationOffer: () -> Unit = {},
     /** AI의 기권으로 끝난 판을 세션에 반영한다 — 수순에 기권이 붙은 판을 올리고 대국을 끝낸다. */
@@ -103,6 +110,7 @@ class AutoAiTurnController(
      * - 거절하면 AI가 그대로 둔다. 어느 쪽이든 이 대국에서는 다시 묻지 않는다.
      *
      * 기다리는 국면이 아니면 아무 일도 하지 않는다 — 팝업이 늦게 닫히는 사이 무르기·새 대국으로 판이 바뀌었을 수 있다.
+     * ⚠️ 거절 뒤의 [requestAiTurn]이 같은 국면에서 다시 묻지 않는 것은 [settleResignationOffer]가 먼저 「이 대국에서 답했다」를 적기 때문이다.
      */
     fun answerResignationOffer(accepted: Boolean) {
         val controllerState = currentControllerState()
@@ -208,6 +216,29 @@ class AutoAiTurnController(
         requestAiTurn()
     }
 
+    /**
+     * **AI가 두기 전에 기권을 제안할 판인지 본다**(백로그 #221, 사용자 2026-10-08) — 제안했으면 `true`.
+     *
+     * 근거는 형세 기록이다(`HopelessPosition.resignationGrounds` — 상대가 둔 뒤의 형세가 국면의 문턱보다 뒤진 채 5회). 그 기록은
+     * 수마다 이미 쌓이므로 엔진을 더 부르지 않고, 어떤 엔진 길(사람 모델 · 주 모델 탐색)로 두는 상대든 같은 규칙이 걸린다.
+     * - 사람이 없는 판(AI끼리)에서는 묻지 않는다 — 답할 사람이 없다.
+     * - 한 판에 한 번만 묻는다(`canOfferAiResignation`) — 거절한 판에서 다시 묻지 않는다. 무르기도 그 판이다.
+     */
+    private fun offerResignationIfHopeless(): Boolean {
+        val offer = offerResignation ?: return false
+        val controllerState = currentControllerState()
+        if (!controllerState.playerSetup.hasHumanSeat() || !controllerState.canOfferAiResignation) return false
+        val state = controllerState.gameState
+        val grounds = HopelessPosition.resignationGrounds(
+            player = state.nextPlayer,
+            state = state,
+            snapshots = controllerState.core.scoreState.scoreSnapshots,
+        ) ?: return false
+        runtimeEventLog.append(runtimeAiResignationOfferLog(currentRuntimeLogContext(), grounds))
+        offer(AutoAiTurnTimeout(sessionGeneration = controllerState.core.runtimeState.sessionGeneration, moveCount = state.moves.size))
+        return true
+    }
+
     fun requestAiTurn() {
         // 백그라운드에서는 새 차례를 띄우지 않는다(backlog #202) — 돌아오면 [onAppForegrounded]가 다시 요청한다.
         if (!isAppInForeground()) return
@@ -219,6 +250,8 @@ class AutoAiTurnController(
         ) {
             AutoAiTurnRequestPlan.Skip -> return
             is AutoAiTurnRequestPlan.Schedule -> {
+                // AI가 둘 차례다 — 두기 전에, 기권을 제안할 판인지 본다. 제안했으면 사용자의 답을 기다리고 이번에는 두지 않는다.
+                if (offerResignationIfHopeless()) return
                 val turnJob = runScheduledAutoAiTurnApplication(
                     AutoAiScheduledTurnRunRequest(
                         schedule = request,

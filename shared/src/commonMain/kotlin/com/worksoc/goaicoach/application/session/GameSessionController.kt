@@ -57,6 +57,10 @@ data class GameSessionControllerState(
             moveCount = gameState.moves.size,
         )
 
+    /** 이 대국에서 AI가 기권을 제안해도 되는가 — 한 판에 한 번이다(무르기는 대국을 바꾸지 않는다). */
+    val canOfferAiResignation: Boolean
+        get() = autoAiTurn.canOfferResignation(core.runtimeState.matchGeneration)
+
     fun withCore(next: GameSessionCoreState): GameSessionControllerState =
         copy(core = next)
 

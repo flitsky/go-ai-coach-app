@@ -54,7 +54,7 @@ internal class LocalEngineCoreSessionDelegate(
     private var humanStyleUnavailable = false
 
     /**
-     * 진영마다 **진 판이 이어진 차례 수**(백로그 #213, [LosingStreak]) — 종국의 통과와 중반의 기권 제안이 이것을 본다.
+     * 진영마다 **진 판이 이어진 차례 수**(백로그 #213, [LosingStreak]) — 종반의 통과가 이것을 본다(기권 제안은 대국 세션이 형세 기록에서 읽는다).
      * 진영마다 따로 센다: AI끼리 두는 판에서 한 진영의 기록이 다른 진영의 차례에 읽히면 이기는 쪽이 통과한다.
      */
     private val losingStreaks = mutableMapOf<StoneColor, LosingStreak>()
@@ -234,7 +234,7 @@ internal class LocalEngineCoreSessionDelegate(
         coreApi.configure(turnProfile)
         coreApi.syncToGameState(currentState)
         // **통과는 종국에서만** 한다(사용자 2026-10-07) — 진 판이 이어졌고 판의 80%를 뒀으면 상대 집 안에 뜻 없는 수를 잇지 않고 통과한다.
-        // 대국 중반에는 통과하지 않는다: 가망이 없으면 통과가 아니라 기권을 제안한다(아래 `offersResignation`).
+        // 종반 전에는 통과하지 않는다: 중반·후반에 가망이 없으면 통과가 아니라 기권을 제안한다 — 그것은 대국 세션이 형세 기록을 보고 묻는다(`HopelessPosition.resignationGrounds`).
         val streak = losingStreaks[aiPlayer]?.takeIf { it.continuesAt(currentState) } ?: LosingStreak()
         val move = if (streak.passesAt(currentState)) Move.Pass(aiPlayer) else chooseHumanStyleMove(currentState, aiPlayer, coreApi.humanPolicy(style.profile))
         val afterAi = MatchReferee.playOrThrow(currentState, move)
@@ -250,8 +250,7 @@ internal class LocalEngineCoreSessionDelegate(
             currentCoroutineContext().ensureActive()
             null
         }
-        val nextStreak = streak.after(aiPlayer, estimate, afterAi)
-        losingStreaks[aiPlayer] = nextStreak
+        losingStreaks[aiPlayer] = streak.after(aiPlayer, estimate, afterAi)
         return AutoAiTurnResult(
             turnOutcome = TurnOutcome(
                 gameState = afterAi,
@@ -263,7 +262,6 @@ internal class LocalEngineCoreSessionDelegate(
             profile = turnProfile,
             playLevel = playLevel,
             // 가망이 없으면 **기권을 제안한다**(사용자 2026-10-07) — 다음 AI 차례에 세션이 사용자에게 묻는다. 한 판에 한 번만 묻는 것은 세션이 지킨다.
-            offersResignation = nextStreak.offersResignation(afterAi),
         )
     }
 

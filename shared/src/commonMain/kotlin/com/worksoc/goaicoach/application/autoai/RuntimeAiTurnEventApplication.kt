@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
+import com.worksoc.goaicoach.shared.playstyle.ResignationGrounds
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 
 internal fun runtimeAiTurnScheduleLog(
@@ -91,11 +92,32 @@ internal fun runtimeAiTurnSuccessLog(
         detail = "move=${turnState.moves.size + 1} player=${aiPlayer.label} " +
             "selected=${display.lastMoveText.runtimeLogSnippet(80)} turnElapsedMs=$turnElapsedMs " +
             "turnTime=${turnTimeUpdate?.runtimeText()?.runtimeLogSnippet(140) ?: "not_recorded"} " +
-            // AI가 이 수 뒤에 기권을 제안하는가(backlog #213) — 팝업은 사용자가 한 수 둔 뒤에 뜨므로 리포트에서 둘을 잇는 고리다.
-            "offersResignation=${display.offersResignation} " +
             "before=${turnState.runtimeBoardSummary()} after=${display.gameState.runtimeBoardSummary()} " +
             "summary=${display.candidateText.runtimeLogSnippet(900)}",
     )
+
+/**
+ * AI가 기권을 제안했다(backlog #221) — 왜 그때 물었는지 리포트만으로 알 수 있게 근거가 된 형세를 그대로 적는다:
+ * `m<수순>:<AI 기준 점수차>/<그 국면의 문턱>`. 판은 그대로이고 사용자의 답을 기다린다([runtimeAiResignationAnswerLog]가 뒤를 잇는다).
+ */
+internal fun runtimeAiResignationOfferLog(
+    context: RuntimeLogContext,
+    grounds: ResignationGrounds,
+): String =
+    context.event(
+        name = "ai_resignation_offer",
+        phase = "ai_turn",
+        transition = "keep_current_board_await_choice",
+        detail = "readings=" + grounds.readings.joinToString(",") { reading ->
+            "m${reading.moveNumber}:${reading.ownScoreLead.runtimeOneDecimal()}/${reading.deficitBar.runtimeOneDecimal()}"
+        },
+    )
+
+private fun Double.runtimeOneDecimal(): String {
+    val tenths = kotlin.math.round(this * 10.0).toLong()
+    val sign = if (tenths < 0) "-" else ""
+    return "$sign${kotlin.math.abs(tenths) / 10}.${kotlin.math.abs(tenths) % 10}"
+}
 
 /**
  * AI의 기권 제안에 사용자가 답했다(backlog #213) — 받아들였으면 AI의 기권으로 판이 끝나고, 거절했으면 AI가 그대로 둔다.

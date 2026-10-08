@@ -26,11 +26,6 @@ data class AutoAiTurnResult(
     val scoreEstimate: ScoreEstimate?,
     val profile: EngineProfile,
     val playLevel: PlayLevelSetting,
-    /**
-     * 이 수를 둔 AI가 **기권을 제안하는가**(백로그 #213) — 형세가 가망 없이 기울었다(`LosingStreak.offersResignation`).
-     * 판단만 싣는다: 한 판에 한 번만 묻고, 사람이 있는 판에서만 묻는 것은 세션이 지킨다(`AutoAiTurnUiState`).
-     */
-    val offersResignation: Boolean = false,
 )
 
 data class LocalEngineMoveResult(
