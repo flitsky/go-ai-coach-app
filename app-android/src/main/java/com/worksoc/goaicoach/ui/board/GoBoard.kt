@@ -892,32 +892,36 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
     lineColor: Color,
 ) {
 
-    // 1. 내부 격자선 그리기 (굵기 1.5f)
+    // 굵기는 칸 간격에 비례한다(backlog #222) — 예전의 픽셀 고정값은 고해상도 폰에서 실처럼 가늘었다.
+    val gridLineWidth = BoardLineStyle.gridLineWidthPx(geometry.spacing, density)
+
+    // 1. 내부 격자선 그리기
     for (index in 0 until boardSize.value) {
         val startHorizontal = geometry.pointFor(BoardCoordinate(index, 0))
         val endHorizontal = geometry.pointFor(BoardCoordinate(index, boardSize.value - 1))
-        drawLine(lineColor, startHorizontal, endHorizontal, strokeWidth = 1.5f)
+        drawLine(lineColor, startHorizontal, endHorizontal, strokeWidth = gridLineWidth)
 
         val startVertical = geometry.pointFor(BoardCoordinate(0, index))
         val endVertical = geometry.pointFor(BoardCoordinate(boardSize.value - 1, index))
-        drawLine(lineColor, startVertical, endVertical, strokeWidth = 1.5f)
+        drawLine(lineColor, startVertical, endVertical, strokeWidth = gridLineWidth)
     }
 
-    // 2. 바둑판 최외곽 테두리 사각형 선 그리기 (굵기 3.5f) - 바둑돌보다 아래 레이어
+    // 2. 바둑판 최외곽 테두리 사각형 선 그리기 - 바둑돌보다 아래 레이어
     val topLeft = geometry.pointFor(BoardCoordinate(0, 0))
     val bottomRight = geometry.pointFor(BoardCoordinate(boardSize.value - 1, boardSize.value - 1))
     drawRect(
         color = lineColor,
         topLeft = topLeft,
         size = Size(bottomRight.x - topLeft.x, bottomRight.y - topLeft.y),
-        style = Stroke(width = 3.5f)
+        style = Stroke(width = BoardLineStyle.borderWidthPx(geometry.spacing, density))
     )
 
     // 3. 화점(Star Points) 그리기
+    val starPointRadius = BoardLineStyle.starPointRadiusPx(geometry.spacing, density)
     for (starPoint in starPoints(boardSize)) {
         drawCircle(
             color = lineColor,
-            radius = geometry.spacing * 0.08f,
+            radius = starPointRadius,
             center = geometry.pointFor(starPoint),
         )
     }
