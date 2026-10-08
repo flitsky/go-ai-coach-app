@@ -23,6 +23,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 - 유튜브 기초 강좌 모음: 입문 강좌를 앱 안에서 골라 바로 시청
 - 점수/승률 그래프: 대국 흐름을 그래프로 한눈에 확인
 - 무르기(Undo): 착수를 되돌려 다른 수를 다시 검토
+- 착수 방식: 누르면 바로 두는 '바로 착수'와, 자리를 잡은 뒤 '착수' 버튼으로 한 번 더 확인하고 두는 '착수 확인' 중에서 대국 화면에서 바로 전환
 - 착수 진동: 돌을 놓는 순간 짧게 울리는 피드백(설정에서 끌 수 있습니다)
 - 바둑판 크기: 화면 여백을 두고 보거나, 가로 폭을 꽉 채워 크게 보거나
 - 보드 크기 선택: 9x9 / 13x13 / 19x19 지원
@@ -87,6 +88,7 @@ Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the op
 - Beginner video lessons: a curated list, opened from inside the app
 - Score and win-rate graph: the shape of the whole game at a glance
 - Undo: take a move back and try a different one
+- Two ways to place a stone: play on tap, or pick a point and confirm with the Play button — switch right on the game screen
 - Haptic feedback on each stone (can be turned off in settings)
 - Board size on screen: leave a margin, or fill the width edge to edge
 - Board sizes: 9x9, 13x13 and 19x19

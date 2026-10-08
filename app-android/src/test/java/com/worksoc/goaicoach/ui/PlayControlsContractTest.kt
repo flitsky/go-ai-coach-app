@@ -17,7 +17,10 @@ import org.junit.Test
  * ⓑ 판 위 토글 둘은 대국 화면에서 **사라지고** 메뉴에 있다.
  * ⓒ 지운 셋(착수 칸 · 메뉴 스위치 · 판 크기별 권장 팝업)은 **플래그 뒤에 살아 있다** — 사용자 지시가
  *   *"UX에서 지우되 피처로 코드는 남겨두기"* 였다. 지워 버리면 되살릴 길이 사라진다.
- * ⓓ 가운데 칸이 빠졌으니 좌석 카드가 **폭을 반씩** 갖는다.
+ * ⓓ 좌석 카드 둘은 폭을 같게 갖는다(가운데 착수 칸이 있으면 셋이 나눈다).
+ *
+ * ⚠️ **#223(2026-10-08)이 확인 모드를 되살렸다** — 스위치는 켜져 있고, 위의 ⓐ·ⓒ는 "다시 끌 때도 안전하다"를 지키는 그물로 남는다.
+ * 판 크기별 권장 팝업만 제 스위치로 갈라 꺼 두었다.
  */
 class PlayControlsContractTest {
 
@@ -86,8 +89,23 @@ class PlayControlsContractTest {
 
         val shell = code("GoCoachApp.kt")
         assertTrue(
-            "판 크기별 착수 모드 권장 팝업이 플래그 뒤에 있지 않다 — 없는 기능을 묻는 팝업이 된다(#143).",
-            shell.contains("if ($gate)") && shell.contains("DirectPlayRecommendationDialog("),
+            "판 크기별 착수 모드 권장 팝업이 확인 모드와 제 스위치 둘 다의 뒤에 있지 않다 — 확인 모드가 꺼지면 없는 기능을 묻는 팝업이 된다(#143·#223).",
+            shell.contains("if ($gate && FeatureFlags.isPlayModeRecommendationEnabled)") && shell.contains("DirectPlayRecommendationDialog("),
+        )
+    }
+
+    /**
+     * 백로그 #223(2026-10-08 사용자) — 확인 모드를 **되살렸다**: 착수 칸이 대국 화면에 돌아오고, 기본값은 바로 착수 그대로이며,
+     * 판 크기별 권장 팝업은 되살리지 않는다. 셋 가운데 하나만 뒤집혀도 사용자가 정한 것과 달라진다.
+     */
+    @Test
+    fun theConfirmModeIsBackWithDirectPlayAsTheDefaultAndWithoutTheSizePopup() {
+        assertTrue("확인 모드가 꺼져 있다 — #223이 되살렸다.", com.worksoc.goaicoach.ui.foundation.FeatureFlags.isPlayConfirmModeEnabled)
+        assertFalse("판 크기별 권장 팝업이 켜져 있다 — 사용자는 되살리지 않기로 했다(#223).", com.worksoc.goaicoach.ui.foundation.FeatureFlags.isPlayModeRecommendationEnabled)
+        assertTrue("기본값이 바로 착수가 아니다(#223).", com.worksoc.goaicoach.presentation.KaTrainUxOptions().isDirectPlayEnabled)
+        assertTrue(
+            "저장된 설정의 기본값이 바로 착수가 아니다(#223).",
+            com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot().isDirectPlayEnabled,
         )
     }
 

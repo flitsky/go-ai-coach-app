@@ -75,6 +75,8 @@ import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.LegalMoveGenerator
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.board.candidateToneColor
@@ -355,7 +357,7 @@ internal fun GamePlaySection(
                 if (screenState.uxOptions.isDirectPlayEnabled) {
                     onEvent(GameUiEvent.PlayAt(coordinate))
                 } else {
-                    tentativeMove = coordinate
+                    tentativeMove = nextTentativeMove(tentativeMove, coordinate, screenState.gameState)
                 }
             },
             isGameEnded = screenState.isGameEnded,
@@ -776,6 +778,17 @@ private fun WideColumnsArrangement(
         }
     }
 }
+
+/**
+ * 착수 확인 모드에서 [tapped]를 누른 뒤의 가늠 자리(backlog #223). **둘 수 있는 자리만** 잡힌다 — 돌이 놓인 자리·자충·패를 누르면
+ * 잡아 둔 자리([current])가 그대로 남는다(판이 이미 「둘 수 없다」는 진동으로 알린다). 걸러 내지 않으면 놓인 돌 위에 가늠돌이
+ * 겹쳐 그려지고, `착수`를 눌러도 아무 일도 일어나지 않는다.
+ */
+internal fun nextTentativeMove(
+    current: BoardCoordinate?,
+    tapped: BoardCoordinate,
+    state: GameState,
+): BoardCoordinate? = if (LegalMoveGenerator.isLegalPlay(state, tapped)) tapped else current
 
 /** 좌우 기둥의 폭. 좌석 카드 세 줄과 `형세 보기 (30)` 라벨이 들어가는 최소치에서 잡았다. */
 private val WideColumnWidth = 104.dp

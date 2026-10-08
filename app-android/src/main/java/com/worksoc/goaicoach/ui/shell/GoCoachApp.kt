@@ -818,9 +818,9 @@ private fun GoCoachScreen(
         )
     }
 
-    // 판 크기별 착수 모드 권장 팝업 — #143이 확인 모드를 UX에서 지우면서 함께 잠긴다.
-    // 남겨 두면 **없는 기능을 묻는 팝업**이 된다(플래그를 켜면 그대로 돌아온다).
-    if (FeatureFlags.isPlayConfirmModeEnabled) {
+    // 판 크기별 착수 모드 권장 팝업 — 꺼 둔다(#223: 확인 모드는 되살리되 이 팝업은 되살리지 않는다).
+    // 확인 모드가 꺼지면 **없는 기능을 묻는 팝업**이 되므로 두 스위치를 함께 본다.
+    if (FeatureFlags.isPlayConfirmModeEnabled && FeatureFlags.isPlayModeRecommendationEnabled) {
         DirectPlayRecommendationDialog(
             boardSize = settingsState.boardSize,
             isDirectPlayEnabled = uxOptions.isDirectPlayEnabled,
