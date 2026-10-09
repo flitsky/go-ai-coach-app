@@ -52,15 +52,20 @@ class PlayControlsContractTest {
         )
     }
 
+    /**
+     * 판 위의 토글 둘은 **돌아왔다**(2026-10-09 사용자) — #143이 메뉴로 옮겼던 것을 되살렸다. 오른쪽은 바둑판 크기 그대로,
+     * 왼쪽은 착수 돋보기가 #188에서 기능째 사라져 그 뒤를 이은 「끌 때 크게」다. 메뉴의 스위치도 그대로 있어야 한다(같은 값).
+     */
     @Test
-    fun theBoardNoLongerCarriesTheTwoToggles() {
+    fun theBoardCarriesTheTwoTogglesAgainAndTheMenuKeepsItsSwitches() {
         val play = code("GamePlaySection.kt")
-        listOf("BoardTopControls(", "BoardTopToggle(").forEach { call ->
-            assertFalse(
-                "대국 화면이 아직 `$call`을 그린다 — #143은 그 둘을 메뉴로 옮겼다.",
-                play.contains(call),
-            )
-        }
+        val controls = play.substringAfter("private fun BoardTopControls(").substringBefore("private fun BoardTopToggle(")
+        assertTrue("폰 배치가 판 위 토글을 그리지 않는다.", play.contains("                BoardTopControls("))
+        val left = controls.indexOf("largeHeldStoneLabelFor(strings.language)")
+        val right = controls.indexOf("boardSizeToggleLabelFor(strings.language, isMaxSize)")
+        assertTrue("판 위 토글 둘 가운데 하나가 없다.", left >= 0 && right >= 0)
+        assertTrue("바둑판 크기 토글이 오른쪽(뒤)이 아니다 — 사용자가 기억하는 자리다.", left < right)
+        assertFalse("착수 돋보기가 판 위에 돌아왔다 — 기능은 #188에서 통째로 걷어냈다.", play.contains("Magnifier"))
 
         val menu = code("KaTrainUxPanels.kt")
         // ⚠️ **착수 돋보기는 2026-09-22에 기능째 사라졌다**(백로그 #188) — 여기서 "메뉴에 있어야

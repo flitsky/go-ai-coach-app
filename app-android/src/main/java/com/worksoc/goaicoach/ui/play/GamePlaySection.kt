@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -81,6 +83,8 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.board.candidateToneColor
 import com.worksoc.goaicoach.ui.designsystem.ActionButton
+import com.worksoc.goaicoach.ui.designsystem.ActionButtonContentColor
+import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
 import com.worksoc.goaicoach.ui.designsystem.StonePalette
@@ -88,8 +92,10 @@ import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
 import com.worksoc.goaicoach.ui.l10n.confirmPlayToggledToastFor
 import com.worksoc.goaicoach.ui.l10n.freeAnalysisUsedToastFor
+import com.worksoc.goaicoach.ui.l10n.largeHeldStoneLabelFor
 import com.worksoc.goaicoach.ui.l10n.rematchActionFor
 import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
@@ -414,6 +420,18 @@ internal fun GamePlaySection(
                 EngineUnavailableBadge(
                     availability = screenState.engine.availability,
                     modifier = Modifier.padding(bottom = AppSpacing.Space6),
+                )
+                BoardTopControls(
+                    isLargeHeldStoneEnabled = screenState.uxOptions.isLargeHeldStoneEnabled,
+                    onToggleLargeHeldStone = {
+                        onEvent(
+                            GameUiEvent.ChangeUxOptions(
+                                screenState.uxOptions.copy(isLargeHeldStoneEnabled = !screenState.uxOptions.isLargeHeldStoneEnabled),
+                            ),
+                        )
+                    },
+                    isMaxSize = isBoardMaxSize,
+                    onToggleBoardSize = onToggleBoardSize,
                 )
                 // ⚠️ 폭을 **GoBoard 바깥에서** 바꾼다. 안에서 바꾸면 탭 좌표 변환·좌표 라벨·형세
                 // 오버레이가 저마다 다른 폭을 볼 위험이 있는데, 밖에서 주면 그 안의 모든 계산이
@@ -811,6 +829,77 @@ internal fun nextTentativeMove(
 
 /** 좌우 기둥의 폭. 좌석 카드 세 줄과 `형세 보기 (30)` 라벨이 들어가는 최소치에서 잡았다. */
 private val WideColumnWidth = 104.dp
+
+/**
+ * 판 **바로 위** 경계선에 바짝 붙는 토글 두 개 — 왼쪽은 **끌 때 크게**, 오른쪽은 **바둑판 크기**(최대 / 여백)다.
+ *
+ * 이력: #38·#39가 만들었고(왼쪽은 착수 돋보기였다), #143이 "대국 화면에 집중"을 이유로 둘을 메뉴로 옮겼다.
+ * 2026-10-09 사용자가 **되살렸다** — 오른쪽은 그대로, 왼쪽은 돋보기가 #188에서 기능째 사라져서 그 뒤를 이은
+ * 「끌 때 크게」(길게 눌러 조준하는 동안 가늠돌을 키운다, #196·#197)가 받았다. 메뉴의 두 스위치도 그대로 있다 — 같은 값을 본다.
+ *
+ * ⚠️ **판 위에 얹지 마라.** 처음에는 판 우상단에 오버레이했는데, 거기는 실제로 착수하는 자리라 칩이 탭을 가로챈다(2026-08-30 사용자 지적).
+ * ⚠️ **두 칩은 같은 관용구를 쓴다**([BoardTopToggle] 하나를 공유) — 라벨은 **지금 상태**, 켜짐은 초록 테두리.
+ *   하나는 상태 라벨이고 하나는 동작 라벨이면 나란히 놓인 두 칩이 서로 다른 문법으로 말한다.
+ * ⚠️ 폰 배치에만 있다 — 넓은 배치(#141)는 판 위에 줄을 하나 더 둘 세로가 없고, 메뉴로 바꾼다.
+ */
+@Composable
+private fun BoardTopControls(
+    isLargeHeldStoneEnabled: Boolean,
+    onToggleLargeHeldStone: () -> Unit,
+    isMaxSize: Boolean,
+    onToggleBoardSize: () -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    Row(
+        // 아래 2dp만 남긴다 — 경계선에 바짝 붙이는 것이 요점이고, 세로 공간도 아낀다.
+        modifier = Modifier.fillMaxWidth().padding(bottom = AppSpacing.Space2),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BoardTopToggle(
+            label = largeHeldStoneLabelFor(strings.language),
+            active = isLargeHeldStoneEnabled,
+            onToggle = onToggleLargeHeldStone,
+        )
+        BoardTopToggle(
+            // 이쪽은 라벨이 곧 상태다(`바둑판 최대` / `바둑판 여백`) — 판이 화면 끝까지 찼는지는 이미 눈에 보인다.
+            label = boardSizeToggleLabelFor(strings.language, isMaxSize),
+            active = isMaxSize,
+            onToggle = onToggleBoardSize,
+        )
+    }
+}
+
+/**
+ * 판 위 토글 한 개. ⚠️ **켜짐 표시는 테두리 색뿐이다**(2026-08-31 사용자 지시 — *"테두리 색만으로 충분"*): 배경까지 칠하면
+ * 너무 눈에 띄었다. 테두리는 좌석 카드의 차례 표시와 같은 토큰이라 "초록 테두리 = 켜짐"이 화면 위아래에서 한 뜻으로 읽힌다.
+ * ⚠️ 글자색은 꺼져 있어도 흐리게 하지 않는다 — 흐리면 **누를 수 없음**으로 읽히는데 이 칩은 언제나 누를 수 있다.
+ */
+@Composable
+private fun BoardTopToggle(
+    label: String,
+    active: Boolean,
+    onToggle: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .clip(RoundedCornerShape(AppRadius.Corner10))
+            .toggleable(value = active, role = Role.Switch, onValueChange = { onToggle() }),
+        shape = RoundedCornerShape(AppRadius.Corner10),
+        // 켜져 있어도 **같은 배경**이다 — 이름이 `Inactive~`인 것은 이 토큰의 출처(좌석 카드의 비활성 색)를 가리킨다.
+        color = InactiveStateContainerColor,
+        border = if (active) ActiveStateBorder else InactiveStateBorder,
+    ) {
+        Text(
+            // `⇅`는 "이건 뒤집히는 것"이라는 표시다.
+            text = "\u21C5 " + label,
+            modifier = Modifier.padding(horizontal = AppSpacing.Space10, vertical = AppSpacing.Space2),
+            style = MaterialTheme.typography.labelSmall,
+            color = ActionButtonContentColor,
+            maxLines = 1,
+        )
+    }
+}
 
 /**
  * 착수 칸을 **플래그 뒤에** 둔다(백로그 #143) — 꺼져 있으면 아래 줄에 칸이 아예 생기지 않는다.
