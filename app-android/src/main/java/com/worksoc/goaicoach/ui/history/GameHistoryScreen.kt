@@ -72,7 +72,6 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.seatMatchupLabelWithRanksFor
 import com.worksoc.goaicoach.ui.l10n.winRateNoGamesFor
 import com.worksoc.goaicoach.ui.l10n.winRatePeriodLabelFor
-import com.worksoc.goaicoach.ui.l10n.winRateRegularGamesLabelFor
 import com.worksoc.goaicoach.ui.l10n.winRateSummaryFor
 import com.worksoc.goaicoach.ui.l10n.winRateWhatCountsFor
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
@@ -400,7 +399,8 @@ private fun GameHistoryWinRatePanel(
         if (regular == null && rankMeasure == null) {
             Text(text = winRateNoGamesFor(language), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
         }
-        regular?.let { WinRateLine(label = winRateRegularGamesLabelFor(language), summary = it) }
+        // 줄의 이름은 홈의 두 메뉴 이름이다 — 마이 페이지의 머리말도 같은 이름을 쓴다(백로그 #240).
+        regular?.let { WinRateLine(label = LocalUiStrings.current.startMatch, summary = it) }
         rankMeasure?.let { WinRateLine(label = rankMeasureTitleFor(language), summary = it) }
         Text(
             text = winRateWhatCountsFor(language, WinRateShortGameMaxMoveCount),

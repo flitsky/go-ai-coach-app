@@ -6,7 +6,6 @@ import com.worksoc.goaicoach.application.gamehistory.WinRateTally
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.winRateNoGamesFor
 import com.worksoc.goaicoach.ui.l10n.winRatePeriodLabelFor
-import com.worksoc.goaicoach.ui.l10n.winRateRegularGamesLabelFor
 import com.worksoc.goaicoach.ui.l10n.winRateSummaryFor
 import com.worksoc.goaicoach.ui.l10n.winRateWhatCountsFor
 import org.junit.Assert.assertEquals
@@ -19,7 +18,6 @@ import org.junit.Test
 class UiStringsWinRateTest {
     private fun everyStringIn(language: UiLanguage): List<String> =
         WinRatePeriod.entries.map { winRatePeriodLabelFor(language, it) } + listOfNotNull(
-            winRateRegularGamesLabelFor(language),
             winRateSummaryFor(language, WinRateTally(wins = 6, losses = 3, draws = 1)),
             winRateNoGamesFor(language),
             winRateWhatCountsFor(language, WinRateShortGameMaxMoveCount),
@@ -30,7 +28,7 @@ class UiStringsWinRateTest {
         assertTrue("자기검증 — 한국어 문구에는 한글이 있어야 한다", everyStringIn(UiLanguage.Korean).all { it.containsHangul() })
         UiLanguage.entries.forEach { language ->
             val strings = everyStringIn(language)
-            assertEquals("$language: 문구 수가 다르다", 7, strings.size)
+            assertEquals("$language: 문구 수가 다르다", 6, strings.size)
             strings.forEach { text ->
                 assertTrue("$language 문구가 비었다", text.isNotBlank())
                 if (language != UiLanguage.Korean) assertFalse("$language: 한글이 남았다 — $text", text.containsHangul())

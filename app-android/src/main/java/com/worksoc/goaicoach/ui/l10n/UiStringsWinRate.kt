@@ -30,15 +30,6 @@ internal fun winRatePeriodLabelFor(language: UiLanguage, period: WinRatePeriod):
         }
     }
 
-/** 이 줄이 무엇의 승률인지 — 캐릭터와 둔 일반 대국. (승급 대국의 줄은 그 메뉴 이름 [rankMeasureTitleFor]을 쓴다.) */
-internal fun winRateRegularGamesLabelFor(language: UiLanguage): String =
-    when (language) {
-        UiLanguage.Korean -> "대국"
-        UiLanguage.English -> "Games"
-        UiLanguage.Japanese -> "対局"
-        UiLanguage.ChineseSimplified -> "对局"
-    }
-
 /**
  * 전적 한 줄 — `승률 60% · 6승 4패`. 무승부가 있을 때만 무를 붙인다. 센 판이 없으면 `null`(그 줄을 그리지 않는다).
  */

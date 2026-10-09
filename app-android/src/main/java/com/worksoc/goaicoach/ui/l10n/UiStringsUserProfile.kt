@@ -61,3 +61,21 @@ internal fun avatarDescriptionFor(language: UiLanguage): String =
 
 internal fun editNicknameDescriptionFor(language: UiLanguage): String =
     EditNicknameDescriptions.getValue(language)
+
+/** 마이 페이지 머리말(백로그 #240)의 기력 테두리 아래에 붙는 말 — 테두리 안의 급수가 **지금의** 기력임을 밝힌다. */
+internal fun myPageCurrentRankCaptionFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "현재 기력"
+        UiLanguage.English -> "Current rank"
+        UiLanguage.Japanese -> "現在の棋力"
+        UiLanguage.ChineseSimplified -> "当前棋力"
+    }
+
+/** 마이 페이지 머리말의 전적 줄 — 아직 센 판이 없을 때. 0승 0패나 0%라고 말하지 않는다. */
+internal fun myPageNoRecordFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "전적 없음"
+        UiLanguage.English -> "No games yet"
+        UiLanguage.Japanese -> "戦績なし"
+        UiLanguage.ChineseSimplified -> "暂无战绩"
+    }
