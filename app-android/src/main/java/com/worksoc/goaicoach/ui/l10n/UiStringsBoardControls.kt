@@ -59,11 +59,12 @@ internal fun boardSizeSubjectFor(language: UiLanguage): String =
     BoardSizeSubjects.getValue(language)
 
 /**
- * 설정의 「끌 때 크게」 토글(백로그 #197 — #198에서 「착수 돌 크게」를 섹션 문맥에 맞게 줄였다) — 길게 눌러 조준하는 동안 가늠돌을 키울지.
+ * 설정의 「손끝 돌 크게」 토글(백로그 #197) — 길게 눌러 조준하는 동안 가늠돌을 키울지.
+ * 이름의 이력: 「착수 돌 크게」 → #198 「끌 때 크게」(섹션 문맥에 맞게 줄였다) → 2026-10-09 사용자 「손끝 돌 크게」(「끌 때 크게」는 무엇이 커지는지 안 읽혔다).
  * ⚠️ `UiStrings` 필드 여유가 4개뿐이라(리팩토링 보류 `#48`) 위성 Map으로 둔다.
  */
 private val LargeHeldStoneLabels: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "끌 때 크게",
+    UiLanguage.Korean to "손끝 돌 크게",
     UiLanguage.English to "Enlarge on drag",
     UiLanguage.Japanese to "ドラッグ時に拡大",
     UiLanguage.ChineseSimplified to "拖动时放大",

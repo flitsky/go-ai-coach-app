@@ -54,7 +54,7 @@ class PlayControlsContractTest {
 
     /**
      * 판 위의 **바둑판 최대** 토글은 **돌아왔다**(2026-10-09 사용자) — #143이 메뉴로 옮겼던 것을 되살렸다. 오른쪽 끝에 하나만 선다
-     * (왼쪽의 착수 돋보기는 #188에서 기능째 사라졌고, 그 자리에 넣어 봤던 「끌 때 크게」는 같은 날 뺐다).
+     * (왼쪽의 착수 돋보기는 #188에서 기능째 사라졌고, 그 자리에 넣어 봤던 「손끝 돌 크게」(그때 이름은 「끌 때 크게」)는 같은 날 뺐다).
      * 글자는 `바둑판 최대`로 고정이다 — 메뉴의 스위치와 같은 말이어야 한다. 메뉴의 스위치도 그대로 있어야 한다(같은 값).
      */
     @Test
@@ -66,7 +66,7 @@ class PlayControlsContractTest {
         assertTrue("판 위 칩의 글자가 고정이 아니다 — 메뉴의 스위치와 다른 말을 한다.", controls.contains(menuLabel))
         assertTrue("메뉴의 스위치가 판 위 칩과 다른 글자를 쓴다.", code("KaTrainUxPanels.kt").contains(menuLabel))
         assertTrue("판 위 칩이 오른쪽 끝에 서지 않는다.", controls.contains("horizontalArrangement = Arrangement.End"))
-        assertFalse("「끌 때 크게」가 판 위에 돌아왔다 — 사용자가 뺐다(2026-10-09).", play.contains("largeHeldStoneLabelFor"))
+        assertFalse("「손끝 돌 크게」가 판 위에 돌아왔다 — 사용자가 뺐다(2026-10-09).", play.contains("largeHeldStoneLabelFor"))
         assertFalse("착수 돋보기가 판 위에 돌아왔다 — 기능은 #188에서 통째로 걷어냈다.", play.contains("Magnifier"))
 
         val menu = code("KaTrainUxPanels.kt")

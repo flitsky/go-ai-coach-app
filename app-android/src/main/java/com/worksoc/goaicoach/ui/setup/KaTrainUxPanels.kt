@@ -160,7 +160,7 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(isPlayEffectEnabled = it)) },
                 )
                 Spacer(modifier = Modifier.width(columnGap))
-                // 「끌 때 크게」(백로그 #196·#197) — 길게 눌러 끌며 조준하는 동안 가늠돌을 키울지.
+                // 「손끝 돌 크게」(백로그 #196·#197) — 길게 눌러 끌며 조준하는 동안 가늠돌을 키울지.
                 OptionSwitchCell(
                     label = largeHeldStoneLabelFor(strings.language),
                     checked = options.isLargeHeldStoneEnabled,
