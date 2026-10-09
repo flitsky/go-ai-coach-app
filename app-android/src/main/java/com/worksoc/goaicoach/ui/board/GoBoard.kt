@@ -441,7 +441,10 @@ internal fun GoBoard(
                     )
                 }
 
-                if (tentativeMove != null) {
+                // ⚠️ **손가락이 판에 닿아 있는 동안에는 가착수를 그리지 않는다**(2026-10-09 사용자) — 누르는 순간 손끝에 돌이 뜨는데
+                //   옛 가착수까지 그리면 판에 돌이 둘 보인다. 돌은 하나다: 누르면 옛 자리에서 사라지고 손끝에 그려진다.
+                //   값은 건드리지 않는다 — 떼는 순간 `onCoordinateTap`이 옛 자리를 보고 정해야 한다(같은 자리를 다시 누르면 거둔다).
+                if (tentativeMove != null && playDrag == null) {
                     drawGhostStone(
                         center = geometry.pointFor(tentativeMove),
                         radius = geometry.spacing * 0.42f,
@@ -526,8 +529,8 @@ internal fun GoBoard(
                     // 확대창과 운명을 같이해서, 돋보기를 끄면 되먹임이 통째로 사라졌다.
                     // ⚠️ **'착수 확인'의 임시 돌과 같은 모습**(깜빡이는 반투명)으로 그린다(#138, 사용자
                     //   요청 *"'착수 확인'처럼"*). 두 모드에서 "여기에 놓인다"가 같은 말로 읽혀야 한다.
-                    //   이미 임시 돌이 있는 자리면 겹쳐 그리지 않는다 — 겹치면 그 칸만 진해 보인다.
-                    if (dragCoordinate != null && dragCoordinate != tentativeMove) {
+                    //   가착수는 손가락이 닿아 있는 동안 그리지 않으므로(위) 같은 자리여도 겹치지 않는다.
+                    if (dragCoordinate != null) {
                         drawGhostStone(
                             center = geometry.pointFor(dragCoordinate),
                             radius = stoneRadius,
