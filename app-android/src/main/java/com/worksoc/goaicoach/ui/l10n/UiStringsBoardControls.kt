@@ -98,3 +98,24 @@ private val MenuSectionTitles: Map<MenuSection, Map<UiLanguage, String>> = mapOf
 
 internal fun menuSectionTitleFor(language: UiLanguage, section: MenuSection): String =
     MenuSectionTitles.getValue(section).getValue(language)
+
+/**
+ * 「착수 확인」을 켜고 끌 때의 토스트(2026-10-09 사용자 지시) — 돌 버튼의 글자가 `착수 확인`으로 고정이라, 방금 무엇이
+ * 됐고 이제 판을 누르면 어떻게 되는지를 이 두 줄이 말한다. ⚠️ **두 줄까지다** — 토스트는 그 뒤를 자른다.
+ */
+internal fun confirmPlayToggledToastFor(language: UiLanguage, isConfirmOn: Boolean): String =
+    if (isConfirmOn) {
+        when (language) {
+            UiLanguage.Korean -> "착수 확인 기능 활성화\n확인 후 착수합니다."
+            UiLanguage.English -> "Confirm move is on\nA move is placed after you confirm it."
+            UiLanguage.Japanese -> "着手確認をオンにしました\n確認してから着手します。"
+            UiLanguage.ChineseSimplified -> "落子确认已开启\n确认后落子。"
+        }
+    } else {
+        when (language) {
+            UiLanguage.Korean -> "착수 확인 해제\n바로 착수합니다."
+            UiLanguage.English -> "Confirm move is off\nA move is placed right away."
+            UiLanguage.Japanese -> "着手確認をオフにしました\nすぐに着手します。"
+            UiLanguage.ChineseSimplified -> "落子确认已关闭\n直接落子。"
+        }
+    }

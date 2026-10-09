@@ -116,22 +116,19 @@ internal data class UiStrings(
     val none: String,
     val autoDelay: String,
     val engine: String,
-    val directPlay: String,
+    /** 대국 메뉴의 **착수 확인** 스위치 — 켜면 판을 눌러 가착수를 놓고 돌 버튼으로 확정한다. 꺼져 있으면 바로 착수다. */
+    val confirmPlay: String,
     /**
-     * 착수 모드 스위치의 두 얼굴(#37). 대국 메뉴의 [directPlay]와 **뜻은 같지만 문자열이 다르다** —
-     * 그쪽은 설정 격자의 한 줄이라 `Direct play`처럼 길어도 되지만, 이쪽은 `착수` 버튼 위
-     * 100dp 남짓한 칸에 들어가야 해서 4자(전각) 대칭으로 짧게 잡았다. "모드"를 붙이면 배율
-     * 1.5배에서 넘친다.
-     */
-    /**
-     * 보드 크기 모드 칩(#38). **라벨은 현재 상태가 아니라 "누르면 무엇이 되는가"다** —
-     * `playModeDirect`/`playModeConfirm`과 같은 규칙이다(#37에서 한 번 반대로 만들었다가 고쳤다).
+     * 보드 크기 모드 칩(#38). **라벨은 현재 상태가 아니라 "누르면 무엇이 되는가"다**.
      * 보드 모서리에 얹는 작은 칩이라 짧아야 한다.
      */
     val boardModeFull: String,
     val boardModeInset: String,
-    val playModeDirect: String,
-    val playModeConfirm: String,
+    /**
+     * 대국 화면 **돌 버튼**의 글자(2026-10-09) — 메뉴의 [confirmPlay]와 같은 말이지만 **돌 위에 두 줄로** 얹어서
+     * 줄바꿈을 문자열이 갖는다. 켜져 있든 꺼져 있든 이 글자 하나다(켜짐·꺼짐은 돌의 진하기가 말한다).
+     */
+    val confirmPlayOnStone: String,
     val coordinates: String,
     /** 착수 시 진동 토글(#36). 라벨이 "이펙트"가 아니라 "진동"인 이유는 실제로 진동만 하기
      *  때문이다 — 하지 않는 일을 약속하는 라벨은 #31에서 이미 한 번 걸렀다. */

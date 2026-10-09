@@ -48,7 +48,7 @@ class MenuOptionOrderContractTest {
             "strings.playHaptic",
             "strings.playEffect",
             "largeHeldStoneLabelFor(strings.language)",
-            "strings.directPlay",
+            "strings.confirmPlay",
             "menuSectionTitleFor(strings.language, MenuSection.AiCoach)",
             "strings.everyMoveEval",
             "strings.everyMoveTopMoves",

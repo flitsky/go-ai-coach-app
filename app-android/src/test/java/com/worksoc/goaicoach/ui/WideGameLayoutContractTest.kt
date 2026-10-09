@@ -114,20 +114,12 @@ class WideGameLayoutContractTest {
     }
 
     @Test
-    fun thePlaySlotSwapsWidthsWithThePlayMode() {
-        val slot = code("GameStatusPanel.kt").between("internal fun PlaySlot(", "private const val PlaySlotLeadWeight")
-        assertTrue(
-            "가로 착수 칸에서 스위치가 바로 착수일 때 넓지 않다(2026-09-12 사용자 확인).",
-            slot.contains("switch(Modifier.weight(if (isDirectPlay) PlaySlotLeadWeight else PlaySlotRestWeight))"),
-        )
-        assertTrue(
-            "가로 착수 칸에서 `착수`가 확인 모드일 때 넓지 않다 — 두 크기가 맞바뀌어야 한다.",
-            slot.contains("playButton(Modifier.weight(if (isDirectPlay) PlaySlotRestWeight else PlaySlotLeadWeight))"),
-        )
+    fun bothWideArrangementsCarryTheOnePlayStone() {
+        // 착수 칸은 돌 버튼 하나다(2026-10-09) — 넓은 배치에는 높이를 빌릴 좌석 카드가 옆에 없어 고정 크기로 선다.
         val stacked = code("GamePlaySection.kt").between("private fun WidePlayArrangement(", "private val WideBoardInset")
-        assertTrue("위아래 배치가 착수 칸을 가로로 쓰지 않는다.", stacked.contains("horizontal = true"))
+        assertTrue("위아래 배치의 돌 버튼이 제 크기를 받지 않는다.", stacked.contains("modifier.size(WidePlayStoneSize)"))
         val columns = code("GamePlaySection.kt").between("private fun WideColumnsArrangement(", "private val WideColumnWidth")
-        assertTrue("좌우 기둥이 착수 칸을 세로로 쓰지 않는다 — 기둥 폭에서는 가로가 들어가지 않는다.", columns.contains("horizontal = false"))
+        assertTrue("좌우 기둥의 돌 버튼이 제 크기를 받지 않는다.", columns.contains(".size(WidePlayStoneSize)"))
         // ⚠️ #143이 착수 칸을 **플래그 뒤로** 보냈다(UX에서는 빠졌고 코드는 남았다). 두 배치 모두 그 뒤에 있어야
         //   한다 — 한쪽만 남으면 플래그를 켰을 때 배치마다 다른 화면이 된다.
         assertTrue("위아래 배치의 착수 칸이 플래그 뒤에 있지 않다(#143).", stacked.contains("playConfirmSlot {"))

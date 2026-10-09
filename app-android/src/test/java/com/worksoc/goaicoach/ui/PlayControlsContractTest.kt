@@ -2,6 +2,8 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.play.PlayStoneFace
+import com.worksoc.goaicoach.ui.play.playStoneFaceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -81,11 +83,11 @@ class PlayControlsContractTest {
         val status = code("GameStatusPanel.kt")
         assertTrue("착수 칸이 플래그 뒤에 있지 않다(#143).", status.contains("if ($gate) PlaySlot("))
         assertTrue("착수 칸 코드 자체가 사라졌다 — 플래그를 켜도 되살아나지 않는다(#143).", status.contains("internal fun PlaySlot("))
-        assertTrue("착수 모드 스위치 코드가 사라졌다(#143).", status.contains("private fun PlayModeSwitch("))
+        assertTrue("착수 칸의 돌 버튼 코드가 사라졌다(#143).", status.contains("private fun PlayStoneButton("))
 
         val menu = code("KaTrainUxPanels.kt")
-        assertTrue("메뉴의 `바로 착수` 스위치가 플래그 뒤에 있지 않다(#143).", menu.contains("if ($gate)"))
-        assertTrue("메뉴의 `바로 착수` 스위치 코드가 사라졌다(#143).", menu.contains("strings.directPlay"))
+        assertTrue("메뉴의 `착수 확인` 스위치가 플래그 뒤에 있지 않다(#143).", menu.contains("if ($gate)"))
+        assertTrue("메뉴의 `착수 확인` 스위치 코드가 사라졌다(#143).", menu.contains("strings.confirmPlay"))
 
         val shell = code("GoCoachApp.kt")
         assertTrue(
@@ -107,6 +109,50 @@ class PlayControlsContractTest {
             "저장된 설정의 기본값이 바로 착수가 아니다(#223).",
             com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot().isDirectPlayEnabled,
         )
+    }
+
+    /**
+     * 착수 칸은 **돌 버튼 하나**다(2026-10-09 사용자 지시) — 모드를 켜고 끄다가, 착수 확인에서 가착수가 놓이면 그 수를 확정한다.
+     * 바로 착수에서는 가착수가 있든 없든 확정 얼굴이 뜨지 않아야 한다(탭이 곧 착수인 모드다).
+     */
+    @Test
+    fun theOnePlayStoneTogglesTheModeUntilAStoneWaitsToBeConfirmed() {
+        assertEquals(PlayStoneFace.ConfirmOff, playStoneFaceOf(isDirectPlay = true, hasTentativeMove = false))
+        assertEquals(PlayStoneFace.ConfirmOff, playStoneFaceOf(isDirectPlay = true, hasTentativeMove = true))
+        assertEquals(PlayStoneFace.ConfirmOn, playStoneFaceOf(isDirectPlay = false, hasTentativeMove = false))
+        assertEquals(PlayStoneFace.CommitMove, playStoneFaceOf(isDirectPlay = false, hasTentativeMove = true))
+
+        val status = code("GameStatusPanel.kt")
+        assertFalse("착수 모드 스위치가 돌 버튼과 따로 남아 있다 — 버튼은 하나다.", status.contains("fun PlayModeSwitch("))
+        assertTrue(
+            "돌 버튼이 판의 돌과 다른 그림을 쓴다 — 판의 돌 모양을 고치면 이 버튼만 옛 모양으로 남는다.",
+            status.contains("drawStone(") && status.contains("drawGhostStone("),
+        )
+        assertTrue(
+            "돌의 지름이 좌석 카드 높이의 70%가 아니다(2026-10-09 사용자 지시).",
+            status.contains("private const val PlayStoneSeatHeightShare = 0.7f") &&
+                status.contains(".fillMaxHeight(PlayStoneSeatHeightShare)") &&
+                status.contains(".height(IntrinsicSize.Min)"),
+        )
+
+        // ⚠️ 글자는 `착수 확인` 하나로 고정이다(같은 날 사용자 지시) — 켜짐·꺼짐은 돌의 진하기가 말하고, **꺼진 쪽이 흐리다**.
+        assertFalse("돌 버튼의 글자가 다시 모드마다 바뀐다.", status.contains("playModeDirect"))
+        assertTrue(
+            "꺼진 얼굴이 흐린 돌이 아니다 — 글자가 고정이라 진하기가 뒤집히면 켜짐·꺼짐이 거꾸로 읽힌다.",
+            status.contains("if (face == PlayStoneFace.ConfirmOff) {\n                    drawGhostStone("),
+        )
+        // ⚠️ 바뀔 때마다 토스트가 뜬다 — 버튼이 아니라 값이 바뀐 자리에서(메뉴의 스위치로 바꿔도 같은 말이 떠야 한다).
+        val play = code("GamePlaySection.kt")
+        assertTrue(
+            "착수 확인을 켜고 끌 때의 토스트가 값이 바뀐 자리에 있지 않다.",
+            play.contains("confirmPlayToggledToastFor(confirmPlayToastLanguage, isConfirmOn = !isDirectPlay)"),
+        )
+        assertFalse("토스트를 돌 버튼이 직접 띄운다 — 메뉴로 바꾸면 말이 없다.", status.contains("Toast"))
+
+        // ⚠️ 메뉴의 스위치는 **착수 확인을 켜는** 쪽이다 — 저장값(`isDirectPlayEnabled`)과 방향이 반대라 양쪽에서 뒤집어야 한다.
+        val menu = code("KaTrainUxPanels.kt")
+        assertTrue("메뉴 스위치의 켜짐이 착수 확인이 아니다.", menu.contains("checked = !options.isDirectPlayEnabled"))
+        assertTrue("메뉴 스위치를 켜도 착수 확인이 되지 않는다.", menu.contains("options.copy(isDirectPlayEnabled = !it)"))
     }
 
     @Test

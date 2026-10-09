@@ -155,23 +155,18 @@ class FontScaleLayoutContractTest {
     }
 
     /**
-     * 착수 모드 스위치(백로그 #107). 영어 1.3배에서 `⇅ Con…` 으로 잘렸다 —
-     * **무엇을 누르는지 알 수 없는 라벨은 없는 것과 같다.**
+     * 착수 칸의 돌 버튼(백로그 #107 → 2026-10-09 돌 버튼 하나로). 스위치 시절 영어 1.3배에서 `⇅ Con…` 으로 잘렸다 —
+     * **무엇을 누르는지 알 수 없는 라벨은 없는 것과 같다.** 돌은 좌석 카드의 높이를 따라 자라야 한다(함정 9번).
      */
     @Test
-    fun thePlayModeSwitchWrapsAndItsHeightIsAFloor() {
+    fun thePlayStoneGrowsWithTheSeatCards() {
         assertTrue(
-            "스위치 라벨이 한 줄로 고정돼 큰 글꼴에서 잘린다(#107).",
+            "돌 버튼의 두 줄 라벨이 한 줄로 고정됐다.",
             statusPanel.contains("maxLines = 2"),
         )
-        // ⚠️ 접히게만 하고 높이를 고정으로 두면 **아랫줄이 잘린다** — 둘은 한 처방이다(함정 9번).
-        assertFalse(
-            "착수 버튼 높이가 다시 고정이다 — 접힌 라벨의 아랫줄이 잘린다(#107).",
-            statusPanel.contains(".height(PlayButtonHeight)"),
-        )
         assertTrue(
-            "착수 버튼 높이가 바닥값이 아니다(#107).",
-            statusPanel.contains("heightIn(min = PlayButtonHeight)"),
+            "폰 배치의 돌 버튼이 좌석 카드 높이를 따르지 않는다 — 큰 글꼴에서 카드만 자라고 돌은 그대로다.",
+            statusPanel.contains(".fillMaxHeight(PlayStoneSeatHeightShare)"),
         )
     }
 

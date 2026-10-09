@@ -168,15 +168,17 @@ internal fun KaTrainUxMenuPanel(
                     onCheckedChange = { onOptionsChange(options.copy(isLargeHeldStoneEnabled = it)) },
                 )
             }
-            // '착수 확인 / 바로 착수'는 #143이 UX에서 지웠다 — 코드는 플래그 뒤에 그대로 남는다
+            // 「착수 확인」 스위치는 #143이 UX에서 지웠다 — 코드는 플래그 뒤에 그대로 남는다
             // (`FeatureFlags.isPlayConfirmModeEnabled`). 플래그가 켜지면 착수 섹션에 한 줄을 받는다.
             if (FeatureFlags.isPlayConfirmModeEnabled) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     OptionSwitchCell(
-                        label = strings.directPlay,
-                        checked = options.isDirectPlayEnabled,
+                        // ⚠️ 스위치는 **「착수 확인」을 켜는** 쪽이다(2026-10-09 사용자 지시) — 저장되는 값은 그대로
+                        //   `isDirectPlayEnabled`라 여기서 뒤집는다. 켜짐 = 착수 확인, 꺼짐 = 바로 착수.
+                        label = strings.confirmPlay,
+                        checked = !options.isDirectPlayEnabled,
                         modifier = Modifier.weight(1f),
-                        onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = it)) },
+                        onCheckedChange = { onOptionsChange(options.copy(isDirectPlayEnabled = !it)) },
                     )
                     Spacer(modifier = Modifier.width(columnGap))
                     Spacer(modifier = Modifier.weight(1f))

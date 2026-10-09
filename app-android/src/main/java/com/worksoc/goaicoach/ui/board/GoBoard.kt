@@ -958,7 +958,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
+internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStone(
     center: Offset,
     radius: Float,
     stone: StoneColor,
@@ -1024,7 +1024,7 @@ private fun stoneEdgeColor(stone: StoneColor, isGameEnded: Boolean): Color =
     }
 
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
+internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGhostStone(
     center: Offset,
     radius: Float,
     stone: StoneColor,

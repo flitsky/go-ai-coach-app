@@ -1,41 +1,38 @@
 package com.worksoc.goaicoach.ui.play
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
@@ -44,6 +41,8 @@ import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.ui.board.drawGhostStone
+import com.worksoc.goaicoach.ui.board.drawStone
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -51,7 +50,6 @@ import com.worksoc.goaicoach.ui.designsystem.GameStatusPalette
 import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
-import kotlin.math.abs
 
 @Composable
 internal fun GameStatusPanel(
@@ -76,6 +74,8 @@ internal fun GameStatusPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                // 줄의 높이를 좌석 카드의 높이로 못박는다 — 가운데 돌 버튼이 **그 높이의 몇 할**로 제 크기를 정한다.
+                .height(IntrinsicSize.Min)
                 .padding(vertical = AppSpacing.Space4),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
@@ -94,20 +94,20 @@ internal fun GameStatusPanel(
                 alignEnd = false,
             )
 
-            // 중앙: [착수 모드 스위치] + [착수] 버튼. `수순 N수`가 헤더로 올라가며 비운 자리를
-            // 스위치가 받았다(#35 → #37). 넓은 배치(#141)도 같은 칸을 **가로로** 쓴다 — [PlaySlot].
+            // 중앙: **돌 버튼 하나**([PlaySlot]) — 착수 확인을 켜고 끄다가, 가착수가 놓이면 그 수를 확정한다.
             if (FeatureFlags.isPlayConfirmModeEnabled) PlaySlot(
                 screenState = screenState,
                 tentativeMove = tentativeMove,
                 onEvent = onEvent,
-                horizontal = false,
-                // ⚠️ **폭을 훔쳐 넓히려다 되돌렸다**(백로그 #107, 2026-09-05 실기).
-                // 1.4f로 올리자 스위치 라벨은 들어갔지만 **좌석 카드의 `Captures: 0`이 잘렸다** —
-                // 세 칸이 1.3배에서 함께 들어갈 폭이 애초에 없다. **폭 배분으로 풀 문제가 아니라
-                // 문구 길이의 문제다**(사용자 판단). 한쪽을 고치면 다른 쪽이 깨지는 자리다.
+                // ⚠️ **weight가 없다 — 이 칸은 돌 하나만큼만 갖고, 남는 폭은 전부 좌석 카드 둘이 나눈다**
+                // (2026-10-09 사용자 지시: 흑·백 패널이 넓게 보이게). 셋이 1:1:1로 나누던 때는 1.3배에서
+                // 좌석 카드의 `Captures: 0`이 잘렸다(#107).
+                // 돌의 지름은 **좌석 카드 높이의 70%**다(같은 날 사용자 지시) — 고정값이 아니라 카드를 따라 자란다.
+                // 양옆 여백은 돌이 카드에 붙어 보이지 않을 만큼 둔다(같은 날 사용자 지시: "약간의 공간").
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = AppSpacing.Space4),
+                    .padding(horizontal = PlayStoneSideGap)
+                    .fillMaxHeight(PlayStoneSeatHeightShare)
+                    .aspectRatio(1f, matchHeightConstraintsFirst = true),
             )
 
             PlayerSeatCard(
@@ -141,99 +141,145 @@ internal fun GameStatusPanel(
 }
 
 /**
- * **착수 칸** — [착수 모드 스위치] + [착수] 버튼(#37). 폰 배치는 세로로 쌓고(상태판 가운데),
- * 넓은 배치(#141)는 **가로로** 나란히 둔다(아래 둘째 줄 맨 앞).
+ * **착수 칸** — 돌 모양 버튼 **하나**다(2026-10-09 사용자 지시). 그 전에는 [착수 모드 스위치]와 [착수] 버튼 둘이
+ * 모드에 따라 크기를 맞바꿨다(#37).
  *
- * ⚠️ **두 모드에서 크기를 맞바꾼다 — 가로여도 같은 약속이다.** 바로 착수일 때는 `착수`가 할 일이
- * 없으니 스위치가 주인공이고 `착수`는 **점선 자리표시로 작게** 남는다. 착수 확인일 때는 반대로
- * `착수`가 크고 스위치가 작다(2026-09-12 사용자 확인: *"기능 전환에 따라 착수 버튼이 활성화되거나
- * 엄청 작은 상태로"*). 세로에서는 높이를, 가로에서는 **폭**을 맞바꾼다.
+ * 한 버튼이 세 얼굴을 갖는다([PlayStoneFace]) — 무엇을 그리고 눌렀을 때 무엇을 하는지가 얼굴 하나로 함께 정해진다:
+ * - **착수 확인 켜짐**: 진한 흰 돌 + `착수\n확인`. 누르면 끈다(바로 착수).
+ * - **착수 확인 꺼짐**: 흐린 흰 돌 + 흐린 `착수\n확인`. 누르면 켠다.
+ * - **착수 확정**: 착수 확인이 켜진 채 판에 가착수가 놓였을 때 — 초록 고리 + `착수`. 누르면 그 수를 둔다.
+ *
+ * ⚠️ **글자는 `착수 확인`으로 고정이고, 켜짐·꺼짐은 돌의 진하기가 말한다**(2026-10-09 사용자 지시) — 처음에는 글자를
+ *   `바로 착수`로 바꿨는데, 글자가 바뀌면 "다른 버튼"으로 읽히고 한 기능의 켜짐·꺼짐으로 읽히지 않는다.
+ *   그래서 처음 정했던 「켜짐 = 흐린 돌」도 뒤집혔다 — 글자가 고정이면 **흐린 쪽이 꺼짐**이어야 한다.
+ * ⚠️ 켜고 끌 때의 안내 토스트는 여기가 아니라 `GamePlaySection`이 띄운다 — 메뉴의 스위치로 바꿔도 같은 말이 떠야 한다.
+ * ⚠️ **크기는 부르는 쪽이 준다**([modifier]) — 폰은 좌석 카드 높이의 70%, 넓은 배치(#141)는 고정 크기.
  */
 @Composable
 internal fun PlaySlot(
     screenState: GameScreenState,
     tentativeMove: BoardCoordinate?,
     onEvent: (GameUiEvent) -> Unit,
-    horizontal: Boolean,
     modifier: Modifier,
 ) {
     val strings = LocalUiStrings.current
     val isDirectPlay = screenState.uxOptions.isDirectPlayEnabled
-    val switch: @Composable (Modifier) -> Unit = { switchModifier ->
-        PlayModeSwitch(
-            isDirectPlay = isDirectPlay,
-            // **바로 착수일 때 스위치가 주인공이다**(#37 피드백, 2026-08-30). 그 모드에서는
-            // `착수` 버튼이 할 일이 없으므로 크기를 서로 맞바꾼다 — 지금 누를 수 있는
-            // 것이 커야 한다.
-            prominent = isDirectPlay,
-            enabled = !screenState.isGameEnded,
-            onToggle = {
+    val face = playStoneFaceOf(isDirectPlay = isDirectPlay, hasTentativeMove = tentativeMove != null)
+    PlayStoneButton(
+        face = face,
+        label = if (face == PlayStoneFace.CommitMove) strings.playMove else strings.confirmPlayOnStone,
+        enabled = !screenState.isGameEnded,
+        onClick = {
+            if (face == PlayStoneFace.CommitMove) {
+                tentativeMove?.let {
+                    onEvent(GameUiEvent.SubmitMove(Move.Play(screenState.gameState.nextPlayer, it)))
+                }
+            } else {
                 onEvent(
                     GameUiEvent.ChangeUxOptions(
                         screenState.uxOptions.copy(isDirectPlayEnabled = !isDirectPlay),
                     ),
                 )
-            },
-            modifier = switchModifier,
-        )
-    }
-    val playButton: @Composable (Modifier) -> Unit = { buttonModifier ->
-        if (isDirectPlay) {
-            // 이 모드에서 `착수` 버튼은 쓸 일이 없다. 그렇다고 **지워 버리면** 모드를
-            // 바꿨을 때 버튼이 난데없이 튀어나온 것처럼 보이고, 평소처럼 **꽉 찬 회색
-            // 버튼**으로 두면 "왜 안 눌리지"가 된다. 점선 자리표시는 "여기 버튼이 있고,
-            // 모드를 바꾸면 살아난다"를 한 번에 말한다.
-            PlayButtonGhost(label = strings.playMove, modifier = buttonModifier)
-        } else {
-            Button(
-                onClick = {
-                    tentativeMove?.let {
-                        onEvent(GameUiEvent.SubmitMove(Move.Play(screenState.gameState.nextPlayer, it)))
-                    }
-                },
-                enabled = tentativeMove != null && !screenState.isGameEnded,
-                modifier = buttonModifier
-                    .fillMaxWidth()
-                    .heightIn(min = PlayButtonHeight),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledContainerColor = GameStatusPalette.PlayButtonDisabledContainer,
-                    disabledContentColor = GameStatusPalette.PlayButtonDisabledContent,
-                ),
-                shape = RoundedCornerShape(AppRadius.Corner24),
-                contentPadding = PaddingValues(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space8),
-            ) {
-                Text(strings.playMove, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             }
-        }
-    }
-
-    if (horizontal) {
-        // 가로: **폭**을 맞바꾼다. 주인공이 넓게(1.5), 쉬는 쪽이 좁게(0.5 — 점선 자리표시).
-        Row(
-            modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            switch(Modifier.weight(if (isDirectPlay) PlaySlotLeadWeight else PlaySlotRestWeight))
-            playButton(Modifier.weight(if (isDirectPlay) PlaySlotRestWeight else PlaySlotLeadWeight))
-        }
-    } else {
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
-        ) {
-            switch(Modifier)
-            playButton(Modifier)
-        }
-    }
+        },
+        modifier = modifier,
+    )
 }
 
-/** 가로 착수 칸에서 주인공(넓은 쪽)과 쉬는 쪽의 폭 비율. */
-private const val PlaySlotLeadWeight = 1.5f
-private const val PlaySlotRestWeight = 0.5f
+/** 돌 버튼의 세 얼굴 — [PlaySlot]의 KDoc. */
+internal enum class PlayStoneFace { ConfirmOff, ConfirmOn, CommitMove }
+
+/**
+ * 지금 돌 버튼이 어느 얼굴인가. 가착수는 착수 확인에서만 생기지만(바로 착수는 탭이 곧 착수다), 그 약속에 기대지 않고
+ * **모드를 먼저 본다** — 착수 확인이 꺼져 있는데 「착수」 확정 버튼이 뜨는 일은 없어야 한다.
+ */
+internal fun playStoneFaceOf(isDirectPlay: Boolean, hasTentativeMove: Boolean): PlayStoneFace = when {
+    isDirectPlay -> PlayStoneFace.ConfirmOff
+    hasTentativeMove -> PlayStoneFace.CommitMove
+    else -> PlayStoneFace.ConfirmOn
+}
+
+/** 폰 배치에서 돌 버튼의 지름 ÷ 좌석 카드의 높이(2026-10-09 사용자 지시: 70% — 90%, 80%를 거쳐 줄였다. 버튼이 크게 느껴졌다). */
+private const val PlayStoneSeatHeightShare = 0.7f
+
+/** 폰 배치에서 돌 버튼과 양옆 좌석 카드 사이의 여백. */
+private val PlayStoneSideGap = AppSpacing.Space10
+
+/** 넓은 배치(#141)의 돌 버튼 지름 — 옆에 높이를 빌릴 좌석 카드가 없어 고정값이다. 두 줄 라벨이 1.3배에서도 들어간다. */
+internal val WidePlayStoneSize = 64.dp
+
+/** 착수 확인이 **꺼져 있을 때** 돌의 투명도 — 판의 가착수 돌이 깜빡이는 범위(0.35~0.65) 안에서, 켜진 돌과 한눈에 갈리게 낮은 쪽. */
+private const val PlayStoneOffAlpha = 0.4f
+
+/** 꺼져 있을 때 글자의 투명도 — 돌만 흐리고 글자가 진하면 켜진 것으로 읽힌다. */
+private const val PlayStoneOffLabelAlpha = 0.45f
+
+/** 착수 확정 얼굴에서 돌을 두르는 고리의 굵기. */
+private val PlayStoneCommitRingWidth = 3.dp
+
+/**
+ * 돌 버튼 한 개. 돌은 **판의 돌과 같은 그리기**를 쓴다(`drawStone`·`drawGhostStone`) — 따로 그리면 판의 돌 모양을
+ * 고칠 때 이 버튼만 옛 모양으로 남는다. 색은 누구 차례든 **흰 돌**이다(사용자 지시) — 글자를 얹을 바탕이라서다.
+ *
+ * ⚠️ 돌을 그리는 `drawBehind`가 `clip`보다 **앞**이다 — 돌의 그림자는 원 밖으로 조금 나가고, 잘리는 것은 누름 물결뿐이어야 한다.
+ */
+@Composable
+private fun PlayStoneButton(
+    face: PlayStoneFace,
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+) {
+    val isCommit = face == PlayStoneFace.CommitMove
+    val ringColor = MaterialTheme.colorScheme.primary
+    val ringWidth = with(LocalDensity.current) { PlayStoneCommitRingWidth.toPx() }
+    Box(
+        modifier = modifier
+            .alpha(if (enabled) 1f else 0.5f)
+            .drawBehind {
+                val radius = size.minDimension / 2f
+                if (face == PlayStoneFace.ConfirmOff) {
+                    drawGhostStone(center = center, radius = radius, stone = StoneColor.White, alpha = PlayStoneOffAlpha)
+                } else {
+                    drawStone(center = center, radius = radius, stone = StoneColor.White, isGameEnded = false)
+                }
+                // 확정 얼굴은 "지금 누르면 둔다"를 고리로 말한다 — 글자만 바뀌면 모드 버튼인 줄 알고 누른다.
+                if (isCommit) {
+                    drawCircle(color = ringColor, radius = radius - ringWidth / 2f, center = center, style = Stroke(width = ringWidth))
+                }
+            }
+            .clip(CircleShape)
+            // 글자가 고정이라 켜짐·꺼짐을 접근성 도구에는 **스위치의 값**으로 알린다. 확정 얼굴만 그냥 버튼이다.
+            .then(
+                if (isCommit) {
+                    Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                } else {
+                    Modifier.toggleable(
+                        value = face == PlayStoneFace.ConfirmOn,
+                        enabled = enabled,
+                        role = Role.Switch,
+                        onValueChange = { onClick() },
+                    )
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            // 라벨이 두 줄(`착수\n확인`)이다 — 줄바꿈은 문자열이 갖고 있다.
+            text = label,
+            style = if (isCommit) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = when (face) {
+                PlayStoneFace.CommitMove -> ringColor
+                PlayStoneFace.ConfirmOn -> GameStatusPalette.SeatLabel
+                PlayStoneFace.ConfirmOff -> GameStatusPalette.SeatLabel.copy(alpha = PlayStoneOffLabelAlpha)
+            },
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+        )
+    }
+}
 
 /**
  * 넓은 배치(#141)의 **좌석 카드** — 폰 배치의 [PlayerSeatCard]를 줄였다. 차례 표시(초록 테두리·배경)는
@@ -376,160 +422,6 @@ internal fun formatMillis(millis: Long): String {
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
     return String.format("%02d:%02d", minutes, remainingSeconds)
-}
-
-/**
- * `착수` 버튼 바로 위에서 **착수 모드를 직접 뒤집는** 스위치(#37).
- *
- * 이 설정은 원래 대국 메뉴(☰) 안에만 있었다. 대국 중 가장 자주 오가는 축인데 두 뎁스를
- * 들어가야 했고, 마침 `수순 N수`가 헤더로 올라가며(#35) 이 자리가 비었다.
- *
- * **반 바퀴 뒤집기**(사용자 지정 이펙트): `rotationX`로 카드가 뒤집히고, 90°를 넘는 순간
- * 뒷면 라벨로 갈아탄다. 뒷면은 그대로 두면 거꾸로 서므로 180°를 되돌려 세운다 —
- * 이 되돌리기가 없으면 글자가 뒤집힌 채 멈춘다.
- *
- * **위/아래 스와이프와 탭을 모두 받는다.** 사용자가 지정한 조작은 스와이프지만, 탭이 훨씬
- * 발견하기 쉽고 접근성 도구도 탭만 보낸다 — 스와이프만 받으면 못 쓰는 사용자가 생긴다.
- *
- * ⚠️ 세로 드래그를 **소비**해야 한다. 대국 화면 루트에 `verticalScroll`이 있어서
- * (`GoCoachContent.kt`), 소비하지 않으면 이 위젯 위에서 스와이프해도 화면만 스크롤된다.
- */
-@Composable
-private fun PlayModeSwitch(
-    isDirectPlay: Boolean,
-    /** 이 모드에서 스위치가 주인공인가. 참이면 `착수` 버튼과 같은 크기·무게로 그린다. */
-    prominent: Boolean,
-    enabled: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier,
-) {
-    val strings = LocalUiStrings.current
-    val rotation by animateFloatAsState(
-        targetValue = if (isDirectPlay) 0f else 180f,
-        animationSpec = tween(durationMillis = 280),
-        label = "PlayModeSwitchFlip",
-    )
-    val showingConfirmSide = rotation > 90f
-    val density = LocalDensity.current.density
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                rotationX = rotation
-                // 없으면 원근이 과장돼 뒤집힐 때 카드가 화면 밖으로 튀어나온 것처럼 보인다.
-                cameraDistance = 12f * density
-            }
-            .alpha(if (enabled) 1f else 0.5f)
-            .pointerInput(enabled) {
-                if (!enabled) return@pointerInput
-                var dragged = 0f
-                // ⚠️ **한 제스처에 한 번만** 뒤집는다. 누적만 0으로 되돌리는 방식은 부족했다 —
-                // 임계(48px)의 두 배를 넘게 끌면 두 번 뒤집혀 제자리로 돌아온다(실기 확인:
-                // 120px 스와이프가 무반응처럼 보였다). 그래서 이번 제스처에서 이미 뒤집었는지를
-                // 따로 기억하고, 손을 떼야 다시 열린다.
-                var toggledThisGesture = false
-                detectVerticalDragGestures(
-                    onDragStart = { dragged = 0f; toggledThisGesture = false },
-                    onDragEnd = { dragged = 0f; toggledThisGesture = false },
-                    onDragCancel = { dragged = 0f; toggledThisGesture = false },
-                ) { change, dragAmount ->
-                    change.consume()
-                    dragged += dragAmount
-                    if (!toggledThisGesture && abs(dragged) > SwipeToggleThresholdPx) {
-                        toggledThisGesture = true
-                        onToggle()
-                    }
-                }
-            }
-            .clickable(enabled = enabled, onClick = onToggle),
-        shape = RoundedCornerShape(if (prominent) AppRadius.Corner24 else AppRadius.Corner14),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = if (prominent) 2.dp else 1.dp,
-    ) {
-        Row(
-            modifier = Modifier
-                // ⚠️ **고정 높이가 아니라 바닥값이다**(함정 9번, #107). 고정이면 두 줄로 접힌
-                // 라벨의 아랫줄이 잘린다 — 출석판이 같은 이유로 `heightIn(min = …)`으로 갔다.
-                .then(if (prominent) Modifier.heightIn(min = PlayButtonHeight) else Modifier)
-                .padding(horizontal = AppSpacing.Space6, vertical = AppSpacing.Space5)
-                // 뒷면을 다시 세운다.
-                .graphicsLayer { rotationX = if (showingConfirmSide) 180f else 0f },
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "\u21C5",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.secondary,
-            )
-            Spacer(modifier = Modifier.width(AppSpacing.Space3))
-            // ⚠️ **라벨은 현재 상태가 아니라 "누르면 무엇이 되는가"다**(2026-08-30 사용자 지적).
-            // 착수 확인 모드에서 `착수 확인`이라고 쓰면 이미 그 상태인데 또 그 말을 하는 셈이라,
-            // 눌렀을 때 무엇이 될지 알 수 없다. 그래서 **반대편 모드 이름**을 보여준다.
-            Text(
-                text = if (showingConfirmSide) strings.playModeDirect else strings.playModeConfirm,
-                style = if (prominent) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                // ⚠️ **1줄이면 큰 글꼴에서 `Con…` 이 된다**(백로그 #107, 영어 1.3배 실기).
-                // 무엇을 누르는지 알 수 없는 라벨은 없는 것과 같다. 아래 높이가 바닥값이라
-                // 접혀도 잘리지 않는다.
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-/** 스와이프 한 번으로 뒤집히는 최소 이동량. 스크롤과 헷갈리지 않을 만큼은 커야 한다. */
-private const val SwipeToggleThresholdPx = 48f
-
-/** `착수` 버튼의 정상 높이. 스위치가 주인공일 때 그 높이를 물려받는다(#37). */
-private val PlayButtonHeight = 48.dp
-
-/** 점선 자리표시의 높이 — 정상 버튼보다 확실히 낮아 "지금은 쉬는 자리"로 읽힌다. */
-private val GhostPlayButtonHeight = 26.dp
-
-/**
- * 바로 착수 모드에서 `착수` 버튼이 있던 자리를 지키는 **점선 자리표시**(#37 피드백).
- *
- * 누를 수 없고, 누를 수 있는 척도 하지 않는다. 점선 테두리와 낮은 높이가 "여기 버튼이 하나
- * 있는데 지금은 쉬고 있다 — 모드를 바꾸면 살아난다"를 말한다. 아예 지우지 않는 이유는
- * 레이아웃이 출렁이고, 모드를 바꿨을 때 버튼이 난데없이 생긴 것처럼 보이기 때문이다.
- */
-@Composable
-private fun PlayButtonGhost(label: String, modifier: Modifier) {
-    val ghostColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-    val dashOn = with(LocalDensity.current) { 6.dp.toPx() }
-    val dashOff = with(LocalDensity.current) { 5.dp.toPx() }
-    val strokeWidth = with(LocalDensity.current) { 1.dp.toPx() }
-    val corner = with(LocalDensity.current) { 24.dp.toPx() }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(GhostPlayButtonHeight)
-            .drawBehind {
-                drawRoundRect(
-                    color = ghostColor,
-                    cornerRadius = CornerRadius(corner, corner),
-                    style = Stroke(
-                        width = strokeWidth,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashOn, dashOff)),
-                    ),
-                )
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = ghostColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
 }
 
 /**

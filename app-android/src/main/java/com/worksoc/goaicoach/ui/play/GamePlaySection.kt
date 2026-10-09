@@ -88,6 +88,7 @@ import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.confirmPlayToggledToastFor
 import com.worksoc.goaicoach.ui.l10n.freeAnalysisUsedToastFor
 import com.worksoc.goaicoach.ui.l10n.rematchActionFor
 import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
@@ -131,8 +132,25 @@ internal fun GamePlaySection(
     LaunchedEffect(screenState.gameState) {
         tentativeMove = null
     }
+    // ⚠️ 「착수 확인」이 **바뀔 때마다** 토스트로 알린다(2026-10-09 사용자 지시) — 돌 버튼으로 바꾸든 메뉴의 스위치로 바꾸든
+    //   같은 말이 뜨도록 누른 자리가 아니라 **값이 바뀐 자리**에서 띄운다. 화면에 처음 들어올 때는 바뀐 것이 아니므로 말하지 않는다.
+    //   연달아 누르면 앞 토스트를 지우고 띄운다 — 쌓이면 마지막 상태와 다른 말이 몇 초씩 뒤늦게 뜬다.
+    val confirmPlayToastContext = LocalContext.current
+    val confirmPlayToastLanguage = LocalUiStrings.current.language
+    var announcedDirectPlay by remember { mutableStateOf(screenState.uxOptions.isDirectPlayEnabled) }
+    var confirmPlayToast by remember { mutableStateOf<Toast?>(null) }
     LaunchedEffect(screenState.uxOptions.isDirectPlayEnabled) {
         tentativeMove = null
+        val isDirectPlay = screenState.uxOptions.isDirectPlayEnabled
+        if (announcedDirectPlay != isDirectPlay) {
+            announcedDirectPlay = isDirectPlay
+            confirmPlayToast?.cancel()
+            confirmPlayToast = Toast.makeText(
+                confirmPlayToastContext,
+                confirmPlayToggledToastFor(confirmPlayToastLanguage, isConfirmOn = !isDirectPlay),
+                Toast.LENGTH_SHORT,
+            ).also { it.show() }
+        }
     }
 
     // 보드에 무엇을 그릴 권한이 있는지는 여기서 정해 GoBoard에는 데이터만 넘긴다 — 보드가 스스로
@@ -611,8 +629,7 @@ private fun WidePlayArrangement(
                         screenState = screenState,
                         tentativeMove = tentativeMove,
                         onEvent = onEvent,
-                        horizontal = true,
-                        modifier = modifier.weight(2f),
+                        modifier = modifier.size(WidePlayStoneSize),
                     )
                 }?.invoke(this)
                 slots.eval(Modifier.weight(1f))
@@ -767,8 +784,9 @@ private fun WideColumnsArrangement(
                             screenState = screenState,
                             tentativeMove = tentativeMove,
                             onEvent = onEvent,
-                            horizontal = false,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .size(WidePlayStoneSize)
+                                .align(Alignment.CenterHorizontally),
                         )
                     }
                     slots.undo(Modifier.fillMaxWidth())
