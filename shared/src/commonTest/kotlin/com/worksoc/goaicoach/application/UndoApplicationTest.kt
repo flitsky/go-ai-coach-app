@@ -232,6 +232,27 @@ class UndoApplicationTest {
         assertEquals(UndoRequestPlan.ShowMessage("No human move to undo yet."), plan)
     }
 
+    /**
+     * 버튼이 미리 묻는 말(백로그 #242) — 누르면 **실제로 물러나는가**. 계획이 안내 문구만 돌려주는 세 경우에는 `false`라서
+     * 버튼이 꺼지고, 이 판의 무료 무르기가 아무 일도 일어나지 않는 탭에 닳지 않는다.
+     */
+    @Test
+    fun canUndoLastTurnIsTrueExactlyWhenThePlanWouldRollBack() {
+        val aiOpening = GameState.empty().play(Move.Pass(StoneColor.Black))
+        val aiVsAi = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai),
+            white = SidePlayerSetup(controller = SeatController.Ai),
+        )
+
+        assertFalse(canUndoLastTurn(GameState.empty(), MatchMode.HumanVsAi, PlayerSetup()), "no move yet")
+        assertFalse(canUndoLastTurn(aiOpening, MatchMode.AiVsAi, aiVsAi), "AI controls both sides")
+        assertFalse(canUndoLastTurn(aiOpening, MatchMode.AiVsHuman, HumanWhite), "only the AI's opening move — nothing of the human's to take back")
+
+        assertTrue(canUndoLastTurn(aiOpening, MatchMode.HumanVsAi, PlayerSetup()), "the human (Black) just moved")
+        assertTrue(canUndoLastTurn(aiOpening.play(Move.Pass(StoneColor.White)), MatchMode.AiVsHuman, HumanWhite))
+        assertTrue(canUndoLastTurn(aiOpening, MatchMode.LocalTwoPlayer, PlayerSetup()))
+    }
+
     @Test
     fun undoRequestPlanUsesActualFirstMoverNotBlackForHandicapGames() {
         // Handicap games start with White to move (GameState.withHandicap),

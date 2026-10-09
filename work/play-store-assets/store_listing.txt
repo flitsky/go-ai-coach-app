@@ -152,7 +152,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 <ko-KR>
 캐릭터 다섯이 이제 그 기력의 사람처럼 둡니다 — 15급부터 7단까지. 「승급 대국」에서 내 급수를 찾아 보세요.
 
-· 캐릭터와 두는 대국마다 형세 보기·추천 수 3회 무료(광고 없이)
+· 캐릭터와 두는 대국마다 형세 보기·추천 수·무르기 3회 무료(광고 없이)
 · 형세가 크게 기울면 AI가 기권을 제안합니다
 · 착수 확인 모드가 돌아왔습니다(대국 화면에서 전환)
 · 다시보기: 형세 그래프를 크게 펼쳐 좌우로 넘기고, 지나간 국면에서도 형세 보기·추천 수
@@ -164,7 +164,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 <en-US>
 The five characters now play like people of their rank — 15 kyu to 7 dan. Find your own in Rank Match.
 
-· 3 free Evaluations and Top moves per game vs a character, no ad
+· 3 free Evaluations, Top moves and Undos per game vs a character, no ad
 · The AI offers to resign when far behind
 · Confirm-before-playing is back
 · Replay: large scrollable score graph; Evaluation and Top moves on past positions

@@ -79,6 +79,32 @@ class UiStringsFreeAnalysisTest {
         )
     }
 
+    /**
+     * **무르기의 관문**(백로그 #242, 사용자 2026-10-09)도 같은 순서다 — 열려 있으면 그대로, 잠겨 있으면 이 판의 무료 3회, 다 쓰면 업셀.
+     * ⚠️ 무르기는 켜 두는 표시가 아니라 한 번의 동작이라 **1회성 원장에 적지 않는다** — 적으면 다음 탭이 "끄는 탭"으로 읽혀 값 없이 통과한다.
+     * 버튼의 「무료 N」과 잠금 테두리도 잠겨 있을 때의 남은 횟수 하나로 정한다.
+     */
+    @Test
+    fun theUndoGateSpendsItsOwnFreeUsesOnlyWhenLockedAndNeverMarksAOneShot() {
+        val source = RepoPaths.uiFile("GamePlaySection.kt").readContractSource()
+        val gate = source.substringAfter("fun undoGated(").substringBefore("PremiumUpsellDialogHost(")
+        val allowed = gate.indexOf("access is FeatureAccess.Allowed")
+        val free = gate.indexOf("consumables.useFree(FeatureId.Undo)")
+        val upsell = gate.indexOf("showPremiumUpsellDialog = true")
+
+        assertTrue("무르기의 관문이 무료 사용을 쓰지 않는다(#242).", free >= 0)
+        assertTrue("이미 열린 길보다 무료 사용을 먼저 본다 — 무제한인 사람의 횟수가 닳는다(#242).", allowed in 0 until free)
+        assertTrue("무료 사용이 업셀보다 뒤에 있다(#242).", free < upsell)
+        assertFalse("무르기를 1회성 원장에 적는다 — 다음 탭이 값 없이 통과한다(#242).", gate.contains("markOneShot"))
+
+        val slot = source.substringAfter("val undoAccess = premium.resolve(FeatureId.Undo)").substringBefore("content(slots)")
+        assertTrue("무르기 버튼이 제 관문을 거치지 않는다(#242).", slot.contains("undoGated(undoAccess)"))
+        assertTrue(
+            "무르기 버튼의 잠금 테두리가 남은 무료 횟수를 보지 않는다 — 값 없이 눌리는데 잠긴 것처럼 보인다(#242).",
+            slot.contains("premiumLocked = undoAccess is FeatureAccess.Locked && undoFreeLeft == 0"),
+        )
+    }
+
     /** 다시보기에서는 주지 않는다(사용자 2026-10-08) — 다시보기의 분석은 제 원장으로 값을 받고, 이 판의 무료 사용을 모른다. */
     @Test
     fun theReplayScreenNeverTouchesTheFreeUses() {

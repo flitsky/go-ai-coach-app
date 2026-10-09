@@ -147,6 +147,8 @@ internal fun SingleActionButton(
     label: String,
     onEvent: (GameUiEvent) -> Unit,
     modifier: Modifier = Modifier,
+    /** 이름 옆 괄호 안의 표시(`무르기 (무료 3)`) — 형세 보기·추천 수의 표시와 같은 자리, 같은 한 줄이다. */
+    mark: String? = null,
     premiumLocked: Boolean = false,
     premiumFeature: Boolean = false,
 ) {
@@ -155,6 +157,7 @@ internal fun SingleActionButton(
         enabled = action.enabled,
         modifier = modifier,
         label = label,
+        mark = mark,
         premiumLocked = premiumLocked,
         premiumFeature = premiumFeature,
     )
@@ -166,6 +169,7 @@ internal fun ActionButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    mark: String? = null,
     premiumLocked: Boolean = false,
     premiumFeature: Boolean = false,
 ) {
@@ -181,7 +185,7 @@ internal fun ActionButton(
         ),
         border = premiumBorderOr(null, premiumFeature, premiumLocked),
     ) {
-        ActionButtonText(label)
+        ActionButtonText(label = label, mark = mark)
     }
 }
 

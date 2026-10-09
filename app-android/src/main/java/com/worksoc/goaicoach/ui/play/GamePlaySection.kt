@@ -94,6 +94,7 @@ import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
 import com.worksoc.goaicoach.ui.l10n.confirmPlayToggledToastFor
+import com.worksoc.goaicoach.ui.l10n.freeAnalysisMarkFor
 import com.worksoc.goaicoach.ui.l10n.freeAnalysisUsedToastFor
 import com.worksoc.goaicoach.ui.l10n.rematchActionFor
 import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
@@ -1088,6 +1089,26 @@ private fun GameActionButtonHost(
         }
     }
 
+    // **무르기의 관문**(백로그 #242, 사용자 2026-10-09) — 순서는 위와 같다: 열려 있으면 그대로, 잠겨 있으면 **이 판의 무료 3회**부터
+    // 쓰고 다 쓰면 업셀. 새 사용자가 출석 3일차에 무제한 무르기를 얻기 전에도 한 판에 세 번은 무를 수 있게 하려는 것이다.
+    // ⚠️ `featureGated`에 얹지 않은 이유: 무르기는 켜 두는 표시가 아니라 **한 번의 동작**이다. 1회성 원장(`markOneShot`)에 적으면
+    //   다음 탭이 "끄는 탭"으로 읽혀 값 없이 통과한다. 1회권도 없고(`ConsumableCatalog`), 「매 수마다」 안내도 무르기의 말이 아니다.
+    // ⚠️ 무를 수가 없는 순간에는 버튼이 꺼져 있어(`canUndoLastTurn`) 횟수가 헛되이 닳지 않는다.
+    fun undoGated(access: FeatureAccess, action: () -> Unit) {
+        if (access is FeatureAccess.Allowed) {
+            action()
+            return
+        }
+        // ⚠️ 남은 횟수는 **쓰기 전에** 읽는다(위의 무료 사용과 같은 이유).
+        val freeLeft = consumables.freeUsesRemaining(FeatureId.Undo)
+        if (freeLeft > 0 && consumables.useFree(FeatureId.Undo)) {
+            action()
+            Toast.makeText(context, freeAnalysisUsedToastFor(strings.language, freeLeft - 1), Toast.LENGTH_SHORT).show()
+        } else {
+            showPremiumUpsellDialog = true
+        }
+    }
+
     PremiumUpsellDialogHost(
         visible = showPremiumUpsellDialog,
         onDismiss = { showPremiumUpsellDialog = false },
@@ -1250,9 +1271,10 @@ private fun GameActionButtonHost(
             //   ⓑ 광고 1시간 활성 → `Allowed(AdGrant)`
             //   ⓒ 3일차 출석 보상으로 영구 획득 → `Allowed(Claimed)`
             // 셋 다 `Allowed`라 테두리가 저절로 사라진다 — **상태 전이를 따로 배선할 것이 없다.**
-            // ⚠️ 라벨에는 아무 표시도 붙이지 않는다. 무르기에 무제한 표시를 달지 않기로 한 것은
-            // 사용자 확정 사항이고(`UiStrings.featureButtonLabel` KDoc), 게다가 이 버튼은
-            // `ActionButtonMinHeight`(48dp) **고정 높이**라 줄이 늘면 폰트 배율에서 잘린다.
+            // 아직 잠긴 사람에게는 **캐릭터와 두는 판마다 무료 3회**가 있다(백로그 #242 — `undoGated`).
+            // ⚠️ 열린 뒤의 라벨에는 아무 표시도 붙이지 않는다. 무르기에 무제한 표시를 달지 않기로 한 것은
+            // 사용자 확정 사항이다(`UiStrings.featureButtonLabel` KDoc). 붙는 표시는 **남은 무료 횟수 하나뿐**이고
+            // (`무르기 (무료 3)`), 이름과 같은 줄이라 `ActionButtonMinHeight`(48dp) 고정 높이를 넘지 않는다.
             // ⚠️ **끝난 판에서는 이 칸이 「대국 설정」이 된다**(백로그 #185).
             // ⚠️ **되돌아오지 않는 결정이다** — 지금까지 무르기는 종국 후에도 살아 있어서
             // 기권·계가를 **되돌려 계속 둘 수 있었다**(2026-09-22 실기 확인: 기권 직후 무르기를
@@ -1272,15 +1294,17 @@ private fun GameActionButtonHost(
             val undoAction = screenState.actionButtons.firstOrNull { it.role == GameActionButtonRole.Undo }
             if (undoAction != null) {
                 val undoAccess = premium.resolve(FeatureId.Undo)
+                // 잠겨 있을 때만 센다 — 이미 열린 사람에게 「무료 3」은 틀린 말이다(횟수도 닳지 않는다).
+                val undoFreeLeft = if (undoAccess is FeatureAccess.Locked) consumables.freeUsesRemaining(FeatureId.Undo) else 0
                 SingleActionButton(
                     action = undoAction,
                     label = strings.undo,
-                    onEvent = { event -> featureGated(undoAccess) { onEvent(event) } },
+                    mark = freeAnalysisMarkFor(strings.language, undoFreeLeft).takeIf { undoFreeLeft > 0 },
+                    onEvent = { event -> undoGated(undoAccess) { onEvent(event) } },
                     modifier = modifier,
-                    // 형세·추천과 같은 관용구다. 다만 그 둘이 함께 보는 `tapIsFree`는 여기 없다 —
-                    // 무르기에는 1회권이 없어(`ConsumableCatalog`에 `FeatureUse(Undo)`가 없다)
-                    // 언제나 false이므로, 붙이면 읽는 사람만 헷갈린다.
-                    premiumLocked = undoAccess is FeatureAccess.Locked,
+                    // 형세·추천과 같은 관용구다 — 무료 횟수가 남아 있으면 이번 탭은 값이 없으니 잠금 테두리를 두르지 않는다.
+                    // 무르기에는 1회권이 없어(`ConsumableCatalog`에 `FeatureUse(Undo)`가 없다) 볼 것은 무료 횟수 하나다.
+                    premiumLocked = undoAccess is FeatureAccess.Locked && undoFreeLeft == 0,
                     // ⚠️ **무르기에는 `premiumFeature`를 주지 않는다 — 빠뜨린 것이 아니라 결정이다**
                     // (2026-09-18). 무르기는 **출석 3일차로 영구 해금되는 무료 경로**가 있어서,
                     // 열린 뒤에도 금색을 상시로 두면 "돈을 내야 하는 것"으로 과장된다. 대국 메뉴가

@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.premium.state
 
-import com.worksoc.goaicoach.application.botcharacter.isFreeAnalysisMatch
+import com.worksoc.goaicoach.application.botcharacter.isFreeUseMatch
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -49,10 +49,17 @@ class MatchFreeUsesTest {
         assertEquals(3, nextGame.remaining(FeatureId.TopMoves, matchGeneration = 2L))
     }
 
-    /** 무료 사용은 형세 보기와 추천 수뿐이다 — 무르기·착수 평가·사진 분석에는 없다. */
+    /**
+     * 무료 사용은 형세 보기 · 추천 수 · **무르기** 셋이다(무르기는 백로그 #242, 사용자 2026-10-09 — 출석 3일차의 무제한 무르기를
+     * 얻기 전에도 한 판에 세 번은 무를 수 있게). 착수 평가·사진 분석에는 없다. 기능마다 따로 센다.
+     */
     @Test
-    fun onlyEvalAndTopMovesHaveFreeUses() {
-        assertEquals(setOf(FeatureId.Eval, FeatureId.TopMoves), MatchFreeUses.Features)
+    fun evalTopMovesAndUndoHaveFreeUsesAndEachIsCountedOnItsOwn() {
+        assertEquals(setOf(FeatureId.Eval, FeatureId.TopMoves, FeatureId.Undo), MatchFreeUses.Features)
+        val undoneTwice = MatchFreeUses().afterUsing(FeatureId.Undo, 1L).afterUsing(FeatureId.Undo, 1L)
+        assertEquals(1, undoneTwice.remaining(FeatureId.Undo, matchGeneration = 1L))
+        assertEquals(3, undoneTwice.remaining(FeatureId.Eval, matchGeneration = 1L), "an undo does not eat an evaluation")
+        assertEquals(0, undoneTwice.afterUsing(FeatureId.Undo, 1L).afterUsing(FeatureId.Undo, 1L).remaining(FeatureId.Undo, 1L))
         FeatureId.entries.filterNot { it in MatchFreeUses.Features }.forEach { other ->
             assertEquals(0, MatchFreeUses().remaining(other, matchGeneration = 1L), "$other")
         }
@@ -69,10 +76,10 @@ class MatchFreeUsesTest {
         val aiVsAi = PlayerSetup(black = SidePlayerSetup(SeatController.Ai), white = SidePlayerSetup(SeatController.Ai))
         val humanVsHuman = PlayerSetup(black = SidePlayerSetup(SeatController.Human), white = SidePlayerSetup(SeatController.Human))
 
-        assertTrue(isFreeAnalysisMatch(humanVsCharacter))
-        assertTrue(isFreeAnalysisMatch(characterVsHuman))
-        assertFalse(isFreeAnalysisMatch(rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(10))))
-        assertFalse(isFreeAnalysisMatch(aiVsAi))
-        assertFalse(isFreeAnalysisMatch(humanVsHuman))
+        assertTrue(isFreeUseMatch(humanVsCharacter))
+        assertTrue(isFreeUseMatch(characterVsHuman))
+        assertFalse(isFreeUseMatch(rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(10))))
+        assertFalse(isFreeUseMatch(aiVsAi))
+        assertFalse(isFreeUseMatch(humanVsHuman))
     }
 }

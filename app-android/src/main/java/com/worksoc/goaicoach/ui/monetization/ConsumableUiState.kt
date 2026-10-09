@@ -71,7 +71,7 @@ internal data class ConsumableUiState(
      */
     val refresh: () -> Unit = {},
     /**
-     * **이 판의 무료 사용**(백로그 #228) — 캐릭터와 두는 대국에서 형세 보기·추천 수를 기능마다 3회씩 무료로 쓴다.
+     * **이 판의 무료 사용**(백로그 #228 · 무르기는 #242) — 캐릭터와 두는 대국에서 형세 보기·추천 수·무르기를 기능마다 3회씩 무료로 쓴다.
      * 남은 횟수와, 한 번 쓰는 길. 무료 사용이 없는 판(승급 대국 · AI끼리 · 사람끼리)이면 늘 0이다.
      * 1회권보다 **먼저** 쓴다 — 순서는 `GamePlaySection`의 `featureGated`가 지킨다(무료 3회 → 1회권 → 업셀).
      */
@@ -151,8 +151,8 @@ internal fun buildConsumableUiState(
     context: Context,
     /** 지금 대국의 세대 — 무료 사용(#228)을 「한 판」 단위로 세는 잣대다. 무르기에는 그대로이고 새 대국·이어하기에서 오른다. */
     matchGeneration: Long,
-    /** 이 판이 무료 사용을 주는 판인가 — 캐릭터와 두는 대국(`isFreeAnalysisMatch`). */
-    isFreeAnalysisMatch: Boolean,
+    /** 이 판이 무료 사용을 주는 판인가 — 캐릭터와 두는 대국(`isFreeUseMatch`). */
+    isFreeUseMatch: Boolean,
     onPremiumChanged: (PremiumState) -> Unit,
 ): ConsumableUiState {
     val store: ConsumableStorePort = remember(context) { ConsumableInventoryStore(context) }
@@ -185,9 +185,9 @@ internal fun buildConsumableUiState(
             expired
         },
         refresh = { inventory = store.load() },
-        freeUsesRemaining = { featureId -> if (isFreeAnalysisMatch) freeUses.remaining(featureId, matchGeneration) else 0 },
+        freeUsesRemaining = { featureId -> if (isFreeUseMatch) freeUses.remaining(featureId, matchGeneration) else 0 },
         useFree = { featureId ->
-            val available = isFreeAnalysisMatch && freeUses.remaining(featureId, matchGeneration) > 0
+            val available = isFreeUseMatch && freeUses.remaining(featureId, matchGeneration) > 0
             if (available) freeUses = freeUses.afterUsing(featureId, matchGeneration)
             available
         },

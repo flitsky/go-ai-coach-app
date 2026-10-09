@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.application.prompt.decidePromptVisibility
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
 import com.worksoc.goaicoach.application.session.GameSessionControllerState
+import com.worksoc.goaicoach.application.undo.canUndoLastTurn
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.MatchSeatSnapshot
@@ -430,7 +431,9 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             // Always enabled regardless of engine-busy state -- undoLastTurn()
             // (application/undo/UndoController.kt) applies locally immediately
             // and safely, no matter what the engine is doing.
-            enabled = input.gameState.moves.isNotEmpty() && input.matchMode != MatchMode.AiVsAi && !isRankMeasureGame,
+            // 켜짐의 조건은 "누르면 실제로 물러나는가"다(`canUndoLastTurn`, 백로그 #242) — 무를 수가 없는데 눌리면
+            // 이 판의 무료 무르기가 헛되이 닳는다(백을 잡고 AI의 첫 수만 놓인 때가 그 자리였다).
+            enabled = canUndoLastTurn(input.gameState, input.matchMode, input.playerSetup) && !isRankMeasureGame,
             isFilled = false,
         ),
         GameActionButtonState(

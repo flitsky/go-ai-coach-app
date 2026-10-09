@@ -76,6 +76,19 @@ private fun humanUndoMoveCount(currentState: GameState, humanColor: StoneColor):
     return undoCount.takeIf { it <= size }
 }
 
+/**
+ * 지금 「무르기」를 누르면 **실제로 수가 물러나는가** — [buildUndoRequestPlan]이 안내 문구만 돌려주는 경우(무를 수가 없다 ·
+ * AI끼리 두는 판 · 백을 잡았는데 아직 AI의 첫 수만 놓였다)를 버튼이 미리 안다(백로그 #242).
+ * 이 판의 무료 무르기 3회가 **아무 일도 일어나지 않는 탭**에 닳지 않게 하려는 것이다. 엔진이 준비됐는지는 묻지 않는다 —
+ * 무르기는 판을 먼저 되돌리고 엔진은 나중에 맞춘다.
+ */
+fun canUndoLastTurn(
+    currentState: GameState,
+    matchMode: MatchMode,
+    playerSetup: PlayerSetup,
+): Boolean =
+    buildUndoRequestPlan(currentState, matchMode, isEngineReady = false, playerSetup) is UndoRequestPlan.ApplyLocalUndo
+
 internal fun buildUndoRequestPlan(
     currentState: GameState,
     matchMode: MatchMode,

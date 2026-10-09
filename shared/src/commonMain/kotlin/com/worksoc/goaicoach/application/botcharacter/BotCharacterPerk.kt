@@ -45,12 +45,13 @@ fun matchOpponentCharacter(setup: PlayerSetup): BotCharacter? {
 }
 
 /**
- * 이 판이 **무료 분석을 주는 판인가**(백로그 #228, 사용자 2026-10-08: *"캐릭터와 대국할 때 누구나 매 대국 시작 시 3회 고정 제공"*).
+ * 이 판이 **무료 사용을 주는 판인가**(백로그 #228, 사용자 2026-10-08: *"캐릭터와 대국할 때 누구나 매 대국 시작 시 3회 고정 제공"*).
+ * 형세 보기·추천 수·무르기가 같은 잣대를 쓴다(무르기는 백로그 #242, 2026-10-09 — 그래서 이름이 「무료 분석」에서 「무료 사용」이 됐다).
  *
- * 사람이 정확히 한 명이고 상대가 캐릭터인 「캐릭터 대국」의 판이다. 승급 대국은 아니다 — 거기서는 형세 보기·추천 수가 누구에게나
+ * 사람이 정확히 한 명이고 상대가 캐릭터인 「캐릭터 대국」의 판이다. 승급 대국은 아니다 — 거기서는 형세 보기·추천 수·무르기가 누구에게나
  * 꺼져 있고(#219), 상대도 캐릭터가 아니라 급수 AI다. AI끼리·사람끼리 두는 판도 아니다(「캐릭터와 대국할 때」).
  */
-fun isFreeAnalysisMatch(setup: PlayerSetup): Boolean =
+fun isFreeUseMatch(setup: PlayerSetup): Boolean =
     setup.hasHumanSeat() &&
         (setup.black.controller == SeatController.Ai || setup.white.controller == SeatController.Ai) &&
         !setup.isRankMeasure() &&
