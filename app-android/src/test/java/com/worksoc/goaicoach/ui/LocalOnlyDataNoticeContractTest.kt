@@ -138,15 +138,35 @@ class LocalOnlyDataNoticeContractTest {
      */
     @Test
     fun allThreePiecesOfTheNoticeAreRenderedTogether() {
-        val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
+        val notice = source(RepoPaths.uiFile("LocalOnlyDataNotice.kt"))
         listOf(
             "localOnlyDataNoticeTitle",
             "localOnlyDataNoticeBody",
             "localOnlyDataNoticePaidRestoreLine",
         ).forEach { field ->
             assertTrue(
-                "`MyPageScreen.kt`가 `$field`를 그리지 않는다 — 고지 세 조각은 함께 있어야 한다(#129).",
-                myPage.contains(field),
+                "`LocalOnlyDataNotice.kt`가 `$field`를 그리지 않는다 — 고지 세 조각은 함께 있어야 한다(#129).",
+                notice.contains(field),
+            )
+        }
+    }
+
+    /**
+     * 본문은 **창 하나**이고 여는 길은 둘이다(백로그 #241, 2026-10-09 사용자) — 설정 하단의 링크(정본 자리)와, 마이 페이지에
+     * 남긴 한 줄. ⚠️ 마이 페이지의 한 줄이 사라지면 *"잃게 되는 것들을 보는 바로 그 화면"* 과 고지의 연결이 끊긴다(#74 ⓒ).
+     * 본문을 어느 화면이 다시 **펼쳐서** 들면 문구가 두 벌이 된다.
+     */
+    @Test
+    fun theNoticeIsOneDialogOpenedFromSettingsAndPointedToFromMyPage() {
+        val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
+        val settingsLinks = source(RepoPaths.uiFile("SettingsHelpLinks.kt"))
+        val settings = source(RepoPaths.uiFile("SettingsScreen.kt"))
+        assertTrue("마이 페이지에 고지의 한 줄이 없다.", myPage.contains("LocalOnlyDataNoticePointer("))
+        assertTrue("설정 하단이 고지의 창을 열지 않는다.", settingsLinks.contains("LocalOnlyDataNoticeDialog(") && settings.contains("SettingsHelpLinks("))
+        listOf(myPage, settingsLinks, settings).forEach { screen ->
+            assertTrue(
+                "화면이 고지의 본문을 직접 든다 — 본문은 `LocalOnlyDataNotice.kt`의 창 하나여야 한다.",
+                !screen.contains("localOnlyDataNoticeBody") && !screen.contains("localOnlyDataNoticePaidRestoreLine"),
             )
         }
     }
@@ -158,7 +178,7 @@ class LocalOnlyDataNoticeContractTest {
      * 실패하니 구독 이야기를 쓰지 말라"*(#87 「앱이 안 하는 것을 문구가 약속했다」의 재판을
      * 막으려던 것). **그 전제가 사라졌다**: `PremiumPurchaseGlue.kt`가 이제 `SUBS`로 조회한다.
      * 그래서 같은 위험을 **반대편에서** 지킨다 — 그 한 줄이 `INAPP`으로 돌아가는 순간
-     * 마이 페이지의 *"앱이 구독을 확인해 모든 기능을 다시 열어 드립니다"* 가 거짓이 된다.
+     * 고지의 *"앱이 구독을 확인해 모든 기능을 다시 열어 드립니다"* 가 거짓이 된다.
      *
      * ⚠️ 옛 게이트(`isBotCharacterPurchaseEnabled`)도 함께 걷어냈다 — **캐릭터 개별 판매가
      * 2026-09-18에 폐기**돼(#160·#161·#18) 그 플래그는 영영 켜지지 않고, 문구가 죽어 있었다.
@@ -174,14 +194,14 @@ class LocalOnlyDataNoticeContractTest {
             glue.contains("BillingClient.ProductType.SUBS"),
         )
 
-        val myPage = source(RepoPaths.uiFile("MyPageScreen.kt"))
+        val notice = source(RepoPaths.uiFile("LocalOnlyDataNotice.kt"))
             .lines()
             .joinToString("\n") { it.substringBefore("//") }
         assertTrue(
             "복원 문장이 다시 플래그 뒤로 숨었다 — 아직 구독하지 않은 사람이 " +
                 "\"구독하면 이것도 해결된다\"를 영영 못 보게 된다.",
-            myPage.contains("strings.localOnlyDataNoticePaidRestoreLine") &&
-                !myPage.contains("isBotCharacterPurchaseEnabled"),
+            notice.contains("strings.localOnlyDataNoticePaidRestoreLine") &&
+                !notice.contains("isBotCharacterPurchaseEnabled"),
         )
     }
 

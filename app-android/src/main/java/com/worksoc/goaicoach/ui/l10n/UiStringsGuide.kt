@@ -132,8 +132,7 @@ private fun requireLabels(toolLabels: GuideToolLabels?): GuideToolLabels =
  * 마이페이지에서 첫돌이가 건네는 한 줄(백로그 #128 ②의 둘째 자리).
  *
  * ⚠️ **단계가 아니다** — 판정에 참여하지 않고 늘 보인다. 마이페이지는 사용자가 *"내가 모은 것"* 을
- * 보러 오는 자리라, 그것을 함께 챙겨 온 상대가 거기 있는 것이 자연스럽다. 나중에 **가이드
- * 다시보기** 행이 이 옆에 붙는다.
+ * 보러 오는 자리라, 그것을 함께 챙겨 온 상대가 거기 있는 것이 자연스럽다.
  */
 private val MyPageGreeting: Map<UiLanguage, String> = mapOf(
     // ⚠️ **이름을 문구에 박지 않는다.** 첫돌이의 이름은 언어마다 다르고(`botCharacterNameFor`)

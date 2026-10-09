@@ -79,3 +79,15 @@ internal fun myPageNoRecordFor(language: UiLanguage): String =
         UiLanguage.Japanese -> "戦績なし"
         UiLanguage.ChineseSimplified -> "暂无战绩"
     }
+
+/**
+ * 마이 페이지에 남은 고지 **한 줄**(백로그 #241) — 누르면 「내 기록은 어떻게 보관되나요」의 본문이 열린다.
+ * ⚠️ 소실도 안전도 단정하지 않는다(본문의 원칙 그대로) — "기기에 보관된다"는 사실만 말한다.
+ */
+internal fun localOnlyDataNoticePointerFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "이 기록은 이 기기에 보관돼요"
+        UiLanguage.English -> "These records are kept on this device"
+        UiLanguage.Japanese -> "この記録はこの端末に保存されます"
+        UiLanguage.ChineseSimplified -> "这些记录保存在本机"
+    }

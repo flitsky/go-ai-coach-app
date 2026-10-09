@@ -459,6 +459,8 @@ internal fun SettingsScreen(
                     // 백로그 #195 — 버전 줄 **바로 아래**(2026-09-30 사용자 결정). 버전 텍스트의 10탭과 겹치지
                     // 않게 간격을 두고, 누르면 같은 화면 안의 하위 화면이 열린다(외부 브라우저가 아니다).
                     Spacer(modifier = Modifier.height(AppSpacing.Space8))
+                    // 도움말 둘(가이드 다시보기 · 내 기록의 보관, 백로그 #241) — 법적 고지 둘보다 앞에 선다.
+                    SettingsHelpLinks()
                     Text(
                         text = openSourceLicensesTitleFor(strings.language),
                         fontSize = AppTextSize.Text12,

@@ -455,7 +455,7 @@ internal data class UiStrings(
      *   단계 본문은 함수로 나오므로 그 그물의 사각지대이고, 그쪽은 `UiStringsGuideTest`가 맡는다.
      */
     val guideAckAction: String,
-    /** 마이페이지의 **가이드 다시보기** 행 라벨이자 그 화면의 제목(#128). */
+    /** 설정 하단의 **가이드 다시보기** 링크 라벨이자 그 화면의 제목(#128 · 자리는 #241). */
     val guideReplayAction: String,
     /**
      * 다시보기에서 **대국 화면** 묶음의 제목(#128).

@@ -1,8 +1,6 @@
 package com.worksoc.goaicoach.ui.account
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,8 +29,6 @@ import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
-import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
@@ -47,7 +43,8 @@ import com.worksoc.goaicoach.ui.l10n.guideBodyFor
 import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
 
 /**
- * **가이드 다시보기**(백로그 #128, 사용자 확정 ⓑ: 진입점은 마이페이지에만).
+ * **가이드 다시보기**(백로그 #128). 진입점은 **설정 하단** 하나다(`SettingsHelpLinks`, 백로그 #241 — 2026-10-09에 사용자가
+ * 처음의 ⓑ *"마이페이지에만"* 을 뒤집었다).
  *
  * ## ⚠️ `Dialog`여야 한다 — 창 안 오버레이로 그리면 뒤로가기에 진다
  *
@@ -268,37 +265,5 @@ private fun ReplayLine(text: String) {
             fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-/** 마이페이지의 **가이드 다시보기** 행. 상태를 갖지 않는다 — 여는 쪽이 상태를 든다. */
-@Composable
-internal fun GuideReplayRow(onClick: () -> Unit) {
-    val strings = LocalUiStrings.current
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppRadius.Corner12),
-        tonalElevation = AppElevation.Level1,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .border(
-                    width = AppBorderWidth.Hairline,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(AppRadius.Corner12),
-                )
-                .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space12),
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            FirstDolAvatar(size = 26.dp)
-            Text(
-                text = strings.guideReplayAction,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
     }
 }
