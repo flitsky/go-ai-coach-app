@@ -162,7 +162,7 @@ private fun seedBundledKataGoAssetsIfNeeded(
     }
 
     // 사람 모델(백로그 #215)도 같은 규칙이다 — 둘 중 하나라도 있으면 풀지 않는다(이름의 `.gz` 사정도 주 모델과 같다).
-    // 번들에 없는 빌드에서는 여는 데 실패하고 넘어간다 — 그 기기의 급수 캐릭터는 지금 방식으로 두고 기력 측정 대국 카드는 안 보인다.
+    // 번들에 없는 빌드에서는 여는 데 실패하고 넘어간다 — 그 기기의 급수 캐릭터는 지금 방식으로 두고 승급 대국 카드는 안 보인다.
     val humanModel = File(katagoDir, HumanModelName)
     if (!File(katagoDir, HumanModelCompressedName).isFile && !humanModel.isFile) {
         seedAssetIfMissing(

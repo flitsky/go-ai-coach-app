@@ -620,7 +620,7 @@ private fun GoCoachScreen(
         onForegrounded = { controllers.autoAiTurnController.onAppForegrounded() },
     )
     cancelUndoSync = controllers.undoController::cancelPendingSync
-    // 기력 측정 대국(백로그 #219) — 내 기력과 연승·연패. 본체는 ui/home/RankMeasureUiState.kt에 있다(상태 훅 예산).
+    // 승급 대국(백로그 #219) — 내 기력과 연승·연패. 본체는 ui/home/RankMeasureUiState.kt에 있다(상태 훅 예산).
     val rankMeasureUiState = buildRankMeasureUiState(context, isAvailable = engineClient.capabilities.supportsHumanNetwork)
     exitToHome = {
         controllers.autoAiTurnController.cancelInFlightTurn() // 나가면 AI 차례는 물음 없이 멈춘다(#74)
@@ -631,7 +631,7 @@ private fun GoCoachScreen(
             context, true, scoreState.finalScoreJudgement, gameState, playerSetup,
             scoreState.scoreSnapshots,
         )
-        // 기력 측정 대국이었으면 방금 기록한 판을 기력에 반영하고 일반 대국 설정으로 되돌린다 — 기록 **뒤**, 갈아엎기 **전**(#219).
+        // 승급 대국이었으면 방금 기록한 판을 기력에 반영하고 일반 대국 설정으로 되돌린다 — 기록 **뒤**, 갈아엎기 **전**(#219).
         leaveRankMeasureGame(playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
         controllers.settingsController.refreshNewGamePreview()
         currentDestination = ScreenDestination.Home
@@ -643,7 +643,7 @@ private fun GoCoachScreen(
                 currentPlayer = { gameState.nextPlayer },
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = {
-                    // 기력 측정 대국의 「재 대국」은 상대를 지금의 내 기력으로, 판 크기를 그 기력이 둘 수 있는 것으로 맞추고 시작한다(#219).
+                    // 승급 대국의 「재 대국」은 상대를 지금의 내 기력으로, 판 크기를 그 기력이 둘 수 있는 것으로 맞추고 시작한다(#219).
                     prepareNextRankMeasureGame(context, selectedLanguage, settingsState.playerSetup, settingsState.boardSize, rankMeasureUiState.latestState(), controllers.settingsController)
                     sessionStore.clear()
                     savedSessionUiState = savedSessionUiState.dismiss()
@@ -858,7 +858,7 @@ private fun GoCoachScreen(
     OneShotAnalysisAutoClear(consumableUiState, gameState.moves.size, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
 
     // 형세 보기를 켜 둔 채 급수 캐릭터와 두면 AI가 둘 때마다 화면의 형세가 사람 모델의 임시 값이 된다 — 사람 차례에 주 모델로 다시 잰다(백로그 #215).
-    // 기력 측정 대국에서는 형세 보기가 꺼져 있으니 재지 않는다(#219).
+    // 승급 대국에서는 형세 보기가 꺼져 있으니 재지 않는다(#219).
     ProvisionalScoreRefineEffect(
         ProvisionalScoreRefineInput(uxOptions.showOwnershipOverlay && !playerSetup.isRankMeasure(), scoreState.scoreEstimate?.network, isGameEnded, isEngineReady, isEngineBusy, isPendingUndoSync, playerSetup.seatFor(gameState.nextPlayer).isHuman, ProvisionalScoreRefineAttempt(runtimeState.sessionGeneration, gameState.moves.size)),
         isEngineBusyNow = { isEngineBusy || engineClient.isEngineOperationInFlight },
@@ -867,7 +867,7 @@ private fun GoCoachScreen(
 
     // 끝난 판에 거는 효과 둘은 **결과가 난 뒤**에 돈다(함정 88) — 「끝났다」는 표시는 계가보다 먼저 켜진다.
     val isResultKnown = scoreState.finalScoreJudgement != null || gameState.moves.lastOrNull() is Move.Resign
-    // 끝난 기력 측정 대국을 기력에 반영하고, 기력이 바뀌면 한 줄로 알린다(백로그 #219).
+    // 끝난 승급 대국을 기력에 반영하고, 기력이 바뀌면 한 줄로 알린다(백로그 #219).
     RankMeasureRecordedEffect(rankMeasureUiState, isGameEnded, isResultKnown, runtimeState.sessionGeneration, gameState)
     // 대국이 끝나면 그 판의 형세 기록(사람 모델의 임시 값)을 주 모델로 다시 잰다 — 다시보기를 연 동안은 그 화면이 잰다(백로그 #215).
     ScoreRecordRemeasureEffect(isGameEnded && isEngineReady && currentDestination != ScreenDestination.GameHistory, isResultKnown, runtimeState.sessionGeneration, gameState, scoreState.scoreSnapshots, engineClient, runtimeState.engineProfile) { remeasured ->

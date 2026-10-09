@@ -30,7 +30,7 @@ internal fun winRatePeriodLabelFor(language: UiLanguage, period: WinRatePeriod):
         }
     }
 
-/** 이 줄이 무엇의 승률인지 — 캐릭터와 둔 일반 대국. (기력 측정 대국의 줄은 그 메뉴 이름 [rankMeasureTitleFor]을 쓴다.) */
+/** 이 줄이 무엇의 승률인지 — 캐릭터와 둔 일반 대국. (승급 대국의 줄은 그 메뉴 이름 [rankMeasureTitleFor]을 쓴다.) */
 internal fun winRateRegularGamesLabelFor(language: UiLanguage): String =
     when (language) {
         UiLanguage.Korean -> "대국"

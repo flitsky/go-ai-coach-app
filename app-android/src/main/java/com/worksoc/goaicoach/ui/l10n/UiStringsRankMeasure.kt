@@ -9,7 +9,7 @@ import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.customRank
 
 /**
- * **기력 측정 대국**(백로그 #219)의 문구 — 내 기력을 알아보고, 비슷한 상대와 두며 배운다.
+ * **승급 대국**(백로그 #219)의 문구 — 내 기력을 알아보고, 비슷한 상대와 두며 배운다.
  * 급수 표기와 급수를 직접 정한 상대의 이름은 나중의 인공지능 캐릭터(#220)도 함께 쓴다.
  *
  * `UiStrings` 생성자 슬롯이 255/255로 꽉 차 있어(함정 61) 다른 화면들처럼 사이드 테이블에 둔다.
@@ -41,7 +41,7 @@ internal fun rankedOpponentLabelFor(language: UiLanguage, rank: KgsRank): String
 /** 홈의 두 번째 카드 제목. */
 internal fun rankMeasureTitleFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "기력 측정 대국"
+        UiLanguage.Korean -> "승급 대국"
         UiLanguage.English -> "Rank Match"
         UiLanguage.Japanese -> "棋力測定対局"
         UiLanguage.ChineseSimplified -> "棋力测定对局"
@@ -49,7 +49,7 @@ internal fun rankMeasureTitleFor(language: UiLanguage): String =
 
 internal fun rankMeasureSubtitleFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "내 기력을 알아보고, 비슷한 상대와 두며 배웁니다."
+        UiLanguage.Korean -> "같은 기력의 AI와 두고, 결과가 기력에 반영됩니다."
         UiLanguage.English -> "Find your rank and learn by playing opponents at your level."
         UiLanguage.Japanese -> "自分の棋力を知り、同じくらいの相手と打って学びます。"
         UiLanguage.ChineseSimplified -> "了解自己的棋力，与水平相近的对手对弈学习。"
@@ -144,7 +144,7 @@ internal fun rankMeasureOfficialNoteFor(language: UiLanguage): String =
  */
 internal fun rankMeasureOverwriteWarningFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "저장된 이전 대국이 존재합니다. 새 대국을 시작하면 이전 대국을 이어받을 수 없게 됩니다. 기력 측정 대국을 시작하시겠습니까?"
+        UiLanguage.Korean -> "저장된 이전 대국이 존재합니다. 새 대국을 시작하면 이전 대국을 이어받을 수 없게 됩니다. 승급 대국을 시작하시겠습니까?"
         UiLanguage.English -> "A saved match exists. Starting a new match may overwrite your previous progress. Start a rank match?"
         UiLanguage.Japanese -> "保存された前回の対局が存在します。新しい対局を開始すると前回の対局データが上書きされる可能性があります。棋力測定対局を始めますか？"
         UiLanguage.ChineseSimplified -> "存在已保存的前局。开始新对局可能会覆盖之前的进度。是否开始棋力测定对局？"

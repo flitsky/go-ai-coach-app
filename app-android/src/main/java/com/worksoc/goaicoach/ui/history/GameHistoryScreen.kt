@@ -364,7 +364,7 @@ internal fun GameHistoryScreen(
 
 /**
  * **승률 요약**(백로그 #227, 사용자 피드백 2026-10-08) — 기간(최근 10판 · 최근 한 달 · 누적)을 고르면 그 기간의 전적을 보인다.
- * 일반 대국과 기력 측정 대국을 따로 적는다. 무엇을 세는지는 `gameHistoryWinRate`가 정한다(사람 대 AI · 11수 이상 · 결과를 아는 판).
+ * 일반 대국과 승급 대국을 따로 적는다. 무엇을 세는지는 `gameHistoryWinRate`가 정한다(사람 대 AI · 11수 이상 · 결과를 아는 판).
  *
  * ⚠️ 번들 참고 기보는 여기서 뺀다 — 사용자가 둔 판이 아니고, 그 id는 이 층만 안다.
  * 고른 기간은 이 화면 안에서만 든다(#208의 체크박스와 같은 이유 — 셸 상태 훅 예산과 자동저장 함정).
@@ -513,7 +513,7 @@ internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings)
     val summary = listOf(
         dateOrReferenceLabel,
         "${entry.boardSize}x${entry.boardSize}",
-        // 급수를 직접 정한 상대와 둔 판(기력 측정 대국, 백로그 #219)은 그 급수를 남긴다 — `사람:AI 5급`.
+        // 급수를 직접 정한 상대와 둔 판(승급 대국, 백로그 #219)은 그 급수를 남긴다 — `사람:AI 5급`.
         seatMatchupLabelWithRanksFor(strings, entry.playerSetup),
         handicapPhrase(strings, entry.handicapCount),
         strings.gameHistoryOutcomeLabel(entry.winner, entry.isResign, entry.margin),

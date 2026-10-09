@@ -30,7 +30,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * 기력 측정 대국(백로그 #219) — 자기 기력과 같은 급수의 AI와 두고, 결과가 기력을 옮긴다.
+ * 승급 대국(백로그 #219) — 자기 기력과 같은 급수의 AI와 두고, 결과가 기력을 옮긴다.
  *
  * 여기서 고정하는 것은 **사용자가 정한 규칙**이다(2026-10-07):
  * - 급 구간: 이길 때마다 오른다 — 이긴 집 수 차이를 10으로 나눈 몫, 최소 1단계. 1단에서 멈춘다.
@@ -267,7 +267,7 @@ class RankMeasureTest {
     }
 
     /**
-     * 기력 측정 대국은 **사람 좌석이 그렇게 표시된** 판이다 — 급수만 직접 정한 AI와 두는 판(나중의 인공지능 캐릭터, #220)이나
+     * 승급 대국은 **사람 좌석이 그렇게 표시된** 판이다 — 급수만 직접 정한 AI와 두는 판(나중의 인공지능 캐릭터, #220)이나
      * AI끼리·캐릭터 상대는 아니다.
      */
     @Test
@@ -292,7 +292,7 @@ class RankMeasureTest {
         assertNull(markedButAgainstACharacter.rankMeasureMatchup())
     }
 
-    /** 새 대국을 시작할 때 상대를 내 기력으로 맞춘다 — 기력 측정 대국이 아니면 좌석 그대로다. */
+    /** 새 대국을 시작할 때 상대를 내 기력으로 맞춘다 — 승급 대국이 아니면 좌석 그대로다. */
     @Test
     fun theNextGameIsAgainstTheCurrentRank() {
         val setup = rankMeasurePlayerSetup(StoneColor.White, KgsRank.kyu(10))
@@ -304,9 +304,9 @@ class RankMeasureTest {
     }
 
     /**
-     * 끝난 기력 측정 대국을 되살릴 때는 그 판의 좌석·판 크기·호선을 설정에 다시 올린다 — 일반 설정에는 저장돼 있지 않아서,
+     * 끝난 승급 대국을 되살릴 때는 그 판의 좌석·판 크기·호선을 설정에 다시 올린다 — 일반 설정에는 저장돼 있지 않아서,
      * 그대로 두면 되살아난 판이 캐릭터와 둔 일반 대국으로 보이고 「재 대국」도 일반 대국으로 시작한다.
-     * 일반 대국의 끝난 판, 아직 두고 있는 기력 측정 대국은 건드리지 않는다(뒤쪽은 이어하기가 제 길로 되살린다).
+     * 일반 대국의 끝난 판, 아직 두고 있는 승급 대국은 건드리지 않는다(뒤쪽은 이어하기가 제 길로 되살린다).
      */
     @Test
     fun restoringAnEndedRankMeasureGameBringsItsSeatsAndBoardBack() {
@@ -342,7 +342,7 @@ class RankMeasureTest {
 
     /**
      * 기록된 판 하나를 한 번만 반영하고 저장한다 — **이긴 집 수 차이는 기록에서 읽는다**(25.5집 차 → 2단계).
-     * 기력 측정 대국이 아닌 판은 저장소를 건드리지 않는다.
+     * 승급 대국이 아닌 판은 저장소를 건드리지 않는다.
      */
     @Test
     fun aRecordedGameIsCountedOnceAndSaved() {

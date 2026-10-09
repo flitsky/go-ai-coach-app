@@ -17,14 +17,14 @@ import com.worksoc.goaicoach.shared.policy.toPlayLevelSetting
 import kotlin.math.floor
 
 /**
- * 6계층 — **기력 측정 대국**(백로그 #219): 내 기력을 알아보고, 비슷한 상대와 되풀이해 두며 배운다.
+ * 6계층 — **승급 대국**(백로그 #219): 내 기력을 알아보고, 비슷한 상대와 되풀이해 두며 배운다.
  *
  * 사람 한 명이 **자기 기력과 같은 급수의 AI**와 둔다. 이기면 오르고 지면 내려서, 이기고 지기를 되풀이하는 급수가 곧 그 사람의
  * 실력 구간이다(사용자 2026-10-06). 오르내리는 규칙은 [adjustRankAfterResult]에 있다(사용자 2026-10-07). 상대는 그 급수의 사람 모델 프로필이 둔다 — 캐릭터(#215)와 같은 엔진 경로다
  * (`PlayLevelGroup.CustomRank` · `shared.playstyle.humanPlayStyle`).
  *
  * ## 무엇이 어디에 사는가
- * - **이 판이 기력 측정 대국이라는 것**은 사람 좌석의 대국 종류([HumanGameType.RankMeasure])가 말한다 — 좌석 설정에 실려
+ * - **이 판이 승급 대국이라는 것**은 사람 좌석의 대국 종류([HumanGameType.RankMeasure])가 말한다 — 좌석 설정에 실려
  *   이어하기·대국 기록까지 간다(`PlayerSetup.isRankMeasure`, 5계층).
  * - **지금 두는 판의 급수**는 그 판의 AI 좌석이 갖는다(`SidePlayerSetup.playLevel`) — 판정 결과·대국 기록이 그것을 읽는다.
  * - **내 기력**(= 다음 판의 상대 급수)은 여기([RankMeasureState.rank])에 산다. 끝난 판이 이것을 고치고, 새 대국을 시작할 때
@@ -38,7 +38,7 @@ import kotlin.math.floor
  * 초기화된다. 제 저장소([RankMeasureStorePort])를 갖는다.
  */
 data class RankMeasureState(
-    /** 내 기력 — 다음 기력 측정 대국의 상대 급수다. 기록이 없으면 20급에서 시작한다. */
+    /** 내 기력 — 다음 승급 대국의 상대 급수다. 기록이 없으면 20급에서 시작한다. */
     val rank: KgsRank = KgsRank.Weakest,
     /**
      * 기력 측정을 **시작했는가**. 시작하기 전에만 — 곧 최초 1회에 한해 — 기력을 스스로 고를 수 있다([chooseStartingRank]).
@@ -91,7 +91,7 @@ val RankMeasureKyuPromotionCap: KgsRank = KgsRank.dan(1)
 fun RankMeasureState.chooseStartingRank(chosen: KgsRank): RankMeasureState =
     if (canChooseStartingRank) copy(rank = minOf(chosen, StrongestStartingRank)) else this
 
-/** 기력 측정 대국을 시작했다 — 이제 기력을 스스로 고를 수 없다. */
+/** 승급 대국을 시작했다 — 이제 기력을 스스로 고를 수 없다. */
 fun RankMeasureState.started(): RankMeasureState = if (hasStarted) this else copy(hasStarted = true)
 
 /**
@@ -123,21 +123,21 @@ fun rankMeasureBoardSizeFor(rank: KgsRank, preferred: BoardSize): BoardSize {
     return if (preferred in allowed) preferred else allowed.first()
 }
 
-/** 기력 측정 대국의 좌석 배치 — 사람([userColor], 대국 종류 = 기력 측정) 대 그 급수의 AI. */
+/** 승급 대국의 좌석 배치 — 사람([userColor], 대국 종류 = 기력 측정) 대 그 급수의 AI. */
 fun rankMeasurePlayerSetup(userColor: StoneColor, rank: KgsRank): PlayerSetup {
     val user = SidePlayerSetup(controller = SeatController.Human, humanGameType = HumanGameType.RankMeasure)
     val opponent = SidePlayerSetup(controller = SeatController.Ai, playLevel = rank.toPlayLevelSetting())
     return if (userColor == StoneColor.Black) PlayerSetup(black = user, white = opponent) else PlayerSetup(black = opponent, white = user)
 }
 
-/** 기력 측정 대국의 두 좌석 — 사람의 색과 상대의 급수. */
+/** 승급 대국의 두 좌석 — 사람의 색과 상대의 급수. */
 data class RankMeasureMatchup(
     val userColor: StoneColor,
     val opponentRank: KgsRank,
 )
 
 /**
- * 이 좌석 배치가 기력 측정 대국이면 그 두 좌석, 아니면 `null`. 사람 좌석이 기력 측정이라고 표시돼 있고([HumanGameType.RankMeasure])
+ * 이 좌석 배치가 승급 대국이면 그 두 좌석, 아니면 `null`. 사람 좌석이 기력 측정이라고 표시돼 있고([HumanGameType.RankMeasure])
  * 상대가 급수를 직접 정한 AI여야 한다 — 표시 없이 급수만 직접 정한 AI(나중의 인공지능 캐릭터, #220)는 기력 측정이 아니다.
  */
 fun PlayerSetup.rankMeasureMatchup(): RankMeasureMatchup? {
@@ -154,8 +154,8 @@ private fun SidePlayerSetup.isRankMeasureUser(): Boolean =
     controller == SeatController.Human && humanGameType == HumanGameType.RankMeasure
 
 /**
- * 새 기력 측정 대국을 시작하기 직전의 좌석 배치 — 상대를 **내 기력**([RankMeasureState.rank])으로 맞춘다.
- * 기력 측정 대국이 아니면 그대로 돌려준다. 바뀔 것이 없으면 **같은 값**이다(부르는 쪽이 `!=`로 가른다).
+ * 새 승급 대국을 시작하기 직전의 좌석 배치 — 상대를 **내 기력**([RankMeasureState.rank])으로 맞춘다.
+ * 승급 대국이 아니면 그대로 돌려준다. 바뀔 것이 없으면 **같은 값**이다(부르는 쪽이 `!=`로 가른다).
  */
 fun PlayerSetup.withRankForNextMeasureGame(state: RankMeasureState): PlayerSetup {
     val matchup = rankMeasureMatchup() ?: return this
@@ -163,10 +163,10 @@ fun PlayerSetup.withRankForNextMeasureGame(state: RankMeasureState): PlayerSetup
 }
 
 /**
- * **끝난 기력 측정 대국을 되살릴 때**의 설정 — 결과 창이 떠 있는 채로 프로세스가 죽었다 돌아온 경우다.
+ * **끝난 승급 대국을 되살릴 때**의 설정 — 결과 창이 떠 있는 채로 프로세스가 죽었다 돌아온 경우다.
  *
  * 끝난 판의 복원은 판과 판정만 되살리고 좌석은 살아 있는 설정의 것을 쓴다. 일반 대국은 그 설정이 곧 그 판의 설정이라 문제가 없었지만,
- * 기력 측정 대국의 좌석·판 크기·호선은 **일반 설정에 저장되지 않는다**([rankMeasurePlayerSetup] 참고) — 그대로 두면 되살아난 판이
+ * 승급 대국의 좌석·판 크기·호선은 **일반 설정에 저장되지 않는다**([rankMeasurePlayerSetup] 참고) — 그대로 두면 되살아난 판이
  * 캐릭터와 둔 일반 대국으로 보이고(상대 이름·진영이 틀린다), 「재 대국」이 일반 대국으로 시작하며, 이어하기 저장분도 그렇게 덮인다
  * (2026-10-06 에뮬레이터). 그래서 그 판의 것을 설정에 다시 올린다. 일반 대국이거나 아직 진행 중인 판이면 그대로 돌려준다.
  */
@@ -211,7 +211,7 @@ data class RankMeasureAdjustment(
 )
 
 /**
- * 끝난 기력 측정 대국 한 판을 기력에 반영한다 — **사용자가 정한 규칙**(2026-10-07)이다.
+ * 끝난 승급 대국 한 판을 기력에 반영한다 — **사용자가 정한 규칙**(2026-10-07)이다.
  *
  * - **급 구간의 승급**: 이길 때마다 오른다. 오르는 폭은 이긴 집 수 차이를 10으로 나눈 몫, 최소 1([rankMeasurePromotionSteps]).
  *   아무리 크게 이겨도 **1단에서 멈춘다**([RankMeasureKyuPromotionCap]).
@@ -300,7 +300,7 @@ fun resignationMarginFor(replay: GameReplayData?, winner: StoneColor): Double? {
 }
 
 /**
- * 끝나서 기록된 판([entry])을 기력에 반영하고 저장한다. 기력 측정 대국이 아니거나 **이미 반영한 판**이면 아무 일도 하지 않고 `null`
+ * 끝나서 기록된 판([entry])을 기력에 반영하고 저장한다. 승급 대국이 아니거나 **이미 반영한 판**이면 아무 일도 하지 않고 `null`
  * ([RankMeasureState.lastCountedGameId]) — 여러 번 불러도 한 판은 한 번만 센다.
  *
  * @param replay 그 판의 다시보기 본문 — 상대가 기권한 판의 집 수 차이를 여기서 읽는다([resignationMarginFor]). 없으면 1단계로 친다.

@@ -285,7 +285,7 @@ internal fun SettingsScreen(
             PlayerSetupPanel(
                 state = screenState.playerSetupUi,
                 // 엔진이 바빠도 받는다 — 다음 수부터 적용(2026-09-30, `buildPlayerSetupChangePlan`).
-                // 기력 측정 대국의 좌석은 잠근다(백로그 #219 — `GameMenuSection`과 같은 이유).
+                // 승급 대국의 좌석은 잠근다(백로그 #219 — `GameMenuSection`과 같은 이유).
                 enabled = !screenState.playerSetup.isRankMeasure(),
                 onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
             )
@@ -332,7 +332,7 @@ internal fun SettingsScreen(
             SearchTimeSettingsPanel(
                 settings = screenState.searchTimeSettings,
                 // 사람 모델이 있는 기기에서는 초고수도 탐색하지 않는다(7단 프로필, 2026-10-06) — 「제한이 길수록 세게 둔다」는 안내는 예전 방식으로
-                // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 기력 측정 대국의 가용성과 같은 답이다.
+                // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 승급 대국의 가용성과 같은 답이다.
                 showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi() && !LocalRankMeasureUiState.current.isAvailable,
                 enabled = true,
                 onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },

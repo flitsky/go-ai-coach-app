@@ -46,7 +46,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 기력 측정 대국(백로그 #219)의 문구 — 급수 표기와, 홈 카드·설정 창·기력 변동 알림·기록 표시. */
+/** 승급 대국(백로그 #219)의 문구 — 급수 표기와, 홈 카드·설정 창·기력 변동 알림·기록 표시. */
 class UiStringsRankMeasureTest {
     private fun everyStringIn(language: UiLanguage): List<String> =
         listOf(
@@ -100,10 +100,10 @@ class UiStringsRankMeasureTest {
         }
     }
 
-    /** 사용자가 정한 이름 그대로다(2026-10-06) — 홈의 두 번째 메뉴 「기력 측정 대국」. 기록이 없으면 「측정 기록 없음」. */
+    /** 사용자가 정한 이름 그대로다 — 「승급 대국」(2026-10-09, 처음 이름은 「기력 측정 대국」이었다 · 백로그 #238). 기록이 없으면 「측정 기록 없음」(2026-10-06). */
     @Test
     fun theKoreanNameAndTheNoRecordWordingAreWhatTheUserChose() {
-        assertEquals("기력 측정 대국", rankMeasureTitleFor(UiLanguage.Korean))
+        assertEquals("승급 대국", rankMeasureTitleFor(UiLanguage.Korean))
         assertEquals("최고 기력: 측정 기록 없음", rankMeasurePeakRankFor(UiLanguage.Korean, null))
         assertEquals("현재 기력: 20급", rankMeasureCurrentRankFor(UiLanguage.Korean, KgsRank.kyu(20)))
     }

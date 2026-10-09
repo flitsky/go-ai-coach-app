@@ -76,7 +76,7 @@ class HumanMoveSamplerTest {
 
     /**
      * 캐릭터 다섯이 모두 사람 모델로 둔다 — 판다 15급 · 돌뫼 9급 · 반상 1급 · 사범 꼬북 3단 · 관장 천원 7단(사용자 2026-10-06, 폰에서 둬 본 뒤).
-     * 숨겨 둔 그룹은 예전 방식이다. 급수를 직접 정한 상대(기력 측정 대국, #219)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
+     * 숨겨 둔 그룹은 예전 방식이다. 급수를 직접 정한 상대(승급 대국, #219)는 캐릭터가 아니라 따로 본다(`KgsRankTest`).
      */
     @Test
     fun onlyTheThreeKyuCharactersHaveAHumanStyle() {

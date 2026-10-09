@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 
 /**
  * 대국 기록의 승률(백로그 #227). 사용자가 정한 것(2026-10-08): 사람 대 AI 판만 · 10수 이하 판과 승자를 모르는 옛 기권 기록은 뺀다 ·
- * 기력 측정 대국은 따로.
+ * 승급 대국은 따로.
  */
 class GameHistoryWinRateTest {
     private val now = 1_800_000_000_000L
@@ -87,7 +87,7 @@ class GameHistoryWinRateTest {
         assertEquals(WinRateTally(wins = 1, draws = 1), gameHistoryWinRate(entries, WinRatePeriod.AllTime, now).regular)
     }
 
-    /** 기력 측정 대국은 따로 센다 — 일반 대국의 승률에 섞이지 않는다. */
+    /** 승급 대국은 따로 센다 — 일반 대국의 승률에 섞이지 않는다. */
     @Test
     fun rankMeasureGamesAreTalliedSeparately() {
         val measured = rankMeasurePlayerSetup(StoneColor.Black, KgsRank.kyu(10))

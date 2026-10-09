@@ -194,7 +194,7 @@ internal fun ExpandedGameMenuSection(
             state = screenState.playerSetupUi,
             // ⚠️ **엔진이 바빠도 잠그지 않는다**(2026-09-30) — AI 대 AI에서는 늘 바빠 「유저」로 되돌릴 수 없었다.
             //   바꾼 좌석은 다음 수부터 적용된다(`buildPlayerSetupChangePlan`).
-            // ⚠️ 기력 측정 대국의 좌석은 잠근다(백로그 #219) — 상대를 캐릭터로 바꾸거나 AI에게 넘기면 그 판은 더는 기력을 재는 판이 아니다.
+            // ⚠️ 승급 대국의 좌석은 잠근다(백로그 #219) — 상대를 캐릭터로 바꾸거나 AI에게 넘기면 그 판은 더는 기력을 재는 판이 아니다.
             enabled = !screenState.playerSetup.isRankMeasure(),
             onPlayerSetupChange = { setup -> onEvent(GameUiEvent.ChangePlayerSetup(setup)) },
         )
@@ -231,7 +231,7 @@ internal fun ExpandedGameMenuSection(
         SearchTimeSettingsPanel(
             settings = screenState.searchTimeSettings,
             // 사람 모델이 있는 기기에서는 초고수도 탐색하지 않는다(7단 프로필, 2026-10-06) — 「제한이 길수록 세게 둔다」는 안내는 예전 방식으로
-            // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 기력 측정 대국의 가용성과 같은 답이다.
+            // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 승급 대국의 가용성과 같은 답이다.
             showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi() && !LocalRankMeasureUiState.current.isAvailable,
             // 엔진이 바빠도 열어 둔다(2026-08-30). 이 값은 다음 엔진 호출부터 적용되므로
             // 진행 중인 탐색을 흔들지 않는다. 막아 두면 **AI 대 AI 대국에서 영영 못 만진다** —

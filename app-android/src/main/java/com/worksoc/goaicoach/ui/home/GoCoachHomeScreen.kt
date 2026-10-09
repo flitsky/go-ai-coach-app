@@ -117,7 +117,7 @@ internal fun GoCoachHomeScreen(
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     /**
-     * 「기력 측정 대국」(백로그 #219)을 시작한다 — 설정 창에서 고른 진영·판 크기(와 최초 1회의 시작 기력)를 준다.
+     * 「승급 대국」(백로그 #219)을 시작한다 — 설정 창에서 고른 진영·판 크기(와 최초 1회의 시작 기력)를 준다.
      * 창과 그 상태는 이 화면이 들고, 셸은 시작하는 일만 한다(셸의 훅 예산, 함정 3).
      */
     onStartRankMeasureGame: (RankMeasureStart) -> Unit,
@@ -131,7 +131,7 @@ internal fun GoCoachHomeScreen(
 ) {
     val strings = LocalUiStrings.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
-    // 기력 측정 대국(백로그 #219) — 설정 창과, 진행 중인 대국이 있을 때 먼저 묻는 덮어쓰기 경고(저장 슬롯은 하나라 이 대국도
+    // 승급 대국(백로그 #219) — 설정 창과, 진행 중인 대국이 있을 때 먼저 묻는 덮어쓰기 경고(저장 슬롯은 하나라 이 대국도
     // 그것을 밀어낸다). 제목은 「대국 하기」의 것을 그대로 쓰고, 본문은 끝 문장만 다르다(`rankMeasureOverwriteWarningFor`).
     val rankMeasure = LocalRankMeasureUiState.current
     var showRankMeasureDialog by remember { mutableStateOf(false) }
@@ -309,7 +309,7 @@ internal fun GoCoachHomeScreen(
                 )
             }
 
-            // 「기력 측정 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
+            // 「승급 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
             // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
             if (rankMeasure.isAvailable) {
                 Spacer(modifier = Modifier.height(AppSpacing.Space12))
@@ -513,10 +513,10 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
 }
 
 /**
- * 홈의 **대국 카드** — 「대국 하기」와 「기력 측정 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
+ * 홈의 **대국 카드** — 「대국 하기」와 「승급 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
  *
  * ## 초록 바탕을 버린 이유
- * 전에는 「대국 하기」만 브랜드 초록을 칠했다. 「기력 측정 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
+ * 전에는 「대국 하기」만 브랜드 초록을 칠했다. 「승급 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
  * 위쪽이 초록 벽이 되고 **구간의 테두리(`RankTierBadge`)가 초록에 묻힌다**(플래티넘의 청록이 특히). 그래서 바탕은 흰색으로
  * 두고 살짝 띄우며, 초록은 오른쪽의 ▶ 하나로만 남긴다 — "누르면 둔다"는 표시다. 아래 메뉴와의 위계는 색이 아니라
  * **크기**가 만든다([MenuTile]).
@@ -827,7 +827,7 @@ private val GameHistoryPreviewGameState: GameState = GameState.empty(
 )
 
 /**
- * 「기력 측정 대국」 카드의 아이콘 — **지금의 내 기력**을 글자로 보인다(`20급`). 다른 카드의 판 그림과 같은 자리·같은 크기다.
+ * 「승급 대국」 카드의 아이콘 — **지금의 내 기력**을 글자로 보인다(`20급`). 다른 카드의 판 그림과 같은 자리·같은 크기다.
  * 카드를 열지 않아도 기력이 보이고, 그 기력이 속한 **구간의 테두리**가 둘러선다(백로그 #236 — 브론즈부터 그랜드 마스터까지 일곱,
  * 구간의 경계는 `KgsRankTier`, 테두리의 모양과 색은 [RankTierBadge]).
  */

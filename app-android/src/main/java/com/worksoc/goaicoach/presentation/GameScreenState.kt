@@ -330,7 +330,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
         input.matchSeats.current.canAcceptBoardInput
 
     /**
-     * **기력 측정 대국에서는 대국 중 도움이 전부 꺼진다**(백로그 #219, 사용자 2026-10-06) — 형세 보기 · 추천 수 · 무르기.
+     * **승급 대국에서는 대국 중 도움이 전부 꺼진다**(백로그 #219, 사용자 2026-10-06) — 형세 보기 · 추천 수 · 무르기.
      * 재는 것은 스스로 둔 수여야 한다. 켜 둔 「매 수 형세」·「매 수 추천」도 이 판에서는 **꺼진 것으로 보이고 눌리지 않는다**
      * (설정은 그대로 남아 다음 일반 대국에서 다시 켜져 있다). 판이 끝나면 풀린다 — 종국의 영역 표시는 누구에게나 보인다.
      */
@@ -411,7 +411,7 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
      */
     fun coachingButtonEnabled(isFilled: Boolean, canRequest: Boolean): Boolean = isFilled || canRequest
 
-    // 기력 측정 대국에서는 켜 둔 토글도 꺼진 것으로 그린다 — 켜진 채 잠기면 "끌 수 있어야 한다"는 위 규칙과 부딪히고, 실제로도 아무것도 안 나온다.
+    // 승급 대국에서는 켜 둔 토글도 꺼진 것으로 그린다 — 켜진 채 잠기면 "끌 수 있어야 한다"는 위 규칙과 부딪히고, 실제로도 아무것도 안 나온다.
     val topMovesShownAsOn = input.topMovesEnabled && !isRankMeasureGame
     val evalShownAsOn = input.uxOptions.showOwnershipOverlay && !isRankMeasureGame
 

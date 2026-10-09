@@ -161,7 +161,7 @@ internal fun runTopMoveAnalysisApplication(request: TopMoveAnalysisRunRequest) {
     if (request.automatic && request.pendingPostUndoEngineSync) {
         return
     }
-    // ⚠️ **기력 측정 대국에서는 돌지 않는다**(백로그 #219, 사용자 2026-10-06 — 대국 중 도움 없음). 「매 수 추천」·「착수 평가」를
+    // ⚠️ **승급 대국에서는 돌지 않는다**(백로그 #219, 사용자 2026-10-06 — 대국 중 도움 없음). 「매 수 추천」·「착수 평가」를
     // 켜 둔 사용자도 이 판에서는 탐색이 안 걸린다 — 재는 것은 스스로 둔 수여야 한다. 버튼도 같은 조건으로 잠긴다(`GameScreenState`).
     // 아래 OR 식에 섞지 않고 따로 둔다 — 그 식은 "착수 평가"를 지키는 계약이 글자 그대로 본다(`ReplayRecordingContractTest`).
     if (request.playerSetup.isRankMeasure()) {

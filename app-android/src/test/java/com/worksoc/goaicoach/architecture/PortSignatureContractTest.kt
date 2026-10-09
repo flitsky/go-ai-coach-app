@@ -512,7 +512,7 @@ class PortSignatureContractTest {
 
         /**
          * 기준선의 계약 수 — `*Port` 인터페이스 20개 + 명시 등록 1개(`PositionAnalysisCacheStore`). `#73` 실측(19 + 1)에
-         * `RankMeasureStorePort`(기력 측정 대국의 상태 저장, 백로그 #219 — 2026-10-06)가 더해졌다.
+         * `RankMeasureStorePort`(승급 대국의 상태 저장, 백로그 #219 — 2026-10-06)가 더해졌다.
          * 포트를 새로 만들거나 지우면 여기를 고친다.
          */
         const val EXPECTED_CONTRACT_COUNT = 21

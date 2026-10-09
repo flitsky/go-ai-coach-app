@@ -193,7 +193,7 @@ internal fun GoCoachContent(
                 onReviewFinishedGame()
             },
             reviewMistakeCount = reviewMistakeCount,
-            // 기력 측정 대국이면 그 판의 상대 급수를 남긴다(백로그 #219). 좌석은 다음 대국을 시작할 때까지 둔 급수 그대로다.
+            // 승급 대국이면 그 판의 상대 급수를 남긴다(백로그 #219). 좌석은 다음 대국을 시작할 때까지 둔 급수 그대로다.
             opponentLine = screenState.playerSetup.rankMeasureMatchup()?.let { matchup ->
                 rankedOpponentLineFor(strings.language, matchup.opponentRank)
             },
@@ -201,7 +201,7 @@ internal fun GoCoachContent(
     }
 
     // 기력 변동 팝업(백로그 #219, 사용자 2026-10-07) — **판정 결과 창이 닫힌 뒤에** 띄운다. 둘은 별도 윈도우라 함께 뜨면
-    // 위아래가 정해지지 않는다(함정 7). 기력 측정 대국이 아니면 띄울 것이 없어 아무것도 그리지 않는다.
+    // 위아래가 정해지지 않는다(함정 7). 승급 대국이 아니면 띄울 것이 없어 아무것도 그리지 않는다.
     if (finalJudgementToShow == null) RankMeasureChangeDialog(LocalRankMeasureUiState.current)
 
     // ⚠️ 판을 한 화면에 맞추려고 **세 높이**를 잰다(백로그 #139 1차, 계산은 `fittedBoardMaxHeightPx`).

@@ -78,7 +78,7 @@ class BundledEngineAssetContractTest {
 
     /**
      * 사람 모델도 번들에 싣는다(백로그 #215, 2026-10-06 사용자 결정 — 두 모델). 빠지면 **조용히** 빠진다: 급수 캐릭터는 예전 방식으로
-     * 두고 기력 측정 대국 카드는 보이지 않을 뿐 아무것도 빨개지지 않는다.
+     * 두고 승급 대국 카드는 보이지 않을 뿐 아무것도 빨개지지 않는다.
      */
     @Test
     fun theHumanModelIsBundledAndSeededToo() {

@@ -8,7 +8,7 @@ import com.worksoc.goaicoach.shared.policy.KgsRank
 import org.json.JSONObject
 
 /**
- * 기력 측정 대국의 상태(내 기력 · 최고 기력 · 연승·연패)를 남긴다(백로그 #219).
+ * 승급 대국의 상태(내 기력 · 최고 기력 · 연승·연패)를 남긴다(백로그 #219).
  *
  * ⚠️ `UserPreferencesSnapshot`에 얹지 않고 제 저장소를 갖는다(함정 2 — 자동저장이 스냅샷을 처음부터 다시 조립한다).
  * 이름이 앱 접두사(`go_ai_coach_`)로 시작해 「앱 최초 실행 상태로 되돌리기」가 함께 지운다(`wipeToFreshInstall`, 함정 55).

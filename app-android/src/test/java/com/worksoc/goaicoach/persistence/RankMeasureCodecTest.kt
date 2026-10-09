@@ -11,7 +11,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 기력 측정 대국(백로그 #219)이 기기에 남기는 것 — 제 저장소의 상태와, 좌석 설정에 실리는 표시·급수. */
+/** 승급 대국(백로그 #219)이 기기에 남기는 것 — 제 저장소의 상태와, 좌석 설정에 실리는 표시·급수. */
 class RankMeasureCodecTest {
     @Test
     fun theStateRoundTrips() {
@@ -58,8 +58,8 @@ class RankMeasureCodecTest {
     }
 
     /**
-     * 기력 측정 대국의 좌석은 좌석 설정 코덱을 그대로 지난다 — 이어하기·대국 기록이 함께 쓰는 코덱이다. 사람 좌석의 대국 종류
-     * `RankMeasure`와 상대의 그룹 `CustomRank` + 단계 번호가 실려야, 다시 읽은 판이 여전히 기력 측정 대국이고 급수도 그대로다.
+     * 승급 대국의 좌석은 좌석 설정 코덱을 그대로 지난다 — 이어하기·대국 기록이 함께 쓰는 코덱이다. 사람 좌석의 대국 종류
+     * `RankMeasure`와 상대의 그룹 `CustomRank` + 단계 번호가 실려야, 다시 읽은 판이 여전히 승급 대국이고 급수도 그대로다.
      * ⚠️ 두 이름이 곧 저장 형식이다(함정 1) — enum 이름을 바꾸면 저장된 판이 전부 일반 대국·캐릭터 상대로 읽힌다.
      */
     @Test

@@ -72,7 +72,7 @@ internal data class ConsumableUiState(
     val refresh: () -> Unit = {},
     /**
      * **이 판의 무료 사용**(백로그 #228) — 캐릭터와 두는 대국에서 형세 보기·추천 수를 기능마다 3회씩 무료로 쓴다.
-     * 남은 횟수와, 한 번 쓰는 길. 무료 사용이 없는 판(기력 측정 대국 · AI끼리 · 사람끼리)이면 늘 0이다.
+     * 남은 횟수와, 한 번 쓰는 길. 무료 사용이 없는 판(승급 대국 · AI끼리 · 사람끼리)이면 늘 0이다.
      * 1회권보다 **먼저** 쓴다 — 순서는 `GamePlaySection`의 `featureGated`가 지킨다(무료 3회 → 1회권 → 업셀).
      */
     val freeUsesRemaining: (FeatureId) -> Int = { 0 },

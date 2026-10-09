@@ -46,7 +46,7 @@ internal fun FinalJudgementDialog(
      */
     reviewMistakeCount: Int?,
     /**
-     * 그 판의 상대를 말하는 한 줄(백로그 #219) — 기력 측정 대국에만 있다(`상대: 18급 AI`).
+     * 그 판의 상대를 말하는 한 줄(백로그 #219) — 승급 대국에만 있다(`상대: 18급 AI`).
      * 캐릭터와 둔 판은 `null`이고 지금까지와 똑같다.
      */
     opponentLine: String? = null,

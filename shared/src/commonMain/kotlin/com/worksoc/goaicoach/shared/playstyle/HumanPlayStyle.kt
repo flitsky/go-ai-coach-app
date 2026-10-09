@@ -43,7 +43,7 @@ data class HumanPlayStyle(
  * ⚠️ 값을 바꿀 때는 구간([HumanPlayStyle.weakestRank]~[HumanPlayStyle.strongestRank]) 안에서 — 구간은 U-59가 정했다.
  */
 fun PlayLevelSetting.humanPlayStyle(): HumanPlayStyle? {
-    // 급수를 직접 정한 상대(기력 측정 대국, 백로그 #219) — 그 급수의 공식 프로필 그대로 둔다. 구간이 한 칸이다.
+    // 급수를 직접 정한 상대(승급 대국, 백로그 #219) — 그 급수의 공식 프로필 그대로 둔다. 구간이 한 칸이다.
     customRank()?.let { rank ->
         val label = "${rank.number}${if (rank.isDan) "d" else "k"}"
         return HumanPlayStyle(profile = rank.profile, weakestRank = label, strongestRank = label)

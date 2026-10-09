@@ -6,8 +6,8 @@ import com.worksoc.goaicoach.match.isRankMeasure
  * **대국 기록의 승률**(백로그 #227, 사용자 피드백 2026-10-08: *"승률 — 최근 10게임, 누적, 최근 한 달 등 선택 가능"*).
  *
  * 사용자가 정한 것(2026-10-08): **사람 대 AI 판만** 센다 · **10수 이하 판**과 **승자를 모르는 옛 기권 기록**은 뺀다 ·
- * **기력 측정 대국은 따로** 보인다.
- * 스레드가 메운 것(사용자에게 알렸다): 「최근 10판」은 **갈래마다**(일반 대국 10판 · 기력 측정 대국 10판) 센다 ·
+ * **승급 대국은 따로** 보인다.
+ * 스레드가 메운 것(사용자에게 알렸다): 「최근 10판」은 **갈래마다**(일반 대국 10판 · 승급 대국 10판) 센다 ·
  * 「최근 한 달」은 지금부터 30일 · 무승부는 판 수에 넣고 승으로 치지 않는다 · 처음 보이는 기간은 최근 10판이다.
  */
 enum class WinRatePeriod {
@@ -28,7 +28,7 @@ data class WinRateTally(
     val winRatePercent: Int? get() = if (games == 0) null else (wins * 100 + games / 2) / games
 }
 
-/** [regular] = 캐릭터와 둔 일반 대국, [rankMeasure] = 기력 측정 대국. */
+/** [regular] = 캐릭터와 둔 일반 대국, [rankMeasure] = 승급 대국. */
 data class GameHistoryWinRate(
     val regular: WinRateTally,
     val rankMeasure: WinRateTally,
