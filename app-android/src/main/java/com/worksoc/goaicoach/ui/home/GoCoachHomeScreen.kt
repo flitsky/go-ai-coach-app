@@ -72,6 +72,7 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.customRank
@@ -86,6 +87,7 @@ import com.worksoc.goaicoach.ui.designsystem.HomeLogoPalette
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
+import com.worksoc.goaicoach.ui.designsystem.RankTierBadge
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
@@ -320,7 +322,7 @@ internal fun GoCoachHomeScreen(
                     titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     subtitleColor = MaterialTheme.colorScheme.secondary,
                     onClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
-                    icon = { RankMeasureIcon(rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
+                    icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
                 )
             }
 
@@ -836,25 +838,12 @@ private val GameHistoryPreviewGameState: GameState = GameState.empty(
 
 /**
  * 「기력 측정 대국」 카드의 아이콘 — **지금의 내 기력**을 글자로 보인다(`20급`). 다른 카드의 판 그림과 같은 자리·같은 크기다.
- * 새 그림 자산 없이 가는 자리 표시이고, 카드를 열지 않아도 기력이 보인다는 쓸모가 있다.
+ * 카드를 열지 않아도 기력이 보이고, 그 기력이 속한 **구간의 테두리**가 둘러선다(백로그 #236 — 브론즈부터 그랜드 마스터까지 일곱,
+ * 구간의 경계는 `KgsRankTier`, 테두리의 모양과 색은 [RankTierBadge]).
  */
 @Composable
-private fun RankMeasureIcon(rankLabel: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(AppRadius.Corner8))
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = rankLabel,
-            color = MaterialTheme.colorScheme.onPrimary,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-        )
-    }
+private fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
+    RankTierBadge(rank = rank, label = rankLabel, modifier = Modifier.fillMaxSize())
 }
 
 /**
