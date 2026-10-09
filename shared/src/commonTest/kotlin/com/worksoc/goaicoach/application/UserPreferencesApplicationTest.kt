@@ -293,7 +293,7 @@ class UserPreferencesApplicationTest {
 
     /**
      * **승급 대국의 설정은 일반 대국 설정을 덮어쓰지 않는다**(백로그 #219). 그 판을 두는 동안의 좌석(사람 대 급수 AI)·판 크기·호선이
-     * 저장되면, 다음에 「대국 하기」를 열었을 때 고른 캐릭터와 걸어 둔 접바둑이 사라져 있다. 그 밖의 설정(탐색 시간 등)은 평소대로 저장한다.
+     * 저장되면, 다음에 「캐릭터 대국」을 열었을 때 고른 캐릭터와 걸어 둔 접바둑이 사라져 있다. 그 밖의 설정(탐색 시간 등)은 평소대로 저장한다.
      */
     @Test
     fun autosaveKeepsTheRegularGameSetupWhileARankMeasureGameIsLive() {

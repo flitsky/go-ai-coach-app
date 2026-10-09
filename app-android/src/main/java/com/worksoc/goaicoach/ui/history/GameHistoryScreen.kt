@@ -100,7 +100,7 @@ internal fun GameHistoryScreen(
     onReturnToGame: () -> Unit,
     /**
      * 저장 슬롯(`SavedGameStorePort`는 **한 판만** 담는다)에 진행 중인 **다른** 대국이 있는가.
-     * 홈의 「대국 하기」가 쓰는 것과 **같은 신호**다 — 분기 대국도 그 슬롯을 밀어내므로
+     * 홈의 「캐릭터 대국」이 쓰는 것과 **같은 신호**다 — 분기 대국도 그 슬롯을 밀어내므로
      * 같은 경고를 같은 문구로 띄운다(백로그 #172, 구 U-38).
      */
     hasResumableSession: Boolean,

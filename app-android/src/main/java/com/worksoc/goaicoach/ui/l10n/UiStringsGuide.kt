@@ -33,12 +33,15 @@ private val AttendanceClaimBody: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "每天来的话，我会为您准备单次券和新伙伴。",
 )
 
-/** ③ 홈 `대국 하기` 카드 우상단 말풍선 — 사용자 원문을 그대로 쓴다. */
+/**
+ * ③ 홈 `캐릭터 대국` 카드 우상단 말풍선 — 사용자 원문(*"대국 하기를 통해 바둑을 즐길 수 있어요"*)에서 카드 이름만 새 이름으로 옮겼다(백로그 #239).
+ * ⚠️ 카드 이름(`strings.startMatch`)이 바뀌면 이 문장도 함께 바꾼다 — 말풍선이 없는 이름을 가리키게 된다.
+ */
 private val HomeStartMatchBody: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "대국 하기를 통해 바둑을 즐길 수 있어요",
-    UiLanguage.English to "Tap Play a Match to start a game with me",
-    UiLanguage.Japanese to "「対局する」から囲碁を楽しめます",
-    UiLanguage.ChineseSimplified to "点击「开始对局」就能下棋了",
+    UiLanguage.Korean to "캐릭터 대국으로 바둑을 즐길 수 있어요",
+    UiLanguage.English to "Tap Character Match to start a game with me",
+    UiLanguage.Japanese to "「キャラクター対局」から囲碁を楽しめます",
+    UiLanguage.ChineseSimplified to "点击「角色对局」就能下棋了",
 )
 
 /**

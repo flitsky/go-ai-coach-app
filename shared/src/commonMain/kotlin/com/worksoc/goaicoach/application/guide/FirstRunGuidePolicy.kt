@@ -41,7 +41,7 @@ enum class GuideStep(
     /** ② 출석 보상 팝업 안 한 줄. */
     AttendanceClaim("attendance_claim", GuideSurface.AttendanceClaim),
 
-    /** ③ 홈 `대국 하기` 카드 우상단 말풍선. */
+    /** ③ 홈 `캐릭터 대국` 카드 우상단 말풍선. */
     HomeStartMatch("home_start_match", GuideSurface.Home),
 
     /** ④ 대국 설정 화면. */

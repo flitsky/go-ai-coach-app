@@ -10,7 +10,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * 백로그 #181 — 홈 "대국 하기" 카드 아이콘이 어떤 캐릭터를 보여줄지 고르는
+ * 백로그 #181 — 홈 "캐릭터 대국" 카드 아이콘이 어떤 캐릭터를 보여줄지 고르는
  * [currentAiCharacterOrDefault]를 고정한다.
  *
  * ⚠️ 이 산수는 `PlayerSetupPanel.kt`의 캐릭터 픽커가 "지금 고른 캐릭터"를 표시할 때 쓰는 것과

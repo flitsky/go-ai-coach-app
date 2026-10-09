@@ -984,7 +984,7 @@ private fun GoCoachScreen(
                 // 대국 화면에서 「복기 하기」로 들어온 다시보기의 **나가는 문**(백로그 #185).
                 // 왔던 곳으로 돌려보낸다 — 그 대국 화면은 아직 살아 있고 계가 결과도 그대로다.
                 onReturnToGame = { currentDestination = ScreenDestination.InGame },
-                // 홈의 「대국 하기」와 **같은 신호**다 — 분기 대국도 저장 슬롯 하나를 밀어낸다.
+                // 홈의 「캐릭터 대국」과 **같은 신호**다 — 분기 대국도 저장 슬롯 하나를 밀어낸다.
                 hasResumableSession = savedSessionToPrompt != null,
                 // ⚠️ **분기 대국은 「이어하기」와 같은 길을 탄다**(백로그 #172). 필요한 것
                 //   (수순이 실린 국면에서 시작 · 엔진을 그 자리로 동기화 · 좌석 설정 복원)이

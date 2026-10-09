@@ -103,7 +103,7 @@ import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 /**
  * 0 Depth: 홈 화면 (Home Screen)
  * - 사용자가 앱 진입 시 최초로 마주하는 엔트리 화면입니다.
- * - "대국 하기" (대국 설정 로비로 이동) 및 "학습 하기" ([StudyScreen]으로 이동) 메뉴를 제공합니다.
+ * - "캐릭터 대국" (대국 설정 로비로 이동) 및 "학습 하기" ([StudyScreen]으로 이동) 메뉴를 제공합니다.
  * - 시스템 샌드위치/소프트키 및 상단 상태바 영역 침범 방지 적용.
  */
 @Composable
@@ -122,7 +122,7 @@ internal fun GoCoachHomeScreen(
      */
     onStartRankMeasureGame: (RankMeasureStart) -> Unit,
     /**
-     * 백로그 #181 — "대국 하기" 카드 아이콘이 마지막으로 고른 AI 캐릭터를 보여주기 위해 받는다.
+     * 백로그 #181 — "캐릭터 대국" 카드 아이콘이 마지막으로 고른 AI 캐릭터를 보여주기 위해 받는다.
      * ⚠️ 새 상태 훅이 아니다 — `GoCoachApp.kt`가 이미 들고 있는 `screenState.playerSetup`(파생값)을
      * 그대로 흘려보낸 것뿐이다(셸의 훅 예산 42/42, 함정 3).
      */
@@ -132,7 +132,7 @@ internal fun GoCoachHomeScreen(
     val strings = LocalUiStrings.current
     var showOverwriteWarningDialog by remember { mutableStateOf(false) }
     // 승급 대국(백로그 #219) — 설정 창과, 진행 중인 대국이 있을 때 먼저 묻는 덮어쓰기 경고(저장 슬롯은 하나라 이 대국도
-    // 그것을 밀어낸다). 제목은 「대국 하기」의 것을 그대로 쓰고, 본문은 끝 문장만 다르다(`rankMeasureOverwriteWarningFor`).
+    // 그것을 밀어낸다). 제목은 「캐릭터 대국」의 것을 그대로 쓰고, 본문은 끝 문장만 다르다(`rankMeasureOverwriteWarningFor`).
     val rankMeasure = LocalRankMeasureUiState.current
     var showRankMeasureDialog by remember { mutableStateOf(false) }
     var showRankMeasureOverwriteWarning by remember { mutableStateOf(false) }
@@ -274,7 +274,7 @@ internal fun GoCoachHomeScreen(
                 }
             }
 
-            // "대국 하기" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
+            // "캐릭터 대국" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
             //
             // ⚠️ **첫돌이 말풍선을 이 열의 새 자식으로 넣지 말 것**(백로그 #128 ③). 자식을 더하면
             // 카드가 아래로 밀려 **사용자가 눌러야 할 표적이 움직이고**, #28이 만졌던 가중치·스크롤
@@ -344,7 +344,7 @@ internal fun GoCoachHomeScreen(
         }
     }
 
-    // 이전 대국 존재 상태에서 새 대국 하기 선택 시 확인 경고 팝업
+    // 이전 대국 존재 상태에서 새 캐릭터 대국 선택 시 확인 경고 팝업
     if (showOverwriteWarningDialog) {
         AlertDialog(
             onDismissRequest = { showOverwriteWarningDialog = false },
@@ -513,10 +513,10 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
 }
 
 /**
- * 홈의 **대국 카드** — 「대국 하기」와 「승급 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
+ * 홈의 **대국 카드** — 「캐릭터 대국」과 「승급 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
  *
  * ## 초록 바탕을 버린 이유
- * 전에는 「대국 하기」만 브랜드 초록을 칠했다. 「승급 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
+ * 전에는 「캐릭터 대국」만 브랜드 초록을 칠했다. 「승급 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
  * 위쪽이 초록 벽이 되고 **구간의 테두리(`RankTierBadge`)가 초록에 묻힌다**(플래티넘의 청록이 특히). 그래서 바탕은 흰색으로
  * 두고 살짝 띄우며, 초록은 오른쪽의 ▶ 하나로만 남긴다 — "누르면 둔다"는 표시다. 아래 메뉴와의 위계는 색이 아니라
  * **크기**가 만든다([MenuTile]).
@@ -656,7 +656,7 @@ private fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
 private val MenuTileIconSize = 52.dp
 
 /**
- * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없거나 기본 설정이면 기본값(레벨3, "수제자 반상")을
+ * "캐릭터 대국" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없거나 기본 설정이면 기본값(레벨3, "수제자 반상")을
  * 돌려준다(백로그 #181, 2026-09-21 사용자 요청으로 기본값을 판다에서 수제자 반상으로 변경).
  * [PlayerSetup]이 기본값(흑 사람, 백 AI 1단계)인 초기 상태이거나, 두 좌석 중 AI가 없거나
  * `FastBeginner` 그룹이 아니면 기본값인 레벨 3("수제자 반상")을 돌려준다.
@@ -688,7 +688,7 @@ private fun defaultAiCharacter(): BotCharacter =
         ?: BotCharacterCatalog.fastBeginnerRoster.first()
 
 /**
- * "대국 하기" 카드의 정적 국면 — **두 점**만 놓는다(2026-09-22 사용자 지시). 「학습 하기」가
+ * "캐릭터 대국" 카드의 정적 국면 — **두 점**만 놓는다(2026-09-22 사용자 지시). 「학습 하기」가
  * 세 점인 것과 일부러 다르다: 이쪽은 *"이제 두기 시작한다"* 이고 저쪽은 *"공부할 모양이 있다"* 다.
  * `BoardRules.play`를 거치지 않고 바로 앉히는 것은 [StudyPreviewGameState]와 같은 이유다(장식용).
  */
@@ -703,7 +703,7 @@ private val GamePlayPreviewGameState: GameState = GameState.empty(
 )
 
 /**
- * "대국 하기" 카드 아이콘 — 바둑판(두 점) 위 **좌상단**에 상대 캐릭터를 70%로 얹는다
+ * "캐릭터 대국" 카드 아이콘 — 바둑판(두 점) 위 **좌상단**에 상대 캐릭터를 70%로 얹는다
  * (2026-09-22 사용자 지시, 백로그 #192).
  *
  * ## ⚠️ 전에는 캐릭터가 슬롯을 통째로 채웠다

@@ -43,16 +43,16 @@ internal fun rankMeasureTitleFor(language: UiLanguage): String =
     when (language) {
         UiLanguage.Korean -> "승급 대국"
         UiLanguage.English -> "Rank Match"
-        UiLanguage.Japanese -> "棋力測定対局"
-        UiLanguage.ChineseSimplified -> "棋力测定对局"
+        UiLanguage.Japanese -> "昇級対局"
+        UiLanguage.ChineseSimplified -> "升级对局"
     }
 
 internal fun rankMeasureSubtitleFor(language: UiLanguage): String =
     when (language) {
         UiLanguage.Korean -> "같은 기력의 AI와 두고, 결과가 기력에 반영됩니다."
-        UiLanguage.English -> "Find your rank and learn by playing opponents at your level."
-        UiLanguage.Japanese -> "自分の棋力を知り、同じくらいの相手と打って学びます。"
-        UiLanguage.ChineseSimplified -> "了解自己的棋力，与水平相近的对手对弈学习。"
+        UiLanguage.English -> "Play an AI at your rank. The result moves your rank up or down."
+        UiLanguage.Japanese -> "同じ棋力のAIと打ち、結果が棋力に反映されます。"
+        UiLanguage.ChineseSimplified -> "与同等棋力的 AI 对弈，结果会反映到棋力上。"
     }
 
 /** 설정 창의 「현재 기력」 줄. */
@@ -139,15 +139,15 @@ internal fun rankMeasureOfficialNoteFor(language: UiLanguage): String =
     }
 
 /**
- * 이어할 대국이 있을 때 카드를 누르면 먼저 묻는 말 — 「대국 하기」의 경고와 앞 두 문장이 같고 **끝 문장만 다르다**: 저쪽은
+ * 이어할 대국이 있을 때 카드를 누르면 먼저 묻는 말 — 「캐릭터 대국」의 경고와 앞 두 문장이 같고 **끝 문장만 다르다**: 저쪽은
  * "대국 설정으로 이동하시겠습니까?"인데 이 카드는 대국 설정으로 가지 않는다(2026-10-06 에뮬레이터에서 그 문장이 그대로 떴다).
  */
 internal fun rankMeasureOverwriteWarningFor(language: UiLanguage): String =
     when (language) {
         UiLanguage.Korean -> "저장된 이전 대국이 존재합니다. 새 대국을 시작하면 이전 대국을 이어받을 수 없게 됩니다. 승급 대국을 시작하시겠습니까?"
         UiLanguage.English -> "A saved match exists. Starting a new match may overwrite your previous progress. Start a rank match?"
-        UiLanguage.Japanese -> "保存された前回の対局が存在します。新しい対局を開始すると前回の対局データが上書きされる可能性があります。棋力測定対局を始めますか？"
-        UiLanguage.ChineseSimplified -> "存在已保存的前局。开始新对局可能会覆盖之前的进度。是否开始棋力测定对局？"
+        UiLanguage.Japanese -> "保存された前回の対局が存在します。新しい対局を開始すると前回の対局データが上書きされる可能性があります。昇級対局を始めますか？"
+        UiLanguage.ChineseSimplified -> "存在已保存的前局。开始新对局可能会覆盖之前的进度。是否开始升级对局？"
     }
 
 /** 진영(흑·백)을 고르는 줄의 제목 — 사용자 요청문의 말 그대로 「플레이어」(2026-10-06). */

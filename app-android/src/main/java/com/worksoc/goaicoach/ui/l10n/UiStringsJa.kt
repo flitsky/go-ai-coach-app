@@ -98,7 +98,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     yes = "はい",
     no = "いいえ",
     handicap = "置き石",
-    startMatch = "対局する",
+    startMatch = "キャラクター対局",
     study = "学習する",
     matchSetup = "対局設定",
     startMatchAction = "対局開始",
@@ -111,7 +111,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     notImplementedMessage = "この機能は現在準備中です。",
     // 신규 로컬라이징 필드
     showScoreGraph = "スコアグラフ表示",
-    homeStartMatchSubtitle = "AIやローカルプレイヤーとの対局を設定して開始します。",
+    homeStartMatchSubtitle = "キャラクターと対局。二人で一台でも打てます。",
     gameHistoryTitle = "対局記録",
     gameHistoryEmptyMessage = "まだ終了した対局がありません。",
     cacheOptTitle = "この対局の最適化",
