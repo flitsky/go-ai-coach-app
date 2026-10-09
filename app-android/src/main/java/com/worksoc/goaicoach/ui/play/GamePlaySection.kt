@@ -95,7 +95,6 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
 import com.worksoc.goaicoach.ui.l10n.confirmPlayToggledToastFor
 import com.worksoc.goaicoach.ui.l10n.freeAnalysisUsedToastFor
-import com.worksoc.goaicoach.ui.l10n.largeHeldStoneLabelFor
 import com.worksoc.goaicoach.ui.l10n.rematchActionFor
 import com.worksoc.goaicoach.ui.l10n.reviewGameActionFor
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
@@ -422,14 +421,6 @@ internal fun GamePlaySection(
                     modifier = Modifier.padding(bottom = AppSpacing.Space6),
                 )
                 BoardTopControls(
-                    isLargeHeldStoneEnabled = screenState.uxOptions.isLargeHeldStoneEnabled,
-                    onToggleLargeHeldStone = {
-                        onEvent(
-                            GameUiEvent.ChangeUxOptions(
-                                screenState.uxOptions.copy(isLargeHeldStoneEnabled = !screenState.uxOptions.isLargeHeldStoneEnabled),
-                            ),
-                        )
-                    },
                     isMaxSize = isBoardMaxSize,
                     onToggleBoardSize = onToggleBoardSize,
                 )
@@ -831,21 +822,19 @@ internal fun nextTentativeMove(
 private val WideColumnWidth = 104.dp
 
 /**
- * 판 **바로 위** 경계선에 바짝 붙는 토글 두 개 — 왼쪽은 **끌 때 크게**, 오른쪽은 **바둑판 크기**(최대 / 여백)다.
+ * 판 **바로 위** 경계선에 바짝 붙는 토글 — 오른쪽 끝의 **바둑판 최대** 하나다.
  *
- * 이력: #38·#39가 만들었고(왼쪽은 착수 돋보기였다), #143이 "대국 화면에 집중"을 이유로 둘을 메뉴로 옮겼다.
- * 2026-10-09 사용자가 **되살렸다** — 오른쪽은 그대로, 왼쪽은 돋보기가 #188에서 기능째 사라져서 그 뒤를 이은
- * 「끌 때 크게」(길게 눌러 조준하는 동안 가늠돌을 키운다, #196·#197)가 받았다. 메뉴의 두 스위치도 그대로 있다 — 같은 값을 본다.
+ * 이력: #38·#39가 좌우에 둘을 두었고(왼쪽은 착수 돋보기, 오른쪽은 바둑판 크기), #143이 "대국 화면에 집중"을 이유로 메뉴로 옮겼다.
+ * 2026-10-09 사용자가 오른쪽을 **되살렸다.** 왼쪽은 돋보기가 #188에서 기능째 사라져 「끌 때 크게」를 넣어 봤다가 같은 날 뺐다(사용자).
  *
+ * ⚠️ **글자는 `바둑판 최대`로 고정이다**(같은 날 사용자 지시) — 예전에는 `바둑판 여백` ↔ `바둑판 최대`로 바뀌었는데,
+ *   한 스위치의 켜짐·꺼짐으로 읽히는 쪽이 직관적이고 **메뉴의 스위치와 같은 말**이 된다(그쪽도 `바둑판 최대`다 — 같은 함수를 부른다).
+ *   켜짐은 초록 테두리가 말한다.
  * ⚠️ **판 위에 얹지 마라.** 처음에는 판 우상단에 오버레이했는데, 거기는 실제로 착수하는 자리라 칩이 탭을 가로챈다(2026-08-30 사용자 지적).
- * ⚠️ **두 칩은 같은 관용구를 쓴다**([BoardTopToggle] 하나를 공유) — 라벨은 **지금 상태**, 켜짐은 초록 테두리.
- *   하나는 상태 라벨이고 하나는 동작 라벨이면 나란히 놓인 두 칩이 서로 다른 문법으로 말한다.
  * ⚠️ 폰 배치에만 있다 — 넓은 배치(#141)는 판 위에 줄을 하나 더 둘 세로가 없고, 메뉴로 바꾼다.
  */
 @Composable
 private fun BoardTopControls(
-    isLargeHeldStoneEnabled: Boolean,
-    onToggleLargeHeldStone: () -> Unit,
     isMaxSize: Boolean,
     onToggleBoardSize: () -> Unit,
 ) {
@@ -853,17 +842,11 @@ private fun BoardTopControls(
     Row(
         // 아래 2dp만 남긴다 — 경계선에 바짝 붙이는 것이 요점이고, 세로 공간도 아낀다.
         modifier = Modifier.fillMaxWidth().padding(bottom = AppSpacing.Space2),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BoardTopToggle(
-            label = largeHeldStoneLabelFor(strings.language),
-            active = isLargeHeldStoneEnabled,
-            onToggle = onToggleLargeHeldStone,
-        )
-        BoardTopToggle(
-            // 이쪽은 라벨이 곧 상태다(`바둑판 최대` / `바둑판 여백`) — 판이 화면 끝까지 찼는지는 이미 눈에 보인다.
-            label = boardSizeToggleLabelFor(strings.language, isMaxSize),
+            label = boardSizeToggleLabelFor(strings.language, isMaxSize = true),
             active = isMaxSize,
             onToggle = onToggleBoardSize,
         )

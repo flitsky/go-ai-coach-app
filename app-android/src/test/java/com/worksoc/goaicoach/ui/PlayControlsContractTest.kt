@@ -53,18 +53,20 @@ class PlayControlsContractTest {
     }
 
     /**
-     * 판 위의 토글 둘은 **돌아왔다**(2026-10-09 사용자) — #143이 메뉴로 옮겼던 것을 되살렸다. 오른쪽은 바둑판 크기 그대로,
-     * 왼쪽은 착수 돋보기가 #188에서 기능째 사라져 그 뒤를 이은 「끌 때 크게」다. 메뉴의 스위치도 그대로 있어야 한다(같은 값).
+     * 판 위의 **바둑판 최대** 토글은 **돌아왔다**(2026-10-09 사용자) — #143이 메뉴로 옮겼던 것을 되살렸다. 오른쪽 끝에 하나만 선다
+     * (왼쪽의 착수 돋보기는 #188에서 기능째 사라졌고, 그 자리에 넣어 봤던 「끌 때 크게」는 같은 날 뺐다).
+     * 글자는 `바둑판 최대`로 고정이다 — 메뉴의 스위치와 같은 말이어야 한다. 메뉴의 스위치도 그대로 있어야 한다(같은 값).
      */
     @Test
-    fun theBoardCarriesTheTwoTogglesAgainAndTheMenuKeepsItsSwitches() {
+    fun theBoardCarriesTheBoardSizeToggleAgainAndItSaysWhatTheMenuSays() {
         val play = code("GamePlaySection.kt")
         val controls = play.substringAfter("private fun BoardTopControls(").substringBefore("private fun BoardTopToggle(")
         assertTrue("폰 배치가 판 위 토글을 그리지 않는다.", play.contains("                BoardTopControls("))
-        val left = controls.indexOf("largeHeldStoneLabelFor(strings.language)")
-        val right = controls.indexOf("boardSizeToggleLabelFor(strings.language, isMaxSize)")
-        assertTrue("판 위 토글 둘 가운데 하나가 없다.", left >= 0 && right >= 0)
-        assertTrue("바둑판 크기 토글이 오른쪽(뒤)이 아니다 — 사용자가 기억하는 자리다.", left < right)
+        val menuLabel = "boardSizeToggleLabelFor(strings.language, isMaxSize = true)"
+        assertTrue("판 위 칩의 글자가 고정이 아니다 — 메뉴의 스위치와 다른 말을 한다.", controls.contains(menuLabel))
+        assertTrue("메뉴의 스위치가 판 위 칩과 다른 글자를 쓴다.", code("KaTrainUxPanels.kt").contains(menuLabel))
+        assertTrue("판 위 칩이 오른쪽 끝에 서지 않는다.", controls.contains("horizontalArrangement = Arrangement.End"))
+        assertFalse("「끌 때 크게」가 판 위에 돌아왔다 — 사용자가 뺐다(2026-10-09).", play.contains("largeHeldStoneLabelFor"))
         assertFalse("착수 돋보기가 판 위에 돌아왔다 — 기능은 #188에서 통째로 걷어냈다.", play.contains("Magnifier"))
 
         val menu = code("KaTrainUxPanels.kt")
