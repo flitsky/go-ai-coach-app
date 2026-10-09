@@ -377,6 +377,8 @@ internal fun GamePlaySection(
                 onBoardSlotPositioned(Rect(coordinates.positionInRoot(), coordinates.size.toSize()))
             },
             tentativeMove = tentativeMove,
+            // 끌기 시작하면 잡아 둔 가착수를 내려놓는다 — 판에 돌이 둘 보이지 않게(사유는 `GoBoard`의 KDoc).
+            onPlayDragStart = { tentativeMove = null },
             onCoordinateTap = { coordinate ->
                 if (screenState.uxOptions.isDirectPlayEnabled) {
                     onEvent(GameUiEvent.PlayAt(coordinate))
@@ -808,15 +810,22 @@ private fun WideColumnsArrangement(
 }
 
 /**
- * 착수 확인 모드에서 [tapped]를 누른 뒤의 가늠 자리(backlog #223). **둘 수 있는 자리만** 잡힌다 — 돌이 놓인 자리·자충·패를 누르면
- * 잡아 둔 자리([current])가 그대로 남는다(판이 이미 「둘 수 없다」는 진동으로 알린다). 걸러 내지 않으면 놓인 돌 위에 가늠돌이
- * 겹쳐 그려지고, `착수`를 눌러도 아무 일도 일어나지 않는다.
+ * 착수 확인 모드에서 [tapped]를 누른 뒤의 가착수 자리(backlog #223 → 2026-10-09 사용자: 회수하는 길).
+ *
+ * - **둘 수 있는 새 자리**를 누르면 그 자리로 옮긴다.
+ * - **잡아 둔 그 자리를 한 번 더** 누르면 거둔다 — 가착수를 물리는 길이 그 전에는 없었다(다른 자리로 옮길 수만 있었다).
+ * - **둘 수 없는 자리**(놓인 돌 위 · 자충 · 패)를 눌러도 거둔다. 예전(#223)에는 잡아 둔 자리가 남았다.
+ *   걸러 내지 않으면 놓인 돌 위에 가착수가 겹쳐 그려지고 `착수`를 눌러도 아무 일도 일어나지 않는다 — 그것은 그대로 막는다.
  */
 internal fun nextTentativeMove(
     current: BoardCoordinate?,
     tapped: BoardCoordinate,
     state: GameState,
-): BoardCoordinate? = if (LegalMoveGenerator.isLegalPlay(state, tapped)) tapped else current
+): BoardCoordinate? = when {
+    tapped == current -> null
+    LegalMoveGenerator.isLegalPlay(state, tapped) -> tapped
+    else -> null
+}
 
 /** 좌우 기둥의 폭. 좌석 카드 세 줄과 `형세 보기 (30)` 라벨이 들어가는 최소치에서 잡았다. */
 private val WideColumnWidth = 104.dp

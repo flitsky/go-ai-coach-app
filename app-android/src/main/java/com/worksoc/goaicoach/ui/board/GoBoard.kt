@@ -114,6 +114,13 @@ internal fun GoBoard(
      * ⚠️ 합성 탭(`adb input tap`)은 down→up이 몇 ms라 이 결함을 **못 잡는다.** 실기에서만 드러났다.
      */
     onCoordinatePress: () -> Unit = {},
+    /**
+     * 손끝의 돌을 **끌기 시작하는 순간** 한 번 알린다 — 길게 눌러 임계를 넘겼을 때(③), 또는 그 전에 슬롭을 넘어 끌려 갈 때(②).
+     *
+     * 착수 확인 모드가 이때 **잡아 둔 가착수를 내려놓는다**(2026-10-09 사용자) — 안 그러면 판에 옛 가착수와 손끝의 돌이
+     * 함께 보인다. 돌은 하나다: 끌기 시작하면 그 돌을 집어 든 것이다. 그냥 누르는 탭에서는 부르지 않는다(탭은 뗄 때 [onCoordinateTap]이 정한다).
+     */
+    onPlayDragStart: () -> Unit = {},
     onCoordinateTap: (BoardCoordinate) -> Unit,
     isGameEnded: Boolean = false,
     isEngineBusy: Boolean = false,
@@ -313,6 +320,14 @@ internal fun GoBoard(
                                     if (!LegalMoveGenerator.isLegalPlay(gameState, coordinate)) haptics.playInvalid()
                                 }
 
+                                // 끌기 시작은 한 제스처에 한 번만 알린다(②에서 알렸으면 ③에서 다시 알리지 않는다).
+                                var dragStartAnnounced = false
+                                fun announceDragStart() {
+                                    if (dragStartAnnounced) return
+                                    dragStartAnnounced = true
+                                    onPlayDragStart()
+                                }
+
                                 // ② 임계 전 — 따라가며 이벤트를 판이 가진다(사유는 `trackPressUntilUp`).
                                 var heldPastThreshold = false
                                 val released = try {
@@ -328,7 +343,10 @@ internal fun GoBoard(
                                             playDrag = PlayDrag(follow.target, below = false)
                                             // 슬롭을 넘어 실제로 끌 때만 짚는다 — 안 그러면 누른 첫
                                             // 좌표에서 곧바로 판정이 나 손끝을 떼기 전인데 울린다.
-                                            if (follow.following) maybeSignalInvalidHover(coordinateAt(follow.target))
+                                            if (follow.following) {
+                                                announceDragStart()
+                                                maybeSignalInvalidHover(coordinateAt(follow.target))
+                                            }
                                         }
                                     }
                                 } catch (_: PointerEventTimeoutCancellationException) {
@@ -364,6 +382,7 @@ internal fun GoBoard(
                                 // **확대창을 없앴으므로 대신해 줄 것이 사라졌다** — 그 규칙이
                                 // 저절로 "언제나 띄운다"로 도는 것이 그 결정의 단서였다
                                 // (*"끌기가 안정화되면 돋보기를 비활성화할 수도 있다"*, 사용자).
+                                announceDragStart()
                                 val holdLiftPx = liftPx
                                 var finger = follow.finger
                                 var target = Offset(finger.x, finger.y - holdLiftPx)
