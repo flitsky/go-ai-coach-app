@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -285,9 +286,6 @@ internal fun GoCoachHomeScreen(
                 MenuCard(
                     title = strings.startMatch,
                     subtitle = strings.homeStartMatchSubtitle,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleColor = MaterialTheme.colorScheme.onPrimary,
-                    subtitleColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                     onClick = {
                         if (hasResumableSession) {
                             showOverwriteWarningDialog = true
@@ -314,58 +312,31 @@ internal fun GoCoachHomeScreen(
             // 「기력 측정 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
             // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
             if (rankMeasure.isAvailable) {
-                Spacer(modifier = Modifier.height(AppSpacing.Space16))
+                Spacer(modifier = Modifier.height(AppSpacing.Space12))
                 MenuCard(
                     title = rankMeasureTitleFor(strings.language),
                     subtitle = rankMeasureSubtitleFor(strings.language),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    subtitleColor = MaterialTheme.colorScheme.secondary,
                     onClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
                     icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
                 )
             }
 
-            Spacer(modifier = Modifier.height(AppSpacing.Space16))
-
-            // "대국 기록" (Game History) 카드 — 대국 하기 바로 아래다(백로그 #45, 2026-08-30
-            // 사용자 지시). 두고 → 돌아보는 동선이 앱 안에서 이어지는데, 학습이 사이에 끼면
-            // 그 흐름이 유튜브 링크로 한 번 끊긴다.
-            MenuCard(
-                title = strings.gameHistoryTitle,
-                subtitle = strings.homeGameHistorySubtitle,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                subtitleColor = MaterialTheme.colorScheme.secondary,
-                onClick = onGameHistoryClick,
-                icon = { GameHistoryBoardIcon() },
-            )
-
-            Spacer(modifier = Modifier.height(AppSpacing.Space16))
-
-            // "학습 하기" (Study Mode) 카드
-            MenuCard(
-                title = strings.study,
-                subtitle = strings.homeStudySubtitle,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                subtitleColor = MaterialTheme.colorScheme.secondary,
-                onClick = onStudyClick,
-                icon = { StudyPreviewIcon() },
-            )
-
-            // 🧪 실험실 기능(#179): 설정 > 실험실에서 활성화한 경우에만 메뉴에 노출 (기본값: 비활성/숨김)
-            if (isCameraBoardScanEnabled) {
-                Spacer(modifier = Modifier.height(AppSpacing.Space16))
-                MenuCard(
-                    title = strings.featureShortName(FeatureId.BoardScan),
-                    subtitle = strings.boardScanSubtitle(),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    subtitleColor = MaterialTheme.colorScheme.secondary,
-                    onClick = onBoardScanClick,
-                    icon = { BoardScanPreviewIcon() },
-                )
+            // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
+            // 순서는 그대로다: 「대국 기록」이 먼저(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다), 그다음 「학습 하기」.
+            // 🧪 「사진 분석」은 실험실 기능(#179)이라 설정 > 실험실에서 켠 경우에만 셋째 타일로 붙는다 — 홀로 남은 타일도 반 폭을 지킨다.
+            val tiles = buildList {
+                add(HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() })
+                add(HomeMenuTile(strings.study, onStudyClick) { StudyPreviewIcon() })
+                if (isCameraBoardScanEnabled) {
+                    add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
+                }
+            }
+            tiles.chunked(2).forEach { row ->
+                Spacer(modifier = Modifier.height(AppSpacing.Space12))
+                Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+                    row.forEach { tile -> MenuTile(tile = tile, modifier = Modifier.weight(1f)) }
+                    if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                }
             }
 
             // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는
@@ -542,6 +513,14 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
 }
 
 /**
+ * 홈의 **대국 카드** — 「대국 하기」와 「기력 측정 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
+ *
+ * ## 초록 바탕을 버린 이유
+ * 전에는 「대국 하기」만 브랜드 초록을 칠했다. 「기력 측정 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
+ * 위쪽이 초록 벽이 되고 **구간의 테두리(`RankTierBadge`)가 초록에 묻힌다**(플래티넘의 청록이 특히). 그래서 바탕은 흰색으로
+ * 두고 살짝 띄우며, 초록은 오른쪽의 ▶ 하나로만 남긴다 — "누르면 둔다"는 표시다. 아래 메뉴와의 위계는 색이 아니라
+ * **크기**가 만든다([MenuTile]).
+ *
  * ⚠️ **`private`이 아니라 `internal`인 이유는 가이드 다시보기 하나뿐이다**(백로그 #128).
  * 그 화면이 ③을 설명할 때 **정적 삽화나 캡처가 아니라 이 진짜 카드**를 같은 문구로 그린다 —
  * 이 저장소는 그림이 낡는 사고를 네 번 겪었다(#87·#97·#124·#127, §0 B-2).
@@ -553,117 +532,128 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
 internal fun MenuCard(
     title: String,
     subtitle: String,
-    containerColor: Color,
-    titleColor: Color,
-    subtitleColor: Color,
     onClick: () -> Unit,
-    /**
-     * 카드 좌측의 정사각형 아이콘(백로그 #181). 없으면 예전 레이아웃(제목·부제만)과 1px도
-     * 다르지 않다 — `null`이 기본값이라 이 함수의 다른 호출부(`FirstDolGuideReplay.kt`가 넘기지
-     * 않는 카드가 생기더라도)는 손댈 필요가 없다.
-     */
-    icon: (@Composable () -> Unit)? = null,
+    /** 카드 좌측의 정사각형 그림(백로그 #181) — 상대 캐릭터가 앉은 판, 또는 구간의 테두리에 담긴 내 기력. */
+    icon: @Composable () -> Unit,
 ) {
+    // ⚠️ 누르기는 `Card(onClick)`에 맡긴다 — 바깥 modifier에 `clip` + `clickable`을 걸면 그림자까지 잘려 카드가 떠 보이지 않는다.
     Card(
+        onClick = onClick,
         shape = RoundedCornerShape(AppRadius.Corner14),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(AppRadius.Corner14))
-            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = MenuCardElevation),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                // 카드 높이를 정하는 건 이 상자다 — 고정 `height`가 아니라 **최소** 높이인
-                // 이유가 #29다.
-                //
-                // 산수: 120dp 고정이면 패딩 24dp를 위아래로 뺀 72dp 안에 다 들어가야 한다.
-                // 그런데 아래 두 `Text`는 `fontSize`만 덮고 **줄 높이는 상속한다** — M3가
-                // `LocalTextStyle`로 깔아 둔 `bodyLarge`의 `lineHeight = 24.sp`다. 그래서
-                // 13sp 부제도 한 줄에 24dp를 먹는다(실측 줄 피치 정확히 24.0dp). 제목 24 +
-                // 간격 4 + 부제 1줄 24 = 52dp는 들어가지만, 부제가 **두 줄이 되는 순간**
-                // 76dp라 72dp를 넘겨 마지막 줄이 `clip`에 썰렸다. 두 줄은 드문 일이 아니다 —
-                // 일본어는 411dp 기본 배율에서 이미, 한국어는 360dp에서 그렇게 된다.
-                //
-                // 최소 높이면 평소 모습은 1px도 바뀌지 않고(내용이 72dp에 들면 카드는 여전히
-                // 120dp) 넘칠 때만 자란다. 홈은 #28에서 스크롤을 얻었으므로 카드가 커져도
-                // 화면이 깨지지 않는다.
-                //
-                // ⚠️ 하한을 `Card` modifier로 올리지 마라. M3 `Card`는 내용을 modifier 없는
-                // `Column`으로 감싸는데, 그러면 maxHeight가 Infinity가 돼 배경을 칠하는 이
-                // 상자만 내용 높이로 줄고 **카드 아래에 칠하지 않은 띠**가 드러난다. 실제로
-                // 그렇게 짰다가 봤다.
-                .heightIn(min = 120.dp)
-                .background(containerColor)
-                // ⚠️ **아이콘이 있으면 왼쪽만 극단적으로 좁힌다**(2026-09-21 사용자 요청) —
-                // 제목·부제 앞의 위·아래·오른쪽 여백(24dp)은 그대로 두고, 아이콘과 카드 왼쪽
-                // 테두리 사이만 좁혀 아이콘이 카드에 바짝 붙게 한다.
+                // 고정 높이가 아니라 **최소** 높이다(#29) — 부제가 석 줄이 되는 언어·글꼴 배율에서도 썰리지 않고 카드가 자란다.
+                // 평소(부제 두 줄까지)에는 내용이 이 높이 안에 들어 카드 둘의 키가 같다. 홈은 #28에서 스크롤을 얻었으므로
+                // 카드가 커져도 화면이 깨지지 않는다.
+                // ⚠️ 하한은 `Card`가 아니라 이 줄에 건다 — M3 `Card`는 내용을 modifier 없는 `Column`으로 감싼다.
+                .heightIn(min = MenuCardMinHeight)
                 .padding(
-                    start = if (icon != null) MenuCardIconStartPadding else AppSpacing.Space24,
-                    top = AppSpacing.Space24,
-                    end = AppSpacing.Space24,
-                    bottom = AppSpacing.Space24,
+                    start = AppSpacing.Space8,
+                    top = AppSpacing.Space16,
+                    end = AppSpacing.Space16,
+                    bottom = AppSpacing.Space16,
                 ),
-            // 카드가 최소 높이일 때 내용을 세로 가운데에 둔다. 예전에는 `fillMaxSize` 자식
-            // Column의 `Arrangement.Center`가 하던 일인데, 높이가 내용에 따라 달라진 지금은
-            // 높이를 아는 쪽이 상자뿐이라 여기로 옮겼다.
-            contentAlignment = Alignment.CenterStart,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정). 그림 둘 다 스스로 또렷하다 —
+            // 판은 제 나무 바탕을 그리고, 구간의 테두리는 어두운 판을 두른다.
+            Box(
+                modifier = Modifier
+                    .size(MenuCardIconSize)
+                    .padding(AppSpacing.Space4),
+                contentAlignment = Alignment.Center,
             ) {
-                if (icon != null) {
-                    // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정 — 흰 배경
-                    // 제거). 아이콘 셋 다 자체적으로 또렷하다(캐릭터 원화는 투명 배경, 보드는
-                    // 스스로 나무판 배경을 그린다) — 별도 컨테이너 배경이 없어도 안 묻힌다.
-                    Box(
-                        modifier = Modifier
-                            .size(MenuCardIconSize)
-                            // 2026-09-21 사용자 요청 — 좌측은 최소, 상·하·우측은 적당히.
-                            // 카드 왼쪽 테두리와의 거리는 `MenuCardIconStartPadding`이 이미
-                            // 맡고 있어 이 안쪽 여백까지 왼쪽에 더 주면 이중으로 벌어진다.
-                            .padding(start = 0.dp, top = AppSpacing.Space4, end = AppSpacing.Space4, bottom = AppSpacing.Space4),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        icon()
-                    }
-                    Spacer(modifier = Modifier.width(AppSpacing.Space12))
-                }
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        text = title,
-                        color = titleColor,
-                        fontSize = AppTextSize.Text20,
-                        fontWeight = FontWeight.Bold,
-                    )
+                icon()
+            }
+            Spacer(modifier = Modifier.width(AppSpacing.Space10))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = AppTextSize.Text20,
+                    fontWeight = FontWeight.Bold,
+                )
 
-                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
+                Spacer(modifier = Modifier.height(AppSpacing.Space4))
 
-                    Text(
-                        text = subtitle,
-                        color = subtitleColor,
-                        fontSize = AppTextSize.Text13,
-                        fontWeight = FontWeight.Normal,
-                    )
-                }
+                Text(
+                    text = subtitle,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontSize = AppTextSize.Text13,
+                    // 줄 높이를 상속(24sp)에 맡기지 않는다 — 두 줄 부제가 평소 높이 안에 들어야 카드 둘의 키가 같다.
+                    lineHeight = AppTextSize.Text18,
+                    fontWeight = FontWeight.Normal,
+                )
+            }
+            Spacer(modifier = Modifier.width(AppSpacing.Space10))
+            // 장식이다 — 누르는 표적은 카드 전체라 따로 읽어 줄 이름이 없다.
+            Box(
+                modifier = Modifier
+                    .size(MenuCardPlayButtonSize)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(MenuCardPlayGlyphSize),
+                )
             }
         }
     }
 }
 
-/**
- * [MenuCard] 아이콘 슬롯(바깥 정사각형)의 한 변. 안쪽 그림은 비대칭 여백만큼 더 작다.
- * 2026-09-21 사용자 요청으로 최초 값(56dp)의 150%(84dp)로 키웠다가, 90%(75.6dp),
- * 다시 같은 날 90%인 68dp로 축소 조정했다.
- */
+/** [MenuCard] 그림 자리(바깥 정사각형)의 한 변 — 안쪽 그림은 사방 4dp씩 작은 60dp다. */
 private val MenuCardIconSize = 68.dp
+private val MenuCardMinHeight = 104.dp
+private val MenuCardElevation = 3.dp
+private val MenuCardPlayButtonSize = 36.dp
+private val MenuCardPlayGlyphSize = 22.dp
 
-/** 아이콘이 있을 때 카드 왼쪽 테두리와 아이콘 사이의 여백(2026-09-21 사용자 요청 — 극단적으로 좁힘). */
-private val MenuCardIconStartPadding = 4.dp
+/** 홈의 반 폭 타일 하나 — 제목과 그림, 누르면 갈 곳. */
+private class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
+
+/**
+ * 홈의 **반 폭 타일** — 두는 것이 아닌 메뉴(대국 기록 · 학습 하기 · 실험실의 사진 분석)가 쓴다(백로그 #237).
+ * [MenuCard]보다 작고 납작하며(그림자 없음) **부제가 없다** — 제목만으로 무엇인지 읽히는 메뉴들이고, 반 폭에는 부제가 설 자리가 없다.
+ */
+@Composable
+private fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
+    Card(
+        onClick = tile.onClick,
+        shape = RoundedCornerShape(AppRadius.Corner14),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = AppSpacing.Space8, top = AppSpacing.Space10, end = AppSpacing.Space12, bottom = AppSpacing.Space10),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.size(MenuTileIconSize), contentAlignment = Alignment.Center) { tile.icon() }
+            Spacer(modifier = Modifier.width(AppSpacing.Space10))
+            // 제목이 긴 언어에서는 두 줄이 된다 — 그림이 더 커서 타일의 키는 그대로다.
+            Text(
+                text = tile.title,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = AppTextSize.Text16,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+            )
+        }
+    }
+}
+
+private val MenuTileIconSize = 52.dp
 
 /**
  * "대국 하기" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없거나 기본 설정이면 기본값(레벨3, "수제자 반상")을

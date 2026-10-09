@@ -112,9 +112,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     // 신규 로컬라이징 필드
     showScoreGraph = "スコアグラフ表示",
     homeStartMatchSubtitle = "AIやローカルプレイヤーとの対局を設定して開始します。",
-    homeStudySubtitle = "入門講座・基本の形・詰碁をここで学びましょう。",
     gameHistoryTitle = "対局記録",
-    homeGameHistorySubtitle = "これまで打った対局を確認できます。",
     gameHistoryEmptyMessage = "まだ終了した対局がありません。",
     cacheOptTitle = "この対局の最適化",
     cacheOptTargetLabel = "対象",

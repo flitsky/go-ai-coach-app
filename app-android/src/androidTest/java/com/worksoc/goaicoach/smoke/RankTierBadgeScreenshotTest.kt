@@ -116,9 +116,6 @@ class RankTierBadgeScreenshotTest {
         MenuCard(
             title = rankMeasureTitleFor(UiLanguage.Korean),
             subtitle = rankMeasureSubtitleFor(UiLanguage.Korean),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            subtitleColor = MaterialTheme.colorScheme.secondary,
             onClick = {},
             icon = { RankTierBadge(rank = rank, label = kgsRankLabelFor(UiLanguage.Korean, rank), modifier = Modifier.fillMaxWidth()) },
         )

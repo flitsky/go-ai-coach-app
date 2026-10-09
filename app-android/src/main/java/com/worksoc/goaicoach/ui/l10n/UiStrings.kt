@@ -234,9 +234,7 @@ internal data class UiStrings(
     val notImplementedMessage: String,
     val showScoreGraph: String,
     val homeStartMatchSubtitle: String,
-    val homeStudySubtitle: String,
     val gameHistoryTitle: String,
-    val homeGameHistorySubtitle: String,
     val gameHistoryEmptyMessage: String,
     val cacheOptTitle: String,
     val cacheOptTargetLabel: String,
@@ -979,14 +977,6 @@ internal data class UiStrings(
                 UiLanguage.Japanese -> "盤面写真分析"
                 UiLanguage.ChineseSimplified -> "棋盘拍照分析"
             }
-        }
-
-    fun boardScanSubtitle(): String =
-        when (language) {
-            UiLanguage.Korean -> "카메라로 촬영한 바둑판 국면을 AI로 인식하여 분석합니다"
-            UiLanguage.English -> "Capture a go board photo to recognize and analyze with AI"
-            UiLanguage.Japanese -> "撮影した碁盤の写真をAIで認識・分析します"
-            UiLanguage.ChineseSimplified -> "拍摄棋盘照片，通过 AI 识别并分析形势"
         }
 
     fun labsTitle(): String =

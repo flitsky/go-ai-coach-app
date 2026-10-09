@@ -135,9 +135,6 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                         MenuCard(
                             title = strings.startMatch,
                             subtitle = strings.homeStartMatchSubtitle,
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            titleColor = MaterialTheme.colorScheme.onPrimary,
-                            subtitleColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             onClick = {},
                             // ⚠️ **마지막 선택이 아니라 항상 기본값이다**(백로그 #181). 이 다시보기는
                             // 진행도 저장소를 열지 않는다는 계약이 있는데(위 KDoc), 실제 선택을 보여
