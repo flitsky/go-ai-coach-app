@@ -105,7 +105,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     engineNotReadyToStart = "AIを準備しています。まもなく開始できます。",
     engineUnavailableTitle = "AIエンジンを起動できませんでした",
     engineUnavailableMessage = "AIが正しく動作していません — 対局も分析結果も信頼できません。" +
-        "ネットワーク接続を確認するか、アプリを再起動してください。二人対局はこれまでどおり利用できます。",
+        "Google Playからインストールされた正規版か確認するか、通信環境を確認してアプリを再起動してください。二人対局はこれまでどおり利用できます。",
     engineUnavailableBadge = "AI異常 — 結果は信頼できません",
     backToHome = "メインメニューへ",
     notImplementedMessage = "この機能は現在準備中です。",

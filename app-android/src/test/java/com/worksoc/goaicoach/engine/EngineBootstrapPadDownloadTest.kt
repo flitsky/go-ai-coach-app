@@ -259,9 +259,7 @@ class EngineBootstrapPadDownloadTest {
             tracker = tracker,
         )
 
-        assertTrue("영구 실패 시 재시도 루프를 빠져나와 Failed 상태가 되어야 함", tracker.status.value is EngineDownloadStatus.Failed)
-        val failed = tracker.status.value as EngineDownloadStatus.Failed
-        assertEquals(AssetPackErrorCode.API_NOT_AVAILABLE, failed.errorCode)
+        assertEquals("영구 실패 시 재시도 루프를 빠져나와 Idle 상태로 정리되어야 함", EngineDownloadStatus.Idle, tracker.status.value)
         assertTrue("리스너가 정리되어야 함", fakeManager.registeredListeners.isEmpty())
     }
 
@@ -601,5 +599,121 @@ class EngineBootstrapPadDownloadTest {
         // retry()를 누르면 자동으로 다시 열려야 함
         tracker.retry()
         assertFalse(tracker.isDismissed.value)
+    }
+
+    @Test
+    fun testStartNewDownloadPreservesCellularConfirmationHandler() {
+        val tracker = EngineDownloadTracker()
+        var handlerCalled = false
+        tracker.registerCellularConfirmationHandler { handlerCalled = true }
+
+        // 새 다운로드를 시작해도 핸들러가 지워지지 않아야 함
+        tracker.startNewDownload()
+        tracker.requestCellularConfirmation()
+        assertTrue("startNewDownload 후에도 cellularConfirmationHandler가 보존되어야 함", handlerCalled)
+    }
+
+    @Test
+    fun testPackStatusIndependentFlags() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { packs ->
+            val states = packs.associateWith { pack ->
+                createFakeAssetPackState(
+                    name = pack,
+                    status = AssetPackStatus.DOWNLOADING,
+                )
+            }
+            FakeTask(createFakeAssetPackStates(states))
+        }
+
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        withTimeout(3000L) {
+            while (fakeManager.registeredListeners.isEmpty()) {
+                delay(10)
+            }
+        }
+
+        // 주 모델 완료, 사람 모델은 여전히 WAITING_FOR_WIFI
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoHumanPackName,
+                status = AssetPackStatus.WAITING_FOR_WIFI,
+            )
+        )
+
+        // 한 팩이 완료되었더라도 다른 팩이 WAITING_FOR_WIFI이면 전체 상태는 WaitingForWifi여야 함
+        assertTrue(
+            "다른 팩이 WAITING_FOR_WIFI 상태이면 트래커는 WaitingForWifi를 유지해야 함",
+            tracker.status.value is EngineDownloadStatus.WaitingForWifi,
+        )
+
+        // 사람 모델도 다운로드 완료
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoHumanPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testInitialFetchWaitingForWifiUpdatesTracker() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { packs ->
+            val states = packs.associateWith { pack ->
+                createFakeAssetPackState(
+                    name = pack,
+                    status = AssetPackStatus.WAITING_FOR_WIFI,
+                )
+            }
+            FakeTask(createFakeAssetPackStates(states))
+        }
+
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        withTimeout(3000L) {
+            while (tracker.status.value !is EngineDownloadStatus.WaitingForWifi) {
+                delay(10)
+            }
+        }
+        assertTrue(
+            "첫 fetch 결과가 WAITING_FOR_WIFI이면 즉시 트래커가 WaitingForWifi여야 함",
+            tracker.status.value is EngineDownloadStatus.WaitingForWifi,
+        )
+
+        // 완료로 전환
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
     }
 }

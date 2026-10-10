@@ -104,8 +104,7 @@ internal val UiStringsChineseSimplified = UiStringsKorean.copy(
     startMatchAction = "开始对局",
     engineNotReadyToStart = "正在准备 AI，稍后即可开始。",
     engineUnavailableTitle = "AI 引擎未能启动",
-    engineUnavailableMessage = "AI 无法正常工作 — 对弈和分析结果均不可信。请检查网络连接或重启" +
-        "应用。双人对弈仍可照常使用。",
+    engineUnavailableMessage = "AI 无法正常工作 — 对弈和分析结果均不可信。请确认是否为 Google Play 正版安装，或检查网络连接后重启应用。双人对弈仍可照常使用。",
     engineUnavailableBadge = "AI 异常 — 结果不可信",
     backToHome = "返回主菜单",
     notImplementedMessage = "此功能目前正在准备中。",

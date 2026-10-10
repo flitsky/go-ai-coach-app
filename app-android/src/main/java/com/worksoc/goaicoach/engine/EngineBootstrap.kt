@@ -236,9 +236,17 @@ private fun startBackgroundHumanModelDownload(manager: AssetPackManager) {
                 neededPacks = listOf(KatagoHumanPackName),
                 isMandatory = false,
             )
-        } catch (e: Exception) {
-            // 백그라운드 사람 모델 다운로드 중 예외 발생 시 크래시 방지 및 추적기 안전 정리
-            currentEngineDownloadTracker().updateStatus(EngineDownloadStatus.Idle)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            // 백그라운드 사람 모델 다운로드 중 예외 발생 시 크래시 방지 및 기록
+            android.util.Log.w("EngineBootstrap", "Background human model download failed", e)
+            val tracker = currentEngineDownloadTracker()
+            val currentStatus = tracker.status.value
+            // 사람 모델 수신 상태일 때만 안전하게 Idle로 리셋 (다른 다운로드 덮어쓰기 방지)
+            if (currentStatus is EngineDownloadStatus.Downloading && currentStatus.isHumanModelOnly) {
+                tracker.updateStatus(EngineDownloadStatus.Idle)
+            }
         }
     }
 }
@@ -346,21 +354,11 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
             }
 
             is AttemptOutcome.PermanentFailure -> {
-                // Play가 모르는 설치(make dev-stub, 디버그 APK 등) 또는 스토어 영구 실패이므로 스텁으로 전환
+                // Play가 모르는 설치(make dev-stub, 디버그 APK 등) 또는 스토어 영구 실패이므로 스텁으로 전환.
+                // 부트스트랩 루프가 즉시 종료되고 스텁 모드로 진입하므로, 반응 없는 죽은 재시도 버튼을
+                // 남기지 않고 카드를 Idle로 닫는다. 스텁 안내는 부트스트랩 완료 후 다이얼로그가 맡는다.
                 messages += "Asset pack permanent failure: ${outcome.message} (code: ${outcome.errorCode})"
-                if (isMandatory) {
-                    tracker.updateStatus(
-                        EngineDownloadStatus.Failed(
-                            errorCode = outcome.errorCode,
-                            message = outcome.message,
-                            isHumanModelOnly = false,
-                        )
-                    )
-                } else {
-                    // 사람 모델 단독 영구 실패 시 부트스트랩은 이미 주 모델로 완료되어 있으므로
-                    // 반응 없는 재시도 버튼을 남기지 않고 카드를 닫음(Idle).
-                    tracker.updateStatus(EngineDownloadStatus.Idle)
-                }
+                tracker.updateStatus(EngineDownloadStatus.Idle)
                 break
             }
 
@@ -396,6 +394,8 @@ internal data class FetchAttemptResult(
     val messages: List<String>,
 )
 
+private const val PendingStallTimeoutMs = 300_000L // 5분
+
 internal suspend fun fetchAndAwaitAssetPacksAttempt(
     manager: AssetPackManager,
     neededPacks: List<String>,
@@ -405,11 +405,14 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
     val downloadedBytesMap = mutableMapOf<String, Long>()
     val totalBytesMap = mutableMapOf<String, Long>()
     val failedPacks = mutableSetOf<String>()
+    val packStatusMap = java.util.concurrent.ConcurrentHashMap<String, Int>()
+    val pendingStartTimestamps = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     val isHumanModelOnly = !isMandatory && neededPacks == listOf(KatagoHumanPackName)
 
     neededPacks.forEach { pack ->
         downloadedBytesMap[pack] = 0L
+        packStatusMap[pack] = AssetPackStatus.UNKNOWN
         totalBytesMap[pack] = if (pack == KatagoModelPackName) {
             KatagoModelPackEstimatedBytes
         } else {
@@ -417,29 +420,42 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
         }
     }
 
-    fun updateDownloadProgress() {
+    fun updateProgressOrWifiState() {
+        val anyWaitingForWifi = neededPacks.any { pack ->
+            val st = packStatusMap[pack]
+            st == AssetPackStatus.WAITING_FOR_WIFI || st == AssetPackStatus.REQUIRES_USER_CONFIRMATION
+        }
         val currentDownloaded = downloadedBytesMap.values.sum()
         val currentTotal = totalBytesMap.values.sum().coerceAtLeast(1L)
         val percentage = ((currentDownloaded * 100) / currentTotal).toInt().coerceIn(0, 100)
-        tracker.updateStatus(
-            EngineDownloadStatus.Downloading(
-                bytesDownloaded = currentDownloaded,
-                totalBytesToDownload = currentTotal,
-                percentage = percentage,
-                isHumanModelOnly = isHumanModelOnly,
+
+        if (anyWaitingForWifi) {
+            tracker.updateStatus(
+                EngineDownloadStatus.WaitingForWifi(
+                    bytesDownloaded = currentDownloaded,
+                    totalBytesToDownload = currentTotal,
+                    isHumanModelOnly = isHumanModelOnly,
+                )
             )
-        )
+        } else {
+            tracker.updateStatus(
+                EngineDownloadStatus.Downloading(
+                    bytesDownloaded = currentDownloaded,
+                    totalBytesToDownload = currentTotal,
+                    percentage = percentage,
+                    isHumanModelOnly = isHumanModelOnly,
+                )
+            )
+        }
     }
 
-    updateDownloadProgress()
+    updateProgressOrWifiState()
 
     val messages = mutableListOf<String>()
 
     val outcome = suspendCancellableCoroutine<AttemptOutcome> { continuation ->
         val pendingPacks = neededPacks.toMutableSet()
         val isResumed = AtomicBoolean(false)
-        val isWaitingForWifi = AtomicBoolean(false)
-        val isPending = AtomicBoolean(false)
         val lastProgressTimestamp = AtomicLong(System.currentTimeMillis())
 
         lateinit var listener: AssetPackStateUpdateListener
@@ -490,24 +506,51 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
             override fun onStateUpdate(state: AssetPackState) {
                 val name = state.name()
                 val status = state.status()
+                packStatusMap[name] = status
+
                 when (status) {
                     AssetPackStatus.COMPLETED -> {
-                        isPending.set(false)
+                        pendingStartTimestamps.remove(name)
                         val total = totalBytesMap[name] ?: 0L
                         downloadedBytesMap[name] = total
                         pendingPacks.remove(name)
-                        updateDownloadProgress()
+                        updateProgressOrWifiState()
                         checkCompletion()
                     }
 
                     AssetPackStatus.PENDING -> {
-                        isWaitingForWifi.set(false)
-                        isPending.set(true)
-                        lastProgressTimestamp.set(System.currentTimeMillis())
+                        pendingStartTimestamps.putIfAbsent(name, System.currentTimeMillis())
+                        val bytes = state.bytesDownloaded()
+                        val total = state.totalBytesToDownload()
+                        if (total > 0L) totalBytesMap[name] = total
+                        downloadedBytesMap[name] = bytes
+                        updateProgressOrWifiState()
+                    }
+
+                    AssetPackStatus.WAITING_FOR_WIFI, AssetPackStatus.REQUIRES_USER_CONFIRMATION -> {
+                        pendingStartTimestamps.remove(name)
+                        messages += "Asset pack ($name) is waiting for Wi-Fi or user confirmation (status: $status)."
+                        val bytes = state.bytesDownloaded()
+                        val total = state.totalBytesToDownload()
+                        if (total > 0L) totalBytesMap[name] = total
+                        downloadedBytesMap[name] = bytes
+                        updateProgressOrWifiState()
+                    }
+
+                    AssetPackStatus.DOWNLOADING, AssetPackStatus.TRANSFERRING -> {
+                        pendingStartTimestamps.remove(name)
+                        val bytes = state.bytesDownloaded()
+                        val total = state.totalBytesToDownload()
+                        if (bytes > (downloadedBytesMap[name] ?: 0L)) {
+                            lastProgressTimestamp.set(System.currentTimeMillis())
+                        }
+                        if (total > 0L) totalBytesMap[name] = total
+                        downloadedBytesMap[name] = bytes
+                        updateProgressOrWifiState()
                     }
 
                     AssetPackStatus.FAILED, AssetPackStatus.CANCELED -> {
-                        isPending.set(false)
+                        pendingStartTimestamps.remove(name)
                         val err = state.errorCode()
                         messages += "Asset pack ($name) failed or canceled (code: $err)."
                         failedPacks.add(name)
@@ -515,17 +558,7 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
 
                         val isPermanent = isPermanentAssetPackErrorCode(err)
                         if (isPermanent) {
-                            if (isMandatory) {
-                                tracker.updateStatus(
-                                    EngineDownloadStatus.Failed(
-                                        errorCode = err,
-                                        message = "Asset pack ($name) permanent failure (code: $err)",
-                                        isHumanModelOnly = isHumanModelOnly,
-                                    )
-                                )
-                            } else {
-                                tracker.updateStatus(EngineDownloadStatus.Idle)
-                            }
+                            // 영구 실패 시 트래커 상태는 바깥 루프 한 곳에서 Idle로 정리
                             safeResume(
                                 AttemptOutcome.PermanentFailure(
                                     message = "Asset pack ($name) permanent failure (code: $err)",
@@ -555,51 +588,40 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                             checkCompletion()
                         }
                     }
-
-                    AssetPackStatus.WAITING_FOR_WIFI -> {
-                        isWaitingForWifi.set(true)
-                        isPending.set(false)
-                        messages += "Asset pack ($name) is waiting for Wi-Fi."
-                        val bytes = state.bytesDownloaded()
-                        val total = state.totalBytesToDownload()
-                        if (total > 0L) totalBytesMap[name] = total
-                        downloadedBytesMap[name] = bytes
-                        tracker.updateStatus(
-                            EngineDownloadStatus.WaitingForWifi(
-                                bytesDownloaded = downloadedBytesMap.values.sum(),
-                                totalBytesToDownload = totalBytesMap.values.sum().coerceAtLeast(1L),
-                                isHumanModelOnly = isHumanModelOnly,
-                            )
-                        )
-                    }
-
-                    AssetPackStatus.DOWNLOADING, AssetPackStatus.TRANSFERRING -> {
-                        isWaitingForWifi.set(false)
-                        isPending.set(false)
-                        val bytes = state.bytesDownloaded()
-                        val total = state.totalBytesToDownload()
-                        if (bytes > (downloadedBytesMap[name] ?: 0L)) {
-                            lastProgressTimestamp.set(System.currentTimeMillis())
-                        }
-                        if (total > 0L) totalBytesMap[name] = total
-                        downloadedBytesMap[name] = bytes
-                        updateDownloadProgress()
-                    }
                 }
             }
         }
 
         manager.registerListener(listener)
 
-        // 진행 정체(stall) 감지 코루틴: Wi-Fi 대기 중이거나 Play 대기열(PENDING) 중에는 타이머를 건너뜀
+        // 진행 정체(stall) 감지 코루틴:
+        // Wi-Fi 대기 중이거나 사용자 확인 대기 중에는 타이머 유예.
+        // PENDING 상태는 최대 5분(PendingStallTimeoutMs)까지만 유예하고 초과 시 정체로 처리.
         stallMonitorJob = backgroundDownloadScope.launch {
             while (isActive && !isResumed.get()) {
                 delay(5_000L)
-                if (isWaitingForWifi.get() || isPending.get()) {
+                val anyWaitingForWifi = neededPacks.any { pack ->
+                    val st = packStatusMap[pack]
+                    st == AssetPackStatus.WAITING_FOR_WIFI || st == AssetPackStatus.REQUIRES_USER_CONFIRMATION
+                }
+                if (anyWaitingForWifi) {
                     lastProgressTimestamp.set(System.currentTimeMillis())
                     continue
                 }
-                val elapsed = System.currentTimeMillis() - lastProgressTimestamp.get()
+
+                val now = System.currentTimeMillis()
+                val pendingPacksList = neededPacks.filter { packStatusMap[it] == AssetPackStatus.PENDING }
+                val pendingExceeded = pendingPacksList.any { pack ->
+                    val start = pendingStartTimestamps[pack] ?: now
+                    now - start > PendingStallTimeoutMs
+                }
+
+                if (pendingPacksList.isNotEmpty() && !pendingExceeded) {
+                    lastProgressTimestamp.set(now)
+                    continue
+                }
+
+                val elapsed = now - lastProgressTimestamp.get()
                 if (elapsed > 120_000L && !isResumed.get()) {
                     messages += "Asset pack download stalled for ${elapsed / 1000}s."
                     tracker.updateStatus(
@@ -626,30 +648,21 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                 neededPacks.forEach { pack ->
                     val packState = packStates[pack] ?: return@forEach
                     val st = packState.status()
+                    packStatusMap[pack] = st
                     val total = packState.totalBytesToDownload()
                     if (total > 0L) totalBytesMap[pack] = total
+
                     if (st == AssetPackStatus.COMPLETED) {
                         downloadedBytesMap[pack] = totalBytesMap[pack] ?: 0L
                         pendingPacks.remove(pack)
                     } else if (st == AssetPackStatus.PENDING) {
-                        isPending.set(true)
+                        pendingStartTimestamps.putIfAbsent(pack, System.currentTimeMillis())
                     } else if (st == AssetPackStatus.FAILED || st == AssetPackStatus.CANCELED) {
                         val err = packState.errorCode()
                         messages += "Asset pack ($pack) initial state failed (code: $err)."
                         failedPacks.add(pack)
                         pendingPacks.remove(pack)
                         if (isPermanentAssetPackErrorCode(err)) {
-                            if (isMandatory) {
-                                tracker.updateStatus(
-                                    EngineDownloadStatus.Failed(
-                                        errorCode = err,
-                                        message = "Asset pack ($pack) permanent failure: $err",
-                                        isHumanModelOnly = isHumanModelOnly,
-                                    )
-                                )
-                            } else {
-                                tracker.updateStatus(EngineDownloadStatus.Idle)
-                            }
                             safeResume(
                                 AttemptOutcome.PermanentFailure(
                                     message = "Asset pack ($pack) permanent failure: $err",
@@ -658,27 +671,14 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                             )
                             return@addOnSuccessListener
                         }
-                    } else if (st == AssetPackStatus.WAITING_FOR_WIFI) {
-                        isWaitingForWifi.set(true)
                     }
                 }
-                updateDownloadProgress()
+                updateProgressOrWifiState()
                 checkCompletion()
             }
             .addOnFailureListener { exception ->
                 messages += "Asset pack fetch failed immediately: ${exception.message}"
                 val (errorCode, isPermanent) = determineErrorClassification(exception)
-                if (isPermanent && !isMandatory) {
-                    tracker.updateStatus(EngineDownloadStatus.Idle)
-                } else {
-                    tracker.updateStatus(
-                        EngineDownloadStatus.Failed(
-                            errorCode = errorCode,
-                            message = exception.message ?: "Fetch failed",
-                            isHumanModelOnly = isHumanModelOnly,
-                        )
-                    )
-                }
                 if (isPermanent) {
                     safeResume(
                         AttemptOutcome.PermanentFailure(
@@ -687,6 +687,13 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                         )
                     )
                 } else {
+                    tracker.updateStatus(
+                        EngineDownloadStatus.Failed(
+                            errorCode = errorCode,
+                            message = exception.message ?: "Fetch failed",
+                            isHumanModelOnly = isHumanModelOnly,
+                        )
+                    )
                     safeResume(
                         AttemptOutcome.RecoverableFailure(
                             message = "Fetch failed: ${exception.message}",

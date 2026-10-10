@@ -99,8 +99,20 @@ internal fun EngineDownloadGuideSection(
         if (activity != null) {
             currentEngineDownloadTracker().registerCellularConfirmationHandler {
                 try {
-                    AssetPackManagerFactory.getInstance(activity).showConfirmationDialog(activity)
-                } catch (_: Exception) {
+                    val manager = AssetPackManagerFactory.getInstance(activity)
+                    // 최신 권장 API인 showConfirmationDialog 우선 시도, 환경에 따라 showCellularDataConfirmation으로 안전 폴백
+                    val task = try {
+                        manager.showConfirmationDialog(activity)
+                    } catch (_: NoSuchMethodError) {
+                        manager.showCellularDataConfirmation(activity)
+                    }
+                    task.addOnSuccessListener { resultCode ->
+                        android.util.Log.d("EngineDownloadGuide", "Cellular confirmation result: $resultCode")
+                    }.addOnFailureListener { exception ->
+                        android.util.Log.w("EngineDownloadGuide", "Cellular confirmation dialog failed", exception)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w("EngineDownloadGuide", "Cannot show cellular confirmation dialog", e)
                 }
             }
         }
@@ -117,9 +129,15 @@ internal fun EngineDownloadGuideSection(
     // 카드를 닫은 상태(isDismissed)
     if (isDismissed) {
         val status = downloadStatus
-        // 필수 주 모델 다운로드 실패 후 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
+        val isMandatoryBlocked = when (status) {
+            is EngineDownloadStatus.Failed -> !status.isHumanModelOnly
+            is EngineDownloadStatus.WaitingForWifi -> !status.isHumanModelOnly
+            else -> false
+        }
+        // 필수 주 모델 다운로드 실패 또는 Wi-Fi 대기 중 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
         // 다시 카드를 열 수 있는 미니 안내 배너를 제공한다 (#247).
-        if (status is EngineDownloadStatus.Failed && !status.isHumanModelOnly) {
+        if (isMandatoryBlocked) {
+            val isFailed = status is EngineDownloadStatus.Failed
             Surface(
                 modifier = modifier
                     .fillMaxWidth()
@@ -127,10 +145,10 @@ internal fun EngineDownloadGuideSection(
                     .clickable { currentEngineDownloadTracker().reopen() }
                     .border(
                         width = AppBorderWidth.Hairline,
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
+                        color = if (isFailed) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(AppRadius.Corner8),
                     ),
-                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f),
+                color = if (isFailed) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
             ) {
                 Row(
                     modifier = Modifier
@@ -140,13 +158,13 @@ internal fun EngineDownloadGuideSection(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = UiStringsDownloadGuide.failed(strings.language),
+                        text = if (isFailed) UiStringsDownloadGuide.failed(strings.language) else UiStringsDownloadGuide.waitingForWifi(strings.language),
                         fontSize = AppTextSize.Text12,
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.error,
+                        color = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = UiStringsDownloadGuide.retry(strings.language),
+                        text = if (isFailed) UiStringsDownloadGuide.retry(strings.language) else UiStringsDownloadGuide.continueOnMobileData(strings.language),
                         fontSize = AppTextSize.Text12,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,

@@ -63,7 +63,6 @@ internal class EngineDownloadTracker {
     /** 새 다운로드를 시작할 때 호출되어 닫힘 상태를 초기화한다. */
     fun startNewDownload() {
         _isDismissed.value = false
-        cellularConfirmationHandler = null
     }
 
     fun dismiss() {
