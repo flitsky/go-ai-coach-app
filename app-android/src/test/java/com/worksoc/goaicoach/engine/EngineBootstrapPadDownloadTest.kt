@@ -147,7 +147,7 @@ class EngineBootstrapPadDownloadTest {
         assertTrue(isPermanentAssetPackErrorCode(AssetPackErrorCode.DOWNLOAD_NOT_FOUND))
         assertTrue(isPermanentAssetPackErrorCode(AssetPackErrorCode.APP_NOT_OWNED))
         assertTrue(isPermanentAssetPackErrorCode(AssetPackErrorCode.UNRECOGNIZED_INSTALLATION))
-        assertTrue(isPermanentAssetPackErrorCode(AssetPackErrorCode.INTERNAL_ERROR))
+        assertFalse(isPermanentAssetPackErrorCode(AssetPackErrorCode.INTERNAL_ERROR))
 
         assertFalse(isPermanentAssetPackErrorCode(AssetPackErrorCode.NETWORK_ERROR))
         assertFalse(isPermanentAssetPackErrorCode(AssetPackErrorCode.INSUFFICIENT_STORAGE))
@@ -156,6 +156,7 @@ class EngineBootstrapPadDownloadTest {
 
         assertTrue(isRecoverableAssetPackErrorCode(AssetPackErrorCode.NETWORK_ERROR))
         assertTrue(isRecoverableAssetPackErrorCode(AssetPackErrorCode.INSUFFICIENT_STORAGE))
+        assertTrue(isRecoverableAssetPackErrorCode(AssetPackErrorCode.INTERNAL_ERROR))
         assertTrue(isRecoverableAssetPackErrorCode(CustomErrorCodeStalled))
         assertTrue(isRecoverableAssetPackErrorCode(CustomErrorCodeImmediateFailure))
     }
@@ -461,5 +462,144 @@ class EngineBootstrapPadDownloadTest {
             }
         }
         assertTrue("코루틴 취소 시 리스너가 안전하게 해제되어야 함", fakeManager.registeredListeners.isEmpty())
+    }
+
+    @Test
+    fun testInternalErrorIsTreatedAsRecoverable() = runBlocking(Dispatchers.Default) {
+        var callCount = 0
+        val fakeManager = FakeAssetPackManager {
+            callCount++
+            if (callCount == 1) {
+                FakeTask(exception = newAssetPackException(AssetPackErrorCode.INTERNAL_ERROR))
+            } else {
+                FakeTask(createFakeAssetPackStates(emptyMap()))
+            }
+        }
+
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        withTimeout(3000L) {
+            while (tracker.status.value !is EngineDownloadStatus.Failed) {
+                delay(10)
+            }
+        }
+
+        val failed = tracker.status.value as EngineDownloadStatus.Failed
+        assertEquals(AssetPackErrorCode.INTERNAL_ERROR, failed.errorCode)
+        assertTrue("INTERNAL_ERROR는 영구 스텁이 아니라 복구 가능한 Failed 상태여야 함", downloadJob.isActive)
+
+        tracker.retry()
+
+        withTimeout(3000L) {
+            while (fakeManager.registeredListeners.isEmpty()) {
+                delay(10)
+            }
+        }
+
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testHumanModelPermanentFailureResetsToIdle() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager {
+            FakeTask(exception = newAssetPackException(AssetPackErrorCode.API_NOT_AVAILABLE))
+        }
+
+        val tracker = EngineDownloadTracker()
+        fetchAndAwaitAssetPacksWithRetry(
+            manager = fakeManager,
+            neededPacks = listOf(KatagoHumanPackName),
+            isMandatory = false,
+            tracker = tracker,
+        )
+
+        assertEquals(
+            "선택 사람 모델 영구 실패 시 죽은 재시도 버튼을 남기지 않고 Idle로 리셋되어야 함",
+            EngineDownloadStatus.Idle,
+            tracker.status.value,
+        )
+    }
+
+    @Test
+    fun testPendingStatusHandling() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { packs ->
+            val states = packs.associateWith { pack ->
+                createFakeAssetPackState(
+                    name = pack,
+                    status = AssetPackStatus.PENDING,
+                )
+            }
+            FakeTask(createFakeAssetPackStates(states))
+        }
+
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        withTimeout(3000L) {
+            while (fakeManager.registeredListeners.isEmpty()) {
+                delay(10)
+            }
+        }
+
+        // PENDING 상태 이벤트 수신
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.PENDING,
+            )
+        )
+
+        // 이어서 COMPLETED 이벤트 수신
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testTrackerReopenAndDismiss() {
+        val tracker = EngineDownloadTracker()
+        assertFalse(tracker.isDismissed.value)
+
+        tracker.dismiss()
+        assertTrue(tracker.isDismissed.value)
+
+        tracker.reopen()
+        assertFalse(tracker.isDismissed.value)
+
+        tracker.dismiss()
+        assertTrue(tracker.isDismissed.value)
+
+        // retry()를 누르면 자동으로 다시 열려야 함
+        tracker.retry()
+        assertFalse(tracker.isDismissed.value)
     }
 }

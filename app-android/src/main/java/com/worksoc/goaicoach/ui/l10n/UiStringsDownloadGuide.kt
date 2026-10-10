@@ -50,8 +50,15 @@ internal object UiStringsDownloadGuide {
     private val Card3Body = mapOf(
         UiLanguage.Korean to "판 바로 위나 메뉴의 「바둑판 최대」를 끄면 판 바깥에 여백이 생겨 끝줄에 두기 편해져요.",
         UiLanguage.English to "Turn off 'Board full' above the board or in the menu to add outer margins for easier edge moves.",
-        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線にも 打ちやすくなります。",
+        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線にも打ちやすくなります。",
         UiLanguage.ChineseSimplified to "关闭棋盘上方或菜单中的「棋盘 最大」，可在棋盘四周留出边距，便于在边缘落子。",
+    )
+
+    private val DownloadingNotice = mapOf(
+        UiLanguage.Korean to "바둑 AI 엔진 다운로드 중 (모바일 데이터 환경에서는 Wi-Fi 연결을 권장합니다)",
+        UiLanguage.English to "Downloading Go AI engine (Wi-Fi recommended over mobile data)",
+        UiLanguage.Japanese to "囲碁AIエンジンをダウンロード中（Wi-Fi接続を推奨します）",
+        UiLanguage.ChineseSimplified to "正在下载围棋 AI 引擎（推荐使用 Wi-Fi 连接）",
     )
 
     private val WaitingForWifi = mapOf(
@@ -124,6 +131,13 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "棋盘操作指南",
     )
 
+    private val ContinueOnMobileData = mapOf(
+        UiLanguage.Korean to "모바일 데이터로 계속",
+        UiLanguage.English to "Continue on Mobile Data",
+        UiLanguage.Japanese to "モバイルデータで続行",
+        UiLanguage.ChineseSimplified to "使用移动网络继续",
+    )
+
     fun cards(language: UiLanguage): List<DownloadGuideCard> = listOf(
         DownloadGuideCard(
             title = Card1Title[language] ?: Card1Title.getValue(UiLanguage.Korean),
@@ -139,8 +153,14 @@ internal object UiStringsDownloadGuide {
         ),
     )
 
+    fun downloadingNotice(language: UiLanguage): String =
+        DownloadingNotice[language] ?: DownloadingNotice.getValue(UiLanguage.Korean)
+
     fun waitingForWifi(language: UiLanguage): String =
         WaitingForWifi[language] ?: WaitingForWifi.getValue(UiLanguage.Korean)
+
+    fun continueOnMobileData(language: UiLanguage): String =
+        ContinueOnMobileData[language] ?: ContinueOnMobileData.getValue(UiLanguage.Korean)
 
     fun failed(language: UiLanguage): String =
         Failed[language] ?: Failed.getValue(UiLanguage.Korean)

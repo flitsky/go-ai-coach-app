@@ -50,6 +50,7 @@ internal class EngineDownloadTracker {
     val isDismissed: StateFlow<Boolean> = _isDismissed.asStateFlow()
 
     private var retryHandler: (() -> Unit)? = null
+    private var cellularConfirmationHandler: (() -> Unit)? = null
 
     /**
      * 진행 상황을 갱신한다.
@@ -62,10 +63,16 @@ internal class EngineDownloadTracker {
     /** 새 다운로드를 시작할 때 호출되어 닫힘 상태를 초기화한다. */
     fun startNewDownload() {
         _isDismissed.value = false
+        cellularConfirmationHandler = null
     }
 
     fun dismiss() {
         _isDismissed.value = true
+    }
+
+    /** 닫힌 다운로드 카드를 다시 연다. */
+    fun reopen() {
+        _isDismissed.value = false
     }
 
     fun registerRetryHandler(handler: () -> Unit) {
@@ -75,6 +82,14 @@ internal class EngineDownloadTracker {
     fun retry() {
         _isDismissed.value = false
         retryHandler?.invoke()
+    }
+
+    fun registerCellularConfirmationHandler(handler: (() -> Unit)?) {
+        cellularConfirmationHandler = handler
+    }
+
+    fun requestCellularConfirmation() {
+        cellularConfirmationHandler?.invoke()
     }
 }
 
