@@ -1,6 +1,11 @@
 package com.worksoc.goaicoach.engine
 
 import android.content.Context
+import com.google.android.play.core.assetpacks.AssetPackManager
+import com.google.android.play.core.assetpacks.AssetPackManagerFactory
+import com.google.android.play.core.assetpacks.AssetPackState
+import com.google.android.play.core.assetpacks.AssetPackStateUpdateListener
+import com.google.android.play.core.assetpacks.model.AssetPackStatus
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.engine.android.EngineCoreApiFactory
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
@@ -8,6 +13,9 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import java.io.File
 import java.io.IOException
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
 data class EngineBootstrap(
     val coreApi: EngineCoreApi,
@@ -16,37 +24,86 @@ data class EngineBootstrap(
     val diagnostic: String,
 )
 
-fun createEngineBootstrap(
+/**
+ * KataGo 엔진 모델을 찾고 부트스트랩을 구성한다 (백로그 #245 — PAD on-demand).
+ *
+ * ## 1. 기존 사용자: 기기 내부 파일 우선 (0바이트 · 0초)
+ * 1.3.0 이하에서 설치되어 기기의 `filesDir/katago/`에 이미 저장된 `model.bin.gz` 또는
+ * 비압축 `model.bin`이 있으면 그것을 그대로 사용한다. 에셋 팩을 조회하거나 다운로드하지 않는다.
+ *
+ * ## 2. 신규 사용자: PAD on-demand 에셋 팩 직접 참조 (Direct Path)
+ * 기기에 모델이 없으면 Play Asset Delivery의 on-demand 팩(`katago_model_pack`, `katago_human_pack`)을
+ * 다운로드한다. 팩이 도착하면 파일을 `filesDir`로 복사하지 않고 `AssetPackLocation.assetsPath()`의
+ * 경로를 KataGo에 직접 전달한다:
+ *   · 디스크 용량 약 197MB 절약 (팩 + 복사본 중복 방지)
+ *   · 100MB 복사 I/O 시간 0초 단축
+ *
+ * ## 3. 에셋 팩 안의 이름은 `.gz`가 보존된다 (2026-10-10 실측)
+ * Base APK 에셋과 달리 AGP 에셋 팩(`com.android.asset-pack`)은 `.gz` 압축을 풀지 않고
+ * 원본 파일명 그대로(`katago/model.bin.gz`, `katago/human.bin.gz`) 패키징한다.
+ * KataGo는 `.bin.gz`를 압축 해제 없이 직접 읽는다.
+ */
+suspend fun createEngineBootstrap(
     context: Context,
     nativeLibraryDir: String,
 ): EngineBootstrap {
     val filesDir = context.filesDir
-    val katagoDir = File(filesDir, "katago")
+    val katagoDir = File(filesDir, "katago").apply { mkdirs() }
     val executable = File(nativeLibraryDir, "libkatago.so")
-    val compressedModel = File(katagoDir, "model.bin.gz")
-    val bundledModel = File(katagoDir, "model.bin")
     val config = File(katagoDir, "gtp_learning.cfg")
     val analysisConfig = File(katagoDir, "analysis_learning.cfg")
-    val bundleSeedMessages = seedBundledKataGoAssetsIfNeeded(
-        context = context,
-        katagoDir = katagoDir,
-        compressedModel = compressedModel,
-        bundledModel = bundledModel,
-        config = config,
-        analysisConfig = analysisConfig,
-    )
-    val model = compressedModel.takeIf { it.isFile && it.length() > 0L } ?: bundledModel
-    // 사람 모델(백로그 #215) — 있으면 급수 캐릭터가 그것으로 둔다. 없는 것은 사고가 아니다: 그 기기는 지금 방식으로 둔다.
-    // 2026-10-06부터 **주 모델과 함께 번들에 싣는다**(사용자 결정 — 두 모델). 위 씨딩이 번들에서 풀어 두고, 개발용 debug 빌드는
-    // 번들에 에셋이 없으므로 `make seed-engine`이 이 자리에 넣는다. 주 모델과 같은 두 이름을 본다.
-    val humanModel = listOf(File(katagoDir, HumanModelCompressedName), File(katagoDir, HumanModelName))
-        .firstOrNull { it.isFile && it.length() > 0L }
+
+    // 설정 파일 둘(수십 KB) 씨딩 — base 에셋에 보존됨
+    val configSeedMessages = mutableListOf<String>()
+    seedAssetIfMissing(context = context, assetPath = "katago/gtp_learning.cfg", destination = config)?.let { configSeedMessages += it }
+    seedAssetIfMissing(context = context, assetPath = "katago/analysis_learning.cfg", destination = analysisConfig)?.let { configSeedMessages += it }
+
+    val assetPackManager = try {
+        AssetPackManagerFactory.getInstance(context)
+    } catch (e: Exception) {
+        null
+    }
+
+    // 1단계: 기존 기기 내부 모델 파일 우선 (기존 사용자: 0바이트 · 0초)
+    val compressedModel = File(katagoDir, "model.bin.gz")
+    val bundledModel = File(katagoDir, "model.bin")
+    var localModel: File? = compressedModel.takeIf { it.isFile && it.length() > 0L }
+        ?: bundledModel.takeIf { it.isFile && it.length() > 0L }
+
+    val humanCompressed = File(katagoDir, HumanModelCompressedName)
+    val humanBundled = File(katagoDir, HumanModelName)
+    var localHumanModel: File? = humanCompressed.takeIf { it.isFile && it.length() > 0L }
+        ?: humanBundled.takeIf { it.isFile && it.length() > 0L }
+
+    // 2단계: 기기 내 모델이 없을 경우 이미 내려받아진 PAD 에셋 팩 확인 (Direct Path)
+    if (localModel == null && assetPackManager != null) {
+        localModel = resolvePackAssetFile(assetPackManager, KatagoModelPackName, "katago/model.bin.gz")
+    }
+    if (localHumanModel == null && assetPackManager != null) {
+        localHumanModel = resolvePackAssetFile(assetPackManager, KatagoHumanPackName, "katago/human.bin.gz")
+    }
+
+    // 3단계: 신규 설치 / 팩 미도착 시 fetch() 요청 및 대기 (Preparing 상태 유지)
+    val packMessages = mutableListOf<String>()
+    if (localModel == null && assetPackManager != null) {
+        val downloadMessages = fetchAndAwaitAssetPacks(
+            manager = assetPackManager,
+            requiredPack = KatagoModelPackName,
+            optionalPack = KatagoHumanPackName,
+        )
+        packMessages += downloadMessages
+        // 다운로드 완료 후 에셋 팩 경로 재확인
+        localModel = resolvePackAssetFile(assetPackManager, KatagoModelPackName, "katago/model.bin.gz")
+        if (localHumanModel == null) {
+            localHumanModel = resolvePackAssetFile(assetPackManager, KatagoHumanPackName, "katago/human.bin.gz")
+        }
+    }
 
     val missing = buildList {
         if (!executable.canExecute()) {
             add("native lib")
         }
-        if (!model.isFile) {
+        if (localModel == null || !localModel.isFile) {
             add("model.bin.gz")
         }
         if (!config.isFile) {
@@ -54,7 +111,7 @@ fun createEngineBootstrap(
         }
     }
 
-    if (missing.isNotEmpty()) {
+    if (missing.isNotEmpty() || localModel == null) {
         return EngineBootstrap(
             coreApi = EngineCoreApiFactory.stub(),
             mode = EngineMode.Stub,
@@ -62,9 +119,13 @@ fun createEngineBootstrap(
             diagnostic = buildString {
                 append("Stub fallback: missing ${missing.joinToString()}. ")
                 append("Use an engine-bundled APK, or run make install-dev-engine / make seed-engine, then restart the app.")
-                if (bundleSeedMessages.isNotEmpty()) {
+                if (configSeedMessages.isNotEmpty()) {
                     append("\n")
-                    append(bundleSeedMessages.joinToString("\n"))
+                    append(configSeedMessages.joinToString("\n"))
+                }
+                if (packMessages.isNotEmpty()) {
+                    append("\n")
+                    append(packMessages.joinToString("\n"))
                 }
             },
         )
@@ -76,10 +137,10 @@ fun createEngineBootstrap(
         coreApi = EngineCoreApiFactory.local(
             KataGoProcessConfig(
                 executablePath = executable.absolutePath,
-                modelPath = model.absolutePath,
+                modelPath = localModel.absolutePath,
                 configPath = config.absolutePath,
                 analysisConfigPath = analysisConfig.takeIf { it.isFile }?.absolutePath,
-                humanModelPath = humanModel?.absolutePath,
+                humanModelPath = localHumanModel?.absolutePath,
                 startupOverrides = mapOf(
                     "numSearchThreads" to "1",
                     "logDir" to logsDir.absolutePath,
@@ -96,14 +157,18 @@ fun createEngineBootstrap(
         displayName = "KataGo",
         diagnostic = buildString {
             append("KataGo assets found. Using local process engine.")
-            append(if (humanModel != null) " Human model found: ${humanModel.name}." else " Human model absent.")
+            append(if (localHumanModel != null) " Human model found: ${localHumanModel.name}." else " Human model absent.")
             if (!analysisConfig.isFile) {
                 append("\n")
                 append("KataGo JSON analysis config missing. Broad study analysis will fall back to GTP search analysis.")
             }
-            if (bundleSeedMessages.isNotEmpty()) {
+            if (configSeedMessages.isNotEmpty()) {
                 append("\n")
-                append(bundleSeedMessages.joinToString("\n"))
+                append(configSeedMessages.joinToString("\n"))
+            }
+            if (packMessages.isNotEmpty()) {
+                append("\n")
+                append(packMessages.joinToString("\n"))
             }
         },
     )
@@ -121,126 +186,106 @@ private fun EngineCoreApi.withDebugStallInjector(filesDir: File): EngineCoreApi 
     }
 
 /**
- * 번들에 실린 에셋을 `filesDir/katago`로 푼다 — **앱 데이터를 지워도 다시 풀리는 것이 요점이다.**
- * 네이티브 바이너리는 앱 데이터가 아니라 설치 디렉터리에 있어 애초에 지워지지 않으므로,
- * 이 함수가 도는 한 "앱 데이터 삭제 → 재실행"은 스스로 복구된다.
- *
- * ## ⚠️ 빌드가 넣는 이름과 앱이 여는 이름이 **다르다 — 그래야 맞다**
- * `make prepare-friend-assets`는 `katago/model.bin.gz`를 넣는데, 앱은 `katago/model.bin`을 연다.
- * **AGP가 에셋의 `.gz`를 패키징하면서 풀고 확장자를 뗀다** — 2026-09-05 실측으로 확인했다:
- * 소스에 `model.bin.gz`(97,898,094B) 하나뿐인데 병합 결과는 `model.bin`(105,532,578B)이고,
- * 그 값은 `gzip -dc | wc -c`와 **정확히 같다.**
- *
- * ⚠️ **이것 때문에 한 번 잘못 고쳤다**(2026-09-05). 두 이름이 어긋난 것을 결함으로 보고
- * 여는 쪽을 `.gz`로 바꿨는데, 그 이름은 **APK 안에 존재하지 않아** 오히려 스텁으로 떨어졌다.
- * `assets.open()`의 실패는 [seedAssetIfMissing]이 **삼키므로**(stderr 한 줄) 조용히 그렇게 된다.
- * ⚠️ **두 이름을 "같게" 만들려 하지 말 것** — `BundledEngineAssetContractTest`가 그 **변환**까지
- * 포함해 묶어 둔다(빌드가 넣는 이름에서 `.gz`를 뗀 것 == 앱이 여는 이름).
+ * PAD on-demand 에셋 팩을 요청(fetch)하고 완료될 때까지 비동기 대기한다 (백로그 #245 U-73 대응).
+ * 주 모델 팩([requiredPack])이 완료되면 성공([true])으로 판단하며, 사람 모델 팩([optionalPack])은
+ * 함께 요청하되 실패해도 주 모델이 완료되었으면 엔진 기동을 막지 않는다.
  */
-private fun seedBundledKataGoAssetsIfNeeded(
-    context: Context,
-    katagoDir: File,
-    compressedModel: File,
-    bundledModel: File,
-    config: File,
-    analysisConfig: File,
+private suspend fun fetchAndAwaitAssetPacks(
+    manager: AssetPackManager,
+    requiredPack: String,
+    optionalPack: String,
+    timeoutMillis: Long = 90_000L,
 ): List<String> {
-    katagoDir.mkdirs()
     val messages = mutableListOf<String>()
+    val result = withTimeoutOrNull(timeoutMillis) {
+        suspendCancellableCoroutine<Boolean> { continuation ->
+            val pendingPacks = mutableSetOf(requiredPack, optionalPack)
 
-    // ⚠️ **둘 중 하나라도 이미 있으면 풀지 않는다.** 예전 빌드가 풀어둔 비압축 `model.bin`이
-    // 있는 기기에 `.gz`를 또 풀면 200MB를 쓴다 — 둘 다 쓸 수 있으므로 있는 쪽을 그대로 둔다
-    // (고르는 것은 호출부의 `compressedModel ?: bundledModel`이다).
-    if (!compressedModel.isFile && !bundledModel.isFile) {
-        // 1순위: PAD 에셋 팩(katago_model_pack)에서 시딩 (백로그 #245)
-        seedFromAssetPackIfPresent(
-            context = context,
-            packName = KatagoModelPackName,
-            relativeSourcePath = "katago/model.bin.gz",
-            destination = compressedModel,
-        )?.let { messages += it }
+            val listener = object : AssetPackStateUpdateListener {
+                override fun onStateUpdate(state: AssetPackState) {
+                    val name = state.name()
+                    val status = state.status()
+                    when (status) {
+                        AssetPackStatus.COMPLETED -> {
+                            pendingPacks.remove(name)
+                            if (pendingPacks.isEmpty() && continuation.isActive) {
+                                manager.unregisterListener(this)
+                                continuation.resume(true)
+                            } else if (name == requiredPack && continuation.isActive) {
+                                manager.unregisterListener(this)
+                                continuation.resume(true)
+                            }
+                        }
+                        AssetPackStatus.FAILED, AssetPackStatus.CANCELED -> {
+                            if (name == requiredPack && continuation.isActive) {
+                                manager.unregisterListener(this)
+                                continuation.resume(false)
+                            } else {
+                                pendingPacks.remove(name)
+                            }
+                        }
+                        AssetPackStatus.WAITING_FOR_WIFI -> {
+                            // 모바일 데이터에서 Wi-Fi 대기 중
+                        }
+                        else -> {
+                            // PENDING, DOWNLOADING, TRANSFERRING
+                        }
+                    }
+                }
+            }
 
-        // 2순위 (레거시): 번들 base 에셋에서 시도 (과거 번들된 빌드 호환)
-        if (!compressedModel.isFile) {
-            seedAssetIfMissing(
-                context = context,
-                // ⚠️ `.gz`가 아니다 — 위 머리말 참고. AGP가 이미 풀어서 넣었으므로 APK 안의 이름은
-                // 확장자가 떨어진 `model.bin`이고, 푸는 결과도 비압축본(약 100MB)이다.
-                assetPath = "katago/model.bin",
-                destination = bundledModel,
-            )?.let { messages += it }
+            manager.registerListener(listener)
+            continuation.invokeOnCancellation {
+                manager.unregisterListener(listener)
+            }
+
+            manager.fetch(listOf(requiredPack, optionalPack))
+                .addOnSuccessListener { states ->
+                    val reqState = states.packStates()[requiredPack]
+                    if (reqState?.status() == AssetPackStatus.COMPLETED) {
+                        if (continuation.isActive) {
+                            manager.unregisterListener(listener)
+                            continuation.resume(true)
+                        }
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    messages += "Asset pack fetch failed: ${exception.message}"
+                    if (continuation.isActive) {
+                        manager.unregisterListener(listener)
+                        continuation.resume(false)
+                    }
+                }
         }
     }
 
-    // 사람 모델(백로그 #215)도 같은 규칙이다 — 둘 중 하나라도 있으면 풀지 않는다.
-    val humanModel = File(katagoDir, HumanModelName)
-    val humanCompressed = File(katagoDir, HumanModelCompressedName)
-    if (!humanCompressed.isFile && !humanModel.isFile) {
-        // 1순위: PAD 에셋 팩(katago_human_pack)에서 시딩 (백로그 #245)
-        seedFromAssetPackIfPresent(
-            context = context,
-            packName = KatagoHumanPackName,
-            relativeSourcePath = "katago/human.bin.gz",
-            destination = humanCompressed,
-        )?.let { messages += it }
-
-        // 2순위 (레거시): 번들 base 에셋에서 시도
-        if (!humanCompressed.isFile) {
-            seedAssetIfMissing(
-                context = context,
-                assetPath = "katago/human.bin",
-                destination = humanModel,
-            )?.let { messages += it }
-        }
+    if (result == true) {
+        messages += "Asset pack download completed."
+    } else {
+        messages += "Asset pack download timed out or failed."
     }
-
-    seedAssetIfMissing(
-        context = context,
-        assetPath = "katago/gtp_learning.cfg",
-        destination = config,
-    )?.let { messages += it }
-
-    seedAssetIfMissing(
-        context = context,
-        assetPath = "katago/analysis_learning.cfg",
-        destination = analysisConfig,
-    )?.let { messages += it }
-
     return messages
 }
 
-private fun seedFromAssetPackIfPresent(
-    context: Context,
+/**
+ * PAD 에셋 팩의 설치 디렉터리에서 파일 경로를 찾는다 (복사 없이 직접 참조).
+ */
+private fun resolvePackAssetFile(
+    manager: AssetPackManager,
     packName: String,
     relativeSourcePath: String,
-    destination: File,
-): String? {
-    if (destination.isFile && destination.length() > 0L) {
-        return null
-    }
-
+): File? {
     return try {
-        val manager = com.google.android.play.core.assetpacks.AssetPackManagerFactory.getInstance(context)
         val location = manager.getPackLocation(packName) ?: return null
         val assetsPath = location.assetsPath() ?: return null
         val sourceFile = File(assetsPath, relativeSourcePath)
-        if (!sourceFile.isFile || sourceFile.length() <= 0L) {
-            return null
+        if (sourceFile.isFile && sourceFile.length() > 0L) {
+            sourceFile
+        } else {
+            null
         }
-        destination.parentFile?.mkdirs()
-        val temp = File(destination.parentFile, "${destination.name}.tmp")
-        sourceFile.inputStream().use { input ->
-            temp.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        if (!temp.renameTo(destination)) {
-            temp.copyTo(destination, overwrite = true)
-            temp.delete()
-        }
-        "Seeded PAD asset pack ($packName) $relativeSourcePath."
     } catch (e: Exception) {
-        System.err.println("Failed to seed from asset pack $packName ($relativeSourcePath): ${e.message}")
+        System.err.println("Failed to resolve asset pack $packName ($relativeSourcePath): ${e.message}")
         null
     }
 }

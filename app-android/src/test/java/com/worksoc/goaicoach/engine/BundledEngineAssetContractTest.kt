@@ -64,26 +64,35 @@ class BundledEngineAssetContractTest {
 
     @Test
     fun theAppSeedsBothModelsFromPadPacks() {
-        // 앱이 PAD 에셋 팩에서 두 모델을 꺼내는지 검증
+        // 앱이 PAD 에셋 팩에서 두 모델 경로를 직접 참조하는지 검증
         assertTrue(
-            "앱이 주 모델을 PAD 팩에서 풀지 않는다.",
-            bootstrap.contains("packName = KatagoModelPackName") &&
-                bootstrap.contains("""relativeSourcePath = "katago/model.bin.gz""""),
+            "앱이 주 모델을 PAD 팩에서 참조하지 않는다.",
+            bootstrap.contains("KatagoModelPackName, \"katago/model.bin.gz\""),
         )
         assertTrue(
-            "앱이 사람 모델을 PAD 팩에서 풀지 않는다.",
-            bootstrap.contains("packName = KatagoHumanPackName") &&
-                bootstrap.contains("""relativeSourcePath = "katago/human.bin.gz""""),
+            "앱이 사람 모델을 PAD 팩에서 참조하지 않는다.",
+            bootstrap.contains("KatagoHumanPackName, \"katago/human.bin.gz\""),
         )
     }
 
     @Test
     fun thePadPackNamesMatchModuleDeclarations() {
-        // EngineBootstrap의 팩 이름 상수가 settings.gradle.kts의 모듈 이름과 일치하는지 검증
+        // EngineBootstrap의 팩 이름 상수가 settings.gradle.kts 및 각 모듈 build.gradle.kts와 일치하는지 검증
         val settings = RepoPaths.root.resolve("settings.gradle.kts").readContractSource()
+        val appGradle = RepoPaths.appAndroidBuildScript.readContractSource()
+        val modelPackGradle = RepoPaths.root.resolve("katago_model_pack/build.gradle.kts").readContractSource()
+        val humanPackGradle = RepoPaths.root.resolve("katago_human_pack/build.gradle.kts").readContractSource()
+
         assertTrue("katago_model_pack이 settings에 선언되지 않았다.", "include(\":katago_model_pack\")" in settings)
         assertTrue("katago_human_pack이 settings에 선언되지 않았다.", "include(\":katago_human_pack\")" in settings)
+        assertTrue("app-android에 assetPacks가 등록되지 않았다.", "assetPacks += setOf(\":katago_model_pack\", \":katago_human_pack\")" in appGradle)
+
         assertTrue("EngineBootstrap의 주 모델 팩 이름이 일치하지 않는다.", "internal const val KatagoModelPackName = \"katago_model_pack\"" in bootstrap)
         assertTrue("EngineBootstrap의 사람 모델 팩 이름이 일치하지 않는다.", "internal const val KatagoHumanPackName = \"katago_human_pack\"" in bootstrap)
+
+        assertTrue("katago_model_pack packName이 일치하지 않는다.", "packName.set(\"katago_model_pack\")" in modelPackGradle)
+        assertTrue("katago_human_pack packName이 일치하지 않는다.", "packName.set(\"katago_human_pack\")" in humanPackGradle)
+        assertTrue("katago_model_pack deliveryType이 on-demand가 아니다.", "deliveryType.set(\"on-demand\")" in modelPackGradle)
+        assertTrue("katago_human_pack deliveryType이 on-demand가 아니다.", "deliveryType.set(\"on-demand\")" in humanPackGradle)
     }
 }

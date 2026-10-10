@@ -57,8 +57,8 @@ import kotlinx.coroutines.withContext
 internal class GoCoachProcessRuntime(
     val diagnosticEventLog: DiagnosticEventLogPort,
     positionAnalysisCacheStore: PositionAnalysisCacheStore,
-    /** 블로킹 IO다(최초 실행에는 약 100MB 모델 복사) — [ioDispatcher]에서 부른다. */
-    private val createBootstrap: () -> EngineBootstrap,
+    /** 블로킹 IO 또는 PAD 에셋 팩 다운로드 대기 — [ioDispatcher]에서 부른다. */
+    private val createBootstrap: suspend () -> EngineBootstrap,
     /** 원격 엔진 주소. `null`이면 원격을 쓰지 않는다 — 값은 debug 빌드에 주소가 있을 때만 온다([forApplication]). */
     private val remoteEngineUrl: String?,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
