@@ -21,11 +21,10 @@ import org.junit.runner.RunWith
  *
  * Two things make this non-trivial to assert on, found by running against a real emulator rather
  * than assuming:
- * - `createEngineBootstrap` is synchronous and always resolves (falling back to a stub engine
- *   when KataGo assets aren't seeded), but on a device without `make seed-engine`, it first
- *   copies the bundled model out of assets/ before falling back -- multiple real seconds of I/O,
- *   not instant. `waitUntil` below covers that instead of assuming the default Compose idle sync
- *   catches it (it doesn't track that IO-bound `LaunchedEffect` as a pending recomposition).
+ * - `createEngineBootstrap` is asynchronous (falling back to a stub engine when KataGo assets
+ *   aren't seeded and network is offline), and on a device without `make seed-engine`, it checks
+ *   local files and asset packs. `waitUntil` below covers that instead of assuming the default
+ *   Compose idle sync catches it (it doesn't track that IO-bound `LaunchedEffect` as a pending recomposition).
  * - [FeatureFlags.isLoginEnabled] is `false`, so [initialDestination] skips Onboarding entirely
  *   and always lands on [ScreenDestination.Home] -- confirmed against the real app, not assumed
  *   from [NewGameBoardTapSmokeTest]'s onboarding-first flow (that test predates the 2026-08-09

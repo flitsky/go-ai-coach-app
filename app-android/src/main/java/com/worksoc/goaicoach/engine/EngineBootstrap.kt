@@ -83,17 +83,26 @@ suspend fun createEngineBootstrap(
         localHumanModel = resolvePackAssetFile(assetPackManager, KatagoHumanPackName, "katago/human.bin.gz")
     }
 
-    // 3단계: 신규 설치 / 팩 미도착 시 fetch() 요청 및 대기 (Preparing 상태 유지)
+    // 3단계: 기기 또는 팩에 없는 모델들을 독립적으로 수집하여 fetch() 요청 및 대기 (Preparing 상태 유지)
+    // - 신규 유저: 주 모델과 사람 모델 둘 다 없음 -> 둘 다 요청하고 대기 (경쟁 상태 없이 둘 다 완료 후 기동)
+    // - 기존 유저(1.1.0 등): 주 모델은 있으나 사람 모델이 없음 -> 사람 모델 팩만 요청하고 대기 (99MB만 받고 주 모델 98MB는 0바이트)
+    // - 기존 유저(1.3.0): 둘 다 있음 -> neededPacks가 비어 0바이트/0초 즉시 기동
+    val neededPacks = buildList {
+        if (localModel == null) add(KatagoModelPackName)
+        if (localHumanModel == null) add(KatagoHumanPackName)
+    }
+
     val packMessages = mutableListOf<String>()
-    if (localModel == null && assetPackManager != null) {
+    if (neededPacks.isNotEmpty() && assetPackManager != null) {
         val downloadMessages = fetchAndAwaitAssetPacks(
             manager = assetPackManager,
-            requiredPack = KatagoModelPackName,
-            optionalPack = KatagoHumanPackName,
+            neededPacks = neededPacks,
         )
         packMessages += downloadMessages
-        // 다운로드 완료 후 에셋 팩 경로 재확인
-        localModel = resolvePackAssetFile(assetPackManager, KatagoModelPackName, "katago/model.bin.gz")
+        // 다운로드 시도 후 에셋 팩 경로 재확인
+        if (localModel == null) {
+            localModel = resolvePackAssetFile(assetPackManager, KatagoModelPackName, "katago/model.bin.gz")
+        }
         if (localHumanModel == null) {
             localHumanModel = resolvePackAssetFile(assetPackManager, KatagoHumanPackName, "katago/human.bin.gz")
         }
@@ -186,46 +195,58 @@ private fun EngineCoreApi.withDebugStallInjector(filesDir: File): EngineCoreApi 
     }
 
 /**
- * PAD on-demand 에셋 팩을 요청(fetch)하고 완료될 때까지 비동기 대기한다 (백로그 #245 U-73 대응).
- * 주 모델 팩([requiredPack])이 완료되면 성공([true])으로 판단하며, 사람 모델 팩([optionalPack])은
- * 함께 요청하되 실패해도 주 모델이 완료되었으면 엔진 기동을 막지 않는다.
+ * PAD on-demand 에셋 팩들을 요청(fetch)하고 완료될 때까지 비동기 대기한다 (백로그 #245 U-73 대응).
+ *
+ * @param neededPacks 기기에 없어 다운로드가 필요한 팩 목록.
+ *   - [KatagoModelPackName](주 모델)이 포함되어 있다면 엔진 기동에 필수적인 팩으로 취급된다.
+ *   - [KatagoHumanPackName](사람 모델)은 선택적 팩으로 취급되어, 주 모델이 준비되었으나 사람 모델만
+ *     명시적으로 실패([AssetPackStatus.FAILED])한 경우에는 엔진 기동을 막지 않고 주 모델 단독으로 진행한다.
+ *   - 단, 사람 모델이 아직 다운로드 중([AssetPackStatus.DOWNLOADING] 등)인 동안에는 임의로 조기 종료하지 않고
+ *     두 모델이 모두 안전하게 완료될 때까지 기다린다 (신규 유저 첫 세션 사람 모델 누락 경쟁 상태 방지).
+ *   - Play 스토어 외부 환경(디버그 APK 등)이거나 필수 팩이 실패한 경우 즉시 실패([false])로 반환한다.
  */
 private suspend fun fetchAndAwaitAssetPacks(
     manager: AssetPackManager,
-    requiredPack: String,
-    optionalPack: String,
-    timeoutMillis: Long = 90_000L,
+    neededPacks: List<String>,
+    timeoutMillis: Long = 300_000L,
 ): List<String> {
+    if (neededPacks.isEmpty()) return emptyList()
+
     val messages = mutableListOf<String>()
     val result = withTimeoutOrNull(timeoutMillis) {
         suspendCancellableCoroutine<Boolean> { continuation ->
-            val pendingPacks = mutableSetOf(requiredPack, optionalPack)
+            val pendingPacks = neededPacks.toMutableSet()
+            lateinit var listener: AssetPackStateUpdateListener
 
-            val listener = object : AssetPackStateUpdateListener {
+            fun checkCompletion() {
+                if (!continuation.isActive) return
+                if (pendingPacks.isEmpty()) {
+                    manager.unregisterListener(listener)
+                    continuation.resume(true)
+                }
+            }
+
+            listener = object : AssetPackStateUpdateListener {
                 override fun onStateUpdate(state: AssetPackState) {
                     val name = state.name()
                     val status = state.status()
                     when (status) {
                         AssetPackStatus.COMPLETED -> {
                             pendingPacks.remove(name)
-                            if (pendingPacks.isEmpty() && continuation.isActive) {
-                                manager.unregisterListener(this)
-                                continuation.resume(true)
-                            } else if (name == requiredPack && continuation.isActive) {
-                                manager.unregisterListener(this)
-                                continuation.resume(true)
-                            }
+                            checkCompletion()
                         }
                         AssetPackStatus.FAILED, AssetPackStatus.CANCELED -> {
-                            if (name == requiredPack && continuation.isActive) {
+                            messages += "Asset pack ($name) failed or canceled (code: ${state.errorCode()})."
+                            if (name == KatagoModelPackName && continuation.isActive) {
                                 manager.unregisterListener(this)
                                 continuation.resume(false)
                             } else {
                                 pendingPacks.remove(name)
+                                checkCompletion()
                             }
                         }
                         AssetPackStatus.WAITING_FOR_WIFI -> {
-                            // 모바일 데이터에서 Wi-Fi 대기 중
+                            messages += "Asset pack ($name) is waiting for Wi-Fi."
                         }
                         else -> {
                             // PENDING, DOWNLOADING, TRANSFERRING
@@ -239,18 +260,28 @@ private suspend fun fetchAndAwaitAssetPacks(
                 manager.unregisterListener(listener)
             }
 
-            manager.fetch(listOf(requiredPack, optionalPack))
+            manager.fetch(neededPacks)
                 .addOnSuccessListener { states ->
-                    val reqState = states.packStates()[requiredPack]
-                    if (reqState?.status() == AssetPackStatus.COMPLETED) {
-                        if (continuation.isActive) {
-                            manager.unregisterListener(listener)
-                            continuation.resume(true)
+                    val packStates = states.packStates()
+                    neededPacks.forEach { pack ->
+                        val st = packStates[pack]?.status()
+                        if (st == AssetPackStatus.COMPLETED) {
+                            pendingPacks.remove(pack)
+                        } else if (st == AssetPackStatus.FAILED || st == AssetPackStatus.CANCELED) {
+                            messages += "Asset pack ($pack) initial state failed (code: ${packStates[pack]?.errorCode()})."
+                            if (pack == KatagoModelPackName && continuation.isActive) {
+                                manager.unregisterListener(listener)
+                                continuation.resume(false)
+                                return@addOnSuccessListener
+                            } else {
+                                pendingPacks.remove(pack)
+                            }
                         }
                     }
+                    checkCompletion()
                 }
                 .addOnFailureListener { exception ->
-                    messages += "Asset pack fetch failed: ${exception.message}"
+                    messages += "Asset pack fetch failed immediately: ${exception.message}"
                     if (continuation.isActive) {
                         manager.unregisterListener(listener)
                         continuation.resume(false)

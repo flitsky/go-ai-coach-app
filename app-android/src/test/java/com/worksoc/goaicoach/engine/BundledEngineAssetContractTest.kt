@@ -63,7 +63,7 @@ class BundledEngineAssetContractTest {
     }
 
     @Test
-    fun theAppSeedsBothModelsFromPadPacks() {
+    fun theAppResolvesBothModelsFromPadPacks() {
         // 앱이 PAD 에셋 팩에서 두 모델 경로를 직접 참조하는지 검증
         assertTrue(
             "앱이 주 모델을 PAD 팩에서 참조하지 않는다.",
