@@ -152,24 +152,46 @@ private fun seedBundledKataGoAssetsIfNeeded(
     // 있는 기기에 `.gz`를 또 풀면 200MB를 쓴다 — 둘 다 쓸 수 있으므로 있는 쪽을 그대로 둔다
     // (고르는 것은 호출부의 `compressedModel ?: bundledModel`이다).
     if (!compressedModel.isFile && !bundledModel.isFile) {
-        seedAssetIfMissing(
+        // 1순위: PAD 에셋 팩(katago_model_pack)에서 시딩 (백로그 #245)
+        seedFromAssetPackIfPresent(
             context = context,
-            // ⚠️ `.gz`가 아니다 — 위 머리말 참고. AGP가 이미 풀어서 넣었으므로 APK 안의 이름은
-            // 확장자가 떨어진 `model.bin`이고, 푸는 결과도 비압축본(약 100MB)이다.
-            assetPath = "katago/model.bin",
-            destination = bundledModel,
+            packName = KatagoModelPackName,
+            relativeSourcePath = "katago/model.bin.gz",
+            destination = compressedModel,
         )?.let { messages += it }
+
+        // 2순위 (레거시): 번들 base 에셋에서 시도 (과거 번들된 빌드 호환)
+        if (!compressedModel.isFile) {
+            seedAssetIfMissing(
+                context = context,
+                // ⚠️ `.gz`가 아니다 — 위 머리말 참고. AGP가 이미 풀어서 넣었으므로 APK 안의 이름은
+                // 확장자가 떨어진 `model.bin`이고, 푸는 결과도 비압축본(약 100MB)이다.
+                assetPath = "katago/model.bin",
+                destination = bundledModel,
+            )?.let { messages += it }
+        }
     }
 
-    // 사람 모델(백로그 #215)도 같은 규칙이다 — 둘 중 하나라도 있으면 풀지 않는다(이름의 `.gz` 사정도 주 모델과 같다).
-    // 번들에 없는 빌드에서는 여는 데 실패하고 넘어간다 — 그 기기의 급수 캐릭터는 지금 방식으로 두고 승급 대국 카드는 안 보인다.
+    // 사람 모델(백로그 #215)도 같은 규칙이다 — 둘 중 하나라도 있으면 풀지 않는다.
     val humanModel = File(katagoDir, HumanModelName)
-    if (!File(katagoDir, HumanModelCompressedName).isFile && !humanModel.isFile) {
-        seedAssetIfMissing(
+    val humanCompressed = File(katagoDir, HumanModelCompressedName)
+    if (!humanCompressed.isFile && !humanModel.isFile) {
+        // 1순위: PAD 에셋 팩(katago_human_pack)에서 시딩 (백로그 #245)
+        seedFromAssetPackIfPresent(
             context = context,
-            assetPath = "katago/human.bin",
-            destination = humanModel,
+            packName = KatagoHumanPackName,
+            relativeSourcePath = "katago/human.bin.gz",
+            destination = humanCompressed,
         )?.let { messages += it }
+
+        // 2순위 (레거시): 번들 base 에셋에서 시도
+        if (!humanCompressed.isFile) {
+            seedAssetIfMissing(
+                context = context,
+                assetPath = "katago/human.bin",
+                destination = humanModel,
+            )?.let { messages += it }
+        }
     }
 
     seedAssetIfMissing(
@@ -185,6 +207,42 @@ private fun seedBundledKataGoAssetsIfNeeded(
     )?.let { messages += it }
 
     return messages
+}
+
+private fun seedFromAssetPackIfPresent(
+    context: Context,
+    packName: String,
+    relativeSourcePath: String,
+    destination: File,
+): String? {
+    if (destination.isFile && destination.length() > 0L) {
+        return null
+    }
+
+    return try {
+        val manager = com.google.android.play.core.assetpacks.AssetPackManagerFactory.getInstance(context)
+        val location = manager.getPackLocation(packName) ?: return null
+        val assetsPath = location.assetsPath() ?: return null
+        val sourceFile = File(assetsPath, relativeSourcePath)
+        if (!sourceFile.isFile || sourceFile.length() <= 0L) {
+            return null
+        }
+        destination.parentFile?.mkdirs()
+        val temp = File(destination.parentFile, "${destination.name}.tmp")
+        sourceFile.inputStream().use { input ->
+            temp.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+        if (!temp.renameTo(destination)) {
+            temp.copyTo(destination, overwrite = true)
+            temp.delete()
+        }
+        "Seeded PAD asset pack ($packName) $relativeSourcePath."
+    } catch (e: Exception) {
+        System.err.println("Failed to seed from asset pack $packName ($relativeSourcePath): ${e.message}")
+        null
+    }
 }
 
 private fun seedAssetIfMissing(
@@ -214,6 +272,10 @@ private fun seedAssetIfMissing(
         null
     }
 }
+
+/** PAD 에셋 팩 이름 (백로그 #245) */
+internal const val KatagoModelPackName = "katago_model_pack"
+internal const val KatagoHumanPackName = "katago_human_pack"
 
 /** 기기의 `files/katago/`에서 찾는 사람 모델 파일 이름(백로그 #215) — KataGo는 `.bin.gz`를 풀지 않고 읽는다. */
 internal const val HumanModelCompressedName = "human.bin.gz"
