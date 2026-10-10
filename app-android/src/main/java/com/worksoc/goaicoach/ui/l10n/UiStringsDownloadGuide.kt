@@ -138,6 +138,27 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "使用移动网络继续",
     )
 
+    private val ConfirmationRequired = mapOf(
+        UiLanguage.Korean to "모바일 데이터 다운로드 승인이 필요합니다.",
+        UiLanguage.English to "Mobile data confirmation required.",
+        UiLanguage.Japanese to "モバイル通信の承認が必要です。",
+        UiLanguage.ChineseSimplified to "需要移动网络授权。",
+    )
+
+    private val OpenConfirmation = mapOf(
+        UiLanguage.Korean to "승인 창 열기",
+        UiLanguage.English to "Open Confirmation",
+        UiLanguage.Japanese to "確認画面を開く",
+        UiLanguage.ChineseSimplified to "打开确认窗口",
+    )
+
+    private val EngineUnavailableStoreFailure = mapOf(
+        UiLanguage.Korean to "AI가 제대로 동작하지 않습니다 — 대국도 분석 결과도 믿을 수 없습니다. Google Play 스토어에서 공식 버전을 설치해 주세요. 사람끼리 두는 대국은 그대로 쓸 수 있어요.",
+        UiLanguage.English to "The AI is not working properly - neither its moves nor its analysis can be trusted. Please install the official version from the Google Play Store. You can still play two-player games with another person.",
+        UiLanguage.Japanese to "AIが正しく動作していません — 対局も分析結果も信頼できません。Google Play ストアから公式版をインストールしてください。人同士の対局はそのまま使えます。",
+        UiLanguage.ChineseSimplified to "AI 无法正常工作 — 对弈和分析结果均不可信。请从 Google Play 商店安装官方正版。双人对弈仍可照常使用。",
+    )
+
     fun cards(language: UiLanguage): List<DownloadGuideCard> = listOf(
         DownloadGuideCard(
             title = Card1Title[language] ?: Card1Title.getValue(UiLanguage.Korean),
@@ -185,6 +206,15 @@ internal object UiStringsDownloadGuide {
 
     fun close(language: UiLanguage): String =
         Close[language] ?: Close.getValue(UiLanguage.Korean)
+
+    fun requiresConfirmation(language: UiLanguage): String =
+        ConfirmationRequired[language] ?: ConfirmationRequired.getValue(UiLanguage.Korean)
+
+    fun openConfirmation(language: UiLanguage): String =
+        OpenConfirmation[language] ?: OpenConfirmation.getValue(UiLanguage.Korean)
+
+    fun engineUnavailableOfficialPlatformFailureMessage(language: UiLanguage): String =
+        EngineUnavailableStoreFailure[language] ?: EngineUnavailableStoreFailure.getValue(UiLanguage.Korean)
 
     fun boardControlsGuide(language: UiLanguage): String =
         BoardControlsGuide[language] ?: BoardControlsGuide.getValue(UiLanguage.Korean)

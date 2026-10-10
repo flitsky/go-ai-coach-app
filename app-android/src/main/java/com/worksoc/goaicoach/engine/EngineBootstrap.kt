@@ -338,6 +338,9 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
     val messages = mutableListOf<String>()
     tracker.startNewDownload()
 
+    var consecutiveInternalErrors = 0
+    val maxConsecutiveInternalErrors = 3
+
     while (currentCoroutineContext().isActive) {
         val (outcome, attemptMessages) = fetchAndAwaitAssetPacksAttempt(
             manager = manager,
@@ -358,6 +361,7 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
                 // 부트스트랩 루프가 즉시 종료되고 스텁 모드로 진입하므로, 반응 없는 죽은 재시도 버튼을
                 // 남기지 않고 카드를 Idle로 닫는다. 스텁 안내는 부트스트랩 완료 후 다이얼로그가 맡는다.
                 messages += "Asset pack permanent failure: ${outcome.message} (code: ${outcome.errorCode})"
+                tracker.lastPermanentFailureCode = outcome.errorCode
                 tracker.updateStatus(EngineDownloadStatus.Idle)
                 break
             }
@@ -369,6 +373,28 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
             }
 
             is AttemptOutcome.RecoverableFailure -> {
+                if (outcome.errorCode == AssetPackErrorCode.INTERNAL_ERROR) {
+                    consecutiveInternalErrors++
+                    if (consecutiveInternalErrors >= maxConsecutiveInternalErrors) {
+                        messages += "Asset pack INTERNAL_ERROR exceeded retry limit ($consecutiveInternalErrors) -> fallback to PermanentFailure."
+                        tracker.lastPermanentFailureCode = outcome.errorCode
+                        tracker.updateStatus(EngineDownloadStatus.Idle)
+                        break
+                    }
+                } else {
+                    consecutiveInternalErrors = 0
+                }
+
+                // 바깥 루프 단 한 곳에서 트래커의 Failed 상태를 설정 ("한 규칙은 한 곳에")
+                val isHumanModelOnly = !isMandatory && neededPacks == listOf(KatagoHumanPackName)
+                tracker.updateStatus(
+                    EngineDownloadStatus.Failed(
+                        errorCode = outcome.errorCode,
+                        message = outcome.message,
+                        isHumanModelOnly = isHumanModelOnly,
+                    )
+                )
+
                 // 사용자가 [다시 시도]를 누를 때까지 suspend 대기
                 val retryDeferred = CompletableDeferred<Unit>()
                 tracker.registerRetryHandler {
@@ -421,9 +447,11 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
     }
 
     fun updateProgressOrWifiState() {
-        val anyWaitingForWifi = neededPacks.any { pack ->
-            val st = packStatusMap[pack]
-            st == AssetPackStatus.WAITING_FOR_WIFI || st == AssetPackStatus.REQUIRES_USER_CONFIRMATION
+        val isConfirmationRequired = neededPacks.any { pack ->
+            packStatusMap[pack] == AssetPackStatus.REQUIRES_USER_CONFIRMATION
+        }
+        val anyWaitingForWifi = isConfirmationRequired || neededPacks.any { pack ->
+            packStatusMap[pack] == AssetPackStatus.WAITING_FOR_WIFI
         }
         val currentDownloaded = downloadedBytesMap.values.sum()
         val currentTotal = totalBytesMap.values.sum().coerceAtLeast(1L)
@@ -435,6 +463,7 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                     bytesDownloaded = currentDownloaded,
                     totalBytesToDownload = currentTotal,
                     isHumanModelOnly = isHumanModelOnly,
+                    isConfirmationRequired = isConfirmationRequired,
                 )
             )
         } else {
@@ -491,10 +520,15 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
             if (pendingPacks.isEmpty()) {
                 if (failedPacks.isEmpty()) {
                     safeResume(AttemptOutcome.Success)
+                } else if (!failedPacks.contains(KatagoModelPackName)) {
+                    // 주 모델은 성공했고 비필수 사람 모델만 실패한 경우:
+                    // 앱 정상 동작이 가능하므로 부트스트랩을 Success로 완료한다 (#246).
+                    messages += "Optional human model failed (${failedPacks.joinToString()}), but mandatory model succeeded -> Continuing with Success."
+                    safeResume(AttemptOutcome.Success)
                 } else {
                     safeResume(
                         AttemptOutcome.RecoverableFailure(
-                            message = "Some packs failed: ${failedPacks.joinToString()}",
+                            message = "Mandatory model failed: ${failedPacks.joinToString()}",
                             errorCode = AssetPackErrorCode.NETWORK_ERROR,
                         )
                     )
@@ -558,23 +592,23 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
 
                         val isPermanent = isPermanentAssetPackErrorCode(err)
                         if (isPermanent) {
-                            // 영구 실패 시 트래커 상태는 바깥 루프 한 곳에서 Idle로 정리
-                            safeResume(
-                                AttemptOutcome.PermanentFailure(
-                                    message = "Asset pack ($name) permanent failure (code: $err)",
-                                    errorCode = err,
+                            if (name == KatagoModelPackName) {
+                                safeResume(
+                                    AttemptOutcome.PermanentFailure(
+                                        message = "Mandatory model pack ($name) permanent failure (code: $err)",
+                                        errorCode = err,
+                                    )
                                 )
-                            )
-                            return
+                                return
+                            } else {
+                                messages += "Optional asset pack ($name) permanent failure (code: $err) - continuing without it."
+                                checkCompletion()
+                                return
+                            }
                         }
 
-                        tracker.updateStatus(
-                            EngineDownloadStatus.Failed(
-                                errorCode = err,
-                                message = "Download failed for $name",
-                                isHumanModelOnly = isHumanModelOnly,
-                            )
-                        )
+                        // ⚠️ 트래커 상태는 바깥 루프 한 곳이 맡는다 ("한 규칙은 한 곳에").
+                        // 시도 안에서 Failed를 부르면 주 모델 수신 중에 잠깐 재시도가 노출되거나 진행이 끊기는 버그가 생긴다.
 
                         // 주 모델 실패 시 즉시 중단 및 재시도 대기
                         if (name == KatagoModelPackName && isMandatory) {
@@ -624,13 +658,7 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                 val elapsed = now - lastProgressTimestamp.get()
                 if (elapsed > 120_000L && !isResumed.get()) {
                     messages += "Asset pack download stalled for ${elapsed / 1000}s."
-                    tracker.updateStatus(
-                        EngineDownloadStatus.Failed(
-                            errorCode = CustomErrorCodeStalled,
-                            message = "Download stalled",
-                            isHumanModelOnly = isHumanModelOnly,
-                        )
-                    )
+                    // ⚠️ 트래커 상태는 바깥 루프 한 곳이 맡는다 ("한 규칙은 한 곳에").
                     safeResume(
                         AttemptOutcome.RecoverableFailure(
                             message = "Download stalled for ${elapsed / 1000}s",
@@ -648,9 +676,19 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                 neededPacks.forEach { pack ->
                     val packState = packStates[pack] ?: return@forEach
                     val st = packState.status()
-                    packStatusMap[pack] = st
+                    // 리스너가 이미 수신한 최신 상태를 옛 fetch 스냅샷(PENDING 등)으로 덮어쓰지 않음
+                    packStatusMap.putIfAbsent(pack, st)
+                    if (packStatusMap[pack] == AssetPackStatus.UNKNOWN) {
+                        packStatusMap[pack] = st
+                    }
+
                     val total = packState.totalBytesToDownload()
                     if (total > 0L) totalBytesMap[pack] = total
+
+                    val downloaded = packState.bytesDownloaded()
+                    if (downloaded > 0L) {
+                        downloadedBytesMap[pack] = maxOf(downloadedBytesMap[pack] ?: 0L, downloaded)
+                    }
 
                     if (st == AssetPackStatus.COMPLETED) {
                         downloadedBytesMap[pack] = totalBytesMap[pack] ?: 0L
@@ -663,13 +701,17 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                         failedPacks.add(pack)
                         pendingPacks.remove(pack)
                         if (isPermanentAssetPackErrorCode(err)) {
-                            safeResume(
-                                AttemptOutcome.PermanentFailure(
-                                    message = "Asset pack ($pack) permanent failure: $err",
-                                    errorCode = err,
+                            if (pack == KatagoModelPackName) {
+                                safeResume(
+                                    AttemptOutcome.PermanentFailure(
+                                        message = "Mandatory model pack ($pack) permanent failure: $err",
+                                        errorCode = err,
+                                    )
                                 )
-                            )
-                            return@addOnSuccessListener
+                                return@addOnSuccessListener
+                            } else {
+                                messages += "Optional asset pack ($pack) permanent failure: $err - continuing without it."
+                            }
                         }
                     }
                 }
@@ -687,13 +729,7 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                         )
                     )
                 } else {
-                    tracker.updateStatus(
-                        EngineDownloadStatus.Failed(
-                            errorCode = errorCode,
-                            message = exception.message ?: "Fetch failed",
-                            isHumanModelOnly = isHumanModelOnly,
-                        )
-                    )
+                    // ⚠️ 트래커 상태는 바깥 루프 한 곳이 맡는다 ("한 규칙은 한 곳에").
                     safeResume(
                         AttemptOutcome.RecoverableFailure(
                             message = "Fetch failed: ${exception.message}",

@@ -716,4 +716,161 @@ class EngineBootstrapPadDownloadTest {
         downloadJob.await()
         assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
     }
+
+    @Test
+    fun testOptionalHumanPackPermanentFailureDoesNotAbortMandatoryModel() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { packs ->
+            val states = packs.associateWith { pack ->
+                createFakeAssetPackState(
+                    name = pack,
+                    status = AssetPackStatus.DOWNLOADING,
+                )
+            }
+            FakeTask(createFakeAssetPackStates(states))
+        }
+
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        withTimeout(3000L) {
+            while (fakeManager.registeredListeners.isEmpty()) {
+                delay(10)
+            }
+        }
+
+        // 사람 모델 영구 실패 발생 (PACK_UNAVAILABLE)
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoHumanPackName,
+                status = AssetPackStatus.FAILED,
+                errorCode = AssetPackErrorCode.PACK_UNAVAILABLE,
+            )
+        )
+
+        // 주 모델은 정상 다운로드 완료
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+
+        downloadJob.await()
+        // 사람 모델이 영구 실패했더라도 필수 주 모델이 성공했으므로 Completed여야 함 (#246)
+        assertTrue("선택 모델 영구 실패 시에도 주 모델 성공 시 Completed여야 함", tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testInternalErrorExceedsMaxRetriesFallsBackToStub() = runBlocking(Dispatchers.Default) {
+        var attempts = 0
+        val tracker = EngineDownloadTracker()
+        val fakeManager = FakeAssetPackManager {
+            attempts++
+            // 매번 INTERNAL_ERROR 발생
+            FakeTask(exception = newAssetPackException(AssetPackErrorCode.INTERNAL_ERROR))
+        }
+
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        // 첫 번째 실패 후 재시도
+        withTimeout(3000L) {
+            while (tracker.status.value !is EngineDownloadStatus.Failed) {
+                delay(10)
+            }
+        }
+        tracker.retry()
+
+        // 두 번째 실패 후 재시도
+        withTimeout(3000L) {
+            while (tracker.status.value !is EngineDownloadStatus.Failed) {
+                delay(10)
+            }
+        }
+        tracker.retry()
+
+        // 세 번째 실패 후에는 상한(3회)에 도달하여 재시도 대기 없이 Idle로 종료되어야 함
+        downloadJob.await()
+        assertEquals("연속 3회 INTERNAL_ERROR 시 Idle 상태로 종료되어야 함", EngineDownloadStatus.Idle, tracker.status.value)
+        assertEquals(3, attempts)
+    }
+
+    @Test
+    fun testRequiresUserConfirmationSetsConfirmationRequiredFlag() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { packs ->
+            val states = packs.associateWith { pack ->
+                createFakeAssetPackState(
+                    name = pack,
+                    status = AssetPackStatus.REQUIRES_USER_CONFIRMATION,
+                )
+            }
+            FakeTask(createFakeAssetPackStates(states))
+        }
+
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        withTimeout(3000L) {
+            while (tracker.status.value !is EngineDownloadStatus.WaitingForWifi) {
+                delay(10)
+            }
+        }
+
+        val wifiStatus = tracker.status.value as EngineDownloadStatus.WaitingForWifi
+        assertTrue("REQUIRES_USER_CONFIRMATION 시 isConfirmationRequired가 true여야 함", wifiStatus.isConfirmationRequired)
+
+        // 완료 처리
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.COMPLETED,
+            )
+        )
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testUnregisterCellularConfirmationHandlerOnlyClearsMatchingHandler() {
+        val tracker = EngineDownloadTracker()
+        var handler1Called = false
+        var handler2Called = false
+        val handler1 = { handler1Called = true }
+        val handler2 = { handler2Called = true }
+
+        tracker.registerCellularConfirmationHandler(handler1)
+        tracker.registerCellularConfirmationHandler(handler2)
+
+        // 옛 핸들러(handler1) unregister 시도 -> handler2는 유지되어야 함
+        tracker.unregisterCellularConfirmationHandler(handler1)
+        tracker.requestCellularConfirmation()
+        assertFalse(handler1Called)
+        assertTrue(handler2Called)
+
+        // 현재 핸들러(handler2) unregister -> 이제 null이 되어야 함
+        tracker.unregisterCellularConfirmationHandler(handler2)
+        handler2Called = false
+        tracker.requestCellularConfirmation()
+        assertFalse(handler2Called)
+    }
 }

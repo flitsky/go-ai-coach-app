@@ -96,16 +96,11 @@ internal fun EngineDownloadGuideSection(
     val activity = remember(context) { context.findActivity() }
 
     DisposableEffect(activity) {
-        if (activity != null) {
-            currentEngineDownloadTracker().registerCellularConfirmationHandler {
+        val handler: () -> Unit = {
+            if (activity != null) {
                 try {
                     val manager = AssetPackManagerFactory.getInstance(activity)
-                    // 최신 권장 API인 showConfirmationDialog 우선 시도, 환경에 따라 showCellularDataConfirmation으로 안전 폴백
-                    val task = try {
-                        manager.showConfirmationDialog(activity)
-                    } catch (_: NoSuchMethodError) {
-                        manager.showCellularDataConfirmation(activity)
-                    }
+                    val task = manager.showConfirmationDialog(activity)
                     task.addOnSuccessListener { resultCode ->
                         android.util.Log.d("EngineDownloadGuide", "Cellular confirmation result: $resultCode")
                     }.addOnFailureListener { exception ->
@@ -116,8 +111,9 @@ internal fun EngineDownloadGuideSection(
                 }
             }
         }
+        currentEngineDownloadTracker().registerCellularConfirmationHandler(handler)
         onDispose {
-            currentEngineDownloadTracker().registerCellularConfirmationHandler(null)
+            currentEngineDownloadTracker().unregisterCellularConfirmationHandler(handler)
         }
     }
 
@@ -138,11 +134,18 @@ internal fun EngineDownloadGuideSection(
         // 다시 카드를 열 수 있는 미니 안내 배너를 제공한다 (#247).
         if (isMandatoryBlocked) {
             val isFailed = status is EngineDownloadStatus.Failed
+            val isConfirmationRequired = status is EngineDownloadStatus.WaitingForWifi && status.isConfirmationRequired
             Surface(
                 modifier = modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(AppRadius.Corner8))
-                    .clickable { currentEngineDownloadTracker().reopen() }
+                    .clickable {
+                        val tracker = currentEngineDownloadTracker()
+                        tracker.reopen()
+                        if (status is EngineDownloadStatus.WaitingForWifi) {
+                            tracker.requestCellularConfirmation()
+                        }
+                    }
                     .border(
                         width = AppBorderWidth.Hairline,
                         color = if (isFailed) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
@@ -158,13 +161,21 @@ internal fun EngineDownloadGuideSection(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = if (isFailed) UiStringsDownloadGuide.failed(strings.language) else UiStringsDownloadGuide.waitingForWifi(strings.language),
+                        text = when {
+                            isFailed -> UiStringsDownloadGuide.failed(strings.language)
+                            isConfirmationRequired -> UiStringsDownloadGuide.requiresConfirmation(strings.language)
+                            else -> UiStringsDownloadGuide.waitingForWifi(strings.language)
+                        },
                         fontSize = AppTextSize.Text12,
                         fontWeight = FontWeight.Medium,
                         color = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text = if (isFailed) UiStringsDownloadGuide.retry(strings.language) else UiStringsDownloadGuide.continueOnMobileData(strings.language),
+                        text = when {
+                            isFailed -> UiStringsDownloadGuide.retry(strings.language)
+                            isConfirmationRequired -> UiStringsDownloadGuide.openConfirmation(strings.language)
+                            else -> UiStringsDownloadGuide.continueOnMobileData(strings.language)
+                        },
                         fontSize = AppTextSize.Text12,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -290,10 +301,14 @@ internal fun EngineDownloadGuideSection(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = UiStringsDownloadGuide.waitingForWifi(strings.language),
+                            text = if (status.isConfirmationRequired) {
+                                UiStringsDownloadGuide.requiresConfirmation(strings.language)
+                            } else {
+                                UiStringsDownloadGuide.waitingForWifi(strings.language)
+                            },
                             fontSize = AppTextSize.Text12,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.error,
+                            color = if (status.isConfirmationRequired) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             modifier = Modifier.weight(1f),
                         )
                         IconButton(
@@ -319,7 +334,7 @@ internal fun EngineDownloadGuideSection(
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
-                    // U-75 대안 B: 모바일 데이터로 계속 버튼 및 다시 시도 버튼
+                    // U-75 대안 B: 모바일 데이터로 계속/승인 버튼 및 다시 시도 버튼
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
@@ -335,7 +350,11 @@ internal fun EngineDownloadGuideSection(
                                 .height(36.dp),
                         ) {
                             Text(
-                                text = UiStringsDownloadGuide.continueOnMobileData(strings.language),
+                                text = if (status.isConfirmationRequired) {
+                                    UiStringsDownloadGuide.openConfirmation(strings.language)
+                                } else {
+                                    UiStringsDownloadGuide.continueOnMobileData(strings.language)
+                                },
                                 fontSize = AppTextSize.Text12,
                             )
                         }

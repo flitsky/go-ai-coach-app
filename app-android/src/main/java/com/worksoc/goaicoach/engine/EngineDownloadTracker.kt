@@ -22,11 +22,12 @@ sealed interface EngineDownloadStatus {
         val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
-    /** 모바일 데이터에서 Wi-Fi 연결을 대기 중 */
+    /** 모바일 데이터에서 Wi-Fi 연결 또는 사용자 확인을 대기 중 */
     data class WaitingForWifi(
         val bytesDownloaded: Long,
         val totalBytesToDownload: Long,
         val isHumanModelOnly: Boolean = false,
+        val isConfirmationRequired: Boolean = false,
     ) : EngineDownloadStatus
 
     /** 다운로드 실패 또는 일시정지 (재시도 가능) */
@@ -63,6 +64,7 @@ internal class EngineDownloadTracker {
     /** 새 다운로드를 시작할 때 호출되어 닫힘 상태를 초기화한다. */
     fun startNewDownload() {
         _isDismissed.value = false
+        lastPermanentFailureCode = null
     }
 
     fun dismiss() {
@@ -83,8 +85,24 @@ internal class EngineDownloadTracker {
         retryHandler?.invoke()
     }
 
+    var lastPermanentFailureCode: Int? = null
+
+    fun isOfficialPlatformPermanentFailure(): Boolean =
+        when (lastPermanentFailureCode) {
+            -13, // APP_NOT_OWNED
+            -15, // UNRECOGNIZED_INSTALLATION
+            -11 -> true // PLAY_STORE_NOT_FOUND
+            else -> false
+        }
+
     fun registerCellularConfirmationHandler(handler: (() -> Unit)?) {
         cellularConfirmationHandler = handler
+    }
+
+    fun unregisterCellularConfirmationHandler(handler: () -> Unit) {
+        if (cellularConfirmationHandler === handler) {
+            cellularConfirmationHandler = null
+        }
     }
 
     fun requestCellularConfirmation() {
