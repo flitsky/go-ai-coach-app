@@ -286,9 +286,10 @@ android {
     }
 
     sourceSets {
-        // ⚠️ **`src/friend/assets`라는 이름은 역사다 — 지금 이것은 "번들 엔진 에셋"이다.**
-        // friend 빌드타입은 2026-09-06에 없어졌지만 **이 디렉터리는 남는다.** 여기에 스토어에
-        // 올리는 AAB의 KataGo 모델(98MB)과 cfg 둘이 있다.
+        // ⚠️ **`src/friend/assets`라는 이름은 역사다 — 지금 이것은 "번들 기본 에셋"이다.**
+        // friend 빌드타입은 2026-09-06에 없어졌지만 **이 디렉터리는 남는다.**
+        // 두 대용량 모델(98MB/99MB)은 PAD 에셋 팩(백로그 #245)으로 분리되었고,
+        // 여기에는 스토어에 올리는 AAB의 기본 설정(cfg 둘)이 있다.
         // ⚠️ **개명하지 않기로 했다**(2026-09-06). 이름이 내용을 배신하는 것은 맞지만 값이 안 맞는다:
         //   · 이 디렉터리는 `.gitignore`라 **git에 없다** — 옮겨도 git이 도와주지 않고 되돌릴 곳도 없다.
         //   · `Makefile`의 `FRIEND_ASSET_DIR` **이름 자체를 `BundledEngineAssetContractTest`가
@@ -415,12 +416,12 @@ dependencies {
     // 쓰지 않으므로 별도로 추가하지 않는다.
     implementation(libs.play.billing)
     // Play In-App Update(백로그 #53) — 설정 화면이 "새 버전이 있는가"를 묻는 데만 쓴다.
-    // ⚠️ **app-update-ktx는 일부러 넣지 않았다.** 이 저장소는 콜백 API를
-    // suspendCancellableCoroutine으로 직접 감싸는 쪽으로 통일돼 있다(billing·AdMob·Auth 셋 다) —
+    // ⚠️ **app-update-ktx/asset-delivery-ktx는 일부러 넣지 않았다.** 이 저장소는 콜백 API를
+    // suspendCancellableCoroutine으로 직접 감싸는 쪽으로 통일돼 있다(billing·AdMob·Auth·AssetDelivery 넷 다) —
     // 여기만 -ktx를 쓰면 같은 일을 두 방식으로 하게 된다.
     implementation(libs.play.app.update)
-    // Play Asset Delivery(백로그 #245) — 모델 팩 다운로드 및 위치 조회.
-    implementation(libs.play.asset.delivery.ktx)
+    // Play Asset Delivery(백로그 #245) — 모델 팩 다운로드(on-demand) 및 위치 조회.
+    implementation(libs.play.asset.delivery)
 
     // CameraX (백로그 #179 - 카메라 바둑판 인식)
     implementation(libs.androidx.camera.core)
