@@ -94,6 +94,43 @@ class EngineBootstrapPadDownloadTest {
             addOnFailureListener(listener)
     }
 
+    /** 성공 콜백을 테스트가 원하는 순간에 부르는 Task — 늦게 도착하는 fetch() 결과를 재현한다. */
+    private class ManualTask<T> : Task<T>() {
+        private val successListeners = mutableListOf<com.google.android.gms.tasks.OnSuccessListener<in T>>()
+
+        @Volatile
+        private var result: T? = null
+
+        fun succeed(value: T) {
+            result = value
+            successListeners.toList().forEach { it.onSuccess(value) }
+        }
+
+        override fun isComplete(): Boolean = result != null
+        override fun isSuccessful(): Boolean = result != null
+        override fun isCanceled(): Boolean = false
+        override fun getResult(): T = result!!
+        override fun <X : Throwable?> getResult(p0: Class<X>): T = getResult()
+        override fun getException(): Exception? = null
+
+        override fun addOnSuccessListener(listener: com.google.android.gms.tasks.OnSuccessListener<in T>): Task<T> {
+            result?.let { listener.onSuccess(it) } ?: successListeners.add(listener)
+            return this
+        }
+
+        override fun addOnSuccessListener(executor: java.util.concurrent.Executor, listener: com.google.android.gms.tasks.OnSuccessListener<in T>): Task<T> =
+            addOnSuccessListener(listener)
+
+        override fun addOnSuccessListener(activity: Activity, listener: com.google.android.gms.tasks.OnSuccessListener<in T>): Task<T> =
+            addOnSuccessListener(listener)
+
+        override fun addOnFailureListener(listener: com.google.android.gms.tasks.OnFailureListener): Task<T> = this
+
+        override fun addOnFailureListener(executor: java.util.concurrent.Executor, listener: com.google.android.gms.tasks.OnFailureListener): Task<T> = this
+
+        override fun addOnFailureListener(activity: Activity, listener: com.google.android.gms.tasks.OnFailureListener): Task<T> = this
+    }
+
     private inner class FakeAssetPackManager(
         var fetchTaskProvider: ((List<String>) -> Task<AssetPackStates>)? = null,
     ) : AssetPackManager {
@@ -333,8 +370,9 @@ class EngineBootstrapPadDownloadTest {
             )
         }
 
+        // 리스너 등록은 fetch() 호출보다 먼저다 — 첫 fetch()까지 기다려야 호출 횟수를 셀 수 있다
         withTimeout(3000L) {
-            while (fakeManager.registeredListeners.isEmpty()) {
+            while (fakeManager.registeredListeners.isEmpty() || fakeManager.fetchInvocationCount < 1) {
                 delay(10)
             }
         }
@@ -794,9 +832,9 @@ class EngineBootstrapPadDownloadTest {
         }
         tracker.retry()
 
-        // 두 번째 실패 후 재시도
+        // 두 번째 실패 후 재시도 — 첫 시도의 Failed가 아직 남아 있으므로 시도 횟수로 두 번째임을 확인한다
         withTimeout(3000L) {
-            while (tracker.status.value !is EngineDownloadStatus.Failed) {
+            while (attempts < 2 || tracker.status.value !is EngineDownloadStatus.Failed) {
                 delay(10)
             }
         }
@@ -872,5 +910,303 @@ class EngineBootstrapPadDownloadTest {
         handler2Called = false
         tracker.requestCellularConfirmation()
         assertFalse(handler2Called)
+    }
+
+    /** 리스너 등록은 fetch() 호출보다 먼저다 — 첫 fetch()까지 함께 기다린다. */
+    private suspend fun awaitListener(fakeManager: FakeAssetPackManager) {
+        withTimeout(3000L) {
+            while (fakeManager.registeredListeners.isEmpty() || fakeManager.fetchInvocationCount < 1) {
+                delay(10)
+            }
+        }
+    }
+
+    private suspend fun awaitStatus(tracker: EngineDownloadTracker, predicate: (EngineDownloadStatus) -> Boolean) {
+        withTimeout(3000L) {
+            while (!predicate(tracker.status.value)) {
+                delay(10)
+            }
+        }
+    }
+
+    @Test
+    fun testHumanOnlyListenerRecoverableFailureShowsFailedNotCompleted() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { FakeTask(createFakeAssetPackStates(emptyMap())) }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoHumanPackName),
+                isMandatory = false,
+                tracker = tracker,
+            )
+        }
+        awaitListener(fakeManager)
+
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoHumanPackName,
+                status = AssetPackStatus.FAILED,
+                errorCode = AssetPackErrorCode.NETWORK_ERROR,
+            )
+        )
+
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
+        val failed = tracker.status.value as EngineDownloadStatus.Failed
+        assertEquals(AssetPackErrorCode.NETWORK_ERROR, failed.errorCode)
+        assertTrue(failed.isHumanModelOnly)
+        assertTrue("사람 모델만 받는 시도의 실패를 Success로 끝내면 안 됨", downloadJob.isActive)
+
+        tracker.retry()
+        awaitListener(fakeManager)
+        fakeManager.emitState(createFakeAssetPackState(name = KatagoHumanPackName, status = AssetPackStatus.COMPLETED))
+
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testHumanOnlyListenerPermanentFailureResetsToIdle() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { FakeTask(createFakeAssetPackStates(emptyMap())) }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoHumanPackName),
+                isMandatory = false,
+                tracker = tracker,
+            )
+        }
+        awaitListener(fakeManager)
+
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoHumanPackName,
+                status = AssetPackStatus.FAILED,
+                errorCode = AssetPackErrorCode.PACK_UNAVAILABLE,
+            )
+        )
+
+        downloadJob.await()
+        assertEquals(EngineDownloadStatus.Idle, tracker.status.value)
+    }
+
+    @Test
+    fun testLateFetchSuccessDoesNotOverwriteFailed() = runBlocking(Dispatchers.Default) {
+        val manualTask = ManualTask<AssetPackStates>()
+        val fakeManager = FakeAssetPackManager { manualTask }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+        awaitListener(fakeManager)
+
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.FAILED,
+                errorCode = AssetPackErrorCode.NETWORK_ERROR,
+            )
+        )
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
+
+        // 시도가 끝난 뒤에야 fetch() 성공 콜백이 도착한다
+        manualTask.succeed(
+            createFakeAssetPackStates(
+                mapOf(
+                    KatagoModelPackName to createFakeAssetPackState(
+                        name = KatagoModelPackName,
+                        status = AssetPackStatus.DOWNLOADING,
+                        bytesDownloaded = 10_000_000L,
+                    ),
+                )
+            )
+        )
+
+        assertTrue("늦은 fetch 콜백이 Failed(재시도 버튼)를 덮어쓰면 안 됨", tracker.status.value is EngineDownloadStatus.Failed)
+        assertTrue(downloadJob.isActive)
+        downloadJob.cancel()
+    }
+
+    @Test
+    fun testFetchSnapshotDoesNotOverrideNewerListenerState() = runBlocking(Dispatchers.Default) {
+        val manualTask = ManualTask<AssetPackStates>()
+        val fakeManager = FakeAssetPackManager { manualTask }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+        awaitListener(fakeManager)
+
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.DOWNLOADING,
+                bytesDownloaded = 30_000_000L,
+            )
+        )
+        // 옛 스냅샷(직전 시도의 FAILED)이 뒤늦게 도착한다
+        manualTask.succeed(
+            createFakeAssetPackStates(
+                mapOf(
+                    KatagoModelPackName to createFakeAssetPackState(
+                        name = KatagoModelPackName,
+                        status = AssetPackStatus.FAILED,
+                        errorCode = AssetPackErrorCode.NETWORK_ERROR,
+                    ),
+                )
+            )
+        )
+
+        assertTrue("리스너가 받는 중이라고 했으면 옛 스냅샷으로 실패 처리하면 안 됨", tracker.status.value is EngineDownloadStatus.Downloading)
+        assertTrue(downloadJob.isActive)
+
+        fakeManager.emitState(createFakeAssetPackState(name = KatagoModelPackName, status = AssetPackStatus.COMPLETED))
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testFetchResultModelFailureWithHumanWaitingForWifiResumesImmediately() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager {
+            FakeTask(
+                createFakeAssetPackStates(
+                    mapOf(
+                        KatagoModelPackName to createFakeAssetPackState(
+                            name = KatagoModelPackName,
+                            status = AssetPackStatus.FAILED,
+                            errorCode = AssetPackErrorCode.NETWORK_ERROR,
+                        ),
+                        KatagoHumanPackName to createFakeAssetPackState(
+                            name = KatagoHumanPackName,
+                            status = AssetPackStatus.WAITING_FOR_WIFI,
+                        ),
+                    )
+                )
+            )
+        }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        // 정체 타이머(Wi-Fi 대기로 멈춤)를 기다리지 않고 곧바로 재시도 대기로 가야 한다
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
+        assertEquals(AssetPackErrorCode.NETWORK_ERROR, (tracker.status.value as EngineDownloadStatus.Failed).errorCode)
+        downloadJob.cancel()
+    }
+
+    @Test
+    fun testFetchResultInternalErrorCountsTowardRetryCap() = runBlocking(Dispatchers.Default) {
+        var attempts = 0
+        val fakeManager = FakeAssetPackManager { packs ->
+            attempts++
+            FakeTask(
+                createFakeAssetPackStates(
+                    packs.associateWith { pack ->
+                        createFakeAssetPackState(
+                            name = pack,
+                            status = AssetPackStatus.FAILED,
+                            errorCode = AssetPackErrorCode.INTERNAL_ERROR,
+                        )
+                    }
+                )
+            )
+        }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
+        assertEquals(
+            "fetch 결과의 진짜 오류 코드가 바깥 루프까지 가야 함",
+            AssetPackErrorCode.INTERNAL_ERROR,
+            (tracker.status.value as EngineDownloadStatus.Failed).errorCode,
+        )
+        tracker.retry()
+        // 첫 시도의 Failed가 아직 남아 있으므로 시도 횟수로 두 번째임을 확인한다
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed && attempts == 2 }
+        tracker.retry()
+
+        downloadJob.await()
+        assertEquals(EngineDownloadStatus.Idle, tracker.status.value)
+        assertEquals(3, attempts)
+    }
+
+    @Test
+    fun testFailedOptionalPackExcludedFromProgressTotal() = runBlocking(Dispatchers.Default) {
+        val fakeManager = FakeAssetPackManager { FakeTask(createFakeAssetPackStates(emptyMap())) }
+        val tracker = EngineDownloadTracker()
+        val downloadJob = async {
+            fetchAndAwaitAssetPacksWithRetry(
+                manager = fakeManager,
+                neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
+                isMandatory = true,
+                tracker = tracker,
+            )
+        }
+        awaitListener(fakeManager)
+
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoHumanPackName,
+                status = AssetPackStatus.FAILED,
+                errorCode = AssetPackErrorCode.PACK_UNAVAILABLE,
+            )
+        )
+        fakeManager.emitState(
+            createFakeAssetPackState(
+                name = KatagoModelPackName,
+                status = AssetPackStatus.DOWNLOADING,
+                bytesDownloaded = 50_000_000L,
+                totalBytesToDownload = 100_000_000L,
+            )
+        )
+
+        val downloading = tracker.status.value as EngineDownloadStatus.Downloading
+        assertEquals("실패한 선택 팩은 진행률 합계에서 빠져야 함", 50, downloading.percentage)
+        assertEquals(100_000_000L, downloading.totalBytesToDownload)
+
+        fakeManager.emitState(createFakeAssetPackState(name = KatagoModelPackName, status = AssetPackStatus.COMPLETED))
+        downloadJob.await()
+        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+    }
+
+    @Test
+    fun testPlayStoreMessageClassifiedAsStoreInstallationFailure() {
+        val (code, isPermanent) = determineErrorClassification(RuntimeException("Play Store app is not installed"))
+        assertEquals(PlayStoreNotFoundErrorCode, code)
+        assertTrue(isPermanent)
+
+        val tracker = EngineDownloadTracker()
+        tracker.lastPermanentFailureCode = code
+        assertTrue(tracker.isOfficialPlatformPermanentFailure())
+
+        assertTrue(isStoreInstallationErrorCode(AssetPackErrorCode.APP_NOT_OWNED))
+        assertTrue(isStoreInstallationErrorCode(AssetPackErrorCode.UNRECOGNIZED_INSTALLATION))
+        assertFalse(isStoreInstallationErrorCode(AssetPackErrorCode.NETWORK_ERROR))
+        assertFalse(isStoreInstallationErrorCode(CustomErrorCodeImmediateFailure))
+        assertFalse(isStoreInstallationErrorCode(null))
     }
 }

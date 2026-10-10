@@ -87,13 +87,8 @@ internal class EngineDownloadTracker {
 
     var lastPermanentFailureCode: Int? = null
 
-    fun isOfficialPlatformPermanentFailure(): Boolean =
-        when (lastPermanentFailureCode) {
-            -13, // APP_NOT_OWNED
-            -15, // UNRECOGNIZED_INSTALLATION
-            -11 -> true // PLAY_STORE_NOT_FOUND
-            else -> false
-        }
+    /** 판정 목록은 [isStoreInstallationErrorCode] 한 곳에 있다 — 영구 실패 목록과 함께 고친다. */
+    fun isOfficialPlatformPermanentFailure(): Boolean = isStoreInstallationErrorCode(lastPermanentFailureCode)
 
     fun registerCellularConfirmationHandler(handler: (() -> Unit)?) {
         cellularConfirmationHandler = handler
