@@ -38,6 +38,9 @@ DEBUG_ENGINE_BINARY := app-android/src/debug/jniLibs/$(ENGINE_ABI)/libkatago.so
 # ⚠️ **개명하지 말 것** — `BundledEngineAssetContractTest`가 이 **변수 이름 자체를** 정규식으로
 # 읽어 "APK 안에 들어갈 이름"을 만든다. 바꾸면 그 계약이 깨진다.
 FRIEND_ASSET_DIR := app-android/src/friend/assets/katago
+# PAD 에셋 팩 디렉터리 (백로그 #245 — 두 모델을 번들 밖으로 분리)
+MODEL_PACK_ASSET_DIR := katago_model_pack/src/main/assets/katago
+HUMAN_PACK_ASSET_DIR := katago_human_pack/src/main/assets/katago
 PLAY_INTERNAL_AAB := dist/go-ai-coach-play-internal.aab
 RELEASE_AAB := dist/go-ai-coach-release.aab
 FRIEND_MODEL_PATH ?= /opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz
@@ -289,13 +292,13 @@ prepare-friend-assets:
 	@test -f "$(FRIEND_HUMAN_MODEL_PATH)" || (echo "Friend APK human model not found: $(FRIEND_HUMAN_MODEL_PATH)" && exit 1)
 	@test -f "$(FRIEND_CONFIG_PATH)" || (echo "Friend APK config not found: $(FRIEND_CONFIG_PATH)" && exit 1)
 	@test -f "$(FRIEND_ANALYSIS_CONFIG_PATH)" || (echo "Friend APK analysis config not found: $(FRIEND_ANALYSIS_CONFIG_PATH)" && exit 1)
-	@rm -rf "$(FRIEND_ASSET_DIR)"
-	@mkdir -p "$(FRIEND_ASSET_DIR)"
-	@cp "$(FRIEND_MODEL_PATH)" "$(FRIEND_ASSET_DIR)/model.bin.gz"
-	@cp "$(FRIEND_HUMAN_MODEL_PATH)" "$(FRIEND_ASSET_DIR)/human.bin.gz"
+	@rm -rf "$(FRIEND_ASSET_DIR)" "$(MODEL_PACK_ASSET_DIR)" "$(HUMAN_PACK_ASSET_DIR)"
+	@mkdir -p "$(FRIEND_ASSET_DIR)" "$(MODEL_PACK_ASSET_DIR)" "$(HUMAN_PACK_ASSET_DIR)"
+	@cp "$(FRIEND_MODEL_PATH)" "$(MODEL_PACK_ASSET_DIR)/model.bin.gz"
+	@cp "$(FRIEND_HUMAN_MODEL_PATH)" "$(HUMAN_PACK_ASSET_DIR)/human.bin.gz"
 	@cp "$(FRIEND_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/gtp_learning.cfg"
 	@cp "$(FRIEND_ANALYSIS_CONFIG_PATH)" "$(FRIEND_ASSET_DIR)/analysis_learning.cfg"
-	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR)"
+	@echo "Prepared friend APK assets in $(FRIEND_ASSET_DIR) and PAD packs in $(MODEL_PACK_ASSET_DIR), $(HUMAN_PACK_ASSET_DIR)"
 
 # ⚠️ `bundle-aab`과 같은 이유로 verify-admob-keys가 bump-version보다 앞이다(백로그 #90).
 release: doctor verify-admob-keys bump-version ensure-debug-engine prepare-friend-assets

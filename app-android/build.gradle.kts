@@ -100,6 +100,9 @@ android {
     namespace = "com.worksoc.goaicoach"
     compileSdk = 36
 
+    // 두 모델을 번들 밖으로 빼는 PAD 에셋 팩(백로그 #245)
+    assetPacks += setOf(":katago_model_pack", ":katago_human_pack")
+
     defaultConfig {
         // Firebase 콘솔에 등록된 패키지명(google-services.json의 android_client_info)과
         // 정확히 일치해야 한다 — namespace(Kotlin 패키지/R·BuildConfig 생성 위치)는
@@ -416,6 +419,8 @@ dependencies {
     // suspendCancellableCoroutine으로 직접 감싸는 쪽으로 통일돼 있다(billing·AdMob·Auth 셋 다) —
     // 여기만 -ktx를 쓰면 같은 일을 두 방식으로 하게 된다.
     implementation(libs.play.app.update)
+    // Play Asset Delivery(백로그 #245) — 모델 팩 다운로드 및 위치 조회.
+    implementation(libs.play.asset.delivery.ktx)
 
     // CameraX (백로그 #179 - 카메라 바둑판 인식)
     implementation(libs.androidx.camera.core)

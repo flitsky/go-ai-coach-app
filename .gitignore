@@ -23,6 +23,8 @@ app-android/google-services.json
 # Native / engine artifacts
 app-android/src/debug/assets/katago/
 app-android/src/friend/assets/katago/
+katago_model_pack/src/main/assets/katago/
+katago_human_pack/src/main/assets/katago/
 app-android/src/debug/jniLibs/
 app-android/src/main/jniLibs/
 *.so
