@@ -315,6 +315,10 @@ internal fun GameSetupLobby(
                     modifier = Modifier.padding(top = AppSpacing.Space6),
                 )
             }
+            // PAD on-demand 에셋 팩 다운로드 동안 표시되는 사용 가이드 카드 3장 및 진행률 (백로그 #245 U-73)
+            EngineDownloadGuideSection(
+                modifier = Modifier.padding(top = AppSpacing.Space12),
+            )
         }
     }
 }

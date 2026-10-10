@@ -212,6 +212,15 @@ private suspend fun fetchAndAwaitAssetPacks(
 ): List<String> {
     if (neededPacks.isEmpty()) return emptyList()
 
+    val estimatedTotal = if (neededPacks.size >= 2) 197L * 1024 * 1024 else 99L * 1024 * 1024
+    currentEngineDownloadTracker().updateStatus(
+        EngineDownloadStatus.Downloading(
+            bytesDownloaded = 0L,
+            totalBytesToDownload = estimatedTotal,
+            percentage = 0,
+        )
+    )
+
     val messages = mutableListOf<String>()
     val result = withTimeoutOrNull(timeoutMillis) {
         suspendCancellableCoroutine<Boolean> { continuation ->
@@ -221,6 +230,7 @@ private suspend fun fetchAndAwaitAssetPacks(
             fun checkCompletion() {
                 if (!continuation.isActive) return
                 if (pendingPacks.isEmpty()) {
+                    currentEngineDownloadTracker().updateStatus(EngineDownloadStatus.Completed)
                     manager.unregisterListener(listener)
                     continuation.resume(true)
                 }
@@ -237,6 +247,9 @@ private suspend fun fetchAndAwaitAssetPacks(
                         }
                         AssetPackStatus.FAILED, AssetPackStatus.CANCELED -> {
                             messages += "Asset pack ($name) failed or canceled (code: ${state.errorCode()})."
+                            currentEngineDownloadTracker().updateStatus(
+                                EngineDownloadStatus.Failed(state.errorCode(), "Download failed for $name")
+                            )
                             if (name == KatagoModelPackName && continuation.isActive) {
                                 manager.unregisterListener(this)
                                 continuation.resume(false)
@@ -247,9 +260,24 @@ private suspend fun fetchAndAwaitAssetPacks(
                         }
                         AssetPackStatus.WAITING_FOR_WIFI -> {
                             messages += "Asset pack ($name) is waiting for Wi-Fi."
+                            currentEngineDownloadTracker().updateStatus(
+                                EngineDownloadStatus.WaitingForWifi(
+                                    bytesDownloaded = state.bytesDownloaded(),
+                                    totalBytesToDownload = state.totalBytesToDownload().takeIf { it > 0L } ?: estimatedTotal,
+                                )
+                            )
                         }
-                        else -> {
-                            // PENDING, DOWNLOADING, TRANSFERRING
+                        AssetPackStatus.DOWNLOADING, AssetPackStatus.TRANSFERRING -> {
+                            val bytes = state.bytesDownloaded()
+                            val total = state.totalBytesToDownload().takeIf { it > 0L } ?: estimatedTotal
+                            val percent = state.transferProgressPercentage()
+                            currentEngineDownloadTracker().updateStatus(
+                                EngineDownloadStatus.Downloading(
+                                    bytesDownloaded = bytes,
+                                    totalBytesToDownload = total,
+                                    percentage = percent,
+                                )
+                            )
                         }
                     }
                 }
@@ -270,6 +298,12 @@ private suspend fun fetchAndAwaitAssetPacks(
                         } else if (st == AssetPackStatus.FAILED || st == AssetPackStatus.CANCELED) {
                             messages += "Asset pack ($pack) initial state failed (code: ${packStates[pack]?.errorCode()})."
                             if (pack == KatagoModelPackName && continuation.isActive) {
+                                currentEngineDownloadTracker().updateStatus(
+                                    EngineDownloadStatus.Failed(
+                                        packStates[pack]?.errorCode() ?: -1,
+                                        "Initial state failed for $pack",
+                                    )
+                                )
                                 manager.unregisterListener(listener)
                                 continuation.resume(false)
                                 return@addOnSuccessListener
@@ -282,6 +316,9 @@ private suspend fun fetchAndAwaitAssetPacks(
                 }
                 .addOnFailureListener { exception ->
                     messages += "Asset pack fetch failed immediately: ${exception.message}"
+                    currentEngineDownloadTracker().updateStatus(
+                        EngineDownloadStatus.Failed(-1, exception.message ?: "Fetch failed")
+                    )
                     if (continuation.isActive) {
                         manager.unregisterListener(listener)
                         continuation.resume(false)
@@ -291,6 +328,7 @@ private suspend fun fetchAndAwaitAssetPacks(
     }
 
     if (result == true) {
+        currentEngineDownloadTracker().updateStatus(EngineDownloadStatus.Completed)
         messages += "Asset pack download completed."
     } else {
         messages += "Asset pack download timed out or failed."
