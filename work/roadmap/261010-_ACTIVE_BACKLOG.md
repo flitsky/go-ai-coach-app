@@ -375,7 +375,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 | # | 무엇을 했는가 | 커밋 |
 | --- | --- | --- |
 | 245 | PAD on-demand 팩 분리, 모델별 독립 fetch, 다운로드 가이드/진행률/재시도 결함 보완, 설정 메뉴 '바둑판 조작법' 추가(U-73) ⏳ 폰 확인 전 — 확인은 #246 | 01ac4d8c, 44e8de84, 833ae937, 9a9fa6e0, 01d3fce0 |
-| 247 | PAD 실패·대기 경로: INTERNAL_ERROR 복구 가능 분류, Wi-Fi 대기 시 모바일 데이터 계속(U-75 B), 즉시 다운로드 및 안내(U-74), 실패 시 reopen, 백그라운드 try-catch, 스와이프 Pager ⏳ 폰 확인 전 | 0c419b91 |
+| 247 | PAD 실패·대기 경로: INTERNAL_ERROR 복구 가능 분류, Wi-Fi 대기 시 모바일 데이터 계속(U-75 B), 즉시 다운로드 및 안내(U-74), 실패 시 reopen, 백그라운드 try-catch, 스와이프 Pager ⏳ 폰 확인 전 | 0c419b91, 665c2c6b, 51039c95, bf5c0340, ff7a5c27 |
 
 ---
 
