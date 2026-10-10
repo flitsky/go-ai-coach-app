@@ -15,7 +15,7 @@ import re
 import sys
 
 LIMIT = 250
-PATH = "work/roadmap/261008-_ACTIVE_BACKLOG.md"  # 세대를 닫으면 새 파일로 고친다(활성 백로그 맨 아래 「세대를 닫을 때」)
+PATH = "work/roadmap/261010-_ACTIVE_BACKLOG.md"  # 세대를 닫으면 새 파일로 고친다(활성 백로그 맨 아래 「세대를 닫을 때」)
 
 
 def main() -> int:

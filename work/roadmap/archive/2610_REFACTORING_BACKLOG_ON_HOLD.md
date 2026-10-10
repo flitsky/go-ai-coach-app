@@ -6,7 +6,7 @@
 > **이 문서는 1세대 리팩토링(2026-09-23~28)이 끝나며 남긴 보류 목록이다.** 기술 부채로 남을 필수 일감은 1세대에서 끝냈다.
 > 여기 17개는 **진행해서 얻는 이득보다 위험·비용이 크다고 판단해 보류**한 것이다(사용자 결정 2026-09-29·30) — 왜 보류인지와 다시 볼 계기는 아래 「출발점」 표.
 > 다시 열 때 필요한 규칙·함정·카드 전문을 함께 담아 둔다. 1세대의 완료 이력은 봉인본에 있다 — 여기로 되돌리지 않는다.
-> 기능 일감은 활성 백로그(`work/roadmap/` 맨 위의 `…_ACTIVE_BACKLOG.md` — 지금은 `261008-_ACTIVE_BACKLOG.md`)가, 설계 근거·실측·함정은 🔒 `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`(이하 **진단서**)가 담당한다.
+> 기능 일감은 활성 백로그(`work/roadmap/` 맨 위의 `…_ACTIVE_BACKLOG.md` — 지금은 `261010-_ACTIVE_BACKLOG.md`)가, 설계 근거·실측·함정은 🔒 `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`(이하 **진단서**)가 담당한다.
 
 ⚠️ **다시 열 때**(카드 하나라도 착수할 때): 파일 이름의 앞머리 `2610_`을 착수한 날의 `YYMMDD-_`로 바꾸고 참조를 함께 고친다
 (`grep -rn "2610_REFACTORING_BACKLOG_ON_HOLD.md" --exclude-dir=.git .`). 봉인본 두 개(1세대 백로그·진단서)의 머리말도 이 이름을 가리킨다 — **가리킴 한 줄만** 고치는 것은 봉인 규칙의 예외로 허용한다(2026-09-30 선례).
@@ -442,4 +442,4 @@ _(없음 — 새로 찾으면 `#112`부터 번호를 받아 여기에 둔다)_
 - `docs/spec/PITFALLS.md` — 함정 1~84 전문
 - `docs/ARCHITECTURE.md` — 7계층 원칙(앱 비종속)
 - `docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 파일 매핑(정본)
-- `work/roadmap/261008-_ACTIVE_BACKLOG.md`(그때그때의 활성 백로그 — `work/roadmap/` 맨 위의 파일) — **기능** 일감(이 문서와 번호 체계가 다르다)
+- `work/roadmap/261010-_ACTIVE_BACKLOG.md`(그때그때의 활성 백로그 — `work/roadmap/` 맨 위의 파일) — **기능** 일감(이 문서와 번호 체계가 다르다)
