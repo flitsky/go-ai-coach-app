@@ -19,22 +19,27 @@ sealed interface EngineDownloadStatus {
         val bytesDownloaded: Long,
         val totalBytesToDownload: Long,
         val percentage: Int,
+        val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
     /** 모바일 데이터에서 Wi-Fi 연결을 대기 중 */
     data class WaitingForWifi(
         val bytesDownloaded: Long,
         val totalBytesToDownload: Long,
+        val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
     /** 다운로드 실패 또는 일시정지 (재시도 가능) */
     data class Failed(
         val errorCode: Int,
         val message: String,
+        val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
     /** 다운로드 완료 */
-    object Completed : EngineDownloadStatus
+    data class Completed(
+        val isHumanModelOnly: Boolean = false,
+    ) : EngineDownloadStatus
 }
 
 internal class EngineDownloadTracker {
@@ -46,11 +51,17 @@ internal class EngineDownloadTracker {
 
     private var retryHandler: (() -> Unit)? = null
 
+    /**
+     * 진행 상황을 갱신한다.
+     * ⚠️ 사용자가 닫기(X)를 누른 [isDismissed] 상태를 임의로 풀지 않는다 (진행 바이트 수신마다 되살아나는 버그 방지).
+     */
     fun updateStatus(newStatus: EngineDownloadStatus) {
-        if (newStatus is EngineDownloadStatus.Downloading || newStatus is EngineDownloadStatus.WaitingForWifi) {
-            _isDismissed.value = false
-        }
         _status.value = newStatus
+    }
+
+    /** 새 다운로드를 시작할 때 호출되어 닫힘 상태를 초기화한다. */
+    fun startNewDownload() {
+        _isDismissed.value = false
     }
 
     fun dismiss() {

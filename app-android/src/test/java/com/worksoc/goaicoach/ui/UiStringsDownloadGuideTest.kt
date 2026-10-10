@@ -50,6 +50,14 @@ class UiStringsDownloadGuideTest {
                 UiStringsDownloadGuide.aiReady(language).isNotBlank(),
             )
             assertTrue(
+                "$language preparingHumanModel is blank",
+                UiStringsDownloadGuide.preparingHumanModel(language).isNotBlank(),
+            )
+            assertTrue(
+                "$language humanModelReady is blank",
+                UiStringsDownloadGuide.humanModelReady(language).isNotBlank(),
+            )
+            assertTrue(
                 "$language previousGuide is blank",
                 UiStringsDownloadGuide.previousGuide(language).isNotBlank(),
             )
@@ -62,12 +70,8 @@ class UiStringsDownloadGuideTest {
                 UiStringsDownloadGuide.close(language).isNotBlank(),
             )
             assertTrue(
-                "$language viewGuideAction is blank",
-                UiStringsDownloadGuide.viewGuideAction(language).isNotBlank(),
-            )
-            assertTrue(
-                "$language viewGuideTitle is blank",
-                UiStringsDownloadGuide.viewGuideTitle(language).isNotBlank(),
+                "$language boardControlsGuide is blank",
+                UiStringsDownloadGuide.boardControlsGuide(language).isNotBlank(),
             )
         }
     }

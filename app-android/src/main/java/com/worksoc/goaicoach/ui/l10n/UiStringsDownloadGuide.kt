@@ -50,7 +50,7 @@ internal object UiStringsDownloadGuide {
     private val Card3Body = mapOf(
         UiLanguage.Korean to "판 바로 위나 메뉴의 「바둑판 최대」를 끄면 판 바깥에 여백이 생겨 끝줄에 두기 편해져요.",
         UiLanguage.English to "Turn off 'Board full' above the board or in the menu to add outer margins for easier edge moves.",
-        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線にも打ちやすくなります。",
+        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線에도 打ちやすくなります。",
         UiLanguage.ChineseSimplified to "关闭棋盘上方或菜单中的「棋盘 最大」，可在棋盘四周留出边距，便于在边缘落子。",
     )
 
@@ -82,6 +82,20 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "✓ AI 准备就绪",
     )
 
+    private val PreparingHumanModel = mapOf(
+        UiLanguage.Korean to "사람처럼 두는 AI 모델을 준비하고 있어요",
+        UiLanguage.English to "Preparing human-style AI model…",
+        UiLanguage.Japanese to "人間らしいAIモデルを準備しています…",
+        UiLanguage.ChineseSimplified to "正在准备拟人 AI 模型…",
+    )
+
+    private val HumanModelReady = mapOf(
+        UiLanguage.Korean to "✓ 사람 모델 준비 완료 (다음 대국부터 적용)",
+        UiLanguage.English to "✓ Human-style AI ready (applies to next game)",
+        UiLanguage.Japanese to "✓ 人間らしいAI準備完了（次の対局から適用）",
+        UiLanguage.ChineseSimplified to "✓ 拟人 AI 准备就绪（从下一局生效）",
+    )
+
     private val PrevGuide = mapOf(
         UiLanguage.Korean to "이전 가이드",
         UiLanguage.English to "Previous guide",
@@ -103,18 +117,11 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "关闭",
     )
 
-    private val ViewGuideAction = mapOf(
-        UiLanguage.Korean to "대국 사용 가이드",
-        UiLanguage.English to "How to Play Guide",
-        UiLanguage.Japanese to "対局ガイド",
-        UiLanguage.ChineseSimplified to "对局指南",
-    )
-
-    private val ViewGuideTitle = mapOf(
-        UiLanguage.Korean to "대국 사용 가이드",
-        UiLanguage.English to "How to Play Guide",
-        UiLanguage.Japanese to "対局ガイド",
-        UiLanguage.ChineseSimplified to "对局指南",
+    private val BoardControlsGuide = mapOf(
+        UiLanguage.Korean to "바둑판 조작법",
+        UiLanguage.English to "Board Controls Guide",
+        UiLanguage.Japanese to "碁盤の操作ガイド",
+        UiLanguage.ChineseSimplified to "棋盘操作指南",
     )
 
     fun cards(language: UiLanguage): List<DownloadGuideCard> = listOf(
@@ -132,11 +139,6 @@ internal object UiStringsDownloadGuide {
         ),
     )
 
-    fun cardFor(language: UiLanguage, index: Int): DownloadGuideCard {
-        val list = cards(language)
-        return list[index.coerceIn(0, list.lastIndex)]
-    }
-
     fun waitingForWifi(language: UiLanguage): String =
         WaitingForWifi[language] ?: WaitingForWifi.getValue(UiLanguage.Korean)
 
@@ -149,6 +151,12 @@ internal object UiStringsDownloadGuide {
     fun aiReady(language: UiLanguage): String =
         AiReady[language] ?: AiReady.getValue(UiLanguage.Korean)
 
+    fun preparingHumanModel(language: UiLanguage): String =
+        PreparingHumanModel[language] ?: PreparingHumanModel.getValue(UiLanguage.Korean)
+
+    fun humanModelReady(language: UiLanguage): String =
+        HumanModelReady[language] ?: HumanModelReady.getValue(UiLanguage.Korean)
+
     fun previousGuide(language: UiLanguage): String =
         PrevGuide[language] ?: PrevGuide.getValue(UiLanguage.Korean)
 
@@ -158,9 +166,6 @@ internal object UiStringsDownloadGuide {
     fun close(language: UiLanguage): String =
         Close[language] ?: Close.getValue(UiLanguage.Korean)
 
-    fun viewGuideAction(language: UiLanguage): String =
-        ViewGuideAction[language] ?: ViewGuideAction.getValue(UiLanguage.Korean)
-
-    fun viewGuideTitle(language: UiLanguage): String =
-        ViewGuideTitle[language] ?: ViewGuideTitle.getValue(UiLanguage.Korean)
+    fun boardControlsGuide(language: UiLanguage): String =
+        BoardControlsGuide[language] ?: BoardControlsGuide.getValue(UiLanguage.Korean)
 }

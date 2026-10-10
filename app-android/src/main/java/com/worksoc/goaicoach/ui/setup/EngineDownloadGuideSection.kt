@@ -105,6 +105,11 @@ internal fun EngineDownloadGuideSection(
                     val downloadedMb = status.bytesDownloaded / (1024 * 1024)
                     val totalMb = (status.totalBytesToDownload / (1024 * 1024)).coerceAtLeast(1L)
                     val progressFloat = (status.percentage / 100f).coerceIn(0f, 1f)
+                    val statusTitle = if (status.isHumanModelOnly) {
+                        UiStringsDownloadGuide.preparingHumanModel(strings.language)
+                    } else {
+                        strings.engineNotReadyToStart
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -112,10 +117,11 @@ internal fun EngineDownloadGuideSection(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
+                            text = statusTitle,
                             fontSize = AppTextSize.Text12,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f),
                         )
                         IconButton(
                             onClick = { currentEngineDownloadTracker().dismiss() },
@@ -129,6 +135,14 @@ internal fun EngineDownloadGuideSection(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
+
+                    Text(
+                        text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
+                        fontSize = AppTextSize.Text12,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space6))
 
@@ -254,16 +268,22 @@ internal fun EngineDownloadGuideSection(
                 }
 
                 is EngineDownloadStatus.Completed -> {
+                    val completedText = if (status.isHumanModelOnly) {
+                        UiStringsDownloadGuide.humanModelReady(strings.language)
+                    } else {
+                        UiStringsDownloadGuide.aiReady(strings.language)
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = UiStringsDownloadGuide.aiReady(strings.language),
+                            text = completedText,
                             fontSize = AppTextSize.Text12,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f),
                         )
                         IconButton(
                             onClick = { currentEngineDownloadTracker().dismiss() },
@@ -429,7 +449,7 @@ internal fun DownloadGuideDialog(onClose: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = UiStringsDownloadGuide.viewGuideTitle(strings.language),
+                        text = UiStringsDownloadGuide.boardControlsGuide(strings.language),
                         fontSize = AppTextSize.Text16,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
