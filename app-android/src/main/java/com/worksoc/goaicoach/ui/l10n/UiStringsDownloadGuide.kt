@@ -50,7 +50,7 @@ internal object UiStringsDownloadGuide {
     private val Card3Body = mapOf(
         UiLanguage.Korean to "판 바로 위나 메뉴의 「바둑판 최대」를 끄면 판 바깥에 여백이 생겨 끝줄에 두기 편해져요.",
         UiLanguage.English to "Turn off 'Board full' above the board or in the menu to add outer margins for easier edge moves.",
-        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線에도 打ちやすくなります。",
+        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線にも 打ちやすくなります。",
         UiLanguage.ChineseSimplified to "关闭棋盘上方或菜单中的「棋盘 最大」，可在棋盘四周留出边距，便于在边缘落子。",
     )
 
@@ -90,10 +90,10 @@ internal object UiStringsDownloadGuide {
     )
 
     private val HumanModelReady = mapOf(
-        UiLanguage.Korean to "✓ 사람 모델 준비 완료 (다음 대국부터 적용)",
-        UiLanguage.English to "✓ Human-style AI ready (applies to next game)",
-        UiLanguage.Japanese to "✓ 人間らしいAI準備完了（次の対局から適用）",
-        UiLanguage.ChineseSimplified to "✓ 拟人 AI 准备就绪（从下一局生效）",
+        UiLanguage.Korean to "✓ 사람 모델 다운로드 완료 (앱 재실행 시 적용)",
+        UiLanguage.English to "✓ Human-style AI downloaded (applies on app restart)",
+        UiLanguage.Japanese to "✓ 人間らしいAIのダウンロード完了（アプリ再起動時に適用）",
+        UiLanguage.ChineseSimplified to "✓ 拟人 AI 下载完成（重启应用后生效）",
     )
 
     private val PrevGuide = mapOf(

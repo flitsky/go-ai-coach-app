@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.engine
 
 import android.content.Context
+import com.google.android.play.core.assetpacks.AssetPackException
 import com.google.android.play.core.assetpacks.AssetPackManager
 import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.google.android.play.core.assetpacks.AssetPackState
@@ -14,12 +15,14 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -235,23 +238,74 @@ private fun startBackgroundHumanModelDownload(manager: AssetPackManager) {
     }
 }
 
-private sealed interface AttemptOutcome {
+internal const val CustomErrorCodeStalled = 1001
+internal const val CustomErrorCodeImmediateFailure = 1002
+
+internal sealed interface AttemptOutcome {
     object Success : AttemptOutcome
-    data class RecoverableFailure(val message: String) : AttemptOutcome
-    data class PermanentFailure(val message: String) : AttemptOutcome
+    data class RecoverableFailure(val message: String, val errorCode: Int) : AttemptOutcome
+    object UserTriggeredRetry : AttemptOutcome
+    data class PermanentFailure(val message: String, val errorCode: Int) : AttemptOutcome
 }
 
 /**
- * 네트워크 오류(-6)나 타임아웃(-2), 스토리지 부족(-10) 등 사용자가 조치 후 재시도 가능한 오류인지 판정한다.
- * Play Store가 없는 환경(make dev-stub, debug 빌드)의 오류(-5, -11 등)는 영구 실패로 취급하여 즉시 스텁으로 넘긴다.
+ * Play Core 공식 오류 코드 또는 자체 코드에서 영구 실패 여부를 판정한다.
+ * API_NOT_AVAILABLE(-5), APP_UNAVAILABLE(-1), PACK_UNAVAILABLE(-2), INVALID_REQUEST(-3),
+ * ACCESS_DENIED(-7), DOWNLOAD_NOT_FOUND(-4), APP_NOT_OWNED(-13), UNRECOGNIZED_INSTALLATION(-15),
+ * INTERNAL_ERROR(-100)는 재시도해도 극복할 수 없으므로 즉시 스텁 모드로 전환해야 한다.
  */
-private fun isRecoverableAssetPackError(errorCode: Int): Boolean =
+internal fun isPermanentAssetPackErrorCode(errorCode: Int): Boolean =
     when (errorCode) {
-        AssetPackErrorCode.NETWORK_ERROR -> true
-        AssetPackErrorCode.INSUFFICIENT_STORAGE -> true
-        -2 -> true // 진행 정체 타임아웃
+        AssetPackErrorCode.API_NOT_AVAILABLE,
+        AssetPackErrorCode.APP_UNAVAILABLE,
+        AssetPackErrorCode.PACK_UNAVAILABLE,
+        AssetPackErrorCode.INVALID_REQUEST,
+        AssetPackErrorCode.ACCESS_DENIED,
+        AssetPackErrorCode.DOWNLOAD_NOT_FOUND,
+        AssetPackErrorCode.APP_NOT_OWNED,
+        AssetPackErrorCode.UNRECOGNIZED_INSTALLATION,
+        -11, // PLAY_STORE_NOT_FOUND
+        AssetPackErrorCode.INTERNAL_ERROR -> true
         else -> false
     }
+
+/**
+ * 네트워크 오류(-6), 스토리지 부족(-10), 진행 정체(1001) 등 사용자가 해결 후 재시도 가능한 오류인지 판정한다.
+ */
+internal fun isRecoverableAssetPackErrorCode(errorCode: Int): Boolean =
+    when (errorCode) {
+        AssetPackErrorCode.NETWORK_ERROR,
+        AssetPackErrorCode.INSUFFICIENT_STORAGE,
+        CustomErrorCodeStalled,
+        CustomErrorCodeImmediateFailure -> true
+        else -> false
+    }
+
+internal fun extractAssetPackErrorCode(throwable: Throwable?): Int? {
+    var current: Throwable? = throwable
+    while (current != null) {
+        if (current is AssetPackException) {
+            return current.errorCode
+        }
+        current = current.cause
+    }
+    return null
+}
+
+internal fun determineErrorClassification(exception: Throwable): Pair<Int, Boolean> {
+    val playErrorCode = extractAssetPackErrorCode(exception)
+    if (playErrorCode != null) {
+        val isPermanent = isPermanentAssetPackErrorCode(playErrorCode)
+        return Pair(playErrorCode, isPermanent)
+    }
+    val msg = exception.message.orEmpty()
+    val isPermanent = msg.contains("API_NOT_AVAILABLE", ignoreCase = true) ||
+        msg.contains("PLAY_STORE_NOT_FOUND", ignoreCase = true) ||
+        msg.contains("Play Store", ignoreCase = true) ||
+        msg.contains("APP_UNAVAILABLE", ignoreCase = true) ||
+        msg.contains("PACK_UNAVAILABLE", ignoreCase = true)
+    return Pair(CustomErrorCodeImmediateFailure, isPermanent)
+}
 
 /**
  * PAD on-demand 에셋 팩을 요청하고 완료까지 대기한다.
@@ -259,15 +313,15 @@ private fun isRecoverableAssetPackError(errorCode: Int): Boolean =
  * 네트워크 일시 오류나 정체 시 [EngineDownloadStatus.Failed] 상태로 재시도 신호를 대기하고,
  * Play Store 밖 설치나 복구 불가능한 오류 시에는 즉시 스텁 fallback으로 진행한다.
  */
-private suspend fun fetchAndAwaitAssetPacksWithRetry(
+internal suspend fun fetchAndAwaitAssetPacksWithRetry(
     manager: AssetPackManager,
     neededPacks: List<String>,
     isMandatory: Boolean,
+    tracker: EngineDownloadTracker = currentEngineDownloadTracker(),
 ): List<String> {
     if (neededPacks.isEmpty()) return emptyList()
 
     val messages = mutableListOf<String>()
-    val tracker = currentEngineDownloadTracker()
     tracker.startNewDownload()
 
     while (currentCoroutineContext().isActive) {
@@ -275,6 +329,7 @@ private suspend fun fetchAndAwaitAssetPacksWithRetry(
             manager = manager,
             neededPacks = neededPacks,
             isMandatory = isMandatory,
+            tracker = tracker,
         )
         messages += attemptMessages
 
@@ -285,14 +340,24 @@ private suspend fun fetchAndAwaitAssetPacksWithRetry(
             }
 
             is AttemptOutcome.PermanentFailure -> {
-                // Play가 모르는 설치(make dev-stub, 디버그 APK 등)이므로 재시도 루프를 탈출하고 스텁으로 전환
-                messages += "Asset pack permanent failure: ${outcome.message}"
+                // Play가 모르는 설치(make dev-stub, 디버그 APK 등) 또는 스토어 영구 실패이므로 스텁으로 전환
+                messages += "Asset pack permanent failure: ${outcome.message} (code: ${outcome.errorCode})"
                 if (isMandatory) {
                     tracker.updateStatus(
-                        EngineDownloadStatus.Failed(-1, outcome.message, isHumanModelOnly = false)
+                        EngineDownloadStatus.Failed(
+                            errorCode = outcome.errorCode,
+                            message = outcome.message,
+                            isHumanModelOnly = false,
+                        )
                     )
                 }
                 break
+            }
+
+            is AttemptOutcome.UserTriggeredRetry -> {
+                // 사용자가 다운로드 중 또는 Wi-Fi 대기 중에 [다시 시도]를 눌러 중단한 경우:
+                // 추가 대기 없이 즉시 새 attempt 시작 (2회 탭 버그 방지)
+                continue
             }
 
             is AttemptOutcome.RecoverableFailure -> {
@@ -316,15 +381,16 @@ private suspend fun fetchAndAwaitAssetPacksWithRetry(
     return messages
 }
 
-private data class FetchAttemptResult(
+internal data class FetchAttemptResult(
     val outcome: AttemptOutcome,
     val messages: List<String>,
 )
 
-private suspend fun fetchAndAwaitAssetPacksAttempt(
+internal suspend fun fetchAndAwaitAssetPacksAttempt(
     manager: AssetPackManager,
     neededPacks: List<String>,
     isMandatory: Boolean,
+    tracker: EngineDownloadTracker = currentEngineDownloadTracker(),
 ): FetchAttemptResult {
     val downloadedBytesMap = mutableMapOf<String, Long>()
     val totalBytesMap = mutableMapOf<String, Long>()
@@ -340,8 +406,6 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
             KatagoHumanPackEstimatedBytes
         }
     }
-
-    val tracker = currentEngineDownloadTracker()
 
     fun updateDownloadProgress() {
         val currentDownloaded = downloadedBytesMap.values.sum()
@@ -361,30 +425,51 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
 
     val messages = mutableListOf<String>()
 
-    // 진행 정체(stall) 감지: 120초 동안 바이트 수신이 전혀 없을 때만 타임아웃 판정 (느린 회선 보호)
-    val lastProgressTimestamp = AtomicLong(System.currentTimeMillis())
-
     val outcome = suspendCancellableCoroutine<AttemptOutcome> { continuation ->
         val pendingPacks = neededPacks.toMutableSet()
-        lateinit var listener: AssetPackStateUpdateListener
+        val isResumed = AtomicBoolean(false)
+        val isWaitingForWifi = AtomicBoolean(false)
+        val lastProgressTimestamp = AtomicLong(System.currentTimeMillis())
 
-        // Wi-Fi 대기 중에도 재시도 핸들러를 배선하여 사용자가 즉시 다시 시도할 수 있게 함
-        tracker.registerRetryHandler {
-            if (continuation.isActive) {
-                manager.unregisterListener(listener)
-                continuation.resume(AttemptOutcome.RecoverableFailure("User triggered retry"))
+        lateinit var listener: AssetPackStateUpdateListener
+        var stallMonitorJob: Job? = null
+
+        fun safeResume(result: AttemptOutcome) {
+            if (isResumed.compareAndSet(false, true)) {
+                try {
+                    manager.unregisterListener(listener)
+                } catch (_: Exception) {
+                }
+                stallMonitorJob?.cancel()
+                continuation.resume(result)
             }
         }
 
-        fun checkCompletion() {
-            if (!continuation.isActive) return
-            if (pendingPacks.isEmpty()) {
+        // ⚠️ 단일 invokeOnCancellation 등록 (코루틴은 핸들러 이중 등록 시 IllegalStateException 발생)
+        continuation.invokeOnCancellation {
+            try {
                 manager.unregisterListener(listener)
+            } catch (_: Exception) {
+            }
+            stallMonitorJob?.cancel()
+        }
+
+        // 사용자가 진행 중/대기 중 [다시 시도]를 누르면 즉시 재시도 outcome으로 중단 및 전환
+        tracker.registerRetryHandler {
+            safeResume(AttemptOutcome.UserTriggeredRetry)
+        }
+
+        fun checkCompletion() {
+            if (isResumed.get()) return
+            if (pendingPacks.isEmpty()) {
                 if (failedPacks.isEmpty()) {
-                    continuation.resume(AttemptOutcome.Success)
+                    safeResume(AttemptOutcome.Success)
                 } else {
-                    continuation.resume(
-                        AttemptOutcome.RecoverableFailure("Some packs failed: ${failedPacks.joinToString()}")
+                    safeResume(
+                        AttemptOutcome.RecoverableFailure(
+                            message = "Some packs failed: ${failedPacks.joinToString()}",
+                            errorCode = AssetPackErrorCode.NETWORK_ERROR,
+                        )
                     )
                 }
             }
@@ -409,15 +494,22 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
                         failedPacks.add(name)
                         pendingPacks.remove(name)
 
-                        if (!isRecoverableAssetPackError(err)) {
-                            // 복구 불가능한 영구 실패 (Play Store 없음 등)
-                            if (continuation.isActive) {
-                                manager.unregisterListener(this)
-                                continuation.resume(
-                                    AttemptOutcome.PermanentFailure("Asset pack ($name) permanent failure (code: $err)")
+                        val isPermanent = isPermanentAssetPackErrorCode(err)
+                        if (isPermanent) {
+                            tracker.updateStatus(
+                                EngineDownloadStatus.Failed(
+                                    errorCode = err,
+                                    message = "Asset pack ($name) permanent failure (code: $err)",
+                                    isHumanModelOnly = isHumanModelOnly,
                                 )
-                                return
-                            }
+                            )
+                            safeResume(
+                                AttemptOutcome.PermanentFailure(
+                                    message = "Asset pack ($name) permanent failure (code: $err)",
+                                    errorCode = err,
+                                )
+                            )
+                            return
                         }
 
                         tracker.updateStatus(
@@ -428,10 +520,13 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
                             )
                         )
 
-                        if (name == KatagoModelPackName && isMandatory && continuation.isActive) {
-                            manager.unregisterListener(this)
-                            continuation.resume(
-                                AttemptOutcome.RecoverableFailure("Mandatory model pack ($name) failed (code: $err)")
+                        // 주 모델 실패 시 즉시 중단 및 재시도 대기
+                        if (name == KatagoModelPackName && isMandatory) {
+                            safeResume(
+                                AttemptOutcome.RecoverableFailure(
+                                    message = "Mandatory model pack ($name) failed (code: $err)",
+                                    errorCode = err,
+                                )
                             )
                         } else {
                             checkCompletion()
@@ -439,6 +534,7 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
                     }
 
                     AssetPackStatus.WAITING_FOR_WIFI -> {
+                        isWaitingForWifi.set(true)
                         messages += "Asset pack ($name) is waiting for Wi-Fi."
                         val bytes = state.bytesDownloaded()
                         val total = state.totalBytesToDownload()
@@ -454,6 +550,7 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
                     }
 
                     AssetPackStatus.DOWNLOADING, AssetPackStatus.TRANSFERRING -> {
+                        isWaitingForWifi.set(false)
                         val bytes = state.bytesDownloaded()
                         val total = state.totalBytesToDownload()
                         if (bytes > (downloadedBytesMap[name] ?: 0L)) {
@@ -468,33 +565,34 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
         }
 
         manager.registerListener(listener)
-        continuation.invokeOnCancellation {
-            manager.unregisterListener(listener)
-        }
 
-        // 진행 정체 모니터링 코루틴
-        val stallMonitorJob = backgroundDownloadScope.launch {
-            while (isActive && continuation.isActive) {
+        // 진행 정체(stall) 감지 코루틴: Wi-Fi 대기 중에는 타이머를 건너뜀
+        stallMonitorJob = backgroundDownloadScope.launch {
+            while (isActive && !isResumed.get()) {
                 delay(5_000L)
+                if (isWaitingForWifi.get()) {
+                    lastProgressTimestamp.set(System.currentTimeMillis())
+                    continue
+                }
                 val elapsed = System.currentTimeMillis() - lastProgressTimestamp.get()
-                if (elapsed > 120_000L && continuation.isActive) {
+                if (elapsed > 120_000L && !isResumed.get()) {
                     messages += "Asset pack download stalled for ${elapsed / 1000}s."
                     tracker.updateStatus(
                         EngineDownloadStatus.Failed(
-                            errorCode = -2,
+                            errorCode = CustomErrorCodeStalled,
                             message = "Download stalled",
                             isHumanModelOnly = isHumanModelOnly,
                         )
                     )
-                    manager.unregisterListener(listener)
-                    continuation.resume(AttemptOutcome.RecoverableFailure("Download stalled for ${elapsed / 1000}s"))
+                    safeResume(
+                        AttemptOutcome.RecoverableFailure(
+                            message = "Download stalled for ${elapsed / 1000}s",
+                            errorCode = CustomErrorCodeStalled,
+                        )
+                    )
                     break
                 }
             }
-        }
-
-        continuation.invokeOnCancellation {
-            stallMonitorJob.cancel()
         }
 
         manager.fetch(neededPacks)
@@ -513,15 +611,24 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
                         messages += "Asset pack ($pack) initial state failed (code: $err)."
                         failedPacks.add(pack)
                         pendingPacks.remove(pack)
-                        if (!isRecoverableAssetPackError(err)) {
-                            if (continuation.isActive) {
-                                manager.unregisterListener(listener)
-                                continuation.resume(
-                                    AttemptOutcome.PermanentFailure("Asset pack ($pack) permanent failure: $err")
+                        if (isPermanentAssetPackErrorCode(err)) {
+                            tracker.updateStatus(
+                                EngineDownloadStatus.Failed(
+                                    errorCode = err,
+                                    message = "Asset pack ($pack) permanent failure: $err",
+                                    isHumanModelOnly = isHumanModelOnly,
                                 )
-                                return@addOnSuccessListener
-                            }
+                            )
+                            safeResume(
+                                AttemptOutcome.PermanentFailure(
+                                    message = "Asset pack ($pack) permanent failure: $err",
+                                    errorCode = err,
+                                )
+                            )
+                            return@addOnSuccessListener
                         }
+                    } else if (st == AssetPackStatus.WAITING_FOR_WIFI) {
+                        isWaitingForWifi.set(true)
                     }
                 }
                 updateDownloadProgress()
@@ -529,23 +636,28 @@ private suspend fun fetchAndAwaitAssetPacksAttempt(
             }
             .addOnFailureListener { exception ->
                 messages += "Asset pack fetch failed immediately: ${exception.message}"
-                val isPermanent = exception.message?.contains("API_NOT_AVAILABLE", ignoreCase = true) == true ||
-                    exception.message?.contains("Play Store", ignoreCase = true) == true
-                val errOutcome = if (isPermanent || !isMandatory) {
-                    AttemptOutcome.PermanentFailure("Fetch failed: ${exception.message}")
-                } else {
-                    AttemptOutcome.RecoverableFailure("Fetch failed: ${exception.message}")
-                }
+                val (errorCode, isPermanent) = determineErrorClassification(exception)
                 tracker.updateStatus(
                     EngineDownloadStatus.Failed(
-                        errorCode = -1,
+                        errorCode = errorCode,
                         message = exception.message ?: "Fetch failed",
                         isHumanModelOnly = isHumanModelOnly,
                     )
                 )
-                if (continuation.isActive) {
-                    manager.unregisterListener(listener)
-                    continuation.resume(errOutcome)
+                if (isPermanent) {
+                    safeResume(
+                        AttemptOutcome.PermanentFailure(
+                            message = "Fetch failed: ${exception.message}",
+                            errorCode = errorCode,
+                        )
+                    )
+                } else {
+                    safeResume(
+                        AttemptOutcome.RecoverableFailure(
+                            message = "Fetch failed: ${exception.message}",
+                            errorCode = errorCode,
+                        )
+                    )
                 }
             }
     }

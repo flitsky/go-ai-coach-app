@@ -105,44 +105,64 @@ internal fun EngineDownloadGuideSection(
                     val downloadedMb = status.bytesDownloaded / (1024 * 1024)
                     val totalMb = (status.totalBytesToDownload / (1024 * 1024)).coerceAtLeast(1L)
                     val progressFloat = (status.percentage / 100f).coerceIn(0f, 1f)
-                    val statusTitle = if (status.isHumanModelOnly) {
-                        UiStringsDownloadGuide.preparingHumanModel(strings.language)
-                    } else {
-                        strings.engineNotReadyToStart
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = statusTitle,
-                            fontSize = AppTextSize.Text12,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(
-                            onClick = { currentEngineDownloadTracker().dismiss() },
-                            modifier = Modifier.size(24.dp),
+                    if (status.isHumanModelOnly) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = UiStringsDownloadGuide.close(strings.language),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp),
+                            Text(
+                                text = UiStringsDownloadGuide.preparingHumanModel(strings.language),
+                                fontSize = AppTextSize.Text12,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f),
                             )
+                            IconButton(
+                                onClick = { currentEngineDownloadTracker().dismiss() },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = UiStringsDownloadGuide.close(strings.language),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(AppSpacing.Space4))
+
+                        Text(
+                            text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
+                            fontSize = AppTextSize.Text12,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
+                                fontSize = AppTextSize.Text12,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            IconButton(
+                                onClick = { currentEngineDownloadTracker().dismiss() },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = UiStringsDownloadGuide.close(strings.language),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
-
-                    Text(
-                        text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
-                        fontSize = AppTextSize.Text12,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space6))
 
