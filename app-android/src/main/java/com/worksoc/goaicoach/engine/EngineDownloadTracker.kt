@@ -22,11 +22,12 @@ sealed interface EngineDownloadStatus {
         val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
-    /** 모바일 데이터에서 Wi-Fi 연결을 대기 중 */
+    /** 모바일 데이터에서 Wi-Fi 연결 또는 사용자 확인을 대기 중 */
     data class WaitingForWifi(
         val bytesDownloaded: Long,
         val totalBytesToDownload: Long,
         val isHumanModelOnly: Boolean = false,
+        val isConfirmationRequired: Boolean = false,
     ) : EngineDownloadStatus
 
     /** 다운로드 실패 또는 일시정지 (재시도 가능) */
@@ -50,6 +51,7 @@ internal class EngineDownloadTracker {
     val isDismissed: StateFlow<Boolean> = _isDismissed.asStateFlow()
 
     private var retryHandler: (() -> Unit)? = null
+    private var cellularConfirmationHandler: (() -> Unit)? = null
 
     /**
      * 진행 상황을 갱신한다.
@@ -62,10 +64,16 @@ internal class EngineDownloadTracker {
     /** 새 다운로드를 시작할 때 호출되어 닫힘 상태를 초기화한다. */
     fun startNewDownload() {
         _isDismissed.value = false
+        lastPermanentFailureCode = null
     }
 
     fun dismiss() {
         _isDismissed.value = true
+    }
+
+    /** 닫힌 다운로드 카드를 다시 연다. */
+    fun reopen() {
+        _isDismissed.value = false
     }
 
     fun registerRetryHandler(handler: () -> Unit) {
@@ -75,6 +83,25 @@ internal class EngineDownloadTracker {
     fun retry() {
         _isDismissed.value = false
         retryHandler?.invoke()
+    }
+
+    var lastPermanentFailureCode: Int? = null
+
+    /** 판정 목록은 [isStoreInstallationErrorCode] 한 곳에 있다 — 영구 실패 목록과 함께 고친다. */
+    fun isOfficialPlatformPermanentFailure(): Boolean = isStoreInstallationErrorCode(lastPermanentFailureCode)
+
+    fun registerCellularConfirmationHandler(handler: (() -> Unit)?) {
+        cellularConfirmationHandler = handler
+    }
+
+    fun unregisterCellularConfirmationHandler(handler: () -> Unit) {
+        if (cellularConfirmationHandler === handler) {
+            cellularConfirmationHandler = null
+        }
+    }
+
+    fun requestCellularConfirmation() {
+        cellularConfirmationHandler?.invoke()
     }
 }
 

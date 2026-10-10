@@ -10,9 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.worksoc.goaicoach.application.engine.EngineAvailability
 import com.worksoc.goaicoach.application.engine.engineAvailabilityFor
+import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
 
 /**
  * 엔진이 **끝내 뜨지 못했을 때** 알리는 팝업(백로그 #101 ④단계).
@@ -49,13 +51,20 @@ internal fun EngineUnavailableNoticeDialog(mode: EngineMode): Boolean {
     if (dismissed) return false
 
     val strings = LocalUiStrings.current
+    val isPlatformFailure = currentEngineDownloadTracker().isOfficialPlatformPermanentFailure()
+    val messageText = if (isPlatformFailure) {
+        UiStringsDownloadGuide.engineUnavailableOfficialPlatformFailureMessage(strings.language)
+    } else {
+        strings.engineUnavailableMessage
+    }
+
     // ⚠️ 이 팝업이 떠 있는 동안 첫돌이 가이드를 **기록하지 않는다** — 뒤에 깔린 채 "봤음"으로
     //   소진되는 것을 막는다(그 사유는 `GuideBlockingOverlays`의 KDoc).
     GuideBlockingOverlays.TrackWhileShown()
     AlertDialog(
         onDismissRequest = { dismissed = true },
         title = { Text(strings.engineUnavailableTitle) },
-        text = { Text(strings.engineUnavailableMessage) },
+        text = { Text(messageText) },
         confirmButton = {
             TextButton(onClick = { dismissed = true }) {
                 Text(strings.close)

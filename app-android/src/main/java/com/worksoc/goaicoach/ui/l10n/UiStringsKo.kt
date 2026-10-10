@@ -105,8 +105,7 @@ internal val UiStringsKorean = UiStrings(
     engineNotReadyToStart = "AI를 준비하고 있어요. 잠시 후 시작할 수 있어요.",
     engineUnavailableTitle = "AI 엔진을 시작하지 못했어요",
     engineUnavailableMessage = "AI가 제대로 동작하지 않습니다 — 대국도 분석 결과도 믿을 수 " +
-        "없어요. 앱을 다시 설치하면 해결되는 경우가 많습니다. 사람끼리 두는 대국은 그대로 " +
-        "쓸 수 있어요.",
+        "없어요. 앱을 다시 설치해 보세요. 사람끼리 두는 대국은 그대로 쓸 수 있어요.",
     engineUnavailableBadge = "AI 비정상 — 결과를 믿을 수 없어요",
     backToHome = "메인으로",
     notImplementedMessage = "아직 준비 중인 기능입니다.",

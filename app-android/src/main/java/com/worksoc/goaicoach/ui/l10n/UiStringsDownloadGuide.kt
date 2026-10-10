@@ -50,8 +50,15 @@ internal object UiStringsDownloadGuide {
     private val Card3Body = mapOf(
         UiLanguage.Korean to "판 바로 위나 메뉴의 「바둑판 최대」를 끄면 판 바깥에 여백이 생겨 끝줄에 두기 편해져요.",
         UiLanguage.English to "Turn off 'Board full' above the board or in the menu to add outer margins for easier edge moves.",
-        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線にも 打ちやすくなります。",
+        UiLanguage.Japanese to "盤の右上やメニューの「碁盤 最大」をオフにすると余白ができ、端の線にも打ちやすくなります。",
         UiLanguage.ChineseSimplified to "关闭棋盘上方或菜单中的「棋盘 最大」，可在棋盘四周留出边距，便于在边缘落子。",
+    )
+
+    private val DownloadingNotice = mapOf(
+        UiLanguage.Korean to "바둑 AI 엔진 다운로드 중 (모바일 데이터 환경에서는 Wi-Fi 연결을 권장합니다)",
+        UiLanguage.English to "Downloading Go AI engine (Wi-Fi recommended over mobile data)",
+        UiLanguage.Japanese to "囲碁AIエンジンをダウンロード中（Wi-Fi接続を推奨します）",
+        UiLanguage.ChineseSimplified to "正在下载围棋 AI 引擎（推荐使用 Wi-Fi 连接）",
     )
 
     private val WaitingForWifi = mapOf(
@@ -124,6 +131,34 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "棋盘操作指南",
     )
 
+    private val ContinueOnMobileData = mapOf(
+        UiLanguage.Korean to "모바일 데이터로 계속",
+        UiLanguage.English to "Continue on Mobile Data",
+        UiLanguage.Japanese to "モバイルデータで続行",
+        UiLanguage.ChineseSimplified to "使用移动网络继续",
+    )
+
+    private val ConfirmationRequired = mapOf(
+        UiLanguage.Korean to "모바일 데이터 다운로드 승인이 필요합니다.",
+        UiLanguage.English to "Mobile data confirmation required.",
+        UiLanguage.Japanese to "モバイル通信の承認が必要です。",
+        UiLanguage.ChineseSimplified to "需要移动网络授权。",
+    )
+
+    private val OpenConfirmation = mapOf(
+        UiLanguage.Korean to "승인 창 열기",
+        UiLanguage.English to "Open Confirmation",
+        UiLanguage.Japanese to "確認画面を開く",
+        UiLanguage.ChineseSimplified to "打开确认窗口",
+    )
+
+    private val EngineUnavailableStoreFailure = mapOf(
+        UiLanguage.Korean to "AI가 제대로 동작하지 않습니다 — 대국도 분석 결과도 믿을 수 없습니다. Google Play 스토어에서 공식 버전을 설치해 주세요. 사람끼리 두는 대국은 그대로 쓸 수 있어요.",
+        UiLanguage.English to "The AI is not working properly - neither its moves nor its analysis can be trusted. Please install the official version from the Google Play Store. You can still play two-player games with another person.",
+        UiLanguage.Japanese to "AIが正しく動作していません — 対局も分析結果も信頼できません。Google Play ストアから公式版をインストールしてください。人同士の対局はそのまま使えます。",
+        UiLanguage.ChineseSimplified to "AI 无法正常工作 — 对弈和分析结果均不可信。请从 Google Play 商店安装官方正版。双人对弈仍可照常使用。",
+    )
+
     fun cards(language: UiLanguage): List<DownloadGuideCard> = listOf(
         DownloadGuideCard(
             title = Card1Title[language] ?: Card1Title.getValue(UiLanguage.Korean),
@@ -139,8 +174,14 @@ internal object UiStringsDownloadGuide {
         ),
     )
 
+    fun downloadingNotice(language: UiLanguage): String =
+        DownloadingNotice[language] ?: DownloadingNotice.getValue(UiLanguage.Korean)
+
     fun waitingForWifi(language: UiLanguage): String =
         WaitingForWifi[language] ?: WaitingForWifi.getValue(UiLanguage.Korean)
+
+    fun continueOnMobileData(language: UiLanguage): String =
+        ContinueOnMobileData[language] ?: ContinueOnMobileData.getValue(UiLanguage.Korean)
 
     fun failed(language: UiLanguage): String =
         Failed[language] ?: Failed.getValue(UiLanguage.Korean)
@@ -165,6 +206,15 @@ internal object UiStringsDownloadGuide {
 
     fun close(language: UiLanguage): String =
         Close[language] ?: Close.getValue(UiLanguage.Korean)
+
+    fun requiresConfirmation(language: UiLanguage): String =
+        ConfirmationRequired[language] ?: ConfirmationRequired.getValue(UiLanguage.Korean)
+
+    fun openConfirmation(language: UiLanguage): String =
+        OpenConfirmation[language] ?: OpenConfirmation.getValue(UiLanguage.Korean)
+
+    fun engineUnavailableOfficialPlatformFailureMessage(language: UiLanguage): String =
+        EngineUnavailableStoreFailure[language] ?: EngineUnavailableStoreFailure.getValue(UiLanguage.Korean)
 
     fun boardControlsGuide(language: UiLanguage): String =
         BoardControlsGuide[language] ?: BoardControlsGuide.getValue(UiLanguage.Korean)

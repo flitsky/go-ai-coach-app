@@ -1,9 +1,8 @@
 package com.worksoc.goaicoach.ui.setup
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,24 +33,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.worksoc.goaicoach.engine.EngineDownloadStatus
 import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
@@ -60,13 +64,23 @@ import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
+import kotlinx.coroutines.launch
+
+private fun Context.findActivity(): Activity? {
+    var current = this
+    while (current is ContextWrapper) {
+        if (current is Activity) return current
+        current = current.baseContext
+    }
+    return null
+}
 
 /**
- * PAD on-demand 에셋 팩 다운로드 동안 표시되는 사용 가이드 카드 섹션 (백로그 #245 U-73).
+ * PAD on-demand 에셋 팩 다운로드 동안 표시되는 사용 가이드 카드 섹션 (백로그 #245 U-73, #247 U-74/U-75).
  *
  * ## 지키는 조건
  * 1. 팩을 실제로 받는 중이거나 상태가 발생했을 때만 표시 (모델이 이미 있는 기기에는 노출 0초)
- * 2. 실패/Wi-Fi 대기 시 숨지 않고 상태와 [다시 시도] 버튼 노출
+ * 2. 실패/Wi-Fi 대기 시 숨지 않고 상태와 [다시 시도] / [모바일 데이터로 계속] 버튼 노출
  * 3. 완료 순간 읽던 카드를 빼앗지 않고 자연스럽게 유지하며, 사용자가 원할 때 닫기(X) 가능
  * 4. 팝업이 아니라 화면 안의 인라인 컴포저블로 배치 (출석/가이드 사슬 방해 금지)
  * 5. GoCoachApp 상태 훅 예산(42/42)을 침범하지 않고 이 컴포저블 내부에서 자체 캡슐화
@@ -78,9 +92,102 @@ internal fun EngineDownloadGuideSection(
     val downloadStatus by currentEngineDownloadTracker().status.collectAsState()
     val isDismissed by currentEngineDownloadTracker().isDismissed.collectAsState()
     val strings = LocalUiStrings.current
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
 
-    // Idle 상태이거나 사용자가 카드를 닫았으면 렌더링하지 않는다
-    if (downloadStatus is EngineDownloadStatus.Idle || isDismissed) {
+    DisposableEffect(activity) {
+        val handler: () -> Unit = {
+            if (activity != null) {
+                try {
+                    val manager = AssetPackManagerFactory.getInstance(activity)
+                    val task = manager.showConfirmationDialog(activity)
+                    task.addOnSuccessListener { resultCode ->
+                        android.util.Log.d("EngineDownloadGuide", "Cellular confirmation result: $resultCode")
+                    }.addOnFailureListener { exception ->
+                        android.util.Log.w("EngineDownloadGuide", "Cellular confirmation dialog failed", exception)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.w("EngineDownloadGuide", "Cannot show cellular confirmation dialog", e)
+                }
+            }
+        }
+        currentEngineDownloadTracker().registerCellularConfirmationHandler(handler)
+        onDispose {
+            currentEngineDownloadTracker().unregisterCellularConfirmationHandler(handler)
+        }
+    }
+
+    // Idle 상태이면 렌더링하지 않는다
+    if (downloadStatus is EngineDownloadStatus.Idle) {
+        return
+    }
+
+    // 카드를 닫은 상태(isDismissed)
+    if (isDismissed) {
+        val status = downloadStatus
+        val isMandatoryBlocked = when (status) {
+            is EngineDownloadStatus.Failed -> !status.isHumanModelOnly
+            is EngineDownloadStatus.WaitingForWifi -> !status.isHumanModelOnly
+            else -> false
+        }
+        // 필수 주 모델 다운로드 실패 또는 Wi-Fi 대기 중 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
+        // 다시 카드를 열 수 있는 미니 안내 배너를 제공한다 (#247).
+        if (isMandatoryBlocked) {
+            val isFailed = status is EngineDownloadStatus.Failed
+            val isConfirmationRequired = status is EngineDownloadStatus.WaitingForWifi && status.isConfirmationRequired
+            Surface(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(AppRadius.Corner8))
+                    .clickable {
+                        // 배너의 동작 이름(「다시 시도」·「모바일 데이터로 계속」)대로 바로 실행한다 — 카드만 열면 같은 버튼을 두 번 누르게 된다.
+                        val tracker = currentEngineDownloadTracker()
+                        when (status) {
+                            is EngineDownloadStatus.Failed -> tracker.retry()
+                            is EngineDownloadStatus.WaitingForWifi -> {
+                                tracker.reopen()
+                                tracker.requestCellularConfirmation()
+                            }
+                            else -> tracker.reopen()
+                        }
+                    }
+                    .border(
+                        width = AppBorderWidth.Hairline,
+                        color = if (isFailed) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(AppRadius.Corner8),
+                    ),
+                color = if (isFailed) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space8),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = when {
+                            isFailed -> UiStringsDownloadGuide.failed(strings.language)
+                            isConfirmationRequired -> UiStringsDownloadGuide.requiresConfirmation(strings.language)
+                            else -> UiStringsDownloadGuide.waitingForWifi(strings.language)
+                        },
+                        fontSize = AppTextSize.Text12,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = when {
+                            isFailed -> UiStringsDownloadGuide.retry(strings.language)
+                            isConfirmationRequired -> UiStringsDownloadGuide.openConfirmation(strings.language)
+                            else -> UiStringsDownloadGuide.continueOnMobileData(strings.language)
+                        },
+                        fontSize = AppTextSize.Text12,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
         return
     }
 
@@ -162,6 +269,15 @@ internal fun EngineDownloadGuideSection(
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(AppSpacing.Space4))
+
+                        // U-74: 다운로드 안내 (바둑 AI 엔진 다운로드 중 (197MB/99MB) · Wi-Fi 권장)
+                        Text(
+                            text = UiStringsDownloadGuide.downloadingNotice(strings.language),
+                            fontSize = AppTextSize.Text12,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space6))
@@ -190,10 +306,14 @@ internal fun EngineDownloadGuideSection(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = UiStringsDownloadGuide.waitingForWifi(strings.language),
+                            text = if (status.isConfirmationRequired) {
+                                UiStringsDownloadGuide.requiresConfirmation(strings.language)
+                            } else {
+                                UiStringsDownloadGuide.waitingForWifi(strings.language)
+                            },
                             fontSize = AppTextSize.Text12,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.error,
+                            color = if (status.isConfirmationRequired) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             modifier = Modifier.weight(1f),
                         )
                         IconButton(
@@ -219,21 +339,49 @@ internal fun EngineDownloadGuideSection(
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
-                    Button(
-                        onClick = { currentEngineDownloadTracker().retry() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
-                        shape = RoundedCornerShape(AppRadius.Corner8),
-                        modifier = Modifier.fillMaxWidth().height(36.dp),
+                    // U-75 대안 B: 모바일 데이터로 계속/승인 버튼 및 다시 시도 버튼
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = UiStringsDownloadGuide.retry(strings.language),
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(AppSpacing.Space6))
-                        Text(text = UiStringsDownloadGuide.retry(strings.language), fontSize = AppTextSize.Text12)
+                        Button(
+                            onClick = { currentEngineDownloadTracker().requestCellularConfirmation() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                            ),
+                            shape = RoundedCornerShape(AppRadius.Corner8),
+                            modifier = Modifier
+                                .weight(1.2f)
+                                .height(36.dp),
+                        ) {
+                            Text(
+                                text = if (status.isConfirmationRequired) {
+                                    UiStringsDownloadGuide.openConfirmation(strings.language)
+                                } else {
+                                    UiStringsDownloadGuide.continueOnMobileData(strings.language)
+                                },
+                                fontSize = AppTextSize.Text12,
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = { currentEngineDownloadTracker().retry() },
+                            shape = RoundedCornerShape(AppRadius.Corner8),
+                            modifier = Modifier
+                                .weight(0.8f)
+                                .height(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = UiStringsDownloadGuide.retry(strings.language),
+                                modifier = Modifier.size(14.dp),
+                            )
+                            Spacer(modifier = Modifier.width(AppSpacing.Space4))
+                            Text(
+                                text = UiStringsDownloadGuide.retry(strings.language),
+                                fontSize = AppTextSize.Text12,
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space10))
@@ -332,6 +480,7 @@ internal fun EngineDownloadGuideSection(
 /**
  * 가이드 카드 3장을 넘겨볼 수 있는 공통 캐러셀 컴포넌트.
  * 로비 인라인 가이드 섹션과 설정 화면의 '가이드 보기' 팝업 다이얼로그에서 공통 사용된다.
+ * 좌우 스와이프 제스처 및 화살표/도트/본문 탭을 통한 유연한 내비게이션을 지원한다.
  */
 @Composable
 internal fun DownloadGuideCardsCarousel(
@@ -340,8 +489,9 @@ internal fun DownloadGuideCardsCarousel(
 ) {
     val cards = UiStringsDownloadGuide.cards(language)
     val totalCards = cards.size
-    var cardIndex by remember { mutableIntStateOf(0) }
-    val currentCard = cards[cardIndex.coerceIn(0, totalCards - 1)]
+    val pagerState = rememberPagerState(initialPage = 0) { totalCards }
+    val scope = rememberCoroutineScope()
+    val currentCard = cards[pagerState.currentPage.coerceIn(0, totalCards - 1)]
 
     Column(modifier = modifier.fillMaxWidth()) {
         // 가이드 카드 헤더 (제목 + 페이지 표시 및 이동 화살표)
@@ -359,7 +509,12 @@ internal fun DownloadGuideCardsCarousel(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = { cardIndex = (cardIndex - 1 + totalCards) % totalCards },
+                    onClick = {
+                        scope.launch {
+                            val prev = (pagerState.currentPage - 1 + totalCards) % totalCards
+                            pagerState.animateScrollToPage(prev)
+                        }
+                    },
                     modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
@@ -371,14 +526,19 @@ internal fun DownloadGuideCardsCarousel(
                 }
 
                 Text(
-                    text = "${cardIndex + 1} / $totalCards",
+                    text = "${pagerState.currentPage + 1} / $totalCards",
                     fontSize = AppTextSize.Text12,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = AppSpacing.Space4),
                 )
 
                 IconButton(
-                    onClick = { cardIndex = (cardIndex + 1) % totalCards },
+                    onClick = {
+                        scope.launch {
+                            val next = (pagerState.currentPage + 1) % totalCards
+                            pagerState.animateScrollToPage(next)
+                        }
+                    },
                     modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
@@ -393,20 +553,24 @@ internal fun DownloadGuideCardsCarousel(
 
         Spacer(modifier = Modifier.height(AppSpacing.Space6))
 
-        // 가이드 본문 텍스트 (탭 시 다음 카드로 이동)
-        AnimatedContent(
-            targetState = currentCard.body,
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "GuideCardBody",
-        ) { body ->
+        // 스와이프 가능한 가이드 본문 Pager (탭 시에도 다음 카드로 이동)
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+        ) { page ->
             Text(
-                text = body,
+                text = cards[page].body,
                 fontSize = AppTextSize.Text13,
                 lineHeight = 19.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { cardIndex = (cardIndex + 1) % totalCards },
+                    .clickable {
+                        scope.launch {
+                            val next = (pagerState.currentPage + 1) % totalCards
+                            pagerState.animateScrollToPage(next)
+                        }
+                    },
             )
         }
 
@@ -419,7 +583,7 @@ internal fun DownloadGuideCardsCarousel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             repeat(totalCards) { index ->
-                val isSelected = index == cardIndex
+                val isSelected = index == pagerState.currentPage
                 Box(
                     modifier = Modifier
                         .padding(horizontal = AppSpacing.Space4)
@@ -432,7 +596,11 @@ internal fun DownloadGuideCardsCarousel(
                                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                             }
                         )
-                        .clickable { cardIndex = index },
+                        .clickable {
+                            scope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
                 )
             }
         }

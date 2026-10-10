@@ -105,8 +105,7 @@ internal val UiStringsEnglish = UiStringsKorean.copy(
     engineNotReadyToStart = "Getting the AI ready. You can start in a moment.",
     engineUnavailableTitle = "The AI engine did not start",
     engineUnavailableMessage = "The AI is not working properly - neither its moves nor its " +
-        "analysis can be trusted. Reinstalling the app usually fixes this. Two-player games " +
-        "still work as usual.",
+        "analysis can be trusted. Try reinstalling the app. Two-player games still work as usual.",
     engineUnavailableBadge = "AI degraded - results cannot be trusted",
     backToHome = "Main Menu",
     notImplementedMessage = "This feature is currently under development.",
