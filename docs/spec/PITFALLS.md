@@ -92,7 +92,7 @@
 - **5** 산출물(AAB·스크린샷)은 화면 변경이 멎은 뒤에
 - **11** 개발자 섹션 1차는 **release에도 실린다** — 게이트는 런타임 boolean(`DeveloperModeStore`, 버전 10탭). 권한을 만드는 버튼은 `BuildConfig.DEBUG`로 한 겹 더(→ 2차)
 - **25** 빌드타입 블록에서 던지지 말 것 — 검사는 `packageRelease`/`packageReleaseBundle`에. `make`는 검사가 `bump-version`보다 앞
-- **31** `src/friend/assets`는 지우지 말 것 — release AAB의 엔진(주 모델 98MB + 2026-10-06부터 사람 모델 99MB, gitignore)
+- **31** `src/friend/assets`는 지우지 말 것 — release AAB의 기본 설정(cfg 둘, gitignore). ⚠️ 두 모델은 2026-10-10부터 PAD 에셋 팩(`katago_model_pack`, `katago_human_pack`)으로 분리됨(#245)
 - **33** 16KB — ⓐ 우리 `.so` ELF 정렬 + ⓑ 패키징, ⓑ만으론 통과 못 함. 확인은 `PT_LOAD p_align`
 - **34** Play "이전 출시 버전"은 **트랙별** — 번들 둘을 워크트리로 대조하기 전엔 원인을 말하지 말 것
 - **35** `setContent` 앞에 SDK를 깨우지 말 것 — 기동 크래시(`StartupOrderContractTest`)
@@ -378,7 +378,7 @@
    · ⚠️ **다만 "맞다"가 "같다"는 아니다** — **AGP는 에셋의 `.gz`를 풀고 확장자를 뗀다.**
      빌드는 `model.bin.gz`를 넣고 앱은 `model.bin`을 여는 것이 **정상**이다. 이것을 모르고
      두 이름을 같게 맞췄다가 **APK에 없는 이름을 열게 만든 적이 있다**(#104, 같은 날 되돌림).
-     계약은 **변환까지 포함해** 재야 한다.
+     계약은 **변환까지 포함해** 재야 한다. ⚠️ **다만 에셋 팩(`com.android.asset-pack`)은 `.gz` 압축을 풀지 않고 원본 파일명 그대로 들어간다**(2026-10-10 #245 실측).
    · ⚠️ **그리고 산출물을 직접 열어볼 것.** 소스에서 패키징 결과를 추론하면 이 변환을 놓친다 —
      `unzip -l <apk> | grep assets/`가 이 건을 실기 설치 직전에 잡았다.
    · **같은 계보**: 함정 19번(아무 명령도 컴파일하지 않는 소스셋), #87(`dist/` 사본이 버전 관리
@@ -411,7 +411,7 @@
 23. **⚠️ 스텁 폴백은 "고장난 빌드"를 따로 만들어야만 볼 수 있다 — 만드는 법**
    (2026-09-05, #101 ④·#105를 이렇게 확인했다). 실패 경로의 화면은 **정상 기기에서 절대
    재현되지 않는다.** 검증하지 않으면 *"고장이 확인된 것이 아니라 본 적이 없는 것"* 으로 남는다.
-   · **① 에셋을 잠시 치운다**: `mv app-android/src/friend/assets/katago /tmp/…`
+   · **① 에셋을 잠시 치운다**: `mv app-android/src/friend/assets/katago /tmp/…` (⚠️ #245부터 두 모델은 PAD 에셋 팩 디렉터리 `katago_*_pack/src/main/assets/katago`에 있다)
    · **② ⚠️ `make release`를 쓰지 말 것** — `prepare-friend-assets`가 에셋을 **되살린다.**
      `./gradlew :app-android:assembleRelease`를 직접 부른다.
    · **③ ⚠️ 병합 산출물을 지운다**: `rm -rf app-android/build/intermediates/{assets,compressed_assets}/release`
@@ -517,7 +517,7 @@
 31. **⚠️ 빌드타입 이름과 같은 이름의 디렉터리를 함께 지우지 말 것**
     - `friend`는 빌드타입 이름이면서 **release가 의존하는 디렉터리 이름**이었다.
       `sourceSets`에서 playInternal·release가 `assets.srcDirs("src/friend/assets")`를 가리킨다 —
-      거기 **98MB KataGo 모델**이 있고 그게 스토어 AAB의 엔진이다.
+      거기 **cfg 둘**이 있고 그게 스토어 base AAB의 기본 설정이다 (두 모델 197MB는 2026-10-10부터 PAD 에셋 팩으로 분리됨, #245).
     - ⚠️ **지우면 조용히 스텁으로 떨어진다** — `seedAssetIfMissing`이 `IOException`을 삼킨다(함정 20).
       게다가 그 디렉터리는 `.gitignore` 대상이라 **git에 없다**: 되돌릴 곳이 저장소에 없고
       `make prepare-friend-assets`로 홈브루에서 다시 복사해 와야 한다.
@@ -787,7 +787,7 @@
 
 50. **⚠️ `pm clear`로 첫 실행을 흉내내면 엔진이 조용히 스텁으로 떨어진다 — 그 여파가 엉뚱한 검증을 막는다** (2026-09-12, #148)
     - 심어 둔 KataGo 모델은 **앱 데이터 안**(`files/katago/model.bin.gz`)에 있다. `pm clear`는 그것까지 지운다.
-      로그에 `Failed to seed bundled asset katago/model.bin`만 남고, 앱은 **멀쩡해 보이는 채로** 스텁 AI로 내려간다.
+      로그에 `Failed to seed bundled asset katago/model.bin`만 남고, 앱은 **멀쩡해 보이는 채로** 스텁 AI로 내려간다(⚠️ 2026-10-10 #245부터는 네트워크가 있으면 PAD on-demand 팩을 스스로 받아 복구하지만, 오프라인 개발 환경에서는 스텁으로 내려간다).
     - ⚠️ **그 여파가 본론을 막는다**: 엔진이 `Unavailable`이면 `EngineUnavailableNoticeDialog`가 뜨고,
       그것이 셸 게이트 사슬의 **첫 항**이라 출석 팝업을 먼저 억제한다. #148(출석 팝업 × 스플래시 겹침)을
       **격리 검증하지 못한 직접 원인**이 이것이다 — 관찰하려던 상호작용이 일어날 기회 자체가 사라졌다.

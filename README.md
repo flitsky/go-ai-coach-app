@@ -73,7 +73,7 @@ make install-dev-engine
 
 `make install-dev-engine` installs the debug APK, seeds the KataGo model/config into app files, and restarts the app. Use `make reinstall-dev-engine` when the emulator reports low storage or when a clean reinstall is needed. Reinstalling removes app files, so the seed step must run again before KataGo mode can work.
 
-`make prepare-friend-assets` copies the model, GTP config, and analysis config into `app-android/src/friend/assets/`, which the `release` and `playInternal` build types bundle. Normal `make dev` / `assembleDebug` does not, so it stays fast and model-free.
+`make prepare-friend-assets` copies the models into PAD asset packs (`katago_model_pack/`, `katago_human_pack/`) and configs into `app-android/src/friend/assets/` (bundled into the base APK). Normal `make dev` / `assembleDebug` does not, so it stays fast and model-free.
 
 ⚠️ The directory is still named `friend` for historical reasons — the sideload channel it was built for is gone (2026-09-06), but the path is the engine source for the store bundle and is deliberately not renamed. See the comment above `FRIEND_ASSET_DIR` in the Makefile.
 
