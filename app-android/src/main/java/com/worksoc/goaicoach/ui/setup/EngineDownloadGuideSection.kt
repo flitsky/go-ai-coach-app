@@ -140,10 +140,15 @@ internal fun EngineDownloadGuideSection(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(AppRadius.Corner8))
                     .clickable {
+                        // 배너의 동작 이름(「다시 시도」·「모바일 데이터로 계속」)대로 바로 실행한다 — 카드만 열면 같은 버튼을 두 번 누르게 된다.
                         val tracker = currentEngineDownloadTracker()
-                        tracker.reopen()
-                        if (status is EngineDownloadStatus.WaitingForWifi) {
-                            tracker.requestCellularConfirmation()
+                        when (status) {
+                            is EngineDownloadStatus.Failed -> tracker.retry()
+                            is EngineDownloadStatus.WaitingForWifi -> {
+                                tracker.reopen()
+                                tracker.requestCellularConfirmation()
+                            }
+                            else -> tracker.reopen()
                         }
                     }
                     .border(
