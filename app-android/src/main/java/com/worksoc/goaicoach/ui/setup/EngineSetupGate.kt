@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.ui.setup
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -39,7 +33,6 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
-import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
@@ -168,13 +161,13 @@ private fun EngineSetupProgressCard(
             }
         }
 
-        status == EngineDownloadStatus.Idle || status == EngineDownloadStatus.Completed -> Surface(
+        // Completed는 위의 canStart가 먼저 받는다 — 여기는 받기 요청 전(수 ms)의 Idle뿐이다.
+        status == EngineDownloadStatus.Idle -> Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(AppRadius.Corner8)),
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
         ) {
-            // 받기 요청 전(수 ms)이나, 받기는 끝났는데 엔진이 아직 정해지지 않은 찰나.
             Column(modifier = Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space8)) {
                 Text(
                     text = UiStringsDownloadGuide.preparing(language),

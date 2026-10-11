@@ -201,7 +201,7 @@ private fun GoCoachScreen(
 ) {
     // 여기서 한 번 물어 아래 읽는 곳들에 그대로 흘린다. ⚠️ **`remember`로 감싸지 않는다** —
     // 감싸는 순간 준비 전 답이 그 자리에서 굳는다. 공급자가 컴포즈 상태를 읽으므로, 재구성이
-    // 곧 갱신이다(상태 훅도 늘지 않는다 — 예산 42/42, 함정 3번).
+    // 곧 갱신이다(상태 훅도 늘지 않는다 — 셸 상태 원장 `architecture-budgets.json`, 함정 3번).
     val identity = engineIdentity()
     val engineName = identity.name
     val engineDiagnostic = identity.diagnostic
@@ -908,7 +908,7 @@ private fun GoCoachScreen(
     // ⚠️ **스플래시가 떠 있는 동안에는 미룬다**(#148, 2026-09-12 사용자 제보 — 출석 팝업이 스플래시와
     //   겹쳐 떴다). 홈은 스플래시 **아래에 이미 컴포즈**돼 있고(#125), 다이얼로그는 각자 별도 윈도우라
     //   스플래시의 `zIndex`가 누르지 못한다. 순서로는 안 되고 명시적 게이트라야 한다 — #63이 같은 벽에서
-    //   배운 것이다. 상태는 `SplashVisibility`가 들고 있어 이 셸의 훅 예산(42/42, 여유 0)을 쓰지 않는다.
+    //   배운 것이다. 상태는 `SplashVisibility`가 들고 있어 이 셸의 상태 원장(`architecture-budgets.json`)에 자리를 늘리지 않는다.
     // 엔진 준비 화면(#249) — 모델이 없으면 화면들 위에 덮는다. 판정은 첫 컴포지션에서 동기로(스플래시 안에서) 끝난다.
     // ⚠️ 떠 있는 동안 출석 팝업도 미룬다 — 실행 루틴은 「준비 화면 → 시작하기 → 출석 보상」이다(사용자 2026-10-11).
     val engineSetupRequired = remember(context) { isEngineSetupRequired(context) }

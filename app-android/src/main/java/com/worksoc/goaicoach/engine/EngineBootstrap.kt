@@ -111,7 +111,9 @@ suspend fun createEngineBootstrap(
             displayName = "stub AI",
             diagnostic = buildString {
                 append("Stub fallback: missing ${missing.joinToString()}. ")
-                append("Use an engine-bundled APK, or run make install-dev-engine / make seed-engine, then restart the app.")
+                // 프로덕션의 원인은 거의 늘 받기 실패다(#254) — 그 코드를 먼저 적고, 개발용 안내는 그 뒤에 둔다.
+                currentEngineDownloadTracker().lastPermanentFailureCode?.let { append("PAD download failed permanently (code $it). ") }
+                append("Dev builds: run make install-dev-engine / make seed-engine, then restart the app.")
                 if (configSeedMessages.isNotEmpty()) {
                     append("\n")
                     append(configSeedMessages.joinToString("\n"))
@@ -414,15 +416,14 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
     fun updateProgressOrWifiState(): Unit = synchronized(stateLock) {
         // ⚠️ 시도가 끝난 뒤 늦게 온 콜백(fetch 성공 등)이 바깥 루프가 세운 Failed를 덮어쓰면 재시도 버튼이 사라진다.
         if (isResumed.get()) return
-        val activePacks = neededPacks
-        val isConfirmationRequired = activePacks.any { pack ->
+        val isConfirmationRequired = neededPacks.any { pack ->
             packStatusMap[pack] == AssetPackStatus.REQUIRES_USER_CONFIRMATION
         }
-        val anyWaitingForWifi = isConfirmationRequired || activePacks.any { pack ->
+        val anyWaitingForWifi = isConfirmationRequired || neededPacks.any { pack ->
             packStatusMap[pack] == AssetPackStatus.WAITING_FOR_WIFI
         }
-        val currentDownloaded = activePacks.sumOf { downloadedBytesMap[it] ?: 0L }
-        val currentTotal = activePacks.sumOf { totalBytesMap[it] ?: 0L }.coerceAtLeast(1L)
+        val currentDownloaded = neededPacks.sumOf { downloadedBytesMap[it] ?: 0L }
+        val currentTotal = neededPacks.sumOf { totalBytesMap[it] ?: 0L }.coerceAtLeast(1L)
         val percentage = ((currentDownloaded * 100) / currentTotal).toInt().coerceIn(0, 100)
 
         if (anyWaitingForWifi) {

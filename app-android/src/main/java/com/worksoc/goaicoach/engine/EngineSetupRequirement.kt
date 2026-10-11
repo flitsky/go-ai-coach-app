@@ -21,12 +21,15 @@ import kotlinx.coroutines.launch
  */
 internal fun isEngineSetupRequired(context: Context): Boolean {
     if (BuildConfig.DEBUG && DebugEngineSetupPreview.consume(context.filesDir, currentEngineDownloadTracker())) return true
+    val katagoDir = File(context.filesDir, "katago")
+    // 기기 파일부터 본다(#254) — 1.3.0 이하 사용자는 여기서 끝나 시작 때마다 메인 스레드에서 Play 객체를 만들지 않는다.
+    if (locateEngineModels(katagoDir, assetPackManager = null).missingPacks.isEmpty()) return false
     val manager = try {
         AssetPackManagerFactory.getInstance(context)
     } catch (e: Exception) {
         null
     }
-    return locateEngineModels(File(context.filesDir, "katago"), manager).missingPacks.isNotEmpty()
+    return locateEngineModels(katagoDir, manager).missingPacks.isNotEmpty()
 }
 
 /**
