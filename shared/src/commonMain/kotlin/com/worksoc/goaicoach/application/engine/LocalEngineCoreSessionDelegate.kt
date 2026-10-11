@@ -48,12 +48,6 @@ internal class LocalEngineCoreSessionDelegate(
     private val benchmarkDelegate = LocalEngineBenchmarkDelegate(coreApi)
 
     /**
-     * 사람 모델로 두려다 **진짜로 실패**한 적이 있는가(백로그 #215) — 그 뒤로는 이 엔진에서 사람 모델을 다시 시도하지 않고 지금 방식으로 둔다.
-     * 수마다 다시 시도하면 수마다 프로세스를 두 번 갈아 올린다(사람 모델로 → 실패 → 주 모델로). 앱을 다시 켜면 처음부터 다시 본다.
-     */
-    private var humanStyleUnavailable = false
-
-    /**
      * 진영마다 **진 판이 이어진 차례 수**(백로그 #213, [LosingStreak]) — 종반의 통과가 이것을 본다(기권 제안은 대국 세션이 형세 기록에서 읽는다).
      * 진영마다 따로 센다: AI끼리 두는 판에서 한 진영의 기록이 다른 진영의 차례에 읽히면 이기는 쪽이 통과한다.
      */
@@ -161,18 +155,14 @@ internal class LocalEngineCoreSessionDelegate(
         // 엔진에는 **이 단계의 방문 수**로 건다(초고수는 더 깊이 읽는다 — `PlayLevelGroup.aiMoveVisits`). 세션에 돌려주는 프로필은
         // [turnProfile] 그대로다: 돌려준 것이 공용 프로필이 되어 추천 수·형세가 쓰므로, 상대의 방문 수가 거기 새면 안 된다.
         val aiSearchProfile = playLevel.toAiTurnEngineProfile(currentProfile, searchTimeSettings)
-        // 급수 캐릭터는 사람 모델로 둔다(백로그 #215) — 그 모델이 기기에 있고, 앞서 실패한 적이 없을 때.
-        val humanStyle = playLevel.humanPlayStyle()?.takeIf { coreApi.supportsHumanNetwork && !humanStyleUnavailable }
+        // 급수 캐릭터는 사람 모델로 둔다(백로그 #215).
+        // ⚠️ **실패하면 주 모델로 바꿔 두지 않는다**(U-80, 사용자 2026-10-11) — 주 모델 탐색은 그 급수의 세기가 아니다(9단 프로필도
+        //   전승한다, 실험실 E2b). 두 모델은 역할이 다르다: 사람 모델 = 실제 대국, 주 모델 = 정교한 분석. 서로의 폴백이 아니다.
+        //   실패는 그대로 올려 AI 차례의 실패 경로를 탄다(refactor backlog #109) — 같은 국면에서 한 번 조용히 다시 시도하고,
+        //   또 실패하면 「엔진 응답 지연」 창이 「엔진 다시 시작하기」를 묻는다. 다시 띄운 엔진은 두 모델을 새로 올린다.
+        val humanStyle = playLevel.humanPlayStyle()?.takeIf { coreApi.supportsHumanNetwork }
         if (humanStyle != null) {
-            try {
-                return runHumanStyleTurn(currentState, aiPlayer, playLevel, turnProfile, humanStyle)
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (failure: Throwable) {
-                // 사람 모델을 못 쓴다(파일이 깨졌거나 프로세스가 죽었다) — 이 차례부터 지금 방식으로 둔다. 판은 아래에서 다시 맞춘다.
-                currentCoroutineContext().ensureActive()
-                humanStyleUnavailable = true
-            }
+            return runHumanStyleTurn(currentState, aiPlayer, playLevel, turnProfile, humanStyle)
         }
         // 그 밖의 AI 차례는 주 모델로 둔다 — 급수 캐릭터와 두던 엔진이면 여기서 갈아 올린다. 판은 바로 아래에서 맞춘다.
         bringMainNetwork()

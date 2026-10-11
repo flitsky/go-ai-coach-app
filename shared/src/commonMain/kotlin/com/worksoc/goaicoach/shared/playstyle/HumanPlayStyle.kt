@@ -12,7 +12,8 @@ import com.worksoc.goaicoach.shared.policy.customRank
  * 사람 모델(KataGo Human SL)의 정책에서 뽑는다. 무엇을 뽑을지는 프로필 하나([profile])가 정한다.
  *
  * ⚠️ 이 타입은 **무엇을 흉내 낼지**만 안다. 사람 모델이 기기에 있는지, 지금 올라가 있는지는 엔진의 일이다
- * (`EngineCoreApi.supportsHumanNetwork`) — 없으면 그 캐릭터는 예전 방식(`PlayLevelSetting.selectionPolicy`)으로 둔다.
+ * (`EngineCoreApi.supportsHumanNetwork`). 앱의 로컬 엔진은 두 모델이 다 있어야 뜬다(#249 U-78). 사람 모델이 대국 중에
+ * 실패하면 주 모델로 바꿔 두지 않고 엔진을 다시 띄운다(U-80 — `LocalEngineCoreSessionDelegate.runAutoAiTurn`).
  *
  * @property profile 사람 모델의 프로필 이름(`rank_15k`). 공식 KGS 급수를 **믿고 쓴다**(사용자 2026-10-04) — 캐릭터의 세기는
  *   이 값을 범위 안에서 고쳐 맞춘다(밸런스 패치).
@@ -38,8 +39,8 @@ data class HumanPlayStyle(
  * 숨겨 둔 다른 그룹(초급·중급·고급)은 예전 방식 그대로다.
  *
  * ⚠️ 2026-10-05에는 고수·초고수를 **주 모델 탐색**(16·32방문)으로 두기로 했었다 — 그 탐색은 9단 프로필을 전승으로 이기는 세기라
- * (실험실 E2b) 「3단」·「7단」이라는 수준이 될 수 없다. 그 길은 이제 **사람 모델을 못 쓸 때의 폴백**으로만 남는다
- * (`PlayLevelGroup.aiMoveVisits`).
+ * (실험실 E2b) 「3단」·「7단」이라는 수준이 될 수 없다. 그래서 사람 모델이 실패해도 이 길로 바꿔 두지 않는다(U-80).
+ * `PlayLevelGroup.aiMoveVisits`는 사람 모델이 없는 엔진(개발용 원격 엔진)에서만 쓰인다.
  * ⚠️ 값을 바꿀 때는 구간([HumanPlayStyle.weakestRank]~[HumanPlayStyle.strongestRank]) 안에서 — 구간은 U-59가 정했다.
  */
 fun PlayLevelSetting.humanPlayStyle(): HumanPlayStyle? {

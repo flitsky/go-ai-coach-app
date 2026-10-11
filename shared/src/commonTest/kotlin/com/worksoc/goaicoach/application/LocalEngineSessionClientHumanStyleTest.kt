@@ -246,23 +246,26 @@ class LocalEngineSessionClientHumanStyleTest {
     }
 
     /**
-     * 사람 모델을 못 쓴다(깨진 파일·죽은 프로세스) — **그 차례부터 지금 방식으로** 둔다. 주 모델로 갈아 올리고 판을 다시 맞춘 뒤 탐색한다.
-     * 그리고 다시 시도하지 않는다: 수마다 다시 시도하면 수마다 프로세스를 두 번 갈아 올린다.
+     * 사람 모델을 못 쓴다(깨진 파일·죽은 프로세스) — **그 차례가 실패한다.** 주 모델로 갈아 올려 탐색하지 않는다(U-80, 사용자 2026-10-11):
+     * 주 모델 탐색은 그 급수의 세기가 아니다. 실패는 AI 차례의 실패 경로(조용한 재시도 → 「엔진 다시 시작하기」)가 맡는다 —
+     * 그래서 **다음 차례는 다시 사람 모델로** 시도한다(다시 띄운 엔진이 두 모델을 새로 올린다).
      */
     @Test
-    fun aBrokenHumanModelFallsBackForThisTurnAndIsNotRetried() = runBlocking {
+    fun aBrokenHumanModelFailsTheTurnInsteadOfFallingBackToTheMainNetwork() = runBlocking {
         engine.humanPolicyFailure = IllegalStateException("model file is corrupt")
 
-        val first = turn(level = 1)
-        val afterFirst = engine.calls.size
-        turn(level = 1)
+        val failure = runCatching { turn(level = 1) }.exceptionOrNull()
 
-        assertEquals(
-            listOf("useNetwork Human", "configure", "newGame", "humanPolicy rank_15k", "useNetwork Main", "configure", "newGame", "newGame", "analyze", "play Black E5", "estimate"),
-            engine.calls.take(afterFirst),
-        )
-        assertEquals(EngineNetwork.Main, first.scoreEstimate?.network)
-        assertFalse(engine.calls.drop(afterFirst).any { it.startsWith("useNetwork") || it.startsWith("humanPolicy") }, "the human network must not be retried every move")
+        assertEquals("model file is corrupt", failure?.message, "the failure must reach the AI-turn failure path, not be swallowed")
+        assertFalse(engine.calls.contains("useNetwork Main"), "must not swap to the main network to play the character: ${engine.calls}")
+        assertFalse(engine.calls.contains("analyze"), "must not search with the main network instead: ${engine.calls}")
+
+        engine.humanPolicyFailure = null
+        val afterRestart = engine.calls.size
+        val retried = turn(level = 1)
+
+        assertTrue(engine.calls.drop(afterRestart).contains("humanPolicy rank_15k"), "the next turn must try the human network again")
+        assertEquals(EngineNetwork.Human, retried.scoreEstimate?.network)
     }
 
     /**
