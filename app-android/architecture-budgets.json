@@ -18,6 +18,8 @@
         "GoCoachScreen.currentDestination": { "kind": "NAVIGATION", "since": "#46", "why": "현재 목적지 — 셸의 본업" },
         "GoCoachScreen.showResignConfirmFromBack": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "뒤로가기와 메뉴 '대국 나가기'가 함께 여는 기권 확인(#175)" },
         "GoCoachScreen.showResumeDialog": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "이어하기 확인 — 홈 카드에서만 열린다(홈으로 내릴 후보)" },
+        "GoCoachScreen.engineSetupRequired": { "kind": "STARTUP_READ", "since": "#249", "why": "엔진 모델이 없는가 — 첫 컴포지션에서 동기로 한 번(스플래시 안에서 판정을 끝낸다). 부트스트랩과 같은 locateEngineModels" },
+        "GoCoachScreen.engineSetupClosed": { "kind": "VISIBILITY_GATE", "since": "#249", "why": "엔진 준비 화면을 「나중에」·「시작하기」로 닫았다 — 출석 팝업 게이트도 이 값으로 미룬다" },
         "GoCoachScreen.premiumState": { "kind": "DOMAIN_STATE", "since": "#46", "why": "저장소에서 복원한 구독·광고 권한 사본 — 홀더/ViewModel로(#40·#44)" },
         "GoCoachScreen.sessionStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "대국 저장소(디버그 원문 #86 때문에 어댑터 타입으로 쥔다)" },
         "GoCoachScreen.benchmarkStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "엔진 벤치마크 저장소" },

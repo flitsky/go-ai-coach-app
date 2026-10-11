@@ -145,6 +145,35 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "AI 无法正常工作 — 对弈和分析结果均不可信。请从 Google Play 商店安装官方正版。双人对弈仍可照常使用。",
     )
 
+    // ── 엔진 준비 화면(백로그 #249) ──
+    private val SetupSubtitle = mapOf(
+        UiLanguage.Korean to "바둑 AI를 받는 동안 바둑판 조작법을 알아 두세요.",
+        UiLanguage.English to "Learn the board controls while the Go AI downloads.",
+        UiLanguage.Japanese to "囲碁AIをダウンロードする間に、碁盤の操作を覚えましょう。",
+        UiLanguage.ChineseSimplified to "下载围棋 AI 期间，先熟悉一下棋盘操作吧。",
+    )
+
+    private val Later = mapOf(
+        UiLanguage.Korean to "나중에",
+        UiLanguage.English to "Later",
+        UiLanguage.Japanese to "あとで",
+        UiLanguage.ChineseSimplified to "稍后",
+    )
+
+    private val Start = mapOf(
+        UiLanguage.Korean to "시작하기",
+        UiLanguage.English to "Start",
+        UiLanguage.Japanese to "はじめる",
+        UiLanguage.ChineseSimplified to "开始",
+    )
+
+    private val Preparing = mapOf(
+        UiLanguage.Korean to "바둑 AI 엔진을 준비하고 있어요",
+        UiLanguage.English to "Preparing the Go AI engine",
+        UiLanguage.Japanese to "囲碁AIエンジンを準備しています",
+        UiLanguage.ChineseSimplified to "正在准备围棋 AI 引擎",
+    )
+
     fun cards(language: UiLanguage): List<DownloadGuideCard> = listOf(
         DownloadGuideCard(
             title = Card1Title[language] ?: Card1Title.getValue(UiLanguage.Korean),
@@ -198,4 +227,16 @@ internal object UiStringsDownloadGuide {
 
     fun boardControlsGuide(language: UiLanguage): String =
         BoardControlsGuide[language] ?: BoardControlsGuide.getValue(UiLanguage.Korean)
+
+    fun setupSubtitle(language: UiLanguage): String =
+        SetupSubtitle[language] ?: SetupSubtitle.getValue(UiLanguage.Korean)
+
+    fun later(language: UiLanguage): String =
+        Later[language] ?: Later.getValue(UiLanguage.Korean)
+
+    fun start(language: UiLanguage): String =
+        Start[language] ?: Start.getValue(UiLanguage.Korean)
+
+    fun preparing(language: UiLanguage): String =
+        Preparing[language] ?: Preparing.getValue(UiLanguage.Korean)
 }

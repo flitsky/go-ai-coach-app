@@ -81,6 +81,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
 import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
+import com.worksoc.goaicoach.engine.isEngineSetupRequired
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
@@ -144,7 +145,9 @@ import com.worksoc.goaicoach.ui.play.ScoreRecordRemeasureEffect
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
 import com.worksoc.goaicoach.ui.settings.SettingsScreen
 import com.worksoc.goaicoach.ui.setup.EngineDownloadHomeNotice
+import com.worksoc.goaicoach.ui.setup.EngineSetupGateScreen
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
+import com.worksoc.goaicoach.ui.setup.engineSetupGateVisible
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
 import com.worksoc.goaicoach.ui.study.StudyScreen
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
@@ -903,7 +906,13 @@ private fun GoCoachScreen(
     //   겹쳐 떴다). 홈은 스플래시 **아래에 이미 컴포즈**돼 있고(#125), 다이얼로그는 각자 별도 윈도우라
     //   스플래시의 `zIndex`가 누르지 못한다. 순서로는 안 되고 명시적 게이트라야 한다 — #63이 같은 벽에서
     //   배운 것이다. 상태는 `SplashVisibility`가 들고 있어 이 셸의 훅 예산(42/42, 여유 0)을 쓰지 않는다.
+    // 엔진 준비 화면(#249) — 모델이 없으면 화면들 위에 덮는다. 판정은 첫 컴포지션에서 동기로(스플래시 안에서) 끝난다.
+    // ⚠️ 떠 있는 동안 출석 팝업도 미룬다 — 실행 루틴은 「준비 화면 → 시작하기 → 출석 보상」이다(사용자 2026-10-11).
+    val engineSetupRequired = remember(context) { isEngineSetupRequired(context) }
+    var engineSetupClosed by remember { mutableStateOf(false) }
+    val showsEngineSetup = engineSetupGateVisible(engineSetupRequired, engineSetupClosed, identity.mode)
     if (!SplashVisibility.isShowing &&
+        !showsEngineSetup &&
         !EngineUnavailableNoticeDialog(identity.mode) &&
         !EngineBenchmarkOverlays(
             progress = benchmarkUiState.progress,
@@ -1057,6 +1066,7 @@ private fun GoCoachScreen(
             )
         }
     }
+    if (showsEngineSetup) EngineSetupGateScreen(engineMode = identity.mode, onClose = { engineSetupClosed = true })
     }
 }
 

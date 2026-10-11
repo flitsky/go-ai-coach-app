@@ -65,6 +65,11 @@ class UiStringsDownloadGuideTest {
                 "$language boardControlsGuide is blank",
                 UiStringsDownloadGuide.boardControlsGuide(language).isNotBlank(),
             )
+            // 엔진 준비 화면(#249)
+            assertTrue("$language setupSubtitle is blank", UiStringsDownloadGuide.setupSubtitle(language).isNotBlank())
+            assertTrue("$language later is blank", UiStringsDownloadGuide.later(language).isNotBlank())
+            assertTrue("$language start is blank", UiStringsDownloadGuide.start(language).isNotBlank())
+            assertTrue("$language preparing is blank", UiStringsDownloadGuide.preparing(language).isNotBlank())
         }
     }
 }
