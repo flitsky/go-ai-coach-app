@@ -143,6 +143,7 @@ import com.worksoc.goaicoach.ui.play.ProvisionalScoreRefineEffect
 import com.worksoc.goaicoach.ui.play.ScoreRecordRemeasureEffect
 import com.worksoc.goaicoach.ui.play.resignCurrentGameIfAllowed
 import com.worksoc.goaicoach.ui.settings.SettingsScreen
+import com.worksoc.goaicoach.ui.setup.EngineDownloadHomeNotice
 import com.worksoc.goaicoach.ui.setup.GameSetupLobby
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
 import com.worksoc.goaicoach.ui.study.StudyScreen
@@ -949,6 +950,7 @@ private fun GoCoachScreen(
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
                 playerSetup = screenState.playerSetup,
+                engineDownloadNotice = { EngineDownloadHomeNotice(it) },
             )
         }
         ScreenDestination.Study -> {

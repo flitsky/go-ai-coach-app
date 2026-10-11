@@ -1,8 +1,5 @@
 package com.worksoc.goaicoach.ui.setup
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,22 +35,18 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.worksoc.goaicoach.engine.EngineDownloadStatus
 import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
@@ -65,15 +58,6 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
 import kotlinx.coroutines.launch
-
-private fun Context.findActivity(): Activity? {
-    var current = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return null
-}
 
 /**
  * PAD on-demand 에셋 팩 다운로드 동안 표시되는 사용 가이드 카드 섹션 (백로그 #245 U-73, #247 U-74/U-75).
@@ -92,30 +76,7 @@ internal fun EngineDownloadGuideSection(
     val downloadStatus by currentEngineDownloadTracker().status.collectAsState()
     val isDismissed by currentEngineDownloadTracker().isDismissed.collectAsState()
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
-    val activity = remember(context) { context.findActivity() }
-
-    DisposableEffect(activity) {
-        val handler: () -> Unit = {
-            if (activity != null) {
-                try {
-                    val manager = AssetPackManagerFactory.getInstance(activity)
-                    val task = manager.showConfirmationDialog(activity)
-                    task.addOnSuccessListener { resultCode ->
-                        android.util.Log.d("EngineDownloadGuide", "Cellular confirmation result: $resultCode")
-                    }.addOnFailureListener { exception ->
-                        android.util.Log.w("EngineDownloadGuide", "Cellular confirmation dialog failed", exception)
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.w("EngineDownloadGuide", "Cannot show cellular confirmation dialog", e)
-                }
-            }
-        }
-        currentEngineDownloadTracker().registerCellularConfirmationHandler(handler)
-        onDispose {
-            currentEngineDownloadTracker().unregisterCellularConfirmationHandler(handler)
-        }
-    }
+    RegisterCellularConfirmationHandler()
 
     // Idle 상태이면 렌더링하지 않는다
     if (downloadStatus is EngineDownloadStatus.Idle) {
@@ -133,60 +94,7 @@ internal fun EngineDownloadGuideSection(
         // 필수 주 모델 다운로드 실패 또는 Wi-Fi 대기 중 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
         // 다시 카드를 열 수 있는 미니 안내 배너를 제공한다 (#247).
         if (isMandatoryBlocked) {
-            val isFailed = status is EngineDownloadStatus.Failed
-            val isConfirmationRequired = status is EngineDownloadStatus.WaitingForWifi && status.isConfirmationRequired
-            Surface(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(AppRadius.Corner8))
-                    .clickable {
-                        // 배너의 동작 이름(「다시 시도」·「모바일 데이터로 계속」)대로 바로 실행한다 — 카드만 열면 같은 버튼을 두 번 누르게 된다.
-                        val tracker = currentEngineDownloadTracker()
-                        when (status) {
-                            is EngineDownloadStatus.Failed -> tracker.retry()
-                            is EngineDownloadStatus.WaitingForWifi -> {
-                                tracker.reopen()
-                                tracker.requestCellularConfirmation()
-                            }
-                            else -> tracker.reopen()
-                        }
-                    }
-                    .border(
-                        width = AppBorderWidth.Hairline,
-                        color = if (isFailed) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(AppRadius.Corner8),
-                    ),
-                color = if (isFailed) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space8),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = when {
-                            isFailed -> UiStringsDownloadGuide.failed(strings.language)
-                            isConfirmationRequired -> UiStringsDownloadGuide.requiresConfirmation(strings.language)
-                            else -> UiStringsDownloadGuide.waitingForWifi(strings.language)
-                        },
-                        fontSize = AppTextSize.Text12,
-                        fontWeight = FontWeight.Medium,
-                        color = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = when {
-                            isFailed -> UiStringsDownloadGuide.retry(strings.language)
-                            isConfirmationRequired -> UiStringsDownloadGuide.openConfirmation(strings.language)
-                            else -> UiStringsDownloadGuide.continueOnMobileData(strings.language)
-                        },
-                        fontSize = AppTextSize.Text12,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
+            EngineDownloadStatusBanner(status = status, modifier = modifier)
         }
         return
     }

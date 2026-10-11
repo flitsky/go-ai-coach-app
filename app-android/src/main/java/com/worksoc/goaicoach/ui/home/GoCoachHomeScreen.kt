@@ -127,6 +127,11 @@ internal fun GoCoachHomeScreen(
      * 그대로 흘려보낸 것뿐이다(셸의 훅 예산 42/42, 함정 3).
      */
     playerSetup: PlayerSetup,
+    /**
+     * 엔진 팩을 받는 동안의 한 줄 안내(#248) — 받기가 없으면 아무것도 그리지 않는다. 셸이 `ui.setup`의 배너를 넘긴다
+     * (홈과 대국 설정은 같은 층이라 서로 import하지 못한다 — `UiPackageCycleRatchetTest`).
+     */
+    engineDownloadNotice: @Composable (Modifier) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -178,6 +183,10 @@ internal fun GoCoachHomeScreen(
                 HomeTopChip(emoji = "🧑", label = strings.myPageTitle, onClick = onMyPageClick)
                 HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
             }
+
+            // 엔진 팩을 받는 동안만 보이는 한 줄 안내(#248). 앱을 켜자마자 받기가 시작되므로 첫 화면에서 알린다.
+            // 칩 바로 아래에 두는 이유: 아래 가중치 여백이 이 높이를 흡수해 **메뉴 카드는 움직이지 않는다**(#128 ③의 표적 원칙).
+            engineDownloadNotice(Modifier.padding(top = AppSpacing.Space12))
 
             // 남는 세로 공간을 위·아래로 나눠 로고 블록을 가운데 둔다. 예전에는 **블록 자체가**
             // `weight(1f)`였는데, 그러면 "남는 공간"이 곧 블록의 **최대 높이**가 된다 — 공간이
