@@ -114,9 +114,10 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 > 손대고 있는 것. **비어 있는 것이 정상이다** — 여기 오래 머무는 항목은 쪼개야 한다는 신호다.
 
 - **#249 엔진 준비 화면**(Opus/높음) — 카드는 아래 「다음」 구역의 `### 249`.
-  · ① 실행 게이트 — 코드 끝, 에뮬레이터 미리보기로 확인(`ae6d7aca` 두 모델 필수 · `9bff7aa5` 게이트) ⏳ 폰(인터널 트랙) 확인 전
-  · 확인 방법: `adb shell "run-as com.zenit9hub.ai.baduk sh -c 'echo ok > files/debug-engine-setup-preview'"`(ok·fail·wifi) 뒤 앱을 켠다 · 받기 로그는 `adb logcat -s EnginePad`
-  · 다음: ② 화면 고도화(설정 「바둑판 조작법」도 이 화면으로) → ③ 판다 시연 + 「직접 해 보기」
+  · ① 실행 게이트 — 코드 끝, 에뮬레이터 미리보기로 확인(`ae6d7aca` 두 모델 필수 · `9bff7aa5` 게이트) · 1.3.3(10303) AAB를 사용자가 인터널 트랙에서 확인 중 ⏳
+  · ②③ 전체 화면 조작법 가이드 + 판다 시연(끌기·착수 확인·판 크기) + 「직접 해 보기」 — 코드 끝, 에뮬레이터 확인(`ffc9b026` 돌 버튼을 `ui.board`로 · `6fbc0ed9` 가이드). 설정 「바둑판 조작법」·대국 설정 받기 카드도 같은 가이드를 연다 ⏳ 폰 확인 전
+  · 확인 방법: `adb shell "run-as com.zenit9hub.ai.baduk sh -c 'echo ok > files/debug-engine-setup-preview'"`(ok·fail·wifi) 뒤 앱을 켠다 · 받기 로그는 `adb logcat -s EnginePad` · 가이드만은 설정 → 「바둑판 조작법」
+  · 카드의 「설정에 미리보기 입구」는 두지 않았다 — 가이드는 설정에서 그대로 열리고, 받기 진행 카드는 진짜 경로(인터널 트랙)로 보는 편이 정확하다(adb 미리보기는 남겼다)
 
 ---
 
