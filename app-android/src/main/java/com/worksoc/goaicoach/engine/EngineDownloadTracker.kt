@@ -46,7 +46,12 @@ internal class EngineDownloadTracker {
     val isDismissed: StateFlow<Boolean> = _isDismissed.asStateFlow()
 
     private var retryHandler: (() -> Unit)? = null
-    private var cellularConfirmationHandler: (() -> Unit)? = null
+    /**
+     * 「모바일 데이터로 계속」이 띄울 Play 승인 창 핸들러 — 배너가 떠 있는 **화면마다** 하나씩 건다(Activity가 있어야 창이 열린다).
+     * ⚠️ 자리 하나였을 때(#252 전) 홈 배너가 건 뒤 엔진 준비 화면이 덮어쓰고, 준비 화면이 닫히며 지우면 자리가 비어
+     *   홈 배너를 눌러도 아무 일이 없었다. 그래서 쌓는다 — 가장 최근에 건 살아 있는 것이 받고, 닫히는 화면은 제 것만 뺀다.
+     */
+    private val cellularConfirmationHandlers = mutableListOf<() -> Unit>()
 
     /**
      * 진행 상황을 갱신한다.
@@ -85,18 +90,17 @@ internal class EngineDownloadTracker {
     /** 판정 목록은 [isStoreInstallationErrorCode] 한 곳에 있다 — 영구 실패 목록과 함께 고친다. */
     fun isOfficialPlatformPermanentFailure(): Boolean = isStoreInstallationErrorCode(lastPermanentFailureCode)
 
-    fun registerCellularConfirmationHandler(handler: (() -> Unit)?) {
-        cellularConfirmationHandler = handler
+    fun registerCellularConfirmationHandler(handler: () -> Unit) {
+        cellularConfirmationHandlers.remove(handler)
+        cellularConfirmationHandlers.add(handler)
     }
 
     fun unregisterCellularConfirmationHandler(handler: () -> Unit) {
-        if (cellularConfirmationHandler === handler) {
-            cellularConfirmationHandler = null
-        }
+        cellularConfirmationHandlers.remove(handler)
     }
 
     fun requestCellularConfirmation() {
-        cellularConfirmationHandler?.invoke()
+        cellularConfirmationHandlers.lastOrNull()?.invoke()
     }
 }
 

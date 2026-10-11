@@ -361,6 +361,21 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
     return messages
 }
 
+/**
+ * 정체 타이머를 대기열(PENDING) 때문에 멈춰 둘 것인가(#252) — 아직 안 끝난 팩 가운데 **대기열에 있는 팩이 있고**, 그 대기가 5분을
+ * 넘지 않았고, **실제로 받는 팩이 하나도 없을 때**만 그렇다. 하나라도 받고 있으면 정체는 평소대로(어느 팩이든 진행이 있으면 산다) 잰다.
+ */
+internal fun isStallTimerHeldByQueue(
+    statuses: Map<String, Int>,
+    unfinishedPacks: Set<String>,
+    pendingExceeded: Boolean,
+): Boolean {
+    if (pendingExceeded) return false
+    val queued = unfinishedPacks.filter { statuses[it] == AssetPackStatus.PENDING }
+    val receiving = unfinishedPacks.filter { statuses[it] != AssetPackStatus.PENDING }
+    return queued.isNotEmpty() && receiving.isEmpty()
+}
+
 internal data class FetchAttemptResult(
     val outcome: AttemptOutcome,
     val messages: List<String>,
@@ -586,7 +601,11 @@ internal suspend fun fetchAndAwaitAssetPacksAttempt(
                     now - start > PendingStallTimeoutMs
                 }
 
-                if (pendingPacksList.isNotEmpty() && !pendingExceeded) {
+                // 대기열(PENDING)의 유예는 **실제로 받는 팩이 하나도 없을 때만** 준다(#252). 예전에는 아무 팩이나 대기 중이면 타이머를
+                // 되돌려, 두 팩을 함께 받다 한 팩이 대기열에 있는 동안 다른 팩이 바이트 없이 멈춰도 최대 5분을 놓쳤다.
+                // 팩별로 따로 재지는 않는다 — Play가 팩을 차례로 받는 느린 망에서 뒤의 팩을 정체로 잘못 볼 수 있다. 진행은 어느 팩이든 센다.
+                val unfinished = synchronized(stateLock) { pendingPacks.toSet() }
+                if (isStallTimerHeldByQueue(packStatusMap, unfinished, pendingExceeded)) {
                     lastProgressTimestamp.set(now)
                     continue
                 }

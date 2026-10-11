@@ -881,6 +881,43 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
+    fun testClosingTheSetupScreenGivesTheConfirmationBackToTheHomeBanner() {
+        // #252: 홈 배너가 걸고 → 엔진 준비 화면이 덮어 걸고 → 준비 화면이 닫히면 홈 배너의 것이 다시 받아야 한다.
+        val tracker = EngineDownloadTracker()
+        var homeCalled = false
+        var gateCalled = false
+        val home = { homeCalled = true }
+        val gate = { gateCalled = true }
+
+        tracker.registerCellularConfirmationHandler(home)
+        tracker.registerCellularConfirmationHandler(gate)
+        tracker.requestCellularConfirmation()
+        assertTrue("떠 있는 맨 위 화면(준비 화면)이 받는다", gateCalled && !homeCalled)
+
+        tracker.unregisterCellularConfirmationHandler(gate)
+        tracker.requestCellularConfirmation()
+        assertTrue("준비 화면이 닫히면 홈 배너가 다시 받는다", homeCalled)
+    }
+
+    @Test
+    fun testQueueHoldsTheStallTimerOnlyWhileNothingIsReceiving() {
+        // #252: 한 팩이 대기열에 있어도 다른 팩이 받는 중이면 정체는 평소대로 잰다(예전에는 최대 5분을 놓쳤다).
+        val both = setOf(KatagoModelPackName, KatagoHumanPackName)
+        val pending = AssetPackStatus.PENDING
+        val downloading = AssetPackStatus.DOWNLOADING
+        assertTrue(isStallTimerHeldByQueue(mapOf(KatagoModelPackName to pending, KatagoHumanPackName to pending), both, pendingExceeded = false))
+        assertFalse(
+            "다른 팩이 받는 중이면 대기열이 타이머를 멈추지 않는다",
+            isStallTimerHeldByQueue(mapOf(KatagoModelPackName to pending, KatagoHumanPackName to downloading), both, pendingExceeded = false),
+        )
+        assertTrue(
+            "끝난 팩은 세지 않는다 — 남은 팩이 대기열뿐이면 멈춘다",
+            isStallTimerHeldByQueue(mapOf(KatagoModelPackName to AssetPackStatus.COMPLETED, KatagoHumanPackName to pending), setOf(KatagoHumanPackName), pendingExceeded = false),
+        )
+        assertFalse("대기 5분을 넘기면 멈추지 않는다", isStallTimerHeldByQueue(mapOf(KatagoModelPackName to pending), setOf(KatagoModelPackName), pendingExceeded = true))
+    }
+
+    @Test
     fun testUnregisterCellularConfirmationHandlerOnlyClearsMatchingHandler() {
         val tracker = EngineDownloadTracker()
         var handler1Called = false
