@@ -297,9 +297,6 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
     val messages = mutableListOf<String>()
     tracker.startNewDownload()
 
-    var consecutiveInternalErrors = 0
-    val maxConsecutiveInternalErrors = 3
-
     while (currentCoroutineContext().isActive) {
         val (outcome, attemptMessages) = fetchAndAwaitAssetPacksAttempt(
             manager = manager,
@@ -332,18 +329,8 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
             }
 
             is AttemptOutcome.RecoverableFailure -> {
-                if (outcome.errorCode == AssetPackErrorCode.INTERNAL_ERROR) {
-                    consecutiveInternalErrors++
-                    if (consecutiveInternalErrors >= maxConsecutiveInternalErrors) {
-                        messages += "Asset pack INTERNAL_ERROR exceeded retry limit ($consecutiveInternalErrors) -> fallback to PermanentFailure."
-                        tracker.lastPermanentFailureCode = outcome.errorCode
-                        tracker.updateStatus(EngineDownloadStatus.Idle)
-                        break
-                    }
-                } else {
-                    consecutiveInternalErrors = 0
-                }
-
+                // ⚠️ 몇 번이 겹쳐도 영구 실패로 바꾸지 않는다(#251) — 예전에는 INTERNAL_ERROR 3회면 스텁으로 갔고, 엔진 준비는
+                // 프로세스에 한 번이라 강제 종료 전까지 다시 받을 길이 없었다. 재시도는 사용자가 누를 때만 도니 헛도는 고리도 없다.
                 // ⚠️ 재시도 핸들러를 Failed보다 먼저 건다 — 반대 순서면 Failed가 보인 직후의 탭이
                 // 끝난 시도의 핸들러로 가서 사라진다.
                 val retryDeferred = CompletableDeferred<Unit>()

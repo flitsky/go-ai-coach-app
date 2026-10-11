@@ -803,13 +803,17 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
-    fun testInternalErrorExceedsMaxRetriesFallsBackToStub() = runBlocking(Dispatchers.Default) {
+    fun testRepeatedInternalErrorsKeepOfferingRetryInsteadOfStub() = runBlocking(Dispatchers.Default) {
+        // #251: -100은 몇 번이 겹쳐도 스텁으로 가지 않는다 — 엔진 준비는 프로세스에 한 번이라 스텁이면 다시 받을 길이 없다.
         var attempts = 0
         val tracker = EngineDownloadTracker()
         val fakeManager = FakeAssetPackManager {
             attempts++
-            // 매번 INTERNAL_ERROR 발생
-            FakeTask(exception = newAssetPackException(AssetPackErrorCode.INTERNAL_ERROR))
+            if (attempts <= 4) {
+                FakeTask(exception = newAssetPackException(AssetPackErrorCode.INTERNAL_ERROR))
+            } else {
+                FakeTask(createFakeAssetPackStates(emptyMap()))
+            }
         }
 
         val downloadJob = async {
@@ -820,26 +824,19 @@ class EngineBootstrapPadDownloadTest {
             )
         }
 
-        // 첫 번째 실패 후 재시도
-        withTimeout(3000L) {
-            while (tracker.status.value !is EngineDownloadStatus.Failed) {
-                delay(10)
+        for (expected in 1..4) {
+            withTimeout(3000L) {
+                while (attempts < expected || tracker.status.value !is EngineDownloadStatus.Failed) delay(10)
             }
+            assertTrue("${expected}번째 -100 뒤에도 다시 받기를 기다려야 한다", downloadJob.isActive)
+            tracker.retry()
         }
-        tracker.retry()
 
-        // 두 번째 실패 후 재시도 — 첫 시도의 Failed가 아직 남아 있으므로 시도 횟수로 두 번째임을 확인한다
-        withTimeout(3000L) {
-            while (attempts < 2 || tracker.status.value !is EngineDownloadStatus.Failed) {
-                delay(10)
-            }
-        }
-        tracker.retry()
-
-        // 세 번째 실패 후에는 상한(3회)에 도달하여 재시도 대기 없이 Idle로 종료되어야 함
+        awaitListener(fakeManager)
+        fakeManager.emitState(createFakeAssetPackState(name = KatagoModelPackName, status = AssetPackStatus.COMPLETED))
         downloadJob.await()
-        assertEquals("연속 3회 INTERNAL_ERROR 시 Idle 상태로 종료되어야 함", EngineDownloadStatus.Idle, tracker.status.value)
-        assertEquals(3, attempts)
+        assertEquals(EngineDownloadStatus.Completed, tracker.status.value)
+        assertEquals(null, tracker.lastPermanentFailureCode)
     }
 
     @Test
@@ -1101,7 +1098,8 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
-    fun testFetchResultInternalErrorCountsTowardRetryCap() = runBlocking(Dispatchers.Default) {
+    fun testFetchResultInternalErrorReachesTheRetryCard() = runBlocking(Dispatchers.Default) {
+        // fetch 결과에 실린 -100도 진짜 코드 그대로 「다시 시도」 카드에 닿는다(#251 — 횟수 상한은 없다).
         var attempts = 0
         val fakeManager = FakeAssetPackManager { packs ->
             attempts++
@@ -1126,20 +1124,14 @@ class EngineBootstrapPadDownloadTest {
             )
         }
 
-        awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
-        assertEquals(
-            "fetch 결과의 진짜 오류 코드가 바깥 루프까지 가야 함",
-            AssetPackErrorCode.INTERNAL_ERROR,
-            (tracker.status.value as EngineDownloadStatus.Failed).errorCode,
-        )
-        tracker.retry()
-        // 첫 시도의 Failed가 아직 남아 있으므로 시도 횟수로 두 번째임을 확인한다
-        awaitStatus(tracker) { it is EngineDownloadStatus.Failed && attempts == 2 }
-        tracker.retry()
-
-        downloadJob.await()
-        assertEquals(EngineDownloadStatus.Idle, tracker.status.value)
-        assertEquals(3, attempts)
+        repeat(3) { index ->
+            awaitStatus(tracker) { it is EngineDownloadStatus.Failed && attempts == index + 1 }
+            assertEquals(AssetPackErrorCode.INTERNAL_ERROR, (tracker.status.value as EngineDownloadStatus.Failed).errorCode)
+            tracker.retry()
+        }
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed && attempts == 4 }
+        assertTrue("세 번을 넘겨도 스텁으로 가지 않는다", downloadJob.isActive)
+        downloadJob.cancel()
     }
 
     @Test
