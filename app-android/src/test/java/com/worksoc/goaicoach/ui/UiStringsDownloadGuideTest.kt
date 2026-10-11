@@ -50,14 +50,6 @@ class UiStringsDownloadGuideTest {
                 UiStringsDownloadGuide.aiReady(language).isNotBlank(),
             )
             assertTrue(
-                "$language preparingHumanModel is blank",
-                UiStringsDownloadGuide.preparingHumanModel(language).isNotBlank(),
-            )
-            assertTrue(
-                "$language humanModelReady is blank",
-                UiStringsDownloadGuide.humanModelReady(language).isNotBlank(),
-            )
-            assertTrue(
                 "$language previousGuide is blank",
                 UiStringsDownloadGuide.previousGuide(language).isNotBlank(),
             )

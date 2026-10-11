@@ -86,14 +86,10 @@ internal fun EngineDownloadGuideSection(
     // 카드를 닫은 상태(isDismissed)
     if (isDismissed) {
         val status = downloadStatus
-        val isMandatoryBlocked = when (status) {
-            is EngineDownloadStatus.Failed -> !status.isHumanModelOnly
-            is EngineDownloadStatus.WaitingForWifi -> !status.isHumanModelOnly
-            else -> false
-        }
-        // 필수 주 모델 다운로드 실패 또는 Wi-Fi 대기 중 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
+        val isBlocked = status is EngineDownloadStatus.Failed || status is EngineDownloadStatus.WaitingForWifi
+        // 다운로드 실패 또는 Wi-Fi 대기 중 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
         // 다시 카드를 열 수 있는 미니 안내 배너를 제공한다 (#247).
-        if (isMandatoryBlocked) {
+        if (isBlocked) {
             EngineDownloadStatusBanner(status = status, modifier = modifier)
         }
         return
@@ -120,73 +116,38 @@ internal fun EngineDownloadGuideSection(
                     val downloadedMb = status.bytesDownloaded / (1024 * 1024)
                     val totalMb = (status.totalBytesToDownload / (1024 * 1024)).coerceAtLeast(1L)
                     val progressFloat = (status.percentage / 100f).coerceIn(0f, 1f)
-                    if (status.isHumanModelOnly) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = UiStringsDownloadGuide.preparingHumanModel(strings.language),
-                                fontSize = AppTextSize.Text12,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f),
-                            )
-                            IconButton(
-                                onClick = { currentEngineDownloadTracker().dismiss() },
-                                modifier = Modifier.size(24.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = UiStringsDownloadGuide.close(strings.language),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(AppSpacing.Space4))
-
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
                             text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
                             fontSize = AppTextSize.Text12,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
                         )
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                        IconButton(
+                            onClick = { currentEngineDownloadTracker().dismiss() },
+                            modifier = Modifier.size(24.dp),
                         ) {
-                            Text(
-                                text = "$downloadedMb MB / $totalMb MB (${status.percentage}%)",
-                                fontSize = AppTextSize.Text12,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = UiStringsDownloadGuide.close(strings.language),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp),
                             )
-                            IconButton(
-                                onClick = { currentEngineDownloadTracker().dismiss() },
-                                modifier = Modifier.size(24.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = UiStringsDownloadGuide.close(strings.language),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                            }
                         }
-
-                        Spacer(modifier = Modifier.height(AppSpacing.Space4))
-
-                        // U-74: 다운로드 안내 (바둑 AI 엔진 다운로드 중 (197MB/99MB) · Wi-Fi 권장)
-                        Text(
-                            text = UiStringsDownloadGuide.downloadingNotice(strings.language),
-                            fontSize = AppTextSize.Text12,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
+
+                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
+
+                    // U-74: 다운로드 안내 (바둑 AI 엔진 다운로드 중 (197MB/99MB) · Wi-Fi 권장)
+                    Text(
+                        text = UiStringsDownloadGuide.downloadingNotice(strings.language),
+                        fontSize = AppTextSize.Text12,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
 
                     Spacer(modifier = Modifier.height(AppSpacing.Space6))
 
@@ -343,12 +304,8 @@ internal fun EngineDownloadGuideSection(
                     Spacer(modifier = Modifier.height(AppSpacing.Space10))
                 }
 
-                is EngineDownloadStatus.Completed -> {
-                    val completedText = if (status.isHumanModelOnly) {
-                        UiStringsDownloadGuide.humanModelReady(strings.language)
-                    } else {
-                        UiStringsDownloadGuide.aiReady(strings.language)
-                    }
+                EngineDownloadStatus.Completed -> {
+                    val completedText = UiStringsDownloadGuide.aiReady(strings.language)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

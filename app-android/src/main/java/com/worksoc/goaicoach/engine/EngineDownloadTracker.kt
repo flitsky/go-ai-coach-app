@@ -19,14 +19,12 @@ sealed interface EngineDownloadStatus {
         val bytesDownloaded: Long,
         val totalBytesToDownload: Long,
         val percentage: Int,
-        val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
     /** 모바일 데이터에서 Wi-Fi 연결 또는 사용자 확인을 대기 중 */
     data class WaitingForWifi(
         val bytesDownloaded: Long,
         val totalBytesToDownload: Long,
-        val isHumanModelOnly: Boolean = false,
         val isConfirmationRequired: Boolean = false,
     ) : EngineDownloadStatus
 
@@ -34,13 +32,10 @@ sealed interface EngineDownloadStatus {
     data class Failed(
         val errorCode: Int,
         val message: String,
-        val isHumanModelOnly: Boolean = false,
     ) : EngineDownloadStatus
 
-    /** 다운로드 완료 */
-    data class Completed(
-        val isHumanModelOnly: Boolean = false,
-    ) : EngineDownloadStatus
+    /** 다운로드 완료 — 받는 팩은 전부 필수라(#249 U-78) 완료는 곧 두 모델이 다 있다는 뜻이다. */
+    object Completed : EngineDownloadStatus
 }
 
 internal class EngineDownloadTracker {

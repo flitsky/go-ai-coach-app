@@ -89,20 +89,6 @@ internal object UiStringsDownloadGuide {
         UiLanguage.ChineseSimplified to "✓ AI 准备就绪",
     )
 
-    private val PreparingHumanModel = mapOf(
-        UiLanguage.Korean to "사람처럼 두는 AI 모델을 준비하고 있어요",
-        UiLanguage.English to "Preparing human-style AI model…",
-        UiLanguage.Japanese to "人間らしいAIモデルを準備しています…",
-        UiLanguage.ChineseSimplified to "正在准备拟人 AI 模型…",
-    )
-
-    private val HumanModelReady = mapOf(
-        UiLanguage.Korean to "✓ 사람 모델 다운로드 완료 (앱 재실행 시 적용)",
-        UiLanguage.English to "✓ Human-style AI downloaded (applies on app restart)",
-        UiLanguage.Japanese to "✓ 人間らしいAIのダウンロード完了（アプリ再起動時に適用）",
-        UiLanguage.ChineseSimplified to "✓ 拟人 AI 下载完成（重启应用后生效）",
-    )
-
     private val PrevGuide = mapOf(
         UiLanguage.Korean to "이전 가이드",
         UiLanguage.English to "Previous guide",
@@ -191,12 +177,6 @@ internal object UiStringsDownloadGuide {
 
     fun aiReady(language: UiLanguage): String =
         AiReady[language] ?: AiReady.getValue(UiLanguage.Korean)
-
-    fun preparingHumanModel(language: UiLanguage): String =
-        PreparingHumanModel[language] ?: PreparingHumanModel.getValue(UiLanguage.Korean)
-
-    fun humanModelReady(language: UiLanguage): String =
-        HumanModelReady[language] ?: HumanModelReady.getValue(UiLanguage.Korean)
 
     fun previousGuide(language: UiLanguage): String =
         PrevGuide[language] ?: PrevGuide.getValue(UiLanguage.Korean)

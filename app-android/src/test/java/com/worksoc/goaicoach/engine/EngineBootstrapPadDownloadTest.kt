@@ -174,6 +174,31 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
+    fun testLocateEngineModelsRequiresBothModels() {
+        // #249 U-78: 두 모델이 다 있어야 받을 것이 없다 — 실행 게이트와 부트스트랩이 이 한 판정을 쓴다.
+        val katagoDir = kotlin.io.path.createTempDirectory("katago").toFile()
+        try {
+            val manager = FakeAssetPackManager()
+            assertEquals(
+                listOf(KatagoModelPackName, KatagoHumanPackName),
+                locateEngineModels(katagoDir, manager).missingPacks,
+            )
+            assertEquals(listOf(KatagoModelPackName, KatagoHumanPackName), locateEngineModels(katagoDir, null).missingPacks)
+
+            java.io.File(katagoDir, "model.bin").writeBytes(byteArrayOf(1))
+            assertEquals("주 모델만 있으면 사람 모델 팩이 남는다", listOf(KatagoHumanPackName), locateEngineModels(katagoDir, manager).missingPacks)
+
+            java.io.File(katagoDir, "human.bin.gz").writeBytes(byteArrayOf(1))
+            assertEquals(emptyList<String>(), locateEngineModels(katagoDir, manager).missingPacks)
+
+            java.io.File(katagoDir, "model.bin").writeBytes(ByteArray(0))
+            assertEquals("빈 파일은 없는 것이다", listOf(KatagoModelPackName), locateEngineModels(katagoDir, manager).missingPacks)
+        } finally {
+            katagoDir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun testErrorCodeClassification() {
         assertTrue(isPermanentAssetPackErrorCode(AssetPackErrorCode.API_NOT_AVAILABLE))
         assertTrue(isPermanentAssetPackErrorCode(-11))
@@ -243,7 +268,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -292,7 +316,6 @@ class EngineBootstrapPadDownloadTest {
         fetchAndAwaitAssetPacksWithRetry(
             manager = fakeManager,
             neededPacks = listOf(KatagoModelPackName),
-            isMandatory = true,
             tracker = tracker,
         )
 
@@ -316,7 +339,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -365,7 +387,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -414,7 +435,7 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
-    fun testHumanModelOptionalDownloadDoesNotPermanentlyAbandonOnNetworkError() = runBlocking(Dispatchers.Default) {
+    fun testHumanOnlyDownloadRetriesAfterNetworkError() = runBlocking(Dispatchers.Default) {
         var attempts = 0
         val fakeManager = FakeAssetPackManager {
             attempts++
@@ -431,7 +452,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoHumanPackName),
-                isMandatory = false,
                 tracker = tracker,
             )
         }
@@ -444,8 +464,7 @@ class EngineBootstrapPadDownloadTest {
 
         val failed = tracker.status.value as EngineDownloadStatus.Failed
         assertEquals(AssetPackErrorCode.NETWORK_ERROR, failed.errorCode)
-        assertTrue(failed.isHumanModelOnly)
-        assertTrue("사람 모델도 일시적 네트워크 오류 시 루프를 탈출하여 영구 포기하면 안 됨", downloadJob.isActive)
+        assertTrue("사람 모델만 받는 시도도 일시적 네트워크 오류로 영구 포기하면 안 됨", downloadJob.isActive)
 
         // 사용자 또는 백그라운드 재시도
         tracker.retry()
@@ -465,8 +484,6 @@ class EngineBootstrapPadDownloadTest {
 
         downloadJob.await()
         assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
-        val completed = tracker.status.value as EngineDownloadStatus.Completed
-        assertTrue(completed.isHumanModelOnly)
     }
 
     @Test
@@ -479,7 +496,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
             )
         }
 
@@ -517,7 +533,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -561,12 +576,11 @@ class EngineBootstrapPadDownloadTest {
         fetchAndAwaitAssetPacksWithRetry(
             manager = fakeManager,
             neededPacks = listOf(KatagoHumanPackName),
-            isMandatory = false,
             tracker = tracker,
         )
 
         assertEquals(
-            "선택 사람 모델 영구 실패 시 죽은 재시도 버튼을 남기지 않고 Idle로 리셋되어야 함",
+            "사람 모델 영구 실패 시 죽은 재시도 버튼을 남기지 않고 Idle(스텁 경로)로 끝나야 함",
             EngineDownloadStatus.Idle,
             tracker.status.value,
         )
@@ -589,7 +603,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -668,7 +681,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -728,7 +740,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -756,7 +767,8 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
-    fun testOptionalHumanPackPermanentFailureDoesNotAbortMandatoryModel() = runBlocking(Dispatchers.Default) {
+    fun testHumanPackPermanentFailureFailsWholeAttempt() = runBlocking(Dispatchers.Default) {
+        // #249 U-78: 캐릭터가 사람 모델로 두므로 사람 모델 없이는 성공이 아니다 — 주 모델만 받았다고 Completed가 되면 안 된다.
         val fakeManager = FakeAssetPackManager { packs ->
             val states = packs.associateWith { pack ->
                 createFakeAssetPackState(
@@ -772,18 +784,11 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
+        awaitListener(fakeManager)
 
-        withTimeout(3000L) {
-            while (fakeManager.registeredListeners.isEmpty()) {
-                delay(10)
-            }
-        }
-
-        // 사람 모델 영구 실패 발생 (PACK_UNAVAILABLE)
         fakeManager.emitState(
             createFakeAssetPackState(
                 name = KatagoHumanPackName,
@@ -792,17 +797,9 @@ class EngineBootstrapPadDownloadTest {
             )
         )
 
-        // 주 모델은 정상 다운로드 완료
-        fakeManager.emitState(
-            createFakeAssetPackState(
-                name = KatagoModelPackName,
-                status = AssetPackStatus.COMPLETED,
-            )
-        )
-
         downloadJob.await()
-        // 사람 모델이 영구 실패했더라도 필수 주 모델이 성공했으므로 Completed여야 함 (#246)
-        assertTrue("선택 모델 영구 실패 시에도 주 모델 성공 시 Completed여야 함", tracker.status.value is EngineDownloadStatus.Completed)
+        assertEquals("사람 모델 영구 실패는 시도 전체의 영구 실패다", EngineDownloadStatus.Idle, tracker.status.value)
+        assertEquals(AssetPackErrorCode.PACK_UNAVAILABLE, tracker.lastPermanentFailureCode)
     }
 
     @Test
@@ -819,7 +816,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -863,7 +859,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -937,7 +932,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoHumanPackName),
-                isMandatory = false,
                 tracker = tracker,
             )
         }
@@ -954,7 +948,6 @@ class EngineBootstrapPadDownloadTest {
         awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
         val failed = tracker.status.value as EngineDownloadStatus.Failed
         assertEquals(AssetPackErrorCode.NETWORK_ERROR, failed.errorCode)
-        assertTrue(failed.isHumanModelOnly)
         assertTrue("사람 모델만 받는 시도의 실패를 Success로 끝내면 안 됨", downloadJob.isActive)
 
         tracker.retry()
@@ -973,7 +966,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoHumanPackName),
-                isMandatory = false,
                 tracker = tracker,
             )
         }
@@ -1000,7 +992,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -1042,7 +1033,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -1100,7 +1090,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -1133,7 +1122,6 @@ class EngineBootstrapPadDownloadTest {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
@@ -1155,42 +1143,39 @@ class EngineBootstrapPadDownloadTest {
     }
 
     @Test
-    fun testFailedOptionalPackExcludedFromProgressTotal() = runBlocking(Dispatchers.Default) {
+    fun testHumanPackRecoverableFailureInJointDownloadWaitsForRetry() = runBlocking(Dispatchers.Default) {
+        // #249 U-78: 두 팩을 함께 받다가 사람 모델만 일시 실패해도 Completed로 끝나지 않고 재시도를 기다린다.
         val fakeManager = FakeAssetPackManager { FakeTask(createFakeAssetPackStates(emptyMap())) }
         val tracker = EngineDownloadTracker()
         val downloadJob = async {
             fetchAndAwaitAssetPacksWithRetry(
                 manager = fakeManager,
                 neededPacks = listOf(KatagoModelPackName, KatagoHumanPackName),
-                isMandatory = true,
                 tracker = tracker,
             )
         }
         awaitListener(fakeManager)
 
+        fakeManager.emitState(createFakeAssetPackState(name = KatagoModelPackName, status = AssetPackStatus.COMPLETED))
         fakeManager.emitState(
             createFakeAssetPackState(
                 name = KatagoHumanPackName,
                 status = AssetPackStatus.FAILED,
-                errorCode = AssetPackErrorCode.PACK_UNAVAILABLE,
-            )
-        )
-        fakeManager.emitState(
-            createFakeAssetPackState(
-                name = KatagoModelPackName,
-                status = AssetPackStatus.DOWNLOADING,
-                bytesDownloaded = 50_000_000L,
-                totalBytesToDownload = 100_000_000L,
+                errorCode = AssetPackErrorCode.NETWORK_ERROR,
             )
         )
 
-        val downloading = tracker.status.value as EngineDownloadStatus.Downloading
-        assertEquals("실패한 선택 팩은 진행률 합계에서 빠져야 함", 50, downloading.percentage)
-        assertEquals(100_000_000L, downloading.totalBytesToDownload)
+        awaitStatus(tracker) { it is EngineDownloadStatus.Failed }
+        assertEquals(AssetPackErrorCode.NETWORK_ERROR, (tracker.status.value as EngineDownloadStatus.Failed).errorCode)
+        assertTrue("사람 모델 실패를 성공으로 끝내면 안 됨", downloadJob.isActive)
 
+        tracker.retry()
+        awaitListener(fakeManager)
         fakeManager.emitState(createFakeAssetPackState(name = KatagoModelPackName, status = AssetPackStatus.COMPLETED))
+        fakeManager.emitState(createFakeAssetPackState(name = KatagoHumanPackName, status = AssetPackStatus.COMPLETED))
+
         downloadJob.await()
-        assertTrue(tracker.status.value is EngineDownloadStatus.Completed)
+        assertEquals(EngineDownloadStatus.Completed, tracker.status.value)
     }
 
     @Test

@@ -72,7 +72,7 @@ internal fun EngineDownloadStatusBanner(
     val accent = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     val (message, action) = when (status) {
         is EngineDownloadStatus.Downloading -> Pair(
-            if (status.isHumanModelOnly) UiStringsDownloadGuide.preparingHumanModel(language) else UiStringsDownloadGuide.downloadingNotice(language),
+            UiStringsDownloadGuide.downloadingNotice(language),
             "${status.percentage}%",
         )
         is EngineDownloadStatus.WaitingForWifi -> Pair(
@@ -83,7 +83,7 @@ internal fun EngineDownloadStatusBanner(
             UiStringsDownloadGuide.failed(language),
             UiStringsDownloadGuide.retry(language),
         )
-        is EngineDownloadStatus.Idle, is EngineDownloadStatus.Completed -> return
+        EngineDownloadStatus.Idle, EngineDownloadStatus.Completed -> return
     }
 
     Surface(

@@ -38,7 +38,7 @@ if [[ -f "$HUMAN_MODEL_PATH" ]]; then
   "$ADB" push "$HUMAN_MODEL_PATH" "$SEED_DIR/human.bin.gz"
   "$ADB" shell run-as "$PACKAGE" cp "$SEED_DIR/human.bin.gz" files/katago/human.bin.gz
 else
-  echo "Human model not found: $HUMAN_MODEL_PATH — skipped (rank characters fall back to the search-bucket method)." >&2
+  echo "Human model not found: $HUMAN_MODEL_PATH — skipped — the app keeps the stub engine without it (#249: characters need the human model)." >&2
 fi
 "$ADB" shell rm -rf "$SEED_DIR"
 
