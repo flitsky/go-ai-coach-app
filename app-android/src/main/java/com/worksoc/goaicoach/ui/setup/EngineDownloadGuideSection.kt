@@ -37,7 +37,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +63,8 @@ import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
 import kotlinx.coroutines.launch
 
 /**
- * PAD on-demand 에셋 팩 다운로드 동안 표시되는 사용 가이드 카드 섹션 (백로그 #245 U-73, #247 U-74/U-75).
+ * PAD on-demand 에셋 팩 다운로드 동안 대국 설정 화면에 표시되는 진행 카드 (백로그 #245 U-73, #247 U-74/U-75).
+ * 조작법은 전체 화면 가이드([BoardControlsGuideDialog], #249)로 연다 — 예전의 글 카드 캐러셀은 그쪽으로 옮겼다.
  *
  * ## 지키는 조건
  * 1. 팩을 실제로 받는 중이거나 상태가 발생했을 때만 표시 (모델이 이미 있는 기기에는 노출 0초)
@@ -76,7 +80,9 @@ internal fun EngineDownloadGuideSection(
     val downloadStatus by currentEngineDownloadTracker().status.collectAsState()
     val isDismissed by currentEngineDownloadTracker().isDismissed.collectAsState()
     val strings = LocalUiStrings.current
+    var showBoardControlsGuide by remember { mutableStateOf(false) }
     RegisterCellularConfirmationHandler()
+    if (showBoardControlsGuide) BoardControlsGuideDialog(onClose = { showBoardControlsGuide = false })
 
     // Idle 상태이면 렌더링하지 않는다
     if (downloadStatus is EngineDownloadStatus.Idle) {
@@ -336,210 +342,9 @@ internal fun EngineDownloadGuideSection(
                 else -> {}
             }
 
-            // 가이드 카드 캐러셀
-            DownloadGuideCardsCarousel(language = strings.language)
-        }
-    }
-}
-
-/**
- * 가이드 카드 3장을 넘겨볼 수 있는 공통 캐러셀 컴포넌트.
- * 로비 인라인 가이드 섹션과 설정 화면의 '가이드 보기' 팝업 다이얼로그에서 공통 사용된다.
- * 좌우 스와이프 제스처 및 화살표/도트/본문 탭을 통한 유연한 내비게이션을 지원한다.
- */
-@Composable
-internal fun DownloadGuideCardsCarousel(
-    language: UiLanguage,
-    modifier: Modifier = Modifier,
-) {
-    val cards = UiStringsDownloadGuide.cards(language)
-    val totalCards = cards.size
-    val pagerState = rememberPagerState(initialPage = 0) { totalCards }
-    val scope = rememberCoroutineScope()
-    val currentCard = cards[pagerState.currentPage.coerceIn(0, totalCards - 1)]
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        // 가이드 카드 헤더 (제목 + 페이지 표시 및 이동 화살표)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = currentCard.title,
-                fontSize = AppTextSize.Text14,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            val prev = (pagerState.currentPage - 1 + totalCards) % totalCards
-                            pagerState.animateScrollToPage(prev)
-                        }
-                    },
-                    modifier = Modifier.size(24.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = UiStringsDownloadGuide.previousGuide(language),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-
-                Text(
-                    text = "${pagerState.currentPage + 1} / $totalCards",
-                    fontSize = AppTextSize.Text12,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = AppSpacing.Space4),
-                )
-
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            val next = (pagerState.currentPage + 1) % totalCards
-                            pagerState.animateScrollToPage(next)
-                        }
-                    },
-                    modifier = Modifier.size(24.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = UiStringsDownloadGuide.nextGuide(language),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(AppSpacing.Space6))
-
-        // 스와이프 가능한 가이드 본문 Pager (탭 시에도 다음 카드로 이동)
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
-        ) { page ->
-            Text(
-                text = cards[page].body,
-                fontSize = AppTextSize.Text13,
-                lineHeight = 19.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        scope.launch {
-                            val next = (pagerState.currentPage + 1) % totalCards
-                            pagerState.animateScrollToPage(next)
-                        }
-                    },
-            )
-        }
-
-        Spacer(modifier = Modifier.height(AppSpacing.Space10))
-
-        // 하단 도트 인디케이터
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            repeat(totalCards) { index ->
-                val isSelected = index == pagerState.currentPage
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = AppSpacing.Space4)
-                        .size(if (isSelected) 6.dp else 5.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                            }
-                        )
-                        .clickable {
-                            scope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        },
-                )
-            }
-        }
-    }
-}
-
-/**
- * 설정 화면 등에서 언제든 사용 가이드 카드를 열어볼 수 있는 다이얼로그 (실기기 테스트 및 도움말).
- */
-@Composable
-internal fun DownloadGuideDialog(onClose: () -> Unit) {
-    GuideBlockingOverlays.TrackWhileShown()
-    val strings = LocalUiStrings.current
-
-    Dialog(
-        onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .clip(RoundedCornerShape(AppRadius.Corner16)),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(AppSpacing.Space20),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = UiStringsDownloadGuide.boardControlsGuide(strings.language),
-                        fontSize = AppTextSize.Text16,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    IconButton(onClick = onClose, modifier = Modifier.size(28.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = UiStringsDownloadGuide.close(strings.language),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppSpacing.Space16))
-
-                Card(
-                    shape = RoundedCornerShape(AppRadius.Corner12),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Box(modifier = Modifier.padding(AppSpacing.Space16)) {
-                        DownloadGuideCardsCarousel(language = strings.language)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppSpacing.Space16))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = onClose) {
-                        Text(text = UiStringsDownloadGuide.close(strings.language))
-                    }
-                }
+            // 조작법은 전체 화면 가이드 한 곳에서 본다(#249) — 여기서는 그리로 여는 입구만 둔다.
+            TextButton(onClick = { showBoardControlsGuide = true }) {
+                Text(text = UiStringsDownloadGuide.boardControlsGuide(strings.language) + " ›", fontSize = AppTextSize.Text13)
             }
         }
     }

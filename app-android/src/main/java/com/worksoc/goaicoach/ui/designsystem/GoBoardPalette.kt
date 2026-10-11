@@ -17,6 +17,10 @@ internal object GoBoardPalette {
     val LabelScrim = Color.Black
     val OnLabelScrim = Color.White
 
+    /** 조작법 시연(#249)의 손가락 점 — 화면 녹화의 터치 표시처럼 반투명 회색 원(투명도는 부르는 쪽이 준다)에 흰 테. */
+    val GuideFingerFill = Color.Black
+    val GuideFingerRing = Color.White
+
     /** 형세(소유권) 표시의 흑·백 영역. */
     val OwnershipBlack = Color(0xFF1F2327)
     val OwnershipWhite = Color(0xFFFFFFFF)

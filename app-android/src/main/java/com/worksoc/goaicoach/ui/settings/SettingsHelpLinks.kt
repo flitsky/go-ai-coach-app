@@ -18,7 +18,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
-import com.worksoc.goaicoach.ui.setup.DownloadGuideDialog
+import com.worksoc.goaicoach.ui.setup.BoardControlsGuideDialog
 
 /**
  * 설정 하단의 **도움말 링크들**(백로그 #241, #245) — 「바둑판 조작법」, 「가이드 다시보기」와 「내 기록은 어떻게 보관되나요」.
@@ -49,7 +49,7 @@ internal fun SettingsHelpLinks() {
     )
     Spacer(modifier = Modifier.height(AppSpacing.Space8))
 
-    if (showDownloadGuide) DownloadGuideDialog(onClose = { showDownloadGuide = false })
+    if (showDownloadGuide) BoardControlsGuideDialog(onClose = { showDownloadGuide = false })
     if (showGuideReplay) FirstDolGuideReplayDialog(onClose = { showGuideReplay = false })
     if (showLocalOnlyDataNotice) LocalOnlyDataNoticeDialog(onClose = { showLocalOnlyDataNotice = false })
 }

@@ -104,8 +104,6 @@ private fun EngineSetupGateContent(
                 .padding(AppSpacing.Space20),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                FirstDolAvatar(size = 44.dp)
-                Spacer(modifier = Modifier.width(AppSpacing.Space12))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = UiStringsDownloadGuide.boardControlsGuide(language),
@@ -124,24 +122,10 @@ private fun EngineSetupGateContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(AppSpacing.Space20))
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                Card(
-                    shape = RoundedCornerShape(AppRadius.Corner12),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Box(modifier = Modifier.padding(AppSpacing.Space16)) {
-                        DownloadGuideCardsCarousel(language = language)
-                    }
-                }
-            }
+            // 판다가 바둑판 위에서 조작법을 시연한다(#249 ③) — 설정의 「바둑판 조작법」과 같은 가이드다.
+            BoardControlsGuide(modifier = Modifier.weight(1f))
 
             Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
