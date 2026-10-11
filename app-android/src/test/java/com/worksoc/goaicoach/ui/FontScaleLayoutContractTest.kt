@@ -162,7 +162,8 @@ class FontScaleLayoutContractTest {
     fun thePlayStoneGrowsWithTheSeatCards() {
         assertTrue(
             "돌 버튼의 두 줄 라벨이 한 줄로 고정됐다.",
-            statusPanel.contains("maxLines = 2"),
+            // 돌 버튼은 #249에서 판 패키지로 옮겼다(조작법 시연이 함께 쓴다).
+            codeOnly(sourceOf("BoardPlayStoneButton.kt")).contains("maxLines = 2"),
         )
         assertTrue(
             "폰 배치의 돌 버튼이 좌석 카드 높이를 따르지 않는다 — 큰 글꼴에서 카드만 자라고 돌은 그대로다.",

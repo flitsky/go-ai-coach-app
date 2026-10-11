@@ -2,8 +2,8 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
-import com.worksoc.goaicoach.ui.play.PlayStoneFace
-import com.worksoc.goaicoach.ui.play.playStoneFaceOf
+import com.worksoc.goaicoach.ui.board.PlayStoneFace
+import com.worksoc.goaicoach.ui.board.playStoneFaceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -90,7 +90,7 @@ class PlayControlsContractTest {
         val status = code("GameStatusPanel.kt")
         assertTrue("착수 칸이 플래그 뒤에 있지 않다(#143).", status.contains("if ($gate) PlaySlot("))
         assertTrue("착수 칸 코드 자체가 사라졌다 — 플래그를 켜도 되살아나지 않는다(#143).", status.contains("internal fun PlaySlot("))
-        assertTrue("착수 칸의 돌 버튼 코드가 사라졌다(#143).", status.contains("private fun PlayStoneButton("))
+        assertTrue("착수 칸의 돌 버튼 코드가 사라졌다(#143).", code("BoardPlayStoneButton.kt").contains("internal fun PlayStoneButton("))
 
         val menu = code("KaTrainUxPanels.kt")
         assertTrue("메뉴의 `착수 확인` 스위치가 플래그 뒤에 있지 않다(#143).", menu.contains("if ($gate)"))
@@ -130,10 +130,11 @@ class PlayControlsContractTest {
         assertEquals(PlayStoneFace.CommitMove, playStoneFaceOf(isDirectPlay = false, hasTentativeMove = true))
 
         val status = code("GameStatusPanel.kt")
+        val stoneButton = code("BoardPlayStoneButton.kt")
         assertFalse("착수 모드 스위치가 돌 버튼과 따로 남아 있다 — 버튼은 하나다.", status.contains("fun PlayModeSwitch("))
         assertTrue(
             "돌 버튼이 판의 돌과 다른 그림을 쓴다 — 판의 돌 모양을 고치면 이 버튼만 옛 모양으로 남는다.",
-            status.contains("drawStone(") && status.contains("drawGhostStone("),
+            stoneButton.contains("drawStone(") && stoneButton.contains("drawGhostStone("),
         )
         assertTrue(
             "돌의 지름이 좌석 카드 높이의 70%가 아니다(2026-10-09 사용자 지시).",
@@ -146,7 +147,7 @@ class PlayControlsContractTest {
         assertFalse("돌 버튼의 글자가 다시 모드마다 바뀐다.", status.contains("playModeDirect"))
         assertTrue(
             "꺼진 얼굴이 흐린 돌이 아니다 — 글자가 고정이라 진하기가 뒤집히면 켜짐·꺼짐이 거꾸로 읽힌다.",
-            status.contains("if (face == PlayStoneFace.ConfirmOff) {\n                    drawGhostStone("),
+            stoneButton.contains("if (face == PlayStoneFace.ConfirmOff) {\n                    drawGhostStone("),
         )
         // ⚠️ 바뀔 때마다 토스트가 뜬다 — 버튼이 아니라 값이 바뀐 자리에서(메뉴의 스위치로 바꿔도 같은 말이 떠야 한다).
         val play = code("GamePlaySection.kt")
