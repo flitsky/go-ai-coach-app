@@ -187,6 +187,14 @@ private const val KatagoHumanPackEstimatedBytes = 99_100_000L
 /** 정체 감지 코루틴이 도는 곳 — 받기 시도와 수명이 같지 않아 따로 둔다. */
 private val backgroundDownloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+/** 로그용 이름 — release 빌드는 난독화돼 `toString()`이 `xc.c@4209b10`처럼 찍힌다(2026-10-11 폰 로그). */
+private fun AttemptOutcome.logLabel(): String = when (this) {
+    AttemptOutcome.Success -> "Success"
+    AttemptOutcome.UserTriggeredRetry -> "UserTriggeredRetry"
+    is AttemptOutcome.RecoverableFailure -> "RecoverableFailure(code=$errorCode, $message)"
+    is AttemptOutcome.PermanentFailure -> "PermanentFailure(code=$errorCode, $message)"
+}
+
 internal const val CustomErrorCodeStalled = 1001
 internal const val CustomErrorCodeImmediateFailure = 1002
 
@@ -299,7 +307,7 @@ internal suspend fun fetchAndAwaitAssetPacksWithRetry(
             tracker = tracker,
         )
         messages += attemptMessages
-        padLog("Attempt for $neededPacks ended: $outcome")
+        padLog("Attempt for $neededPacks ended: ${outcome.logLabel()}")
 
         when (outcome) {
             is AttemptOutcome.Success -> {
