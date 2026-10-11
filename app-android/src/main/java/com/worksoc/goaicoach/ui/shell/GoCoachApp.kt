@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui.shell
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -15,9 +16,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.worksoc.goaicoach.GoCoachAppWiringContext
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
@@ -909,7 +912,7 @@ private fun GoCoachScreen(
     // 엔진 준비 화면(#249) — 모델이 없으면 화면들 위에 덮는다. 판정은 첫 컴포지션에서 동기로(스플래시 안에서) 끝난다.
     // ⚠️ 떠 있는 동안 출석 팝업도 미룬다 — 실행 루틴은 「준비 화면 → 시작하기 → 출석 보상」이다(사용자 2026-10-11).
     val engineSetupRequired = remember(context) { isEngineSetupRequired(context) }
-    var engineSetupClosed by remember { mutableStateOf(false) }
+    var engineSetupClosed by rememberSaveable { mutableStateOf(false) } // 「나중에」는 화면이 다시 만들어져도 지킨다(#253)
     val showsEngineSetup = engineSetupGateVisible(engineSetupRequired, engineSetupClosed, identity.mode)
     if (!SplashVisibility.isShowing &&
         !showsEngineSetup &&
@@ -926,6 +929,8 @@ private fun GoCoachScreen(
     ) {
         AttendanceRewardClaimDialog(context) { next -> premiumState = next }
     }
+    // 엔진 준비 화면이 덮는 동안 아래 화면을 TalkBack에서 가린다(#253) — 덮개는 터치만 막고 접근성 노드는 그대로 남았다.
+    Box(modifier = if (showsEngineSetup) Modifier.clearAndSetSemantics {} else Modifier) {
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
             OnboardingScreen(
@@ -1065,6 +1070,7 @@ private fun GoCoachScreen(
                 onEvent = ::dispatch,
             )
         }
+    }
     }
     if (showsEngineSetup) EngineSetupGateScreen(engineMode = identity.mode, onClose = { engineSetupClosed = true })
     }

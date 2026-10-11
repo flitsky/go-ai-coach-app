@@ -13,6 +13,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -108,7 +110,11 @@ internal fun BoardControlsGuide(modifier: Modifier = Modifier) {
     var line by remember { mutableStateOf("") }
 
     Column(modifier = modifier) {
-        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+        // 좁은 화면·영어·큰 글꼴에서 단계 이름이 찌그러지지 않게 가로로 밀어 볼 수 있다(#253).
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
+        ) {
             steps.forEachIndexed { index, candidate ->
                 val title = when (candidate) {
                     BoardControlsStep.Drag -> UiStringsBoardControlsGuide.stepDrag(language)
@@ -332,8 +338,8 @@ private fun ConfirmStage(practice: Boolean, onLine: (String) -> Unit) {
                         if (confirmOn) {
                             tentative = coordinate
                         } else {
+                            // 바로 착수로도 놓이긴 하지만 칭찬하지 않는다(#253) — 이 단계가 가르치는 것은 「켜고 → 놓아 보고 → 확정」이다.
                             state = state.playIfEmpty(coordinate)
-                            placed++
                         }
                     }
                 },
@@ -585,7 +591,8 @@ private val DragFingerEnd = Offset(5f, 4f + PlayDragLiftCells)
 private val StoneButtonSize = 64.dp
 private val ChipRowHeight = 32.dp
 private val FingerDotSize = 40.dp
-private val MinBoardSide = 200.dp
+/** 판의 가장 작은 한 변 — 작은 화면에서 돌 버튼·칩을 밀어내지 않을 만큼 작게 둔다(#253, 예전 200dp). */
+private val MinBoardSide = 120.dp
 
 /** 「바둑판 최대」를 끈 판의 크기 — 대국 화면의 좌우 여백(16dp)을 시연 폭에 맞춰 조금 과장했다. */
 private const val BoardInsetFraction = 0.86f
