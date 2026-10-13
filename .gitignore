@@ -58,3 +58,6 @@ test-fixtures/board-photos/
 # 배경음악(BGM) 원본 — 저장소 루트의 작업 폴더라 커밋하지 않는다(음원 약 120MB). 앱에 실을 때 `ogg/`의 곡만
 # 앱 리소스 폴더로 옮겨서 커밋한다(활성 백로그 #244). ⚠️ 앞의 `/`가 있어야 `app-android/src/main/assets/`가 안 걸린다.
 /assets/
+
+# 사용자가 S23으로 찍은 실물 판 사진(백로그 #263) — 사진은 커밋하지 않는다(정답 배치만 커밋).
+test-fixtures/board-photos-own/
