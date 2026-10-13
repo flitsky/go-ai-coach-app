@@ -29,6 +29,7 @@ import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -52,6 +53,7 @@ import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 import com.worksoc.goaicoach.vision.AndroidBoardVisionScanner
 import com.worksoc.goaicoach.vision.BoardPhotoDecoder
+import com.worksoc.goaicoach.vision.BoardScanResult
 import com.worksoc.goaicoach.vision.ScannedPositionShare
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +74,8 @@ internal enum class ScanStep {
  *
  * 전체 플로우:
  * 1. [CameraCaptureView]로 바둑판 촬영 (또는 갤러리 이미지 선택 — EXIF 회전·축소)
- * 2. **판 자동 인식**([AndroidBoardVisionScanner.locate]) — 찾으면 그 모서리·판 크기로 핀 화면을 연다
+ * 2. **판 자동 인식**([AndroidBoardVisionScanner.locate] — 원근이 세면 먼저 편다, #263) — 찾은 판을 바로 읽어 보고
+ *    **확실하면 3을 건너뛰어 5로**([BoardScanResult.isConfident], #263). 아니면 찾은 모서리·판 크기로 핀 화면을 연다
  * 3. [CornerPinAdjustmentOverlay]로 어긋난 핀만 미세조정(못 찾았으면 네 핀을 직접)
  * 4. 핀을 **가까운 격자에 붙이고**([AndroidBoardVisionScanner.scan]) 돌 검출
  * 5. [BoardCorrectionEditor]에서 원본 사진과 비교하며 터치 편집, 흑/백 차례, 덤 설정
@@ -94,6 +97,8 @@ internal fun BoardScanScreen(
     var pinCorners by remember { mutableStateOf<BoardCornerPoints?>(null) }
     var pinBoardSize by remember { mutableStateOf(BoardSize.Nineteen) }
     var boardPhoto by remember { mutableStateOf<Bitmap?>(null) }
+    // 인식이 확신하지 못한 교점(#263) — 보정 화면에 「확인 필요」로.
+    var attentionPoints by remember { mutableStateOf<Set<BoardCoordinate>>(emptySet()) }
 
     var isLocating by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
@@ -110,21 +115,40 @@ internal fun BoardScanScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // 찍었거나 골랐거나 공유로 받은 사진 한 장에서 시작한다 — 판을 스스로 찾고 핀 화면을 연다.
+    // 사진 하나에 스캐너 하나 — 픽셀을 배열로 한 번만 복사한다(찾기·읽기·핀 붙이기가 함께 쓴다).
+    val scanner = remember(capturedBitmap) { capturedBitmap?.let(::AndroidBoardVisionScanner) }
+
+    fun showResult(result: BoardScanResult, boardSize: BoardSize) {
+        // 핀이 붙은 자리를 기억해 둔다 — 핀 화면으로 돌아오면 붙은 핀에서 다시 시작한다.
+        pinCorners = result.corners
+        pinBoardSize = boardSize
+        boardPhoto = result.boardPhoto
+        detectedGameState = result.detected.toGameState()
+        attentionPoints = result.uncertain
+        step = ScanStep.Correction
+    }
+
+    // 찍었거나 골랐거나 공유로 받은 사진 한 장에서 시작한다 — 판을 스스로 찾고, **확실하면 핀 화면 없이 바로 결과로**(#263),
+    // 아니면 핀 화면을 연다.
     fun startFromPhoto(bitmap: Bitmap) {
         capturedBitmap = bitmap
         pinCorners = null
         pinBoardSize = BoardSize.Nineteen
+        attentionPoints = emptySet()
         analysisResult = null
         scoreEstimate = null
         isLocating = true
         step = ScanStep.PinAdjustment
+        val photoScanner = AndroidBoardVisionScanner(bitmap)
         scope.launch {
             // 판을 스스로 찾는다 — 못 찾으면 핀 화면이 "직접 맞춰 주세요"로 연다. 실패가 아니다.
-            val located = runCatching { AndroidBoardVisionScanner(bitmap).locate() }.getOrNull()
+            val located = runCatching { photoScanner.locate() }.getOrNull()
             if (located != null && capturedBitmap === bitmap) {
                 pinCorners = located.corners
                 pinBoardSize = located.boardSize
+                // 찾은 판을 바로 읽어 본다 — 샘플 위치를 흔들어도 답이 거의 같으면(ScanStability) 핀 화면을 건너뛴다.
+                val result = runCatching { photoScanner.scan(located.corners, located.boardSize, snap = false) }.getOrNull()
+                if (result != null && result.isConfident && capturedBitmap === bitmap) showResult(result, located.boardSize)
             }
             isLocating = false
         }
@@ -195,13 +219,8 @@ internal fun BoardScanScreen(
                                         try {
                                             // 핀을 안 건드렸으면 자동 인식(또는 지난 인식)이 이미 격자에 붙인 자리다 — 다시 붙이지 않는다.
                                             val untouched = corners == pinCorners && boardSize == pinBoardSize
-                                            val result = AndroidBoardVisionScanner(bitmap).scan(corners, boardSize, snap = !untouched)
-                                            // 핀이 붙은 자리를 기억해 둔다 — 되돌아오면 붙은 핀에서 다시 시작한다.
-                                            pinCorners = result.corners
-                                            pinBoardSize = boardSize
-                                            boardPhoto = result.boardPhoto
-                                            detectedGameState = result.detected.toGameState()
-                                            step = ScanStep.Correction
+                                            val result = (scanner ?: AndroidBoardVisionScanner(bitmap)).scan(corners, boardSize, snap = !untouched)
+                                            showResult(result, boardSize)
                                         } catch (e: Exception) {
                                             errorMessage = text.scanFailed
                                         } finally {
@@ -232,6 +251,7 @@ internal fun BoardScanScreen(
                     BoardCorrectionEditor(
                         initialGameState = initialGameState,
                         boardPhoto = boardPhoto,
+                        attentionPoints = attentionPoints,
                         isAnalyzing = isAnalyzing,
                         analysisResult = analysisResult,
                         scoreEstimate = scoreEstimate,

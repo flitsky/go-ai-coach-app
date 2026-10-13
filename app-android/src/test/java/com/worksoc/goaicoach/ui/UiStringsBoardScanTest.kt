@@ -28,6 +28,7 @@ class UiStringsBoardScanTest {
                 s.analysisFailed("x"),
                 s.stoneCounts(3, 4),
                 s.noLibertyWarning(2),
+                s.attentionHint(3),
                 s.komiChip(6.5),
                 s.winRate(55.0, 45.0),
                 s.scoreLead(true, 3.5),
@@ -43,6 +44,7 @@ class UiStringsBoardScanTest {
             val s = boardScanStringsFor(language)
             assertTrue("$language 판 크기", s.boardSizeChip(13).contains("13"))
             assertTrue("$language 숨 없는 돌", s.noLibertyWarning(7).contains("7"))
+            assertTrue("$language 확인 필요", s.attentionHint(5).contains("5"))
             assertTrue("$language 돌 개수", s.stoneCounts(11, 12).let { it.contains("11") && it.contains("12") })
         }
     }

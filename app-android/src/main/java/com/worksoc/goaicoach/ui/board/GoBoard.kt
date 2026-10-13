@@ -76,6 +76,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.GoBoardColors
 import com.worksoc.goaicoach.ui.designsystem.GoBoardPalette
 import com.worksoc.goaicoach.ui.designsystem.MoveReviewPalette
+import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
@@ -98,6 +99,8 @@ internal fun GoBoard(
     engineActivityIndicator: EngineActivityIndicator?,
     modifier: Modifier = Modifier,
     tentativeMove: BoardCoordinate? = null,
+    /** 「확인 필요」 교점(백로그 #263 — 사진 인식이 확신하지 못한 자리). 주황 네모 테두리로 표시한다. 대국 화면은 쓰지 않는다. */
+    attentionPoints: Set<BoardCoordinate> = emptySet(),
     /**
      * **지연 착수**(백로그 #144)로 확정을 기다리는 자리. 없으면 `null`.
      *
@@ -509,6 +512,16 @@ internal fun GoBoard(
                 }
                 if (uxOptions.showMoveNumbers) {
                     drawMoveNumbers(geometry, gameState)
+                }
+                attentionPoints.forEach { point ->
+                    val half = geometry.spacing * 0.5f
+                    val center = geometry.pointFor(point)
+                    drawRect(
+                        color = VisionPalette.Attention,
+                        topLeft = Offset(center.x - half, center.y - half),
+                        size = Size(half * 2, half * 2),
+                        style = Stroke(width = geometry.spacing * 0.09f),
+                    )
                 }
 
                 // 착수 드래그의 되먹임(#39) — **맨 마지막에** 그려 판 위에 얹는다.

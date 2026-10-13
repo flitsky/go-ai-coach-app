@@ -125,6 +125,9 @@ internal object VisionPalette {
     /** 코너 강조·드래그 중인 핀. */
     val GuideHighlight = Color(0xFFFFD700)
 
+    /** 보정 화면의 「확인 필요」 교점 테두리(#263) — 흑·백 돌과 나무판 위에서 모두 보이는 주황. */
+    val Attention = Color(0xFFFF8F00)
+
     val PinCenter = Color.Black
     val ShutterBusy = Color.Gray
     val ShutterProgress = Color.DarkGray

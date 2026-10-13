@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.vision
 
 import android.graphics.Bitmap
 import androidx.core.graphics.createBitmap
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.BoardVisionScannerPort
@@ -9,12 +10,19 @@ import com.worksoc.goaicoach.shared.vision.DetectedBoard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** 인식 결과 — 돌 배치 + 실제로 쓴(가까운 격자에 붙인) 모서리 + 반듯하게 편 판 사진(보정 화면의 비교용). */
+/**
+ * 인식 결과 — 돌 배치 + 실제로 쓴(가까운 격자에 붙인) 모서리 + 반듯하게 편 판 사진(보정 화면의 비교용)
+ * + 샘플 위치를 흔들면 답이 바뀌는 교점([ScanStability], #263 — 보정 화면의 「확인 필요」).
+ */
 internal class BoardScanResult(
     val detected: DetectedBoard,
     val corners: BoardCornerPoints,
     val boardPhoto: Bitmap,
-)
+    val uncertain: Set<BoardCoordinate>,
+) {
+    /** 핀 화면을 건너뛰어도 될 만큼 확실한가 — 흔들리는 교점이 적다. */
+    val isConfident: Boolean get() = ScanStability.isConfident(uncertain, detected.boardSize)
+}
 
 /**
  * ⚠️ **기준 이미지 테스트와 같은 경로를 탄다**(백로그 #210) — 순수 Kotlin [BoardLocator] · [BoardWarp] · [GridStoneDetector].
@@ -48,7 +56,7 @@ internal class AndroidBoardVisionScanner(
         val detected = GridStoneDetector.detect(board)
         val photo = createBitmap(board.pixels.width, board.pixels.height)
         photo.setPixels(board.pixels.toArgbArray(), 0, board.pixels.width, 0, 0, board.pixels.width, board.pixels.height)
-        BoardScanResult(detected, refined, photo)
+        BoardScanResult(detected, refined, photo, ScanStability.unstablePoints(pixels, refined, boardSize, detected.stones))
     }
 
     override suspend fun detectStones(corners: BoardCornerPoints, boardSize: BoardSize): DetectedBoard =

@@ -51,6 +51,12 @@ class BoardPhotoReportTest {
         val manualAccuracy: Float,
         val errorKinds: Map<String, Int>,
         val locateMillis: Long,
+        /** [LocatedBoard.confidence] — 판 안 격자선의 세기 대비. 핀 화면을 건너뛸지 가를 후보(#263 단계 6). */
+        val confidence: Float?,
+        /** 자동 모서리로 읽은 판에서, 샘플 위치를 0.1칸 흔들면 답이 바뀌는 교점 수(#263 단계 6 — 확신도 후보). */
+        val unstable: Int?,
+        /** 그 흔들리는 교점 가운데 실제로 틀린 것 / 실제로 틀린 교점 수. */
+        val unstableWrong: String?,
     )
 
     /** [f]는 정답 배치, [img]·[corners]는 잴 사진과 그 사진의 정답 모서리(변형이면 변형된 모서리). */
@@ -74,8 +80,20 @@ class BoardPhotoReportTest {
             manualAccuracy = accuracy(f, manual),
             errorKinds = errorKinds(f, manual),
             locateMillis = locateMillis,
+            confidence = located?.confidence,
+            unstable = located?.takeIf { sizeMatches }?.let { unstablePoints(f, img, it.corners).size },
+            unstableWrong = located?.takeIf { sizeMatches }?.let { loc ->
+                val auto = detect(f, img, loc.corners)
+                val wrong = (0 until n * n).map { BoardCoordinate(row = it / n, column = it % n) }
+                    .filter { c -> f.truthAt(c.column, c.row) != auto[c] }.toSet()
+                "${(unstablePoints(f, img, loc.corners) intersect wrong).size}/${wrong.size}"
+            },
         )
     }
+
+    /** [ScanStability] — 앱의 「확인 필요」·핀 건너뛰기와 같은 계산. */
+    private fun unstablePoints(f: BoardPhotoFixture, img: ArrayPixelSource, corners: BoardCornerPoints): Set<BoardCoordinate> =
+        ScanStability.unstablePoints(img, corners, f.boardSize, detect(f, img, corners))
 
     private fun detect(f: BoardPhotoFixture, img: ArrayPixelSource, corners: BoardCornerPoints) =
         GridStoneDetector.detect(BoardWarp.rectify(img, corners, f.boardSize)).stones
@@ -107,8 +125,8 @@ class BoardPhotoReportTest {
     private fun render(name: String, rows: List<Row>): String = buildString {
         appendLine("## $name — ${rows.size}장")
         appendLine()
-        appendLine("| 사진 | 줄 | 판 찾음 | 모서리 오차(칸) | 자동 인식률 | 정답 모서리 인식률 | 틀린 종류(정답 모서리) | locate ms(JVM) |")
-        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- |")
+        appendLine("| 사진 | 줄 | 판 찾음 | 확신도 | 흔들림 교점 | 흔들림∩틀림/틀림 | 모서리 오차(칸) | 자동 인식률 | 정답 모서리 인식률 | 틀린 종류(정답 모서리) | locate ms(JVM) |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
         rows.forEach { r ->
             val found = when {
                 !r.located -> "✗"
@@ -116,7 +134,8 @@ class BoardPhotoReportTest {
                 else -> "○"
             }
             appendLine(
-                "| ${r.key} | ${r.size} | $found | ${r.cornerErrorCells?.let { "%.2f".format(it) } ?: "-"} | " +
+                "| ${r.key} | ${r.size} | $found | ${r.confidence?.let { "%.2f".format(it) } ?: "-"} | ${r.unstable ?: "-"} | ${r.unstableWrong ?: "-"} | " +
+                    "${r.cornerErrorCells?.let { "%.2f".format(it) } ?: "-"} | " +
                     "${r.autoAccuracy?.let(::pct) ?: "-"} | ${pct(r.manualAccuracy)} | " +
                     "${r.errorKinds.entries.joinToString(" ") { "${it.key} ${it.value}" }.ifEmpty { "-" }} | ${r.locateMillis} |",
             )

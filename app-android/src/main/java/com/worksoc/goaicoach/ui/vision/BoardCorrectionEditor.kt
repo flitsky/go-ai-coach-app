@@ -65,6 +65,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.StonePalette
+import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
 import com.worksoc.goaicoach.vision.stonesWithoutLiberties
@@ -87,6 +88,8 @@ enum class BoardEditTool {
 internal fun BoardCorrectionEditor(
     initialGameState: GameState,
     boardPhoto: Bitmap?,
+    /** 인식이 확신하지 못한 교점(#263) — 주황 네모로 보이고, 그 자리를 한 번 누르면(고치면) 표시가 사라진다. */
+    attentionPoints: Set<BoardCoordinate>,
     isAnalyzing: Boolean,
     analysisResult: AnalysisResult?,
     scoreEstimate: ScoreEstimate?,
@@ -103,6 +106,7 @@ internal fun BoardCorrectionEditor(
     var ruleset by remember { mutableStateOf(initialGameState.ruleset) }
     var selectedTool by remember { mutableStateOf(BoardEditTool.Toggle) }
     var showPhoto by remember { mutableStateOf(false) }
+    var attention by remember(attentionPoints) { mutableStateOf(attentionPoints) }
     val text = boardScanStringsFor(LocalUiStrings.current.language)
     val photoBitmap = remember(boardPhoto) { boardPhoto?.asImageBitmap() }
 
@@ -146,7 +150,10 @@ internal fun BoardCorrectionEditor(
 
             Row {
                 OutlinedButton(
-                    onClick = { stones = emptyMap() },
+                    onClick = {
+                        stones = emptyMap()
+                        attention = emptySet()
+                    },
                     enabled = stones.isNotEmpty() && !isAnalyzing,
                     shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
@@ -175,6 +182,15 @@ internal fun BoardCorrectionEditor(
                 FilterChip(selected = !showPhoto, onClick = { showPhoto = false }, label = { Text(text.viewBoard, fontSize = AppTextSize.Text12) })
                 FilterChip(selected = showPhoto, onClick = { showPhoto = true }, label = { Text(text.viewPhoto, fontSize = AppTextSize.Text12) })
             }
+        }
+        if (attention.isNotEmpty()) {
+            Text(
+                text = text.attentionHint(attention.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = VisionPalette.Attention,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space4),
+            )
         }
         if (stonesWithoutLiberty > 0) {
             Text(
@@ -212,8 +228,10 @@ internal fun BoardCorrectionEditor(
                 ),
                 inputEnabled = !isAnalyzing,
                 engineActivityIndicator = null,
+                attentionPoints = attention,
                 onCoordinateTap = { coord ->
                     if (isAnalyzing) return@GoBoard
+                    attention = attention - coord
                     val currentStone = stones[coord]
                     val updatedStones = stones.toMutableMap()
 
