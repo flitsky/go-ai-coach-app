@@ -1,11 +1,11 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureChange
-import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanWindow
-import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanWinsToPromote
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanPromotionMargin
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDemotionLosses
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureKyuPromotionCap
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureMarginPerStep
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureMaxPromotionSteps
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -33,6 +33,7 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasurePeakRankFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureRulesFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSideLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureStartFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureStepCapNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureStrongerFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
@@ -148,9 +149,15 @@ class UiStringsRankMeasureTest {
         // 형세 기록이 없는 기권승은 집 수를 말하지 않는다.
         assertEquals("이겨서 1단계 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, aiResigned.copy(to = KgsRank.kyu(14), margin = null)))
 
-        val toTwoDan = RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = null)
+        // 단 구간 — 10집 이상 차이의 승리가 한 단 올렸다(#259). 크게 이겨도 「한 단」이다.
+        val toTwoDan = RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = 23.5)
         assertEquals("승단!", rankMeasureChangeTitleFor(UiLanguage.Korean, toTwoDan))
-        assertEquals("최근 5판 중 3판을 이겨 한 단 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, toTwoDan))
+        assertEquals("23.5집 차로 이겨 한 단 올랐습니다.", rankMeasureChangeMessageFor(UiLanguage.Korean, toTwoDan))
+        assertEquals("You won by 23.5 points and moved up one dan.", rankMeasureChangeMessageFor(UiLanguage.English, toTwoDan))
+        assertEquals(
+            "상대가 약 15집 뒤진 형세에서 기권해 한 단 올랐습니다.",
+            rankMeasureChangeMessageFor(UiLanguage.Korean, toTwoDan.copy(margin = 15.0, byResignation = true)),
+        )
 
         val backToKyu = RankMeasureChange.Demoted(from = KgsRank.dan(1), to = KgsRank.kyu(1))
         assertEquals("강단", rankMeasureChangeTitleFor(UiLanguage.Korean, backToKyu))
@@ -165,19 +172,28 @@ class UiStringsRankMeasureTest {
     }
 
     /**
-     * 설정 창의 규칙 문구는 규칙과 **같은 숫자**를 말한다 — 10집 · 최소 한 단계 · 1단까지 · 5판 중 3판 · 2연패.
-     * 화면에서 읽은 것과 실제 동작이 다르면 그것이 가장 나쁜 결함이다(2026-10-07: 창에 없는 폭으로 올라 사용자가 물었다).
+     * 설정 창의 규칙 문구는 규칙과 **같은 숫자**를 말한다 — 기본 한 단계 · 10집마다 한 단계씩 더 · 한 판에 최대 7 · 1단까지 · 단은 10집 이상 · 2연패
+     * (사용자 2026-10-13, #259). 화면에서 읽은 것과 실제 동작이 다르면 그것이 가장 나쁜 결함이다(2026-10-07: 창에 없는 폭으로 올라 사용자가 물었다).
      */
     @Test
     fun theRulesTextStatesTheSameNumbersAsTheRule() {
         val rules = rankMeasureRulesFor(UiLanguage.Korean)
-        listOf("10집마다 한 단계", "최소 한 단계", "1단까지", "최근 5판 중 3판", "2연패하면 한 단계").forEach { phrase ->
+        listOf("기본 한 단계", "10집마다 한 단계씩 더", "최대 7단계", "1단까지", "10집 이상 차이로 이기면 한 단", "2연패하면 한 단계").forEach { phrase ->
             assertTrue("규칙 문구에 없다: $phrase", rules.contains(phrase))
         }
+        assertFalse("옛 규칙(최근 5판 중 3판)이 문구에 남았다", rules.contains("5판"))
         assertEquals(10.0, RankMeasureMarginPerStep, 0.0)
+        assertEquals(7, RankMeasureMaxPromotionSteps)
+        assertEquals(10.0, RankMeasureDanPromotionMargin, 0.0)
         assertEquals(KgsRank.dan(1), RankMeasureKyuPromotionCap)
-        assertEquals(5 to 3, RankMeasureDanWindow to RankMeasureDanWinsToPromote)
         assertEquals(2, RankMeasureDemotionLosses)
+        UiLanguage.entries.forEach { language ->
+            listOf(rankMeasureRulesFor(language), rankMeasureKyuCapNoteFor(language), rankMeasureStepCapNoteFor(language)).forEach { line ->
+                assertFalse("$language: 옛 규칙이 남았다 — $line", line.contains("5") && (line.contains("3판") || line.contains("3 of") || line.contains("3勝") || line.contains("赢3局")))
+                assertTrue("$language: 빈 줄", line.isNotBlank())
+            }
+            assertTrue("$language: 최대 단계 안내에 숫자가 없다", rankMeasureStepCapNoteFor(language).contains("7"))
+        }
     }
 
     /** 좌석 요약·대국 기록에 그 판의 급수가 남는다 — 캐릭터와 둔 판의 줄은 예전 그대로다. */

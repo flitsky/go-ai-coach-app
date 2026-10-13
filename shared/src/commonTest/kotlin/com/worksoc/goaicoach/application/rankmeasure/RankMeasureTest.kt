@@ -32,9 +32,9 @@ import kotlin.test.assertTrue
 /**
  * 승급 대국(백로그 #219) — 자기 기력과 같은 급수의 AI와 두고, 결과가 기력을 옮긴다.
  *
- * 여기서 고정하는 것은 **사용자가 정한 규칙**이다(2026-10-07):
- * - 급 구간: 이길 때마다 오른다 — 이긴 집 수 차이를 10으로 나눈 몫, 최소 1단계. 1단에서 멈춘다.
- * - 단 구간: 그 단에서 둔 최근 5판 중 3판을 이기면 한 단 오른다.
+ * 여기서 고정하는 것은 **사용자가 정한 규칙**이다(2026-10-07 → 2026-10-13 백로그 #259):
+ * - 급 구간: 이길 때마다 오른다 — 이긴 집 수 차이를 10으로 나눈 몫 + 1, 한 판에 최대 7단계. 1단에서 멈춘다.
+ * - 단 구간: 10집 이상 차이로 이기면 한 단 오른다(크게 이겨도 한 단).
  * - 어느 구간이든 2연패하면 한 단계 내린다.
  * 그리고 급수대별 판 크기 · 최초 1회의 기력 선택(2026-10-06).
  */
@@ -57,27 +57,35 @@ class RankMeasureTest {
 
     private fun List<RankMeasureAdjustment>.ranks(): List<KgsRank> = map { it.state.rank }
 
-    /** 사용자가 든 예 그대로다 — 15급에서 61집 차로 이기면 6단계 올라 9급. */
+    /**
+     * 사용자가 든 예 그대로다(2026-10-13, #259): 20급 11집 승 → 1+1 = 2단계(18급) · 20급 90집 승 → 9+1 = 10이지만 최대 7(13급) ·
+     * 5급 60집 승 → 6+1 = 7이지만 급에서는 1단까지(1단).
+     */
     @Test
-    fun sixtyOnePointsAtFifteenKyuIsSixStepsToNineKyu() {
-        val result = afterResults(61.0, start = RankMeasureState(rank = KgsRank.kyu(15), hasStarted = true)).single()
+    fun theUsersThreeExamples() {
+        val twentyKyu = RankMeasureState(rank = KgsRank.kyu(20), hasStarted = true)
 
-        assertEquals(KgsRank.kyu(9), result.state.rank)
-        assertEquals(RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(9), margin = 61.0), result.change)
-        assertEquals(6, (result.change as RankMeasureChange.Promoted).steps)
+        assertEquals(KgsRank.kyu(18), afterResults(11.0, start = twentyKyu).single().state.rank)
+        val bigWin = afterResults(90.0, start = twentyKyu).single()
+        assertEquals(KgsRank.kyu(13), bigWin.state.rank)
+        assertEquals(7, (bigWin.change as RankMeasureChange.Promoted).steps)
+        assertEquals(KgsRank.dan(1), afterResults(60.0, start = RankMeasureState(rank = KgsRank.kyu(5), hasStarted = true)).single().state.rank)
     }
 
     /**
-     * 오르는 폭은 이긴 집 수 차이를 10으로 나눈 **몫, 최소 1**이다(사용자 2026-10-07 — 식과 예시가 한 단계 달라 물었고 예시 쪽으로 정했다).
-     * 한 판만 이겨도 1단계는 기본이고, 20집부터 한 단계씩 더 오른다. 집 차이가 없는 승리(상대 기권)는 1단계로 친다.
+     * 오르는 폭은 이긴 집 수 차이를 10으로 나눈 **몫 + 1, 최대 7**이다(사용자 2026-10-13 — 2026-10-07의 「몫, 최소 1」을 갈아 끼웠다).
+     * 10집 미만은 1단계, 10집부터 한 단계씩 더 오른다. 집 차이가 없는 승리(상대 기권, 형세 기록 없음)는 1단계로 친다.
      */
     @Test
-    fun thePromotionStepsAreTheMarginDividedByTenAtLeastOne() {
+    fun thePromotionStepsAreTheMarginDividedByTenPlusOneAtMostSeven() {
         assertEquals(
-            listOf(1, 1, 1, 1, 2, 2, 6, 6, 8),
-            listOf(0.5, 6.5, 10.0, 19.5, 20.0, 29.5, 61.0, 69.5, 87.5).map { margin -> rankMeasurePromotionSteps(margin) },
+            listOf(1, 1, 2, 2, 3, 3, 7, 7, 7, 7),
+            listOf(0.5, 6.5, 10.0, 19.5, 20.0, 29.5, 61.0, 69.5, 70.0, 87.5).map { margin -> rankMeasurePromotionSteps(margin) },
         )
         assertEquals(1, rankMeasurePromotionSteps(null))
+        assertEquals(RankMeasureMaxPromotionSteps, 7)
+        // 팝업이 「한 판에 최대 7단계」를 덧붙이는 경계 — 69.5집은 정확히 7이라 걸리지 않고, 70집부터 걸린다.
+        assertEquals(listOf(false, true, true), listOf(69.5, 70.0, 87.5).map(::rankMeasureHitsStepCap))
     }
 
     /** 급 구간에서는 **이길 때마다** 오른다 — 연승을 기다리지 않는다. */
@@ -85,7 +93,7 @@ class RankMeasureTest {
     fun everyWinInTheKyuRangePromotes() {
         val results = afterResults(3.5, 25.0, 0.5)
 
-        assertEquals(listOf(KgsRank.kyu(9), KgsRank.kyu(7), KgsRank.kyu(6)), results.ranks())
+        assertEquals(listOf(KgsRank.kyu(9), KgsRank.kyu(6), KgsRank.kyu(5)), results.ranks())
         assertTrue(results.all { it.change is RankMeasureChange.Promoted })
     }
 
@@ -111,41 +119,30 @@ class RankMeasureTest {
     }
 
     /**
-     * **단 구간은 최근 5판 중 3판을 이겨야 오른다**(사용자 2026-10-07) — 한 판 이긴 것으로는 오르지 않고, 크게 이겨도 한 단씩이다.
-     * 지고 이기기를 섞어도 5판 안에 3승이면 오른다.
+     * **단 구간은 10집 이상 차이로 이기면 한 단 오른다**(사용자 2026-10-13, #259 — 「최근 5판 중 3판」을 갈아 끼웠다).
+     * 크게 이겨도 한 단이고(같은 날 사용자 확인), 10집 미만의 승리는 그대로다. 집 차이를 모르는 승리는 올리지 않는다.
      */
     @Test
-    fun aDanRankIsPromotedByThreeWinsInTheLastFiveGames() {
-        val straight = afterResults(80.0, 80.0, 80.0, start = dan(1))
-        assertEquals(listOf(KgsRank.dan(1), KgsRank.dan(1), KgsRank.dan(2)), straight.ranks())
-        assertEquals(RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = null), straight.last().change)
+    fun aDanRankIsPromotedByAWinOfTenPointsOrMore() {
+        val big = afterResults(80.0, start = dan(1)).single()
+        assertEquals(KgsRank.dan(2), big.state.rank)
+        assertEquals(RankMeasureChange.Promoted(from = KgsRank.dan(1), to = KgsRank.dan(2), margin = 80.0), big.change)
 
-        val mixed = afterResults(5.0, loss, 5.0, loss, 5.0, start = dan(3))
-        assertEquals(KgsRank.dan(4), mixed.last().state.rank)
-        assertTrue(mixed.dropLast(1).all { it.change == RankMeasureChange.None })
+        assertEquals(listOf(KgsRank.dan(3), KgsRank.dan(4)), afterResults(9.5, 10.0, start = dan(3)).ranks())
+        assertEquals(RankMeasureChange.None, afterResults(9.5, start = dan(3)).single().change)
+
+        val unknownMargin = adjustRankAfterResult(dan(3), playedRank = KgsRank.dan(3), margin = null, userWon = true, byResignation = true)
+        assertEquals(KgsRank.dan(3), unknownMargin.state.rank)
+        assertEquals(RankMeasureChange.None, unknownMargin.change)
     }
 
-    /** 최근 전적은 **5판까지만** 본다 — 여섯 판 전에 이긴 것은 세지 않는다. */
+    /** 단 구간의 작은 승리도 연패는 끊는다 — 패·(5집 승)·패는 2연패가 아니다. */
     @Test
-    fun onlyTheLastFiveDanGamesCount() {
-        // 승 패 승 패 | 패는 2연패가 아니게 배치: 승, 패, 승, 패, 승이면 오르므로, 오래된 승이 밀려나는 수순을 본다.
-        val state = dan(2).copy(recentDanResults = listOf(true, false, false, true, false))
+    fun aSmallDanWinStillBreaksTheLosingStreak() {
+        val results = afterResults(loss, 5.0, loss, start = dan(4))
 
-        val afterWin = adjustRankAfterResult(state, playedRank = KgsRank.dan(2), margin = 3.5, userWon = true)
-
-        // 창은 [패, 패, 승, 패, 승] — 2승뿐이라 그대로다. 맨 앞의 승이 밀려났다.
-        assertEquals(KgsRank.dan(2), afterWin.state.rank)
-        assertEquals(listOf(false, false, true, false, true), afterWin.state.recentDanResults)
-    }
-
-    /** 단이 바뀌면 전적을 비우고 새로 센다 — 1단에서 이긴 판을 2단의 전적으로 치지 않는다. */
-    @Test
-    fun theDanRecordStartsOverAfterTheRankChanges() {
-        val results = afterResults(5.0, 5.0, 5.0, 5.0, 5.0, start = dan(1))
-
-        assertEquals(listOf(KgsRank.dan(1), KgsRank.dan(1), KgsRank.dan(2), KgsRank.dan(2), KgsRank.dan(2)), results.ranks())
-        assertEquals(listOf(true, true), results.last().state.recentDanResults)
-        assertTrue(afterResults(5.0, loss, loss, start = dan(2)).last().state.recentDanResults.isEmpty(), "a demotion clears the record too")
+        assertEquals(KgsRank.dan(4), results.last().state.rank)
+        assertEquals(1, results.last().state.consecutiveLosses)
     }
 
     /**
@@ -173,17 +170,17 @@ class RankMeasureTest {
         assertEquals(1, results.last().state.consecutiveLosses)
     }
 
-    /** 끝을 넘지 않는다 — 20급에서 2연패해도 20급, 9단에서 승단 조건을 채우면 「이미 가장 높다」. */
+    /** 끝을 넘지 않는다 — 20급에서 2연패해도 20급, 9단에서 승단 조건(10집 이상 승리)을 채우면 「이미 가장 높다」. */
     @Test
     fun theLadderStopsAtBothEnds() {
         val bottom = afterResults(loss, loss, start = RankMeasureState(hasStarted = true)).last()
         assertEquals(KgsRank.kyu(20), bottom.state.rank)
         assertEquals(RankMeasureChange.None, bottom.change)
 
-        val top = afterResults(5.0, 5.0, 5.0, start = dan(9)).last()
+        val top = afterResults(12.0, start = dan(9)).single()
         assertEquals(KgsRank.dan(9), top.state.rank)
         assertEquals(RankMeasureChange.AtTheTop, top.change)
-        assertTrue(top.state.recentDanResults.isEmpty(), "the notice must not repeat on every game after it")
+        assertEquals(RankMeasureChange.None, afterResults(5.0, start = dan(9)).single().change, "a small win at the top says nothing")
     }
 
     /**
@@ -341,7 +338,7 @@ class RankMeasureTest {
     }
 
     /**
-     * 기록된 판 하나를 한 번만 반영하고 저장한다 — **이긴 집 수 차이는 기록에서 읽는다**(25.5집 차 → 2단계).
+     * 기록된 판 하나를 한 번만 반영하고 저장한다 — **이긴 집 수 차이는 기록에서 읽는다**(25.5집 차 → 2 + 1 = 3단계, #259).
      * 승급 대국이 아닌 판은 저장소를 건드리지 않는다.
      */
     @Test
@@ -351,12 +348,12 @@ class RankMeasureTest {
 
         val adjustment = runRankMeasureAdjustment(wonByUser, store)
 
-        assertEquals(RankMeasureChange.Promoted(from = KgsRank.kyu(10), to = KgsRank.kyu(8), margin = 25.5), adjustment?.change)
-        assertEquals(KgsRank.kyu(8), store.load().rank)
+        assertEquals(RankMeasureChange.Promoted(from = KgsRank.kyu(10), to = KgsRank.kyu(7), margin = 25.5), adjustment?.change)
+        assertEquals(KgsRank.kyu(7), store.load().rank)
 
         // 끝난 판의 화면은 여러 번 다시 그려지고 계가한 판은 앱을 껐다 켜도 복원된다 — 같은 판을 다시 넘겨도 또 세지 않는다.
         assertNull(runRankMeasureAdjustment(wonByUser, store))
-        assertEquals(KgsRank.kyu(8), store.load().rank)
+        assertEquals(KgsRank.kyu(7), store.load().rank)
 
         assertNull(runRankMeasureAdjustment(entry(PlayerSetup(), winner = StoneColor.Black), store))
         assertEquals(1, store.saves, "a game against a character must not touch the rank")
@@ -393,10 +390,10 @@ class RankMeasureTest {
         val adjustment = runRankMeasureAdjustment(aiResigned, store, replay)
 
         assertEquals(
-            RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(11), margin = 41.0, byResignation = true),
+            RankMeasureChange.Promoted(from = KgsRank.kyu(15), to = KgsRank.kyu(10), margin = 41.0, byResignation = true),
             adjustment?.change,
         )
-        assertEquals(KgsRank.kyu(11), store.load().rank)
+        assertEquals(KgsRank.kyu(10), store.load().rank)
     }
 
     /** 형세 기록이 없는 기권승은 한 단계다 — 그래도 기권으로 이긴 판이라는 것은 남는다(팝업 문구가 갈린다). */
@@ -421,7 +418,7 @@ class RankMeasureTest {
         assertEquals(30.0, resignationMarginFor(replay(whiteAheadBy30), winner = StoneColor.White))
         assertNull(resignationMarginFor(replay(whiteAheadBy30), winner = StoneColor.Black), "이긴 쪽이 형세로는 지고 있었다면 집 수 차이로 치지 않는다")
         assertNull(resignationMarginFor(replay(), winner = StoneColor.White))
-        // 어림값의 소수는 버린다 — 39.6집은 39집(3단계)이지 40집(4단계)이 아니다. 한 집도 안 되면 집 수 차이로 치지 않는다.
+        // 어림값의 소수는 버린다 — 39.6집은 39집(3 + 1 = 4단계)이지 40집(5단계)이 아니다. 한 집도 안 되면 집 수 차이로 치지 않는다.
         assertEquals(39.0, resignationMarginFor(replay(whiteAheadBy30.copy(whiteScoreLead = 39.6)), winner = StoneColor.White))
         assertNull(resignationMarginFor(replay(whiteAheadBy30.copy(whiteScoreLead = 0.4)), winner = StoneColor.White))
         assertNull(resignationMarginFor(null, winner = StoneColor.White))

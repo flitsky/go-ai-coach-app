@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDanWindow
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureStorePort
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -42,8 +41,6 @@ internal object RankMeasureCodec {
             .put("hasStarted", state.hasStarted)
             .put("peakRankStep", state.peakRank?.step ?: JSONObject.NULL)
             .put("consecutiveLosses", state.consecutiveLosses)
-            // 단 구간의 최근 전적 — 오래된 것부터 `W`·`L` 한 글자씩(최대 5판).
-            .put("recentDanResults", state.recentDanResults.joinToString("") { won -> if (won) "W" else "L" })
             .put("lastCountedGameId", state.lastCountedGameId ?: JSONObject.NULL)
             .toString()
 
@@ -56,10 +53,8 @@ internal object RankMeasureCodec {
             // 깨진 값은 「측정 기록 없음」으로 읽는다 — 0으로 읽어 20급을 최고 기력으로 만들어 내지 않는다.
             peakRank = json.optInt("peakRankStep", 0).takeIf { it >= KgsRank.Weakest.step }?.let(KgsRank::ofStepCoerced),
             consecutiveLosses = json.optInt("consecutiveLosses", 0).coerceAtLeast(0),
-            // 모르는 글자는 버린다. 옛 저장분의 `consecutiveWins`·`rally`(2026-10-06의 랠리 규칙)는 읽지 않는다 — 규칙이 바뀌었다.
-            recentDanResults = json.optString("recentDanResults", "")
-                .mapNotNull { letter -> when (letter) { 'W' -> true; 'L' -> false; else -> null } }
-                .takeLast(RankMeasureDanWindow),
+            // 옛 저장분의 `consecutiveWins`·`rally`(2026-10-06의 랠리 규칙)와 `recentDanResults`(2026-10-07의 「최근 5판 중 3판」 — #259가
+            // 「10집 이상 승리」로 갈아 끼웠다)는 읽지 않는다 — 규칙이 바뀌었다. 키가 남아 있어도 해가 없다(스키마 번호는 그대로, 함정 69).
             lastCountedGameId = json.optString("lastCountedGameId", "").takeIf { it.isNotBlank() && !json.isNull("lastCountedGameId") },
         )
     }

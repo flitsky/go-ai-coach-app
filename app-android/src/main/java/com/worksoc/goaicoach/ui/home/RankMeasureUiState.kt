@@ -40,6 +40,7 @@ import com.worksoc.goaicoach.application.rankmeasure.StrongestStartingRank
 import com.worksoc.goaicoach.application.rankmeasure.chooseStartingRank
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureBoardSizeFor
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureBoardSizesFor
+import com.worksoc.goaicoach.application.rankmeasure.rankMeasureHitsStepCap
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePromotionSteps
@@ -73,6 +74,7 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasurePeakRankFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureRulesFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSideLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureStartFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureStepCapNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureStrongerFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureWeakerFor
@@ -277,6 +279,8 @@ internal fun RankMeasureChangeDialog(rankMeasure: RankMeasureUiState) {
     val title = rankMeasureChangeTitleFor(language, change) ?: return
     // 크게 이겼는데 1단에서 멈췄으면 단계 수가 집 수 차이보다 적다 — 그 까닭을 한 줄 덧붙인다.
     val stoppedAtOneDan = change is RankMeasureChange.Promoted && !change.from.isDan && rankMeasurePromotionSteps(change.margin) > change.steps
+    // 한 판의 최대(7단계)에 걸렸으면 그것도 한 줄 — 1단에서 멈춘 경우는 위 줄이 더 정확한 까닭이라 그쪽이 이긴다(#259).
+    val hitStepCap = change is RankMeasureChange.Promoted && !change.from.isDan && !stoppedAtOneDan && rankMeasureHitsStepCap(change.margin)
     AlertDialog(
         onDismissRequest = rankMeasure.dismissChange,
         title = { Text(title, fontWeight = FontWeight.Bold) },
@@ -292,9 +296,9 @@ internal fun RankMeasureChangeDialog(rankMeasure: RankMeasureUiState) {
                     )
                 }
                 rankMeasureChangeMessageFor(language, change)?.let { message -> Text(message) }
-                if (stoppedAtOneDan) {
+                if (stoppedAtOneDan || hitStepCap) {
                     Text(
-                        text = rankMeasureKyuCapNoteFor(language),
+                        text = if (stoppedAtOneDan) rankMeasureKyuCapNoteFor(language) else rankMeasureStepCapNoteFor(language),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.secondary,
                     )
