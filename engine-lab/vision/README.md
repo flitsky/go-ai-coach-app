@@ -36,6 +36,21 @@ engine-lab/vision/.venv/bin/python -I engine-lab/vision/measure_outline.py      
 
 결과는 `runs/`(git 밖)에 남는다. 앱에 넘기는 것은 `--export`의 JSON뿐이다.
 
+## 평가 갤러리 — 정답이 없는 사진을 눈으로 본다
+
+정답이 있는 기준 이미지만 보면 실제 사진의 틀림이 안 보인다(함정 92). 사진 폴더(`test-fixtures/board-photos-web/` · `board-photos-own/`, git 밖)를
+**앱과 같은 순서로** 인식해 HTML로 늘어놓는다:
+
+```sh
+engine-lab/vision/.venv/bin/python -I engine-lab/vision/frames_for_dir.py test-fixtures/board-photos-web       # 원근 틀(OpenCV)
+./gradlew :app-android:testDebugUnitTest --tests '*BoardPhotoGalleryTest*'                                     # 앱 순서로 인식 → build/reports/board-photos/gallery-*.json
+engine-lab/vision/.venv/bin/python -I engine-lab/vision/render_gallery.py test-fixtures/board-photos-web       # → 그 폴더의 gallery.html
+```
+
+갤러리는 사진마다 원본 위 찾은 격자(초록 = 핀 건너뜀, 주황 = 핀 화면) · 읽은 판(주황 네모 = 확인 필요) · 출처·라이선스(`sources*.json`) ·
+평가 버튼과 메모(브라우저에 저장, 「평가 복사」로 한 번에 옮긴다)를 보인다. 인터넷 이미지는 위키미디어 공용·Flickr(Openverse)의 CC·퍼블릭 도메인만 모았다 —
+재배포하지 않는다. ⚠️ 위키미디어는 미리보기 크기를 한꺼번에 요청하면 600초씩 막는다(429) — 2초 간격, 이미 만들어진 크기(1280·960…)부터.
+
 ## 지금까지 잰 것 (2026-10-13, 기준 이미지 5장 + 변형 30장)
 
 - **외곽 사각형(윤곽선)** — 바깥 격자선에 0.3칸 안으로 붙은 것이 35장 중 4장. 판 가장자리·사진 테두리를 잡을 뿐이라 **접었다**.
