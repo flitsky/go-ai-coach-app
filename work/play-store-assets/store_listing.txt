@@ -131,7 +131,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.3.6): 한국어 330자 · 영어 495자.
+⚠️ **언어당 500자 이내.** 지금(1.4.0): 한국어 331자 · 영어 486자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -142,32 +142,33 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.3.6 (versionCode 10306, 2026-10-11) ────────
+──────── 지금 붙여넣을 것 — 1.4.0 (versionCode 10400, 2026-10-13) ────────
 
-✅ **기준선은 1.3.0**(프로덕션 10300 — 2026-10-10, 태그 `v1.3.0`). 1.3.0 이후 사용자가 체감하는 것만 적었다 —
-   #245 엔진을 PAD 팩으로(업데이트가 가벼워짐 · 기존 사용자는 다시 안 받음 — 1.3.3→1.3.5 실측 6.3MB) · #249 엔진 준비 화면 + 판다 조작법 가이드(설정에서도) ·
-   #248 홈의 받기 진행 표시 · U-78/#250 캐릭터는 사람 모델로만 두고 문제 시 엔진 다시 시작.
-   적지 않은 것: #246·#247·#251~#254(받기 실패·정체 처리, 내부 정리) — 사용자가 보는 화면은 위 항목들에 담겼다.
-   ⚠️ 크기 숫자(MB)는 적지 않았다 — Play가 설치 때 엔진을 함께 받는 경우가 있어 「처음 받는 크기」가 기기마다 다르다(#246 시나리오 6).
-⚠️ 언어당 500자 이내 — 지금: 한국어 330자 · 영어 495자.
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.3.6이 나간 뒤의 기준선은 1.3.6이다.
-   지난 본문: 1.3.0 `git show 701ee0e5:work/play-store-assets/store_listing.txt`
+✅ **기준선은 1.3.6**(프로덕션 10306 — 2026-10-11~12). 1.3.6 이후 사용자가 체감하는 것만 적었다 —
+   #255 새 버전 알림(홈 한 줄) · #257 업데이트 뒤 「새로워진 점」 · #256·#261 설정 정리 · #256 「마이 페이지」→「내 정보」 + #260 내 캐릭터 ·
+   #258 조작법 직접 해 보기 · #259 승급 대국 규칙. 앱 안 「새로워진 점」 1.4.0 묶음(`UiStringsWhatsNew.kt`)과 같은 범위다.
+   적지 않은 것: 「엔진이 없고 새 버전이 있으면 받기 전에 업데이트를 고르게」(#255 — 새로 설치한 사람에게만 해당) · 기력 「최근 5판」 삭제(#259).
+⚠️ 언어당 500자 이내 — 지금: 한국어 331자 · 영어 486자. 본문은 스레드가 쓴 초안이다(2026-10-13) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.4.0이 나간 뒤의 기준선은 1.4.0이다.
+   지난 본문: 1.3.6 `git show b3cc0d0a:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
-업데이트가 훨씬 가벼워졌습니다. 바둑 AI 엔진을 앱과 따로 받아, 앱을 올릴 때마다 큰 파일을 다시 받지 않습니다(이미 쓰시던 분은 엔진을 다시 받지 않아요).
+설정과 「내 정보」를 알기 쉽게 정리했습니다.
 
-· 새로 설치하면 엔진을 받는 동안 「바둑판 조작법」이 열리고, 다 받으면 「시작하기」로 바로 시작합니다
-· 바둑판 조작법: 문하생 판다가 돌 끌기 · 착수 확인 · 바둑판 크기를 판 위에서 보여 주고, 「직접 해 보기」로 따라 해 볼 수 있어요(설정에서도 열 수 있습니다)
-· 엔진을 받는 동안 홈 화면에서 진행 상황을 볼 수 있습니다
-· 캐릭터는 언제나 자기 급수대로 둡니다 — 엔진에 문제가 생기면 다시 시작을 안내합니다
+· 새 버전이 나오면 홈 화면에서 알려 드리고, 업데이트한 뒤에는 달라진 점을 한 번 보여 드려요(설정 › 앱 정보 「새로워진 점」에서 다시 볼 수 있어요)
+· 설정: 「언어 및 글자 크기」와 대국 바둑판 · 착수 · AI 코치 설정으로 나눴습니다
+· 「마이 페이지」가 「내 정보」가 되었어요 — 모은 캐릭터를 한눈에 보고, 광고로 조각을 모을 수 있습니다
+· 바둑판 조작법: 판을 누르면 바로 직접 해 볼 수 있어요
+· 승급 대국: 이긴 집 차이 10집마다 한 단계씩 올라요(한 판에 최대 7단계). 단은 10집 이상 차이로 이기면 올라갑니다
 </ko-KR>
 <en-US>
-Lighter updates: the Go AI engine now downloads separately, so updates no longer re-download it (existing users keep theirs).
+Clearer Settings and My info.
 
-· Fresh install: the Board Controls Guide opens while the engine downloads; tap Start when ready
-· Board Controls Guide: Panda the Pupil shows dragging, Confirm move and Board size on a real board; follow along with Try it (also in Settings)
-· Download progress on the home screen
-· Characters always play at their rank; if the engine fails, you're asked to restart it
+· The home screen tells you when a new version is out, and shows what changed once after you update (again in Settings › What's new)
+· Settings: Language and text size, then board, stone placement and AI coach
+· My page is now My info: see your characters and collect pieces via ads
+· Board Controls Guide: touch the board to try it right away
+· Rank games: up one step per 10 points you win by (max 7 per game); in dan ranks, a 10+ point win moves you up
 </en-US>
 
 ──────────────────────────────────────────────
