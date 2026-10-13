@@ -16,25 +16,22 @@ internal object UiStringsBoardControlsGuide {
         UiLanguage.ChineseSimplified to "拖动棋子",
     )
 
-    private val WatchDemo = mapOf(
-        UiLanguage.Korean to "시연 보기",
-        UiLanguage.English to "Watch",
-        UiLanguage.Japanese to "お手本",
-        UiLanguage.ChineseSimplified to "观看演示",
+    /**
+     * 무대 아래 한 줄 — 지금이 시연인지 직접인지를 알린다(#258, 사용자 2026-10-13: 「시연 보기 / 직접 해 보기」 알약 대신 한 줄).
+     * ⚠️ 초는 적지 않는다(「잠시」) — 숫자는 `GuideIdleReturnMillis` 한 곳에만 있다. 스레드가 정한 문구다(영·일·중은 원어민 확인 없음).
+     */
+    private val DemoHint = mapOf(
+        UiLanguage.Korean to "판을 누르면 바로 직접 해 볼 수 있어요",
+        UiLanguage.English to "Touch the board to try it yourself",
+        UiLanguage.Japanese to "盤に触れるとすぐ自分で試せます",
+        UiLanguage.ChineseSimplified to "触摸棋盘即可亲自尝试",
     )
 
-    private val TryIt = mapOf(
-        UiLanguage.Korean to "직접 해 보기",
-        UiLanguage.English to "Try it",
-        UiLanguage.Japanese to "やってみる",
-        UiLanguage.ChineseSimplified to "亲自试试",
-    )
-
-    private val StartOver = mapOf(
-        UiLanguage.Korean to "처음부터",
-        UiLanguage.English to "Start over",
-        UiLanguage.Japanese to "最初から",
-        UiLanguage.ChineseSimplified to "重新开始",
+    private val PracticeHint = mapOf(
+        UiLanguage.Korean to "손을 떼고 잠시 두면 다시 보여 드려요",
+        UiLanguage.English to "Leave it for a moment and the demo comes back",
+        UiLanguage.Japanese to "しばらく触れないとお手本に戻ります",
+        UiLanguage.ChineseSimplified to "停一会儿会重新演示",
     )
 
     private val Drag1 = mapOf(
@@ -136,9 +133,8 @@ internal object UiStringsBoardControlsGuide {
     private fun Map<UiLanguage, String>.of(language: UiLanguage): String = this[language] ?: getValue(UiLanguage.Korean)
 
     fun stepDrag(language: UiLanguage): String = StepDrag.of(language)
-    fun watchDemo(language: UiLanguage): String = WatchDemo.of(language)
-    fun tryIt(language: UiLanguage): String = TryIt.of(language)
-    fun startOver(language: UiLanguage): String = StartOver.of(language)
+    fun demoHint(language: UiLanguage): String = DemoHint.of(language)
+    fun practiceHint(language: UiLanguage): String = PracticeHint.of(language)
 
     /** 끌기 시연의 세 마디(누르기 → 끌기 → 떼기). */
     fun dragLines(language: UiLanguage): List<String> = listOf(Drag1.of(language), Drag2.of(language), Drag3.of(language))

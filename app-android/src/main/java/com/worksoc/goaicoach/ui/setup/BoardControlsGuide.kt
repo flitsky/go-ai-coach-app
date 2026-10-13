@@ -13,6 +13,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,7 +34,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -87,17 +90,59 @@ internal enum class BoardControlsStep { Drag, Confirm, BoardSize }
 internal fun boardControlsSteps(isConfirmModeEnabled: Boolean): List<BoardControlsStep> =
     BoardControlsStep.entries.filter { it != BoardControlsStep.Confirm || isConfirmModeEnabled }
 
+/** 손을 뗀 뒤 시연으로 돌아가기까지(#258, 사용자 2026-10-13 — 처음 말한 2초에서 4초로: 착수 확인의 세 동작 사이에 판다의 말을 읽는 틈). */
+internal const val GuideIdleReturnMillis = 4_000L
+
 /**
- * **바둑판 조작법 가이드**(백로그 #249 ②③) — 문하생 판다(첫돌이)가 **진짜 바둑판**(`GoBoard`)을 그려 놓고 「돌 끌기」·
- * 「착수 확인」·「판 크기」를 시연하고, 「직접 해 보기」로 사용자가 그 판에서 해 볼 수 있다. 엔진은 쓰지 않는다.
+ * 조작법 가이드의 모드(#258) — 알약으로 고르지 않는다. **판(무대)에 손가락이 닿으면 직접**, **손을 떼고 [GuideIdleReturnMillis]가 지나면 시연**.
+ *
+ * @property practicing 직접 해 보는 중인가.
+ * @property fingerDown 손가락이 무대에 닿아 있는가 — 누르고 끄는 동안에는 시간을 세지 않는다.
+ * @property releases 손을 뗀 횟수 — 뗄 때마다 대기 시간을 처음부터 센다(화면의 `LaunchedEffect` 키).
+ * @property demoRun 시연을 새로 시작한 횟수 — 바뀌면 판을 첫 모양으로 새로 만든다(돌아온 시연은 처음부터, 사용자 2026-10-13).
+ */
+internal data class GuideAutoMode(
+    val practicing: Boolean = false,
+    val fingerDown: Boolean = false,
+    val releases: Int = 0,
+    val demoRun: Int = 0,
+) {
+    /** 손가락이 닿았다 — 그 즉시 직접. 판은 그대로 두므로 이 손가락이 바로 돌을 끈다. */
+    fun pressed(): GuideAutoMode = copy(practicing = true, fingerDown = true)
+
+    /** 손을 뗐다 — 여기서부터 기다린다. */
+    fun released(): GuideAutoMode = copy(fingerDown = false, releases = releases + 1)
+
+    /** 손을 떼고 기다리는 시간이 지났다 — 직접 해 보던 중이면 시연을 처음부터. 누르고 있으면 아무것도 바뀌지 않는다. */
+    fun idleElapsed(): GuideAutoMode =
+        if (practicing && !fingerDown) copy(practicing = false, demoRun = demoRun + 1) else this
+
+    /** 단계를 바꿨다 — 그 단계의 시연부터. */
+    fun stepChanged(): GuideAutoMode = GuideAutoMode(demoRun = demoRun + 1)
+
+    /** 기다려야 하는가 — 직접 해 보는 중이고 손이 떨어져 있을 때만. */
+    val waitsToReturn: Boolean get() = practicing && !fingerDown
+}
+
+/**
+ * **바둑판 조작법 가이드**(백로그 #249 ②③ · #258) — 문하생 판다(첫돌이)가 **진짜 바둑판**(`GoBoard`)을 그려 놓고 「돌 끌기」·
+ * 「착수 확인」·「판 크기」를 시연하고, 사용자가 판에 손을 대면 **그 자리에서 직접** 해 볼 수 있다. 엔진은 쓰지 않는다.
  *
  * 엔진 준비 화면([EngineSetupGateScreen])과 설정의 「바둑판 조작법」([BoardControlsGuideDialog])이 함께 쓴다 — 가이드는 한 곳이다.
+ *
+ * ## #258 — 손대면 직접, 손을 떼고 4초면 다시 시연(사용자 2026-10-13)
+ * 예전에는 아래 알약 둘(「시연 보기 / 직접 해 보기」)로 골랐다. 이제 모드는 [GuideAutoMode]가 정하고, 아래에는 지금 상태를 알리는 한 줄만 있다.
+ * ⚠️ **첫 터치가 삼켜지지 않게** — `GoBoard`는 누르는 순간 `inputEnabled`가 꺼져 있으면 그 제스처를 버리고, 그 값이 바뀌면 입력 처리를
+ * 새로 시작한다. 그래서 시연과 직접이 **판 하나를 함께 쓰고 입력은 늘 켠다.** 무대는 손가락을 판**보다 먼저**(`PointerEventPass.Initial`)
+ * 보기만 하고 소비하지 않는다 — 시연이 멈추고, 같은 손가락을 판이 그대로 받는다. 무대 밖(단계 알약 · 「나중에」)의 터치는 세지 않는다.
+ * ⚠️ 시연 대본은 사용자 입력 경로(판의 `onCoordinateTap`, 버튼의 `onClick`)를 **부르지 않는다** — 그 경로들은 모드를 묻지 않고 늘 동작한다.
+ *   모드를 물으면, 누른 순간과 뗀 순간 사이에 화면이 다시 그려지지 않은 빠른 탭에서 옛 모드를 읽어 첫 탭이 무시된다.
  *
  * ## ⚠️ `GoBoard`는 고치지 않는다 — 시연은 겉에 그린다
  * 판은 대국의 몸통이다(보조 기능이 메인을 훼손하지 않는다, 2026-09-20 사용자). 끌기 가늠돌은 판의 내부 상태라 밖에서 줄 수
  * 없으므로, 판 위에 겹친 캔버스가 **판과 같은 함수·상수**(`drawGhostStone`·`heldGhostStoneRadiusRatio`·`PlayDragLiftCells`)로
  * 그린다 — 실제 대국과 같아 보이게. 착수 확인의 가착수는 판의 `tentativeMove`로, 돌 버튼은 대국의 [PlayStoneButton]
- * 그대로 그린다. 「직접 해 보기」는 판의 입력을 그대로 받는다(대국 화면과 같은 제스처).
+ * 그대로 그린다. 직접 해 볼 때는 판이 입력을 그대로 받는다(대국 화면과 같은 제스처).
  */
 @Composable
 internal fun BoardControlsGuide(modifier: Modifier = Modifier) {
@@ -105,9 +150,16 @@ internal fun BoardControlsGuide(modifier: Modifier = Modifier) {
     val strings = LocalUiStrings.current
     val steps = remember { boardControlsSteps(FeatureFlags.isPlayConfirmModeEnabled) }
     var step by remember { mutableStateOf(steps.first()) }
-    var trying by remember { mutableStateOf(false) }
-    var resetCount by remember { mutableIntStateOf(0) }
+    var auto by remember { mutableStateOf(GuideAutoMode()) }
     var line by remember { mutableStateOf("") }
+
+    // 손을 뗄 때마다(releases) 처음부터 센다. 누르고 있거나 시연 중이면 세지 않는다.
+    LaunchedEffect(auto.waitsToReturn, auto.releases) {
+        if (auto.waitsToReturn) {
+            delay(GuideIdleReturnMillis)
+            auto = auto.idleElapsed()
+        }
+    }
 
     Column(modifier = modifier) {
         // 좁은 화면·영어·큰 글꼴에서 단계 이름이 찌그러지지 않게 가로로 밀어 볼 수 있다(#253).
@@ -126,7 +178,7 @@ internal fun BoardControlsGuide(modifier: Modifier = Modifier) {
                     selected = candidate == step,
                     onClick = {
                         step = candidate
-                        trying = false
+                        auto = auto.stepChanged()
                     },
                 )
             }
@@ -139,41 +191,52 @@ internal fun BoardControlsGuide(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                // 무대(판 · 돌 버튼 · 칩)에 닿는 손가락을 판보다 먼저 본다 — 소비하지 않으므로 판과 버튼은 같은 손가락을 그대로 받는다.
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        auto = auto.pressed()
+                        do {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                        } while (event.changes.any { it.pressed })
+                        auto = auto.released()
+                    }
+                },
             contentAlignment = Alignment.TopCenter,
         ) {
-            key(step, trying, resetCount) {
+            // 단계가 바뀌거나 시연이 새로 시작될 때만 판을 새로 만든다 — 시연에서 직접으로 넘어갈 때는 같은 판이다(첫 터치를 판이 받는다).
+            key(step, auto.demoRun) {
                 val onLine: (String) -> Unit = { line = it }
+                val practice = auto.practicing
                 when (step) {
-                    BoardControlsStep.Drag -> if (trying) DragPractice(onLine) else DragDemo(onLine)
-                    BoardControlsStep.Confirm -> ConfirmStage(practice = trying, onLine = onLine)
-                    BoardControlsStep.BoardSize -> BoardSizeStage(practice = trying, onLine = onLine)
+                    BoardControlsStep.Drag -> DragStage(practice = practice, onLine = onLine)
+                    BoardControlsStep.Confirm -> ConfirmStage(practice = practice, onLine = onLine)
+                    BoardControlsStep.BoardSize -> BoardSizeStage(practice = practice, onLine = onLine)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(AppSpacing.Space8))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GuidePill(text = UiStringsBoardControlsGuide.watchDemo(language), selected = !trying, onClick = { trying = false })
-            GuidePill(text = UiStringsBoardControlsGuide.tryIt(language), selected = trying, onClick = { trying = true })
-            Spacer(modifier = Modifier.weight(1f))
-            if (trying) {
-                TextButton(onClick = { resetCount++ }) { Text(UiStringsBoardControlsGuide.startOver(language)) }
-            }
-        }
+        // 지금 상태를 알리는 한 줄(#258) — 모드가 말없이 바뀌면 「왜 판이 바뀌지?」가 된다.
+        Text(
+            text = if (auto.practicing) UiStringsBoardControlsGuide.practiceHint(language) else UiStringsBoardControlsGuide.demoHint(language),
+            fontSize = AppTextSize.Text13,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.fillMaxWidth().padding(vertical = AppSpacing.Space6),
+        )
     }
 }
 
 // ── 끌기 ─────────────────────────────────────────────────────────────
 
+/** 돌 끌기 — 시연과 직접이 **판 하나**를 함께 쓴다(#258). 시연 대본은 [practice]가 켜지는 순간 멈추고, 손가락은 판이 그대로 받는다. */
 @Composable
-private fun DragDemo(onLine: (String) -> Unit) {
-    val lines = UiStringsBoardControlsGuide.dragLines(LocalUiStrings.current.language)
+private fun DragStage(practice: Boolean, onLine: (String) -> Unit) {
+    val language = LocalUiStrings.current.language
+    val lines = UiStringsBoardControlsGuide.dragLines(language)
     var state by remember { mutableStateOf(DemoStartPosition) }
+    var placed by remember { mutableIntStateOf(0) }
     // 손가락 자리 — 칸 단위(x = 열, y = 줄). 가늠돌은 손가락보다 PlayDragLiftCells칸 위, 가장 가까운 교차점이다(판과 같다).
     val finger = remember { Animatable(DragFingerStart, Offset.VectorConverter) }
     val growth = remember { Animatable(0f) }
@@ -182,35 +245,41 @@ private fun DragDemo(onLine: (String) -> Unit) {
     var holding by remember { mutableStateOf(false) }
     val ghostAlpha = rememberGhostPulse()
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            state = DemoStartPosition
-            fingerVisible = false
-            holding = false
-            pressed = false
-            growth.snapTo(0f)
-            finger.snapTo(DragFingerStart)
-            onLine(lines[0])
-            delay(700)
-            fingerVisible = true
-            delay(500)
-            pressed = true
-            delay(450) // 길게 누름 임계
-            holding = true
-            growth.animateTo(1f, tween(HeldGhostStoneGrowMillis))
-            delay(900)
-            onLine(lines[1])
-            finger.animateTo(DragFingerEnd, tween(1_600, easing = FastOutSlowInEasing))
-            delay(700)
-            onLine(lines[2])
-            delay(500)
-            val target = ghostCellUnder(finger.value)
-            holding = false
-            pressed = false
-            state = state.playIfEmpty(target)
-            delay(600)
-            fingerVisible = false
-            delay(2_400)
+    if (practice) {
+        LaunchedEffect(placed) {
+            onLine(if (placed == 0) UiStringsBoardControlsGuide.tryDrag(language) else UiStringsBoardControlsGuide.wellDone(language))
+        }
+    } else {
+        LaunchedEffect(Unit) {
+            while (true) {
+                state = DemoStartPosition
+                fingerVisible = false
+                holding = false
+                pressed = false
+                growth.snapTo(0f)
+                finger.snapTo(DragFingerStart)
+                onLine(lines[0])
+                delay(700)
+                fingerVisible = true
+                delay(500)
+                pressed = true
+                delay(450) // 길게 누름 임계
+                holding = true
+                growth.animateTo(1f, tween(HeldGhostStoneGrowMillis))
+                delay(900)
+                onLine(lines[1])
+                finger.animateTo(DragFingerEnd, tween(1_600, easing = FastOutSlowInEasing))
+                delay(700)
+                onLine(lines[2])
+                delay(500)
+                val target = ghostCellUnder(finger.value)
+                holding = false
+                pressed = false
+                state = state.playIfEmpty(target)
+                delay(600)
+                fingerVisible = false
+                delay(2_400)
+            }
         }
     }
 
@@ -218,39 +287,29 @@ private fun DragDemo(onLine: (String) -> Unit) {
         GuideBoard(
             gameState = state,
             modifier = Modifier.size(side),
-            overlay = { geometry ->
-                if (holding) {
-                    drawGhostStone(
-                        center = geometry.pointFor(ghostCellUnder(finger.value)),
-                        radius = geometry.spacing * heldGhostStoneRadiusRatio(growth.value),
-                        stone = state.nextPlayer,
-                        alpha = ghostAlpha(),
-                    )
-                }
-                if (fingerVisible) drawFinger(geometry.pointAt(finger.value), geometry.spacing, pressed)
-            },
-        )
-    }
-}
-
-@Composable
-private fun DragPractice(onLine: (String) -> Unit) {
-    val language = LocalUiStrings.current.language
-    var state by remember { mutableStateOf(DemoStartPosition) }
-    var placed by remember { mutableIntStateOf(0) }
-    LaunchedEffect(placed) {
-        onLine(if (placed == 0) UiStringsBoardControlsGuide.tryDrag(language) else UiStringsBoardControlsGuide.wellDone(language))
-    }
-    StageBoard(maxBoardHeightReserve = 0.dp) { side ->
-        GuideBoard(
-            gameState = state,
-            modifier = Modifier.size(side),
+            // 시연 중에도 켠다(#258) — 끄면 첫 터치를 판이 버린다(이 파일 KDoc).
             inputEnabled = true,
+            // 모드를 묻지 않는다 — 시연 대본은 이 경로를 쓰지 않는다(이 파일 KDoc).
             onCoordinateTap = { coordinate ->
                 val next = state.playIfEmpty(coordinate)
                 if (next !== state) {
                     state = next
                     placed++
+                }
+            },
+            overlay = if (practice) {
+                null
+            } else {
+                { geometry ->
+                    if (holding) {
+                        drawGhostStone(
+                            center = geometry.pointFor(ghostCellUnder(finger.value)),
+                            radius = geometry.spacing * heldGhostStoneRadiusRatio(growth.value),
+                            stone = state.nextPlayer,
+                            alpha = ghostAlpha(),
+                        )
+                    }
+                    if (fingerVisible) drawFinger(geometry.pointAt(finger.value), geometry.spacing, pressed)
                 }
             },
         )
@@ -330,9 +389,9 @@ private fun ConfirmStage(practice: Boolean, onLine: (String) -> Unit) {
                 gameState = state,
                 modifier = Modifier.size(side),
                 tentativeMove = tentative,
-                // 판이 손가락을 직접 받는 것은 「직접 해 보기」뿐이다. 착수 확인이 켜져 있으면 판은 가착수만 놓는다.
+                // 착수 확인이 켜져 있으면 판은 가착수만 놓는다. 입력은 시연 중에도 켠다(#258) — 끄면 첫 터치를 판이 버린다.
                 uxOptions = KaTrainUxOptions(isDirectPlayEnabled = !confirmOn),
-                inputEnabled = practice,
+                inputEnabled = true,
                 onCoordinateTap = { coordinate ->
                     if (state.stoneAt(coordinate) == null) {
                         if (confirmOn) {
@@ -345,7 +404,7 @@ private fun ConfirmStage(practice: Boolean, onLine: (String) -> Unit) {
                 },
                 // 끌기 시작하면 잡아 둔 가착수를 내려놓는다 — 대국 화면과 같다(손끝의 돌이 하나다).
                 onPlayDragStart = { tentative = null },
-                overlay = { geometry -> finger?.let { drawFinger(geometry.pointAt(it), geometry.spacing, pressed = true) } },
+                overlay = { geometry -> if (!practice) finger?.let { drawFinger(geometry.pointAt(it), geometry.spacing, pressed = true) } },
             )
             Spacer(modifier = Modifier.height(AppSpacing.Space12))
             val face = playStoneFaceOf(isDirectPlay = !confirmOn, hasTentativeMove = tentative != null)
@@ -354,8 +413,8 @@ private fun ConfirmStage(practice: Boolean, onLine: (String) -> Unit) {
                     face = face,
                     label = if (face == PlayStoneFace.CommitMove) strings.playMove else strings.confirmPlayOnStone,
                     enabled = true,
+                    // 모드를 묻지 않는다 — 시연 대본은 이 버튼을 누르지 않는다(이 파일 KDoc).
                     onClick = {
-                        if (!practice) return@PlayStoneButton
                         if (face == PlayStoneFace.CommitMove) {
                             tentative?.let { state = state.playIfEmpty(it) }
                             tentative = null
@@ -367,7 +426,7 @@ private fun ConfirmStage(practice: Boolean, onLine: (String) -> Unit) {
                     },
                     modifier = Modifier.size(StoneButtonSize),
                 )
-                if (buttonTapped) FingerDot()
+                if (buttonTapped && !practice) FingerDot()
             }
         }
     }
@@ -418,10 +477,11 @@ private fun BoardSizeStage(practice: Boolean, onLine: (String) -> Unit) {
                     GuidePill(
                         text = maxLabel,
                         selected = isMax,
-                        onClick = { if (practice) isMax = !isMax },
+                        // 모드를 묻지 않는다 — 시연 대본은 이 칩을 누르지 않는다(이 파일 KDoc).
+                        onClick = { isMax = !isMax },
                         modifier = Modifier.height(ChipRowHeight),
                     )
-                    if (chipTapped) FingerDot()
+                    if (chipTapped && !practice) FingerDot()
                 }
             }
             Spacer(modifier = Modifier.height(AppSpacing.Space8))
