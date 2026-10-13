@@ -52,7 +52,8 @@ import re
 import subprocess
 import sys
 
-SKIP_DIRS = {".git", "build", ".gradle", "worktrees", ".claude", "node_modules", "dist"}
+# `.venv`·`venv`: 실험실의 파이썬 가상환경(`.gitignore`와 같은 이름) — 남의 패키지 문서·코드를 훑지 않는다(#263에서 engine-lab/vision/.venv가 생겼다).
+SKIP_DIRS = {".git", "build", ".gradle", "worktrees", ".claude", "node_modules", "dist", ".venv", "venv"}
 
 # 참조 표기 정책의 **유일한 예외 두 곳**(2026-08-31 사용자 확정).
 # `DOCS_INDEX.md`는 **지도**이고 `HANDOVER.md`는 **새로 오는 사람의 첫 화면**이라, 위치를 말하지
@@ -295,7 +296,7 @@ def line_of(text: str, pos: int) -> str:
 
 def walk(root: str):
     for base, dirs, files in os.walk(root):
-        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS and not d.endswith("-venv")]
         for name in files:
             yield os.path.join(base, name)
 
