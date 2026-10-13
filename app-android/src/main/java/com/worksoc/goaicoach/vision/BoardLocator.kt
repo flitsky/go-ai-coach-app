@@ -67,8 +67,11 @@ internal object BoardLocator {
         findLattice(maps, theta, lattice.pitchU, lattice.pitchV, mask)?.let { lattice = it }
 
         var fitted = snapToGrid(gray, maps.stone!!, lattice.n, lattice.homography)
-        val shifted = adjustExtent(gray, lattice.n, fitted)
-        if (shifted !== fitted) {
+        // 한 번에 한 줄씩만 옮기므로 더 안 움직일 때까지 되풀이한다 — 화면 캡처는 판 위 메뉴줄·이름줄이 겹겹이라 두 줄
+        // 어긋나 시작하기도 한다(갤러리 f06: 첫 격자가 맨 위 메뉴줄에서 시작, 한 번 옮기고도 이름줄을 첫 줄로 읽었다).
+        for (step in 0 until MaxExtentSteps) {
+            val shifted = adjustExtent(gray, lattice.n, fitted)
+            if (shifted === fitted) break
             fitted = snapToGrid(gray, maps.stone!!, lattice.n, shifted)
         }
         return LocatedBoard(cornersOf(fitted, lattice.n, 1f / scale), BoardSize(lattice.n), lattice.contrast.coerceIn(0f, 1f))
@@ -542,6 +545,9 @@ internal object BoardLocator {
 
     private const val RansacRounds = 100
     private const val RansacSeed = 210
+
+    /** [adjustExtent]를 되풀이하는 최대 횟수(한 번에 한 줄). ⚠️ 3은 스레드가 정한 값이다 — f06은 두 번이면 된다. */
+    private const val MaxExtentSteps = 3
 
     /**
      * 판의 범위를 **한 줄** 단위로 바로잡는다 — 격자 전체를 가로·세로로 −1·0·+1줄 옮긴 아홉 후보 중, 바깥 격자선 바로
