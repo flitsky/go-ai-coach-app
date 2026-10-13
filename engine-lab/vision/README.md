@@ -45,7 +45,12 @@ engine-lab/vision/.venv/bin/python -I engine-lab/vision/measure_outline.py      
 engine-lab/vision/.venv/bin/python -I engine-lab/vision/frames_for_dir.py test-fixtures/board-photos-web       # 원근 틀(OpenCV)
 ./gradlew :app-android:testDebugUnitTest --tests '*BoardPhotoGalleryTest*'                                     # 앱 순서로 인식 → build/reports/board-photos/gallery-*.json
 engine-lab/vision/.venv/bin/python -I engine-lab/vision/render_gallery.py test-fixtures/board-photos-web       # → 그 폴더의 gallery.html
+engine-lab/vision/.venv/bin/python -I engine-lab/vision/export_results.py test-fixtures/board-photos-web      # → 사진마다 옆에 <이름>_인식결과.png
 ```
+
+`<이름>_인식결과.png`는 Finder·미리보기에서 원본과 나란히 놓고 보는 한 장짜리 결과다(사용자 2026-10-14) — 원본 위 찾은 격자와 네 모서리 좌표(A19·T19·T1·A1),
+읽은 판(좌표 글자 · 주황 네모 = 확인 필요). 그린 판은 픽셀을 다시 읽어 인식 결과와 한 점도 다르지 않은지 스스로 확인한다.
+사진 폴더를 훑는 쪽(`frames_for_dir.py` · `BoardPhotoGalleryTest`)은 이 꼬리(`_인식결과`)가 붙은 파일을 사진으로 치지 않는다.
 
 갤러리는 사진마다 원본 위 찾은 격자(초록 = 핀 건너뜀, 주황 = 핀 화면) · 읽은 판(주황 네모 = 확인 필요) · 출처·라이선스(`sources*.json`) ·
 평가 버튼과 메모(브라우저에 저장, 「평가 복사」로 한 번에 옮긴다)를 보인다. 인터넷 이미지는 위키미디어 공용·Flickr(Openverse)의 CC·퍼블릭 도메인만 모았다 —

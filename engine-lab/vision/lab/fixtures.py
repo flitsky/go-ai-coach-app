@@ -5,6 +5,7 @@
 `gate:` · 격자(위에서 아래 n줄, B/W/.) · `same-as: <다른 정답의 키>`(판 크기·배치를 물려받는다).
 """
 
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,6 +13,17 @@ import cv2
 import numpy as np
 
 REPO = Path(__file__).resolve().parents[3]
+
+PHOTO_SUFFIXES = {".jpg", ".jpeg", ".png"}
+
+# `export_results.py`가 사진 옆에 쓰는 인식 결과 그림의 이름 꼬리(`<사진 이름>_인식결과.png`) — 사진 묶음을 훑을 때 사진으로 치지 않는다.
+# ⚠️ 앱 테스트 `BoardPhotoGalleryTest.ResultSuffix`와 같은 글자여야 한다.
+RESULT_SUFFIX = "_인식결과"
+
+
+def is_photo(path: Path) -> bool:
+    """사진 묶음 폴더의 파일이 인식할 사진인가 — 인식 결과 그림은 아니다(맥 Finder가 이름을 NFD로 바꿔 둬도 같게 본다)."""
+    return path.suffix.lower() in PHOTO_SUFFIXES and not unicodedata.normalize("NFC", path.stem).endswith(RESULT_SUFFIX)
 
 SETS = {
     "press": ("app-android/src/test/resources/board-photos", "test-fixtures/board-photos"),

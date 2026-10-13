@@ -15,8 +15,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lab import perspective  # noqa: E402
-
-SUFFIXES = {".jpg", ".jpeg", ".png"}
+from lab.fixtures import is_photo  # noqa: E402
 
 
 def main(argv):
@@ -24,7 +23,7 @@ def main(argv):
     out = Path(argv[1]) if len(argv) > 1 else src / "frames.json"
     frames = {}
     for p in sorted(src.iterdir()):
-        if p.suffix.lower() not in SUFFIXES:
+        if not is_photo(p):
             continue
         img = cv2.imread(str(p), cv2.IMREAD_COLOR)
         if img is None:

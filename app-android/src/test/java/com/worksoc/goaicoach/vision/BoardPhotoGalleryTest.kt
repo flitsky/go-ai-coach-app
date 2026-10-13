@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.PointF2D
 import java.io.File
+import java.text.Normalizer
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Test
@@ -22,12 +23,21 @@ class BoardPhotoGalleryTest {
 
     private val folders = listOf("test-fixtures/board-photos-web", "test-fixtures/board-photos-own")
 
+    /**
+     * 사진 옆에 놓인 인식 결과 그림(`engine-lab/vision/export_results.py`가 쓰는 `<사진 이름>_인식결과.png`)은 사진이 아니다.
+     * ⚠️ 실험실 `lab/fixtures.py`의 `RESULT_SUFFIX`와 같은 글자여야 한다. 맥 Finder가 한글 이름을 NFD로 바꿔 둘 수 있어 NFC로 맞춰 본다.
+     */
+    private val ResultSuffix = "_인식결과"
+
+    private fun isPhoto(f: File): Boolean = f.extension.lowercase() in setOf("jpg", "jpeg", "png") &&
+        !Normalizer.normalize(f.nameWithoutExtension, Normalizer.Form.NFC).endsWith(ResultSuffix)
+
     @Test
     fun recognizeEveryPhotoInTheGalleryFolders() {
         folders.map { File(RepoPaths.root, it) }.filter { it.isDirectory }.forEach { dir ->
             val frames = File(dir, "frames.json").takeIf { it.isFile }?.let { JSONObject(it.readText()) }
             val results = JSONArray()
-            dir.listFiles { f -> f.extension.lowercase() in setOf("jpg", "jpeg", "png") }.orEmpty().sortedBy { it.name }.forEach { file ->
+            dir.listFiles { f -> isPhoto(f) }.orEmpty().sortedBy { it.name }.forEach { file ->
                 val img = BoardPhotoFixture.loadPixels(file) ?: return@forEach
                 results.put(recognize(file.name, img, frames?.optJSONObject(file.name)))
             }
