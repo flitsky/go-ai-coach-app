@@ -95,3 +95,27 @@ fun decideStaleSubscriptionDowngrade(state: PremiumState, nowMillis: Long): Prem
     // **팝업이 매번 다시 뜬다** — 이미 일반 사용자로 내려 더 내릴 것이 없는데도.
     return state.copy(source = PremiumSource.None, lastSubscriptionVerifiedAtMillis = null)
 }
+
+/**
+ * 지금 두고 있는 판(백로그 #209) — 72시간 강등을 미룰지 가리는 데 쓴다.
+ *
+ * @property generation 판을 가리는 값(대국을 새로 시작할 때마다 바뀐다 — `GameSessionRuntimeState.matchGeneration`).
+ * @property inProgress 한 수 이상 두었고 아직 끝나지 않았는가. 빈 판(앱을 막 켠 상태)은 대국 중이 아니다.
+ */
+data class MatchInPlay(val generation: Long, val inProgress: Boolean)
+
+/**
+ * 72시간 강등([decideStaleSubscriptionDowngrade])을 **지금 적용해도 되는가**(백로그 #209 — U-46 사용자 결정 2026-10-02):
+ * 사용자가 **대국 중이면 그 판은 프리미엄 그대로 끝까지 두고**, 판이 끝난 뒤 — 또는 다른 판을 시작할 때 — 내린다.
+ *
+ * - 대국 중이 아니면 바로 적용한다.
+ * - 대국 중에 처음 판정됐으면([heldForGeneration]이 `null`) 미룬다 — 부르는 쪽이 그 판의 [MatchInPlay.generation]을 붙잡는다.
+ * - 붙잡은 판이 아닌 다른 판이 진행 중이면(그 판을 두지 않고 새 대국을 시작했다) 적용한다 — 새 판은 내린 상태로 시작한다.
+ *
+ * ⚠️ **Play가 「미소유」라고 답한 즉시 강등(#158)은 이 유예의 대상이 아니다** — 답이 있는 경우다(위 KDoc). 이 함수는 72시간 경로에만 쓴다.
+ */
+fun staleDowngradeMayApply(heldForGeneration: Long?, match: MatchInPlay): Boolean = when {
+    !match.inProgress -> true
+    heldForGeneration == null -> false
+    else -> match.generation != heldForGeneration
+}

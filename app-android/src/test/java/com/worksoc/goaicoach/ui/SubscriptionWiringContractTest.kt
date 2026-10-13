@@ -31,7 +31,16 @@ class SubscriptionWiringContractTest {
     fun theRestoreEffectReceivesTheCurrentPremiumState() {
         assertTrue(
             "복원 효과에 현재 상태를 안 넘긴다 — 해지한 구독이 영원히 살아 있는다(#158).",
-            app.contains("PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState)"),
+            app.contains("PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState,"),
+        )
+        // #209 — 지금 두고 있는 판도 넘긴다. 안 넘기면(또는 세대를 안 넘기면) 72시간 강등이 대국 도중에 그대로 일어난다(U-46).
+        assertTrue(
+            "복원 효과에 지금 판(`MatchInPlay`)을 안 넘긴다 — 대국 중 72시간 강등이 그 판을 끊는다(#209).",
+            app.contains("MatchInPlay(runtimeState.matchGeneration,"),
+        )
+        assertTrue(
+            "72시간 강등이 유예 판정을 거치지 않는다(#209).",
+            premium.contains("staleDowngradeMayApply(heldForGeneration, latestMatch)"),
         )
         // ⚠️ **식별자가 `currentState` → `latestState`로 바뀌었다**(2026-09-18, #174).
         // 함정 22는 *"소스 계약이 고정한 이름은 바꾸기보다 되돌리는 게 싸다"* 고 하지만, 여기서는

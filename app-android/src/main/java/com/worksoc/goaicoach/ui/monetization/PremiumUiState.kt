@@ -46,9 +46,11 @@ import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.MatchInPlay
 import com.worksoc.goaicoach.application.premium.state.PremiumSource
 import com.worksoc.goaicoach.application.premium.state.PremiumState
 import com.worksoc.goaicoach.application.premium.state.decideStaleSubscriptionDowngrade
+import com.worksoc.goaicoach.application.premium.state.staleDowngradeMayApply
 import com.worksoc.goaicoach.performPremiumAdGrant
 import com.worksoc.goaicoach.performPremiumPurchase
 import com.worksoc.goaicoach.performPremiumPurchaseRestore
@@ -465,6 +467,8 @@ internal fun PremiumPurchaseRestoreEffect(
     // ⚠️ **현재 상태를 넘겨야 강등이 된다**(#158) — 안 넘기면 기본값(`None`)이 들어가
     // "내릴 것이 없다"로 판정돼 **해지한 구독이 계속 살아 있는다.**
     currentState: PremiumState,
+    // #209 — 지금 두고 있는 판. 72시간 강등은 이 판이 끝날 때까지 미룬다(아래 `heldForGeneration`).
+    match: MatchInPlay,
     onRestored: (PremiumState) -> Unit,
 ) {
     if (!FeatureFlags.isPurchaseEnabled) return
@@ -476,21 +480,35 @@ internal fun PremiumPurchaseRestoreEffect(
     //   컴포지션마다 새 클로저다 — 함정 46이 경고한 `::함수참조` 형태가 아니므로 갱신이 걸러지지 않는다.
     val latestState by rememberUpdatedState(currentState)
     val latestOnRestored by rememberUpdatedState(onRestored)
+    val latestMatch by rememberUpdatedState(match)
     // 팝업 상태를 이 파일이 든다 — `GoCoachApp.kt`는 상태 훅 여유가 0이다(위 KDoc과 같은 이유).
     var showStaleNotice by remember { mutableStateOf(false) }
+    // #209(U-46, 사용자 2026-10-02) — 72시간 강등을 **대국 중에** 판정했으면 그 판의 세대를 붙잡고 미룬다. 판이 끝나(그리고 대국 화면을 떠나)거나
+    // 다른 판을 시작하면 아래 `LaunchedEffect`가 다시 판정해 내린다. ⚠️ 셸이 아니라 여기 든다(셸의 상태 훅 예산 0 — 함정 3).
+    // ⚠️ Play가 「미소유」라고 답한 즉시 강등(#158)은 이 유예를 지나지 않는다 — `performPremiumPurchaseRestore`가 곧바로 적용한다.
+    var heldForGeneration by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         suspend fun queryOnce() {
             val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog, latestState)
             if (nextState != null) {
+                heldForGeneration = null
                 latestOnRestored(nextState)
                 return
             }
             // ⚠️ **조회로는 아무것도 못 정했을 때에만 신선도를 본다**(백로그 #174).
             // Play가 답을 줬다면 그 답이 정본이다 — 앱의 시계가 Play를 이기는 일은 없어야 한다.
-            decideStaleSubscriptionDowngrade(latestState, System.currentTimeMillis())?.let { downgraded ->
-                showStaleNotice = true
-                latestOnRestored(downgraded)
+            val downgraded = decideStaleSubscriptionDowngrade(latestState, System.currentTimeMillis())
+            when {
+                // 그 사이 확인이 됐다(또는 내릴 것이 없다) — 붙잡은 것도 놓는다.
+                downgraded == null -> heldForGeneration = null
+                staleDowngradeMayApply(heldForGeneration, latestMatch) -> {
+                    heldForGeneration = null
+                    showStaleNotice = true
+                    latestOnRestored(downgraded)
+                }
+                // 대국 중 — 그 판은 끝까지 프리미엄(#209). 처음 붙잡을 때의 판만 기억한다.
+                heldForGeneration == null -> heldForGeneration = latestMatch.generation
             }
         }
         // ⚠️ **콜드 스타트는 이 직접 호출이 맡는다.** `AppForegroundEvents`는 `replay = 0`이라
@@ -498,6 +516,17 @@ internal fun PremiumPurchaseRestoreEffect(
         // 이벤트는 이 컴포지션이 붙기 전에 이미 지나갔다. 같은 이유로 **중복 조회도 생기지 않는다.**
         queryOnce()
         AppForegroundEvents.events.collect { queryOnce() }
+    }
+
+    // #209 — 붙잡아 둔 강등을 그 판이 끝났거나 다른 판이 시작되면 적용한다. 그때 다시 판정한다 — 그 사이 Play가 확인해 줬으면 내리지 않는다.
+    LaunchedEffect(heldForGeneration, match) {
+        val held = heldForGeneration ?: return@LaunchedEffect
+        if (!staleDowngradeMayApply(held, match)) return@LaunchedEffect
+        heldForGeneration = null
+        decideStaleSubscriptionDowngrade(latestState, System.currentTimeMillis())?.let { downgraded ->
+            showStaleNotice = true
+            latestOnRestored(downgraded)
+        }
     }
 
     if (showStaleNotice) {

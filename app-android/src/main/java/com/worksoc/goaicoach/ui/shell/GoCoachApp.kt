@@ -54,6 +54,7 @@ import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.FeatureId
+import com.worksoc.goaicoach.application.premium.state.MatchInPlay
 import com.worksoc.goaicoach.application.rankmeasure.withEndedRankMeasureGame
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -851,7 +852,7 @@ private fun GoCoachScreen(
         onStateChanged = { nextState -> premiumState = nextState },
     )
 
-    PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState) { nextState ->
+    PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState, MatchInPlay(runtimeState.matchGeneration, inProgress = (!isGameEnded && gameState.moves.isNotEmpty()) || currentDestination == ScreenDestination.InGame)) { nextState ->
         premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 

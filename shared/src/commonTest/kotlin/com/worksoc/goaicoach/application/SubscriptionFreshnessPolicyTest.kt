@@ -1,11 +1,15 @@
 package com.worksoc.goaicoach.application
 
+import com.worksoc.goaicoach.application.premium.state.MatchInPlay
 import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshness
 import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy
 import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy.ExpireAfterMillis
 import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy.RecheckAfterMillis
+import com.worksoc.goaicoach.application.premium.state.staleDowngradeMayApply
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /** 구독 확인 신선도 판정 계약(백로그 #174). */
 class SubscriptionFreshnessPolicyTest {
@@ -59,5 +63,20 @@ class SubscriptionFreshnessPolicyTest {
                 nowMillis = now,
             ),
         )
+    }
+
+    /**
+     * #209(U-46, 사용자 2026-10-02) — 대국 중이면 그 판은 끝까지 프리미엄, 판이 끝났거나 다른 판을 시작하면 그때 내린다.
+     */
+    @Test
+    fun theStaleDowngradeWaitsForTheGameInPlay() {
+        val idle = MatchInPlay(generation = 3, inProgress = false)
+        val playing = MatchInPlay(generation = 3, inProgress = true)
+
+        assertTrue(staleDowngradeMayApply(heldForGeneration = null, match = idle), "not playing — downgrade now")
+        assertFalse(staleDowngradeMayApply(heldForGeneration = null, match = playing), "playing — hold for this game")
+        assertFalse(staleDowngradeMayApply(heldForGeneration = 3, match = playing), "still the held game — keep holding")
+        assertTrue(staleDowngradeMayApply(heldForGeneration = 3, match = playing.copy(inProgress = false)), "the held game ended")
+        assertTrue(staleDowngradeMayApply(heldForGeneration = 3, match = MatchInPlay(generation = 4, inProgress = true)), "a new game started")
     }
 }
