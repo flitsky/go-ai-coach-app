@@ -73,15 +73,18 @@ class MyInfoAndSettingsLayoutContractTest {
         }
     }
 
-    /** 순서(머리말 → 구독 → 출석 → 1회권)는 2026-10-09 결정 그대로이고, 「내 캐릭터」는 그 끝, 고지 한 줄 앞이다. */
+    /**
+     * 내 정보의 순서(사용자 2026-10-13, #260): 머리말 → **내 캐릭터** → 구독 카드 → 출석 → 1회권 → 고지 한 줄.
+     * 내 캐릭터가 구독 카드 바로 위에 있어야 *"구독하면 모든 캐릭터가 열린다"* 로 이어 읽힌다.
+     */
     @Test
-    fun myInfoKeepsTheDecidedOrderAndAppendsMyCharacters() {
+    fun myInfoKeepsTheDecidedOrder() {
         val order = listOf(
             "MyPageProfileHeader()",
+            "MyCharactersRow()",
             "PremiumSubscriptionCard()",
             "AttendanceBoardSection(",
             "strings.myPageInventoryTitle",
-            "MyCharactersRow()",
             "LocalOnlyDataNoticePointer()",
         )
         val positions = order.map { myPage.indexOf(it) }
