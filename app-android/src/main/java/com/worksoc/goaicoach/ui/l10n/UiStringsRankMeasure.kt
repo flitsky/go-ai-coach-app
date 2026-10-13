@@ -111,8 +111,8 @@ internal fun rankMeasureStrongerFor(language: UiLanguage): String =
     }
 
 /**
- * 오르내리는 규칙(사용자 2026-10-07 → 2026-10-13 백로그 #259) — 급 구간은 이길 때마다 기본 한 단계에 10집마다 한 단계씩 더(한 판에 최대 7, 1단까지),
- * 단 구간은 10집 이상 차이로 이기면 한 단, 어느 구간이든 2연패하면 한 단계 내림. ⚠️ 규칙(`adjustRankAfterResult`)과 한 글자도 어긋나면 안 된다 —
+ * 오르내리는 규칙(사용자 2026-10-07 → 2026-10-13 최종, 백로그 #259) — 급 구간은 이긴 집 수 차이 10집마다 한 단계(10집 미만이면 그대로, 한 판에 최대 7,
+ * 1단까지), 단 구간은 10집 이상 차이로 이기면 한 단, 어느 구간이든 2연패하면 한 단계 내림. ⚠️ 규칙(`adjustRankAfterResult`)과 한 글자도 어긋나면 안 된다 —
  * 사용자가 화면에서 읽는 것이 규칙이다. 숫자는 규칙의 상수에서 읽는다.
  */
 internal fun rankMeasureRulesFor(language: UiLanguage): String {
@@ -120,10 +120,10 @@ internal fun rankMeasureRulesFor(language: UiLanguage): String {
     val max = RankMeasureMaxPromotionSteps
     val dan = RankMeasureDanPromotionMargin.toInt()
     return when (language) {
-        UiLanguage.Korean -> "급 구간은 이길 때마다 오릅니다 — 기본 한 단계에, 이긴 집 수 차이 ${per}집마다 한 단계씩 더(한 판에 최대 ${max}단계, 1단까지). 단 구간은 ${dan}집 이상 차이로 이기면 한 단 오릅니다. 어느 구간이든 2연패하면 한 단계 내려갑니다."
-        UiLanguage.English -> "In the kyu ranks every win raises you — one step, plus one more for every $per points you win by (at most $max steps per game, up to 1 dan). In the dan ranks a win by $dan points or more raises you one dan. Anywhere, two losses in a row lower you one step."
-        UiLanguage.Japanese -> "級では勝つたびに上がります — 基本1段階に、勝った目数差${per}目ごとに1段階ずつ追加（1局で最大${max}段階、1段まで）。段では${dan}目以上の差で勝つと1段上がります。どの区間でも2連敗で1段階下がります。"
-        UiLanguage.ChineseSimplified -> "级位区间每胜一局都会提升 — 基本一档，每多赢${per}目再加一档（每局最多${max}档，最高到1段）。段位区间赢${dan}目以上升一段。无论哪个区间，两连败降一档。"
+        UiLanguage.Korean -> "급 구간은 이긴 집 수 차이 ${per}집마다 한 단계 오릅니다(${per}집 미만이면 그대로, 한 판에 최대 ${max}단계, 1단까지). 단 구간은 ${dan}집 이상 차이로 이기면 한 단 오릅니다. 어느 구간이든 2연패하면 한 단계 내려갑니다."
+        UiLanguage.English -> "In the kyu ranks you move up one step for every $per points you win by (a win by less than $per keeps your rank; at most $max steps per game, up to 1 dan). In the dan ranks a win by $dan points or more raises you one dan. Anywhere, two losses in a row lower you one step."
+        UiLanguage.Japanese -> "級では勝った目数差${per}目ごとに1段階上がります（${per}目未満ならそのまま、1局で最大${max}段階、1段まで）。段では${dan}目以上の差で勝つと1段上がります。どの区間でも2連敗で1段階下がります。"
+        UiLanguage.ChineseSimplified -> "级位区间每多赢${per}目提升一档（不足${per}目则保持不变，每局最多${max}档，最高到1段）。段位区间赢${dan}目以上升一段。无论哪个区间，两连败降一档。"
     }
 }
 

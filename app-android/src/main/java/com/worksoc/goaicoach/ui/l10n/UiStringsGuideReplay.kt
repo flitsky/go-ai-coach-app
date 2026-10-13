@@ -26,10 +26,10 @@ internal object UiStringsGuideReplay {
     }
 
     fun rankMeasure(language: UiLanguage): String = when (language) {
-        UiLanguage.Korean -> "같은 기력의 AI와 둬요. 이기면 기력이 오르고, 두 판 연달아 지면 한 단계 내려가요. 형세 보기 같은 도움 없이 실력으로만 둬요."
-        UiLanguage.English -> "Play an AI of your own rank. Win to move up; lose two in a row to drop one step. No hints here — just your own play."
-        UiLanguage.Japanese -> "同じ棋力のAIと打ちます。勝てば棋力が上がり、2連敗すると1段階下がります。形勢表示などの手助けなしで、実力だけで打ちます。"
-        UiLanguage.ChineseSimplified -> "与同等棋力的 AI 对弈。赢了棋力上升，连输两局降一级。没有形势判断等帮助，全凭实力。"
+        UiLanguage.Korean -> "같은 기력의 AI와 둬요. 크게 이길수록 기력이 많이 오르고, 두 판 연달아 지면 한 단계 내려가요. 형세 보기 같은 도움 없이 실력으로만 둬요."
+        UiLanguage.English -> "Play an AI of your own rank. The bigger you win, the further you move up; lose two in a row to drop one step. No hints here — just your own play."
+        UiLanguage.Japanese -> "同じ棋力のAIと打ちます。大きく勝つほど棋力が上がり、2連敗すると1段階下がります。形勢表示などの手助けなしで、実力だけで打ちます。"
+        UiLanguage.ChineseSimplified -> "与同等棋力的 AI 对弈。赢得越多，棋力升得越多；连输两局降一级。没有形势判断等帮助，全凭实力。"
     }
 
     fun gameHistory(language: UiLanguage): String = when (language) {

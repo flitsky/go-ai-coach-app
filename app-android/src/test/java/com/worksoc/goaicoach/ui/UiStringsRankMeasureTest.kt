@@ -172,13 +172,13 @@ class UiStringsRankMeasureTest {
     }
 
     /**
-     * 설정 창의 규칙 문구는 규칙과 **같은 숫자**를 말한다 — 기본 한 단계 · 10집마다 한 단계씩 더 · 한 판에 최대 7 · 1단까지 · 단은 10집 이상 · 2연패
+     * 설정 창의 규칙 문구는 규칙과 **같은 숫자**를 말한다 — 10집마다 한 단계 · 10집 미만이면 그대로 · 한 판에 최대 7 · 1단까지 · 단은 10집 이상 · 2연패
      * (사용자 2026-10-13, #259). 화면에서 읽은 것과 실제 동작이 다르면 그것이 가장 나쁜 결함이다(2026-10-07: 창에 없는 폭으로 올라 사용자가 물었다).
      */
     @Test
     fun theRulesTextStatesTheSameNumbersAsTheRule() {
         val rules = rankMeasureRulesFor(UiLanguage.Korean)
-        listOf("기본 한 단계", "10집마다 한 단계씩 더", "최대 7단계", "1단까지", "10집 이상 차이로 이기면 한 단", "2연패하면 한 단계").forEach { phrase ->
+        listOf("10집마다 한 단계", "10집 미만이면 그대로", "최대 7단계", "1단까지", "10집 이상 차이로 이기면 한 단", "2연패하면 한 단계").forEach { phrase ->
             assertTrue("규칙 문구에 없다: $phrase", rules.contains(phrase))
         }
         assertFalse("옛 규칙(최근 5판 중 3판)이 문구에 남았다", rules.contains("5판"))
