@@ -132,10 +132,18 @@ internal fun BoardScanScreen(
 
     // 다른 앱의 「공유」로 받은 사진(백로그 #263) — 화면이 다시 보일 때마다 받은편지함을 본다. 이 화면에 있는 동안
     // 새로 받아도 그 사진으로 다시 시작한다.
+    // ⚠️ 받은 사진을 여는 동안은 촬영 화면을 그리지 않는다 — 그리면 카메라 권한부터 묻는다(공유로 들어온 사람에게는 필요 없는 창).
+    var isOpeningSharedPhoto by remember { mutableStateOf(SharedBoardPhotoInbox.hasPhoto(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        val file = SharedBoardPhotoInbox.take(context) ?: return@LifecycleEventEffect
+        val file = SharedBoardPhotoInbox.take(context)
+        if (file == null) {
+            isOpeningSharedPhoto = false
+            return@LifecycleEventEffect
+        }
+        isOpeningSharedPhoto = true
         scope.launch {
             val bitmap = withContext(Dispatchers.IO) { BoardPhotoDecoder.decode(context, Uri.fromFile(file)) }
+            isOpeningSharedPhoto = false
             if (bitmap == null) errorMessage = text.photoLoadFailed else startFromPhoto(bitmap)
         }
     }
@@ -162,10 +170,14 @@ internal fun BoardScanScreen(
     Box(modifier = modifier.fillMaxSize()) {
         when (step) {
             ScanStep.Capture -> {
-                CameraCaptureView(
-                    onPhotoCaptured = ::startFromPhoto,
-                    onClose = onBackClick,
-                )
+                if (isOpeningSharedPhoto) {
+                    ScanProgressBackdrop(text.locating)
+                } else {
+                    CameraCaptureView(
+                        onPhotoCaptured = ::startFromPhoto,
+                        onClose = onBackClick,
+                    )
+                }
             }
 
             ScanStep.PinAdjustment -> {
@@ -206,22 +218,7 @@ internal fun BoardScanScreen(
                         }
 
                         if (isLocating || isScanning) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(VisionPalette.Backdrop.copy(alpha = 0.6f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    CircularProgressIndicator(color = VisionPalette.OnBackdrop)
-                                    Spacer(modifier = Modifier.height(AppSpacing.Space16))
-                                    Text(
-                                        text = if (isLocating) text.locating else text.scanning,
-                                        color = VisionPalette.OnBackdrop,
-                                        fontWeight = FontWeight.Medium,
-                                    )
-                                }
-                            }
+                            ScanProgressBackdrop(if (isLocating) text.locating else text.scanning)
                         }
                     }
                 } else {
@@ -310,6 +307,23 @@ internal fun BoardScanScreen(
                     }
                 },
             )
+        }
+    }
+}
+
+/** 판을 찾거나 돌을 읽는 동안 화면을 덮는 진행 표시. */
+@Composable
+private fun ScanProgressBackdrop(label: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(VisionPalette.Backdrop.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = VisionPalette.OnBackdrop)
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
+            Text(text = label, color = VisionPalette.OnBackdrop, fontWeight = FontWeight.Medium)
         }
     }
 }

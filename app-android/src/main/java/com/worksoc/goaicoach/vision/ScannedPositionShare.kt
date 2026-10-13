@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * 인식한 국면을 SGF **파일로** 다른 앱에 보낸다(백로그 #263) — 메신저·드라이브·다른 바둑 앱.
@@ -20,7 +23,9 @@ internal object ScannedPositionShare {
     fun send(context: Context, sgf: String, chooserTitle: String) {
         val dir = File(context.cacheDir, DirName).apply { mkdirs() }
         dir.listFiles()?.forEach { it.delete() }
-        val file = File(dir, "board-${System.currentTimeMillis()}.sgf").apply { writeText(sgf) }
+        // 받는 쪽(드라이브·메신저)에 그대로 보이는 이름이라 날짜로 — `board-20261013-2204.sgf`.
+        val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.ROOT).format(Date())
+        val file = File(dir, "board-$stamp.sgf").apply { writeText(sgf) }
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         val send = Intent(Intent.ACTION_SEND)
             .setType(MimeType)
