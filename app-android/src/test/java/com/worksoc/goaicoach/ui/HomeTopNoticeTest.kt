@@ -36,4 +36,21 @@ class HomeTopNoticeTest {
             }
         }
     }
+
+    /** #257 — 「새로워진 점」은 받기 다음, 업데이트 알림 앞이다(한 번 보면 끝나는 것이 먼저). */
+    @Test
+    fun whatsNewComesAfterTheEngineDownloadAndBeforeTheUpdateNotice() {
+        assertEquals(
+            HomeTopNoticeKind.EngineDownload,
+            homeTopNoticeOf(EngineDownloadStatus.Downloading(1L, 2L, 50), AppUpdateStatus.Available, updateDismissed = false, whatsNewPending = true),
+        )
+        assertEquals(
+            HomeTopNoticeKind.WhatsNew,
+            homeTopNoticeOf(EngineDownloadStatus.Completed, AppUpdateStatus.Available, updateDismissed = false, whatsNewPending = true),
+        )
+        assertEquals(
+            HomeTopNoticeKind.AppUpdate,
+            homeTopNoticeOf(EngineDownloadStatus.Idle, AppUpdateStatus.Available, updateDismissed = false, whatsNewPending = false),
+        )
+    }
 }

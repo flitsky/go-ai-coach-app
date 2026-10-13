@@ -428,6 +428,8 @@ internal fun SettingsScreen(
                     // 않게 간격을 두고, 누르면 같은 화면 안의 하위 화면이 열린다(외부 브라우저가 아니다).
                     Spacer(modifier = Modifier.height(AppSpacing.Space8))
                     // 도움말은 #256에서 이 카드 밖, 자기 절(「도움말」)로 나갔다 — 이 카드에는 앱 정보와 법적 고지만 남는다.
+                    // 「새로워진 점」(#257) — 버전 줄과는 링크 하나 거리(10탭 표적과 붙지 않게 위 간격을 그대로 둔다). 실린 묶음이 없으면 그리지 않는다.
+                    SettingsWhatsNewLink()
                     Text(
                         text = openSourceLicensesTitleFor(strings.language),
                         fontSize = AppTextSize.Text12,

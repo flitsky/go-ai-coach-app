@@ -3,7 +3,9 @@ package com.worksoc.goaicoach.ui.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.ui.account.FirstDolGuideReplayDialog
 import com.worksoc.goaicoach.ui.account.LocalOnlyDataNoticeDialog
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
@@ -30,7 +34,10 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
+import com.worksoc.goaicoach.ui.l10n.WhatsNewCatalog
+import com.worksoc.goaicoach.ui.l10n.whatsNewTitleFor
 import com.worksoc.goaicoach.ui.setup.BoardControlsGuideDialog
+import com.worksoc.goaicoach.ui.setup.WhatsNewDialog
 
 /**
  * 설정의 **도움말 절**(백로그 #241, #245 → #256) — 「바둑판 조작법」, 「가이드 다시보기」와 「내 기록은 어떻게 보관되나요」.
@@ -100,4 +107,27 @@ private fun SettingsHelpRow(text: String, onClick: () -> Unit) {
             modifier = Modifier.size(20.dp),
         )
     }
+}
+
+/**
+ * 설정 › 앱 정보의 「새로워진 점」(백로그 #257, 사용자 2026-10-13) — 홈 한 줄을 닫아 버렸거나 다시 보고 싶을 때. 지금 버전까지 실린 묶음을 새것부터 보인다.
+ * 실린 묶음이 없으면(그 버전 전) 줄을 그리지 않는다. 디버그 빌드는 앞으로 나갈 묶음까지 보인다(개발 빌드의 versionCode가 아직 낮다).
+ * 모양은 앱 정보 카드의 다른 링크(오픈소스 라이선스 · 개인정보처리방침)와 같다. 상태는 스스로 든다(설정 화면의 상태는 원장으로 묶여 있다).
+ * 나중에 공지사항(#262)도 이 자리에 붙을 수 있다.
+ */
+@Composable
+internal fun SettingsWhatsNewLink() {
+    val language = LocalUiStrings.current.language
+    val releases = remember { WhatsNewCatalog.releasesUpTo(if (BuildConfig.DEBUG) Int.MAX_VALUE else BuildConfig.VERSION_CODE) }
+    if (releases.isEmpty()) return
+    var show by remember { mutableStateOf(false) }
+    Text(
+        text = whatsNewTitleFor(language),
+        fontSize = AppTextSize.Text12,
+        color = MaterialTheme.colorScheme.primary,
+        textDecoration = TextDecoration.Underline,
+        modifier = Modifier.clickable { show = true },
+    )
+    Spacer(modifier = Modifier.height(AppSpacing.Space8))
+    if (show) WhatsNewDialog(releases = releases, onClose = { show = false })
 }
