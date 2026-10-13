@@ -1,0 +1,4 @@
+# 바둑판 사진 인식 실험실(백로그 #263) — `.venv`는 저장소 밖(gitignore). 만드는 법은 README.md.
+opencv-python-headless==4.12.0.88
+numpy==2.2.6
+pillow==12.3.0

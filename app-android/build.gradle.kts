@@ -302,6 +302,8 @@ android {
         //   `EngineSessionClient` 손 페이크가 세 벌로 복제돼 있었고(함정 70), 이 두 줄이 그것을 끝냈다.
         getByName("test").kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
         getByName("androidTest").kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
+        // 바둑판 사진의 정답·원근 틀(백로그 #263) — 기기 계기 테스트가 단위 테스트와 **같은 파일**을 읽는다(사본을 두지 않는다).
+        getByName("androidTest").resources.srcDir("src/test/resources")
 
         getByName("playInternal") {
             assets.srcDirs("src/friend/assets")

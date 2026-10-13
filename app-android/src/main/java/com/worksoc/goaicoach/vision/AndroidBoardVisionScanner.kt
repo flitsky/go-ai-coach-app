@@ -18,17 +18,25 @@ internal class BoardScanResult(
 
 /**
  * ⚠️ **기준 이미지 테스트와 같은 경로를 탄다**(백로그 #210) — 순수 Kotlin [BoardLocator] · [BoardWarp] · [GridStoneDetector].
+ * OpenCV는 원근을 걷어낼 틀만 계산한다(#263, [OpenCvPerspective]) — 펴고 찾는 쪽([PerspectiveLocate])은 JVM 테스트가 기록된 틀로 밟는다.
  * 옛 `AndroidBitmapPerspectiveTransformer`(안드로이드 `Matrix`)는 JVM 테스트가 밟을 수 없어서 걷어냈다.
  * 비트맵은 [BoardPhotoDecoder]로 줄여서 넘길 것 — 픽셀을 한 번 배열로 복사한다.
  */
 internal class AndroidBoardVisionScanner(
-    sourceBitmap: Bitmap,
+    private val sourceBitmap: Bitmap,
 ) : BoardVisionScannerPort {
 
     private val pixels: ArrayPixelSource by lazy { ArrayPixelSource.fromBitmap(sourceBitmap) }
 
-    /** 판을 스스로 찾는다 — 못 찾으면 `null`(수동 핀으로). */
-    suspend fun locate(): LocatedBoard? = withContext(Dispatchers.Default) { BoardLocator.locate(pixels) }
+    /**
+     * 판을 스스로 찾는다 — 못 찾으면 `null`(수동 핀으로).
+     * 원근이 센 사진은 **먼저 펴고** 찾는다(#263 — [OpenCvPerspective]가 틀을 주면 [PerspectiveLocate]). OpenCV를 못 올렸거나 원근이 약하면
+     * 틀이 없고, 펴서 못 찾았으면 지금의 격자 찾기가 그대로 돈다.
+     */
+    suspend fun locate(): LocatedBoard? = withContext(Dispatchers.Default) {
+        val frame = runCatching { OpenCvPerspective.frameOf(sourceBitmap) }.getOrNull()
+        frame?.let { PerspectiveLocate.locate(pixels, it) } ?: BoardLocator.locate(pixels)
+    }
 
     /**
      * 손으로 놓은 핀을 가까운 격자에 붙이고([BoardLocator.refine]) 돌을 읽는다.
