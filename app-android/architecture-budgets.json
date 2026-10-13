@@ -62,7 +62,6 @@
     "settingsScreen": {
       "codeLineBudget": 400,
       "sites": {
-        "SettingsScreen.resumableSavedGame": { "kind": "STARTUP_READ", "since": "#46", "why": "이어할 대국 여부를 한 번 읽어 잠금 판단(#75) — 셸과 별개인 두 번째 GameSessionStore, 읽기만" },
         "SettingsScreen.developerModeStore": { "kind": "PLATFORM_PORT", "since": "#46", "why": "개발자 모드 저장소" },
         "SettingsScreen.isDeveloperModeEnabled": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "저장된 1차 개발자 게이트 — 어느 섹션을 그릴지 가른다" },
         "SettingsScreen.isAdvancedDeveloperModeEnabled": { "kind": "VISIBILITY_GATE", "since": "#46", "why": "세션 한정 2차 게이트(#77) — 개발자 섹션으로 내릴 후보" },

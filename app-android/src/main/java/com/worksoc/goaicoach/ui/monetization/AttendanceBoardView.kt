@@ -87,6 +87,29 @@ internal fun AttendanceStampBoard(
 }
 
 /**
+ * 접힌 도장판 — **지금 걸음이 있는 한 행만** 그린다(#256, 사용자 2026-10-13: 내 정보의 출석 판 접기). 그림은 [AttendanceStampBoard]와 같다.
+ * 어느 행인지는 [attendanceFoldedRowIsWeekly] 한 곳이 정한다.
+ */
+@Composable
+internal fun AttendanceStampBoardFolded(
+    board: AttendanceBoard,
+    collection: BotCollectionState,
+    modifier: Modifier = Modifier,
+) {
+    val weekly = attendanceFoldedRowIsWeekly(board)
+    Column(modifier = modifier) {
+        StampRow(cells = if (weekly) board.weekly else board.daily, collection = collection, compact = !weekly)
+    }
+}
+
+/**
+ * 접힌 판이 주 단위 행(7·14·21·28일차)을 보일지 — 1~6일차를 다 찍었으면 그렇다. 그전에는 날마다의 행이 지금의 걸음이다.
+ * 28일차를 넘긴 뒤에는 날마다의 행이 다 찍힌 채라 주 단위 행이 남는다(7일마다 반복되는 회차는 판 밖이다).
+ */
+internal fun attendanceFoldedRowIsWeekly(board: AttendanceBoard): Boolean =
+    board.daily.all { it.state == AttendanceCellState.Stamped }
+
+/**
  * 도장판 한 행. [compact]가 참이면 여섯 칸(1~6일차), 거짓이면 네 칸(주 단위)이다 —
  * 두 행이 **같은 전체 너비**를 나눠 쓰므로 네 칸 쪽이 자연히 넓다.
  *

@@ -46,50 +46,22 @@ class BoardSetupLockContractTest {
     }
 
     /**
-     * ⚠️ **설정 화면은 잠금 판정을 넘겨야 한다.** 넘기지 않으면 패널 기본값이 `true`라
-     * **조용히 예전 동작(항상 열림)으로 돌아간다** — 기본값이 있는 파라미터라 컴파일도 통과한다.
+     * ⚠️ **설정 화면에는 좌석·판 설정이 없다**(#256, 사용자 2026-10-13). 로비와 대국 화면 메뉴에 같은 패널이 있고,
+     * 설정의 셋째 사본은 대국 중에 잠긴 회색 칸과 긴 안내문으로만 남았다(그 잠금이 예전 #75 판정이었다).
+     * 되살리면 잠금 판정(`isBoardSetupLockedDuringGame` + 저장된 대국)을 **다시 넘겨야** 한다 — 패널 기본값이 `true`라
+     * 넘기지 않으면 조용히 항상 열린다. 그 전에 활성 백로그 「서 있는 답」을 볼 것.
      */
     @Test
-    fun theSettingsScreenPassesTheLockDecision() {
-        assertTrue(
-            "설정 화면이 `canChangeMatchSetup`을 넘기지 않는다 — 패널 기본값이 true라 " +
-                "잠금이 조용히 사라진다(#75).",
-            settings.contains("canChangeMatchSetup = !isBoardSetupLockedDuringGame("),
-        )
-        assertTrue(
-            "잠금 판정에 둔 수를 넘기지 않는다(#75).",
-            settings.contains("moveCount = screenState.gameState.moves.size"),
-        )
-        assertTrue(
-            "잠금 판정에 종국 여부를 넘기지 않는다(#75).",
-            settings.contains("isGameEnded = screenState.isGameEnded"),
-        )
-        // ⚠️ **저장된 대국도 넘겨야 한다** — 안 넘기면 앱을 껐다 켜는 것만으로 잠금이 우회된다
-        // (2026-09-05 실기에서 실제로 밟았다). 기본값이 `false`라 **컴파일은 통과한다.**
-        assertTrue(
-            "저장된 대국 여부를 넘기지 않는다 — 재시작만으로 잠금이 우회된다(#75).",
-            settings.contains("hasResumableSavedGame = resumableSavedGame"),
-        )
-        assertTrue(
-            "저장된 대국 판정을 `isResumable`로 하지 않는다 — 홈 화면의 '이어하기'와 같은 " +
-                "판정이어야 한다(#75).",
-            settings.contains("GameSessionStore(context).load()?.isResumable == true"),
-        )
-    }
-
-    /**
-     * ⚠️ **판정을 화면에서 인라인으로 다시 쓰면 안 된다.** `isGameEnded` 하나로 판단하는 것이
-     * 이 항목에서 가장 밟기 쉬운 실수이고(대국을 한 번도 안 한 사용자에게도 잠긴다),
-     * 순수 함수로 빼 둔 이유가 **그 실수에 테스트를 붙이기 위해서**다.
-     */
-    @Test
-    fun theLockDecisionIsNotReimplementedInTheScreen() {
+    fun theSettingsScreenNoLongerCarriesSeatOrBoardSetup() {
         assertFalse(
-            "설정 화면이 `isGameEnded`만 보고 직접 잠금을 판단한다 — 대국을 한 번도 하지 않은 " +
-                "사용자에게도 잠긴다. `isBoardSetupLockedDuringGame`을 쓸 것(#75).",
-            settings.contains("canChangeMatchSetup = screenState.isGameEnded") ||
-                settings.contains("canChangeMatchSetup = !screenState.isGameEnded"),
+            "설정 화면이 판 크기·접바둑·계가·덤 패널을 다시 그린다 — #256에서 로비와 대국 메뉴로만 모았다.",
+            settings.contains("CompactScoringAndBoardSettingsPanel("),
         )
+        assertFalse(
+            "설정 화면이 흑·백 좌석 패널을 다시 그린다 — #256에서 로비와 대국 메뉴로만 모았다.",
+            settings.contains("PlayerSetupPanel("),
+        )
+        assertTrue("대국 화면 메뉴가 좌석 패널을 그리지 않는다 — 바꿀 자리가 사라진다.", gameMenu.contains("PlayerSetupPanel("))
     }
 
     /**

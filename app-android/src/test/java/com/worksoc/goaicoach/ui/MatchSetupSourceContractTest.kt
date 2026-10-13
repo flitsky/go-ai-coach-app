@@ -69,19 +69,15 @@ class MatchSetupSourceContractTest {
         assertTrue("로비 패널이 설정의 덤을 넘기지 않는다(#94).", lobby.contains("komi = screenState.setupKomi"))
     }
 
-    /** 설정 화면도 **다음 대국의 기본값**을 고르는 자리다(#75의 사용자 판단) — 로비와 같은 출처를 그린다. */
+    /**
+     * 설정 화면에는 **판 설정이 없다**(#256, 사용자 2026-10-13 — 로비와 대국 화면 메뉴로만 모았다). 다음 대국의 기본값을 고르는 자리는
+     * 로비 하나다. 되살리면 위 로비와 같은 출처(`setupBoardSize`·`setupKomi`·`setupRuleset`)를 넘겨야 한다.
+     */
     @Test
-    fun theSettingsScreenShowsTheSettingsNotTheLiveGame() {
-        assertFalse(
-            "설정 화면이 지금 판의 판 크기를 그린다 — 새 대국은 설정의 판 크기로 시작한다(#94).",
-            settings.contains("boardSize = screenState.gameState.boardSize"),
-        )
-        assertFalse(
-            "설정 화면이 지금 판의 덤을 그린다 — 새 대국은 설정의 덤으로 시작한다(#94).",
-            settings.contains("komi = screenState.gameState.komi"),
-        )
-        assertTrue("설정 화면 패널이 설정의 판 크기를 넘기지 않는다(#94).", settings.contains("boardSize = screenState.setupBoardSize"))
-        assertTrue("설정 화면 패널이 설정의 덤을 넘기지 않는다(#94).", settings.contains("komi = screenState.setupKomi"))
+    fun theSettingsScreenNoLongerDrawsTheBoardSetup() {
+        assertFalse("설정 화면이 판 크기를 다시 그린다(#256).", settings.contains("boardSize ="))
+        assertFalse("설정 화면이 덤을 다시 그린다(#256).", settings.contains("komi ="))
+        assertFalse("설정 화면이 계가 규칙을 다시 그린다(#256).", settings.contains("ruleset ="))
     }
 
     /**
@@ -119,19 +115,14 @@ class MatchSetupSourceContractTest {
         )
     }
 
-    /** 로비와 설정 화면은 **설정의 룰**을 그린다 — 끝난 이어하기 판에서 와도 앞 판의 룰이 보이지 않는다(#22). */
+    /** 로비는 **설정의 룰**을 그린다 — 끝난 이어하기 판에서 와도 앞 판의 룰이 보이지 않는다(#22). 설정 화면에는 판 설정이 없다(#256). */
     @Test
-    fun theLobbyAndTheSettingsScreenShowTheSettingsRuleset() {
+    fun theLobbyShowsTheSettingsRuleset() {
         assertFalse(
             "로비가 지금 판의 룰을 그린다 — 끝난 이어하기·분기 대국에서 오면 앞 판의 룰이 보인다(#22).",
             lobby.contains("screenState.gameState.ruleset"),
         )
         assertTrue("로비 패널이 설정의 룰을 넘기지 않는다(#22).", lobby.contains("ruleset = screenState.setupRuleset"))
-        assertFalse(
-            "설정 화면이 지금 판의 룰을 그린다 — 새 대국은 설정의 룰로 시작한다(#22).",
-            settings.contains("screenState.gameState.ruleset"),
-        )
-        assertTrue("설정 화면 패널이 설정의 룰을 넘기지 않는다(#22).", settings.contains("ruleset = screenState.setupRuleset"))
     }
 
     /** 대국 화면 메뉴는 반대로 **지금 판의 룰**을 그린다(#22) — 이어한 판의 메뉴에 설정의 룰이 보이면 안 된다. */

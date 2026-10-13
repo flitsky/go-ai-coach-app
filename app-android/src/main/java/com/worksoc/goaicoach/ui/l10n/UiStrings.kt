@@ -689,13 +689,17 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "查看你持有的单次券。"
         }
 
-    /** 마이 페이지 화면 제목(#24). 출석 현황·캐릭터 컬렉션도 앞으로 여기 붙는다. */
+    /**
+     * 「내 정보」 화면 제목(#24 → #256). 홈 좌상단 칩과 화면 제목이 같은 글자를 쓴다.
+     * 2026-10-13 사용자 결정으로 「마이 페이지」에서 바꿨다 — 코드의 이름(`MyPage…`)은 그대로 둔다(저장 키·목적지 이름과 묶여 있다).
+     * ⚠️ 영어·일본어·중국어는 스레드가 정한 표기다(원어민 확인 없음).
+     */
     val myPageTitle: String
         get() = when (language) {
-            UiLanguage.Korean -> "마이 페이지"
-            UiLanguage.English -> "My Page"
-            UiLanguage.Japanese -> "マイページ"
-            UiLanguage.ChineseSimplified -> "我的"
+            UiLanguage.Korean -> "내 정보"
+            UiLanguage.English -> "My info"
+            UiLanguage.Japanese -> "マイ情報"
+            UiLanguage.ChineseSimplified -> "我的信息"
         }
 
     /** 마이 페이지의 1회권 재고 절 머리글. */

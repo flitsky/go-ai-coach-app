@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui.account
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,16 +50,20 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardSectionTitleFor
 import com.worksoc.goaicoach.ui.l10n.avatarDescriptionFor
+import com.worksoc.goaicoach.ui.l10n.collapseLabelFor
 import com.worksoc.goaicoach.ui.l10n.editNicknameDescriptionFor
+import com.worksoc.goaicoach.ui.l10n.expandLabelFor
 import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
 import com.worksoc.goaicoach.ui.l10n.nicknamePlaceholderFor
 import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoard
+import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoardFolded
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscriptionCard
 import com.worksoc.goaicoach.ui.monetization.consumableGlyphRes
 
 /**
- * 3 Depth: 마이 페이지 — 지금은 **보유한 1회권 재고**만 보여준다(백로그 #24).
+ * 3 Depth: **내 정보**(화면 이름은 #256에서 「마이 페이지」 → 「내 정보」, 사용자 2026-10-13 — 코드 이름 `MyPage…`는 그대로 둔다).
+ * 순서: 머리말(기력·전적) → 구독 카드 → 출석(접힘 — #256) → 1회권 → 내 캐릭터(#256) → 고지 한 줄.
  *
  * **왜 새 목적지인가**(2026-08-30 사용자 확정, ⓒ안): 설정 화면 한 절이나 홈 카드로 끼워 넣는
  * 것이 더 쌌지만, 여기는 앞으로 **출석 현황과 캐릭터 컬렉션이 붙을 자리**다. 그 둘이 들어올 때
@@ -234,6 +242,9 @@ internal fun MyPageScreen(
                     }
                 }
             }
+            // **「내 캐릭터」**(#256, 사용자 2026-10-13) — 1회권 아래, 「내가 모은 것」의 마지막 줄. 누르면 카드 캐러셀(보기 + 광고로 조각 모으기).
+            // ⚠️ 위의 순서(머리말 → 구독 → 출석 → 1회권)는 2026-10-09 결정 그대로다 — 이 줄은 그 끝에 더했을 뿐이다.
+            MyCharactersRow()
             // **기기에 쌓인다는 고지는 한 줄만 남는다**(백로그 #241, 2026-10-09 사용자) — 본문은 설정 하단으로 갔고, 이 줄을
             // 누르면 같은 창이 열린다. ⚠️ 줄을 아예 지우지 말 것: 위에 늘어선 것들(출석·캐릭터·1회권)이 바로 이 기기에 쌓이는
             // 것들이라, *"내가 지금 보고 있는 이것들"* 로 이어지는 자리가 여기다(#74 ⓒ가 이 화면을 고른 사유).
@@ -266,6 +277,9 @@ private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Uni
     val board = remember(context) {
         buildAttendanceBoard(AttendanceStore(context).load(), collection)
     }
+    // **접어 둔다**(#256, 사용자 2026-10-13) — 판 전체가 화면 절반을 차지했다. 접힌 판은 지금 걸음이 있는 한 행이다.
+    // 화면을 돌리거나 다녀와도 펼친 채로 남게 `rememberSaveable` — 저장소에는 쓰지 않는다(다음에 열면 접혀 있다).
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
     // 제목과 [titleTrailing](첫돌이 인사)이 **한 줄**을 쓴다 — 그 사유는 호출부에 있다.
     // 인사가 두 줄로 늘어날 수 있으므로 제목을 가운데 정렬해 둔다.
@@ -292,12 +306,36 @@ private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Uni
             modifier = Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space12),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
-            AttendanceStampBoard(board, collection)
-            Text(
-                text = attendanceBoardBeyondNoticeFor(strings.language),
-                fontSize = AppTextSize.Text12,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (expanded) {
+                AttendanceStampBoard(board, collection)
+                Text(
+                    text = attendanceBoardBeyondNoticeFor(strings.language),
+                    fontSize = AppTextSize.Text12,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                AttendanceStampBoardFolded(board, collection)
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(vertical = AppSpacing.Space2),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (expanded) collapseLabelFor(strings.language) else expandLabelFor(strings.language),
+                    fontSize = AppTextSize.Text13,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 
