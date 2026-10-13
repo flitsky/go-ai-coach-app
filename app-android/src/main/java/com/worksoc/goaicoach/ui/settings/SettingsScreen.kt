@@ -68,7 +68,6 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesTitleFor
 import com.worksoc.goaicoach.ui.l10n.settingsAboutSectionFor
-import com.worksoc.goaicoach.ui.l10n.settingsBoardDisplayOptionsFor
 import com.worksoc.goaicoach.ui.l10n.settingsDisplaySectionFor
 import com.worksoc.goaicoach.ui.l10n.settingsGameSectionFor
 import com.worksoc.goaicoach.ui.l10n.settingsHelpSectionFor
@@ -112,7 +111,7 @@ private const val DeveloperModeTapCountdownThreshold = 5
  * 문제가 있었다(사용자 피드백, 2026-08-12) — 그래서 대국 설정 로비([GameSetupLobby])의 패널을 여기서도 재사용했다.
  *
  * ## #256(사용자 2026-10-13) — 절 넷, 좌석·판 설정은 뺐다
- * 화면(언어 · 글꼴) · 대국(표시 옵션 — 접힘 · 최대 탐색 시간) · 도움말 · (실험실) · 앱 정보. 좌석(흑·백)과 판 크기·접바둑·계가·덤은
+ * 언어 및 글자 크기 · 대국 바둑판 / 착수 / AI 코치 설정(펼친 채 — #261, AI 코치 절 끝에 최대 탐색 시간) · 도움말 · (실험실) · 앱 정보. 좌석(흑·백)과 판 크기·접바둑·계가·덤은
  * **로비와 대국 화면 메뉴에만** 둔다 — 설정의 셋째 사본은 대국 중에 잠긴 회색 칸으로만 남았다. 남은 표시 옵션과 탐색 시간은
  * 같은 [screenState]/[onEvent]를 써서 여기서 바꾼 값이 곧바로 대국 화면 메뉴에도 반영된다(별도 저장소를 새로 만들지 않음).
  */
@@ -257,7 +256,7 @@ internal fun SettingsScreen(
                 .padding(horizontal = AppSpacing.Space24),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
-            // ## 절은 넷이다 — 화면 · 대국 · 도움말 · 앱 정보(#256, 사용자 2026-10-13 「A 정리형」)
+            // ## 절 — 언어 및 글자 크기 · 대국 셋(바둑판 · 착수 · AI 코치) · 도움말 · 앱 정보(#256 「A 정리형」 → #261 제목을 분명하게, 사용자 2026-10-13)
             // 실험실은 도움말 아래로 내렸다 — Beta 하나가 언어·글꼴 바로 아래 셋째 자리를 차지하고 있었다.
             SettingsSectionTitle(settingsDisplaySectionFor(strings.language))
             LanguageSettingsPanel(
@@ -269,31 +268,30 @@ internal fun SettingsScreen(
             // ⚠️ 저장소는 이 패널이 스스로 갖는다 — 이 화면의 상태는 원장으로 묶여 있다(#102).
             FontScaleSettingsPanel()
 
-            // ## 「대국」 — 표시 옵션과 최대 탐색 시간만 남는다
+            // ## 대국 쪽 절 셋 — 「대국 바둑판 설정」·「대국 착수 설정」·「대국 내 AI 코치 설정」(#261, 사용자 2026-10-13 — 펼친 채)
             // ⚠️ **좌석(흑·백)과 판 크기·접바둑·계가·덤은 여기 두지 않는다**(#256, 사용자 2026-10-13). 로비(`GameSetupLobby`)와
             // 대국 화면 메뉴(`GameMenuSection`)에 같은 패널이 그대로 있다 — 여기 셋째 사본을 두었더니(2026-08-12 · 09-10) 대국 중에는
             // 잠긴 채 회색으로 서서 긴 안내문만 남겼다. 되살리자는 제안이 오면 활성 백로그 「서 있는 답」이 답이다.
-            // ⚠️ 아래 둘은 대국 화면 메뉴와 **같은 순서**다(표시 → 탐색 시간) — 한쪽만 바꾸면 갈린다.
-            SettingsSectionTitle(settingsGameSectionFor(strings.language))
-            // 토글 13개가 설정의 세로 절반을 차지해서 접어 둔다(#256) — 펼침 상태는 그 묶음이 스스로 든다.
-            CollapsibleSettingsGroup(title = settingsBoardDisplayOptionsFor(strings.language)) {
-                KaTrainUxMenuPanel(
-                    options = screenState.uxOptions,
-                    onOptionsChange = { next -> onEvent(GameUiEvent.ChangeUxOptions(next)) },
-                    isTopMovesEveryMove = screenState.actionButtons
-                        .firstOrNull { it.role == GameActionButtonRole.TopMoves }?.isFilled == true,
-                    onTopMovesEveryMoveChange = { onEvent(GameUiEvent.ToggleTopMoves) },
-                )
-            }
-
-            // 엔진이 바빠도 열어 둔다 — 다음 엔진 호출부터 적용되므로 진행 중 탐색을 흔들지 않는다.
-            SearchTimeSettingsPanel(
-                settings = screenState.searchTimeSettings,
-                // 사람 모델이 있는 기기에서는 초고수도 탐색하지 않는다(7단 프로필, 2026-10-06) — 「제한이 길수록 세게 둔다」는 안내는 예전 방식으로
-                // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 승급 대국의 가용성과 같은 답이다.
-                showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi() && !LocalRankMeasureUiState.current.isAvailable,
-                enabled = true,
-                onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
+            // ⚠️ 토글과 그 차례는 **대국 메뉴와 같은 패널**이다 — 여기서는 묶음마다 절 제목과 제 카드로 그리라고 넘길 뿐이다.
+            //   최대 탐색 시간은 AI 코치 절 끝(대국 메뉴에서도 토글 다음이다).
+            KaTrainUxMenuPanel(
+                options = screenState.uxOptions,
+                onOptionsChange = { next -> onEvent(GameUiEvent.ChangeUxOptions(next)) },
+                isTopMovesEveryMove = screenState.actionButtons
+                    .firstOrNull { it.role == GameActionButtonRole.TopMoves }?.isFilled == true,
+                onTopMovesEveryMoveChange = { onEvent(GameUiEvent.ToggleTopMoves) },
+                settingsSectionHeader = { section -> SettingsSectionTitle(settingsGameSectionFor(strings.language, section)) },
+                afterAiCoach = {
+                    // 엔진이 바빠도 열어 둔다 — 다음 엔진 호출부터 적용되므로 진행 중 탐색을 흔들지 않는다.
+                    SearchTimeSettingsPanel(
+                        settings = screenState.searchTimeSettings,
+                        // 사람 모델이 있는 기기에서는 초고수도 탐색하지 않는다(7단 프로필, 2026-10-06) — 「제한이 길수록 세게 둔다」는 안내는 예전 방식으로
+                        // 물러난 기기(사람 모델을 못 쓰는 엔진)에서만 참이다. 사람 모델이 있는지는 승급 대국의 가용성과 같은 답이다.
+                        showsDeepSearchHint = screenState.playerSetup.hasDeepSearchingAi() && !LocalRankMeasureUiState.current.isAvailable,
+                        enabled = true,
+                        onSettingsChange = { settings -> onEvent(GameUiEvent.ChangeSearchTimeSettings(settings)) },
+                    )
+                },
             )
 
             // ## 도움말 — 바둑판 조작법 · 가이드 다시보기 · 내 기록의 보관(#241·#245, 줄 목록은 #256). 설정의 아래쪽이라는 자리는 2026-10-09 결정 그대로다.

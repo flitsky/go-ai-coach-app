@@ -63,6 +63,8 @@ internal fun KaTrainUxMenuPanel(
     onOptionsChange: (KaTrainUxOptions) -> Unit,
     isTopMovesEveryMove: Boolean = false,
     onTopMovesEveryMoveChange: (Boolean) -> Unit = {},
+    settingsSectionHeader: (@Composable (MenuSection) -> Unit)? = null,
+    afterAiCoach: @Composable () -> Unit = {},
 ) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
@@ -74,16 +76,11 @@ internal fun KaTrainUxMenuPanel(
         onDismiss = { showPremiumUpsellDialog = false },
     )
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppRadius.Corner8),
-        tonalElevation = AppElevation.Level1,
-        shadowElevation = AppElevation.Level0,
-    ) {
-        Column(
-            modifier = Modifier.padding(AppSpacing.Space12),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
-        ) {
+    // ## 묶음 셋을 두 모양으로 그린다(#261)
+    // ☰ 대국 메뉴: 카드 **하나** 안에 소제목 셋(지금까지의 모양 그대로). 설정 화면: 묶음마다 **카드 밖 절 제목**([settingsSectionHeader]) +
+    // 자기 카드(사용자 2026-10-13 — 「대국 바둑판 / 착수 / AI 코치 설정」으로 나눠 펼친 채). 토글과 그 차례·프리미엄 판정은 **이 함수 한 곳**이다.
+    val splitIntoSections = settingsSectionHeader != null
+    OptionGroupsContainer(split = splitIntoSections) {
             // **메뉴는 섹션 셋이다**(백로그 #198, 2026-09-30 사용자 결정) — 바둑판 → 착수 → AI 코치.
             // 섹션 제목이 뜻을 실어 주므로 라벨은 짧다(「착수」 섹션의 「진동」·「애니메이션」). 2026-09-12에 정한 차례
             // (판 → 착수 → 착수 뒤 표시 → 프리미엄)를 섹션으로 묶은 것이다. ⚠️ 차례를 바꾸려거든 사용자에게 물을 것 —
@@ -99,7 +96,12 @@ internal fun KaTrainUxMenuPanel(
             val moveReviewAllowed = premium.resolve(FeatureId.MoveReview) is FeatureAccess.Allowed
 
             // ── 바둑판 ──
-            OptionSectionTitle(title = menuSectionTitleFor(strings.language, MenuSection.Board), isFirst = true)
+            OptionGroup(
+                title = menuSectionTitleFor(strings.language, MenuSection.Board),
+                section = MenuSection.Board,
+                settingsSectionHeader = settingsSectionHeader,
+                isFirst = true,
+            ) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 OptionSwitchCell(
                     // ⚠️ 스위치의 라벨은 **켰을 때의 상태**를 적는다(`바둑판 최대`) — 주체 이름(`바둑판 크기`)만
@@ -128,8 +130,14 @@ internal fun KaTrainUxMenuPanel(
                 Spacer(modifier = Modifier.weight(1f))
             }
 
+            }
+
             // ── 착수 ──
-            OptionSectionTitle(title = menuSectionTitleFor(strings.language, MenuSection.Placing))
+            OptionGroup(
+                title = menuSectionTitleFor(strings.language, MenuSection.Placing),
+                section = MenuSection.Placing,
+                settingsSectionHeader = settingsSectionHeader,
+            ) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 OptionSwitchCell(
                     // 「마지막 수」 — 방금 둔 돌에 두르는 고리(#198 전 「착수 표시」).
@@ -187,7 +195,14 @@ internal fun KaTrainUxMenuPanel(
 
             // ── AI 코치(프리미엄) ── 대국 화면의 형세 보기·추천 수 버튼은 **1회성**이고, 수가 진행돼도 계속 갱신되는
             // 상시 표시는 여기서 켠다(2026-08-29). 제목도 프리미엄 색이다 — 섹션 전체가 프리미엄이라는 신호.
-            OptionSectionTitle(title = menuSectionTitleFor(strings.language, MenuSection.AiCoach), color = PremiumGoldDeep)
+            }
+
+            OptionGroup(
+                title = menuSectionTitleFor(strings.language, MenuSection.AiCoach),
+                section = MenuSection.AiCoach,
+                settingsSectionHeader = settingsSectionHeader,
+                titleColor = PremiumGoldDeep,
+            ) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 OptionSwitchCell(
                     label = strings.everyMoveEval,
@@ -238,6 +253,63 @@ internal fun KaTrainUxMenuPanel(
                 Spacer(modifier = Modifier.width(columnGap))
                 Spacer(modifier = Modifier.weight(1f))
             }
+            }
+            // 설정에서만 — AI 코치 절 끝에 붙는 것(최대 탐색 시간, #261). 메뉴는 그것을 패널 밖에서 따로 그린다.
+            if (splitIntoSections) afterAiCoach()
+    }
+}
+
+/**
+ * 묶음들의 바깥(#261) — 메뉴는 카드 하나에 담고, 설정은 묶음마다 제 카드를 가지므로 간격만 둔다.
+ */
+@Composable
+private fun OptionGroupsContainer(split: Boolean, content: @Composable () -> Unit) {
+    if (split) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) { content() }
+    } else {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(AppRadius.Corner8),
+            tonalElevation = AppElevation.Level1,
+            shadowElevation = AppElevation.Level0,
+        ) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.Space12),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
+            ) { content() }
+        }
+    }
+}
+
+/**
+ * 묶음 하나(#261). 메뉴에서는 카드 안의 소제목([OptionSectionTitle]) + 줄들, 설정에서는 카드 밖 절 제목 + 줄들을 담은 제 카드.
+ */
+@Composable
+private fun OptionGroup(
+    title: String,
+    section: MenuSection,
+    settingsSectionHeader: (@Composable (MenuSection) -> Unit)?,
+    isFirst: Boolean = false,
+    titleColor: Color? = null,
+    rows: @Composable () -> Unit,
+) {
+    if (settingsSectionHeader == null) {
+        OptionSectionTitle(title = title, isFirst = isFirst, color = titleColor)
+        rows()
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+        settingsSectionHeader(section)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(AppRadius.Corner8),
+            tonalElevation = AppElevation.Level1,
+            shadowElevation = AppElevation.Level0,
+        ) {
+            Column(
+                modifier = Modifier.padding(AppSpacing.Space12),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
+            ) { rows() }
         }
     }
 }

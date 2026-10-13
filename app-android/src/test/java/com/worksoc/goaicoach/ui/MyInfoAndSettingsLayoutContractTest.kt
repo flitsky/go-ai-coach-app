@@ -26,8 +26,8 @@ class MyInfoAndSettingsLayoutContractTest {
             "settingsDisplaySectionFor(",
             "LanguageSettingsPanel(",
             "FontScaleSettingsPanel()",
-            "settingsGameSectionFor(",
             "KaTrainUxMenuPanel(",
+            "settingsGameSectionFor(",
             "SearchTimeSettingsPanel(",
             "settingsHelpSectionFor(",
             "SettingsHelpLinks()",
@@ -41,12 +41,18 @@ class MyInfoAndSettingsLayoutContractTest {
         assertEquals("설정의 절 순서가 #256의 「A 정리형」과 다르다: $order", positions.sorted(), positions)
     }
 
-    /** 표시 토글 13개는 접힌 묶음 안에 있다 — 밖으로 꺼내면 설정의 세로 절반을 다시 차지한다. */
+    /**
+     * 대국 쪽은 절 셋으로 펼친다(#261, 사용자 2026-10-13) — 같은 패널에 절 제목을 넘기고, 최대 탐색 시간은 AI 코치 절 끝이다.
+     * ☰ 대국 메뉴는 절 제목을 넘기지 않아 예전 모양(카드 하나 + 소제목)이다 — 토글과 차례는 한 곳(`KaTrainUxPanels.kt`).
+     */
     @Test
-    fun displayTogglesSitInsideTheCollapsibleGroup() {
-        val group = settings.indexOf("CollapsibleSettingsGroup(")
-        val panel = settings.indexOf("KaTrainUxMenuPanel(")
-        assertTrue("표시 토글이 접힌 묶음 밖에 있다(#256).", group in 0 until panel)
+    fun gameSettingsAreThreeSectionsFromTheSharedPanel() {
+        assertTrue("설정이 패널에 절 제목을 넘기지 않는다 — 대국 토글이 한 덩어리로 보인다(#261).", settings.contains("settingsSectionHeader = {"))
+        val after = settings.indexOf("afterAiCoach = {")
+        assertTrue("최대 탐색 시간이 AI 코치 절 끝에 있지 않다(#261).", after >= 0 && settings.indexOf("SearchTimeSettingsPanel(") > after)
+        assertFalse("설정이 대국 토글을 다시 접는다 — #261에서 펼친 채로 정했다.", settings.contains("CollapsibleSettingsGroup("))
+        val gameMenu = RepoPaths.uiFile("GameMenuSection.kt").readContractSource()
+        assertFalse("대국 메뉴가 설정의 절 모양을 쓴다 — 메뉴는 카드 하나 + 소제목 그대로다.", gameMenu.contains("settingsSectionHeader"))
     }
 
     /**
