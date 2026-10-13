@@ -499,6 +499,8 @@ internal fun DeveloperTestSection(
             // ⚠️ 확인 다이얼로그 상태는 **저쪽이 소유한다** — 이 섹션의 훅 예산은 여유 0이고,
             // 그 상태는 이 섹션이 알 이유가 없다(`LayeringContractTest`가 실제로 걷어찼다).
             DeveloperFreshInstallControl()
+            // #209 확인용 — 구독 확인 시각을 72시간 넘게 앞으로(결제 경로는 에뮬레이터로 못 밟는다, 함정 56). 상태는 저쪽이 든다.
+            DeveloperStaleSubscriptionControl()
         }
 
         Spacer(modifier = Modifier.height(AppSpacing.Space24))
