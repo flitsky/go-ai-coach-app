@@ -30,6 +30,9 @@ internal object ScanStability {
     /** 판이 사진에서 이만큼(넓이 비율)은 차지해야 확실하다 — 작게 찍힌 판·배경을 판으로 잡은 경우(갤러리 f09)를 거른다. */
     const val MinCoverage = 0.2f
 
+    /** 격자 바깥선 밖으로 이만큼(칸)은 사진 안에 보여야 판이 잘리지 않았다고 본다([showsMarginAllAround]). */
+    const val MarginCells = 0.3f
+
     fun unstablePoints(
         source: PixelSource,
         corners: BoardCornerPoints,
@@ -61,7 +64,7 @@ internal object ScanStability {
 
     /**
      * 핀 화면을 건너뛰어도 될 만큼 확실한가 — 흔들림이 적고(**[isConfident]**), 읽은 판이 **바둑으로 말이 되고**([isPlausible]),
-     * 판이 사진에서 충분히 크다([MinCoverage]). 셋 다여야 한다.
+     * 판이 사진에서 충분히 크고([MinCoverage]), 판이 사진 끝에서 잘리지 않았다([showsMarginAllAround]). 넷 다여야 한다.
      * 흔들림만으로는 못 거르는 틀림이 있다 — 노란 조명 아래 백돌을 **전부** 빈 점으로 읽으면 답이 흔들리지 않는다(갤러리 f30: 흑 134 · 백 0).
      */
     fun canSkipPins(
@@ -72,7 +75,25 @@ internal object ScanStability {
         imageWidth: Int,
         imageHeight: Int,
     ): Boolean = isConfident(unstable, boardSize) && isPlausible(stones, boardSize) &&
-        coverage(corners, imageWidth, imageHeight) >= MinCoverage
+        coverage(corners, imageWidth, imageHeight) >= MinCoverage && showsMarginAllAround(corners, boardSize, imageWidth, imageHeight)
+
+    /**
+     * 격자 바깥선 밖 [MarginCells]칸이 사방 모두 사진 안에 보이는가 — 판 전체를 찍었으면 바깥선 밖에 판 여백이 보인다. 사진이 격자선에서
+     * 잘렸으면 판이 더 이어질 수 있다(갤러리 w05: 19줄 판의 일부를 13줄 판으로 읽고 「확실」이었다). 반 칸으로 두면 바짝 잘라 낸 인쇄 도면
+     * (기준 이미지 05)까지 걸려서 0.3칸이다.
+     */
+    fun showsMarginAllAround(corners: BoardCornerPoints, boardSize: BoardSize, imageWidth: Int, imageHeight: Int): Boolean {
+        val last = (boardSize.value - 1).toFloat()
+        val grid = listOf(PointF2D(0f, 0f), PointF2D(last, 0f), PointF2D(last, last), PointF2D(0f, last))
+        val toImage = BoardHomography.fit(grid, corners.toList()) ?: return false
+        val out = -MarginCells.toDouble()
+        val far = (last + MarginCells).toDouble()
+        val mid = last / 2.0
+        return listOf(out to out, mid to out, far to out, far to mid, far to far, mid to far, out to far, out to mid).all { (x, y) ->
+            val p = toImage.map(x, y)
+            p.x >= 0f && p.y >= 0f && p.x <= imageWidth - 1f && p.y <= imageHeight - 1f
+        }
+    }
 
     /**
      * 실제 대국에서 나올 법한 배치인가 — 숨 없는 돌 무리가 없고, 흑백 개수 차이가 접바둑(9점)과 따낸 돌로 설명될 만하다

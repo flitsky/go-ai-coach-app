@@ -23,6 +23,12 @@ class ScanStabilityTest {
             val sure = ScanStability.unstablePoints(img, f.corners, f.boardSize, right)
             // 04는 한 칸이 15px인 신문 인쇄본이라 정답 모서리로도 25~47개가 흔들린다 — 핀 화면으로 가는 것이 맞다(ConfidentRatio의 KDoc).
             if (f.key != "04" && !ScanStability.isConfident(sure, f.boardSize)) failures += "${f.key} 정답 모서리인데 흔들림 ${sure.size}개"
+            // 핀 건너뛰기의 나머지 조건(그럴듯함 · 크기 · 사방 여백)도 바른 판을 막지 않아야 한다 — 04·05는 신문 도면을 격자선에 바짝(2~7px)
+            // 잘라 낸 사진이라 판이 더 이어지는지 알 수 없다(핀 화면이 맞다).
+            if (f.key !in setOf("04", "05") && !ScanStability.canSkipPins(sure, right, f.boardSize, f.corners, img.width, img.height)) {
+                failures += "${f.key} 정답 모서리인데 핀 화면을 건너뛰지 못한다(그럴듯함 ${ScanStability.isPlausible(right, f.boardSize)} · " +
+                    "크기 ${"%.2f".format(ScanStability.coverage(f.corners, img.width, img.height))} · 여백 ${ScanStability.showsMarginAllAround(f.corners, f.boardSize, img.width, img.height)})"
+            }
 
             val n = f.boardSize.value
             val c = f.corners
