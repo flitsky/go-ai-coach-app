@@ -111,8 +111,10 @@ internal data class BoardPhotoFixture(
          * ⚠️ **`javax.imageio`를 리플렉션으로 부른다** — 앱 모듈의 단위 테스트는 `android.jar`로 컴파일되는데 거기엔
          * `javax.imageio`가 없다. 테스트를 **돌리는** JVM(JDK 17)에는 있으므로 실행 시점에 찾는다. Robolectric을 들이는 것보다 가볍다.
          */
-        private fun loadImage(set: BoardPhotoSet, name: String): ArrayPixelSource? {
-            val file = File(RepoPaths.root, "${set.imageDir}/$name")
+        private fun loadImage(set: BoardPhotoSet, name: String): ArrayPixelSource? = loadPixels(File(RepoPaths.root, "${set.imageDir}/$name"))
+
+        /** 사진 파일 하나를 픽셀로 — 정답이 없는 사진 묶음(인터넷 이미지 · #263 갤러리)도 같은 방법으로 읽는다. */
+        fun loadPixels(file: File): ArrayPixelSource? {
             if (!file.isFile) return null
             val imageIo = Class.forName("javax.imageio.ImageIO")
             val img = imageIo.getMethod("read", File::class.java).invoke(null, file) ?: return null

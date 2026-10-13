@@ -64,3 +64,6 @@ test-fixtures/board-photos-own/
 
 # 바둑판 사진 인식 실험실의 측정 결과(백로그 #263) — 다시 만들 수 있다. 앱에 넘기는 것은 --export의 JSON뿐.
 engine-lab/vision/runs/
+
+# 인터넷에서 모은 바둑판·기보 이미지(백로그 #263, 위키미디어 공용 — 출처·라이선스는 그 폴더의 sources.json). 재배포하지 않는다.
+test-fixtures/board-photos-web/
