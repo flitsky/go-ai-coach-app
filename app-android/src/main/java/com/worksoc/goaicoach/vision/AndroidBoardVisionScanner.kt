@@ -19,10 +19,9 @@ internal class BoardScanResult(
     val corners: BoardCornerPoints,
     val boardPhoto: Bitmap,
     val uncertain: Set<BoardCoordinate>,
-) {
-    /** 핀 화면을 건너뛰어도 될 만큼 확실한가 — 흔들리는 교점이 적다. */
-    val isConfident: Boolean get() = ScanStability.isConfident(uncertain, detected.boardSize)
-}
+    /** 핀 화면을 건너뛰어도 될 만큼 확실한가 — [ScanStability.canSkipPins]. */
+    val isConfident: Boolean,
+)
 
 /**
  * ⚠️ **기준 이미지 테스트와 같은 경로를 탄다**(백로그 #210) — 순수 Kotlin [BoardLocator] · [BoardWarp] · [GridStoneDetector].
@@ -56,7 +55,9 @@ internal class AndroidBoardVisionScanner(
         val detected = GridStoneDetector.detect(board)
         val photo = createBitmap(board.pixels.width, board.pixels.height)
         photo.setPixels(board.pixels.toArgbArray(), 0, board.pixels.width, 0, 0, board.pixels.width, board.pixels.height)
-        BoardScanResult(detected, refined, photo, ScanStability.unstablePoints(pixels, refined, boardSize, detected.stones))
+        val unstable = ScanStability.unstablePoints(pixels, refined, boardSize, detected.stones)
+        val confident = ScanStability.canSkipPins(unstable, detected.stones, boardSize, refined, pixels.width, pixels.height)
+        BoardScanResult(detected, refined, photo, unstable, confident)
     }
 
     override suspend fun detectStones(corners: BoardCornerPoints, boardSize: BoardSize): DetectedBoard =

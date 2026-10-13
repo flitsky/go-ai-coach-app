@@ -68,6 +68,7 @@ import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
+import com.worksoc.goaicoach.vision.ScanStability
 import com.worksoc.goaicoach.vision.stonesWithoutLiberties
 
 enum class BoardEditTool {
@@ -189,6 +190,14 @@ internal fun BoardCorrectionEditor(
                 style = MaterialTheme.typography.bodySmall,
                 color = VisionPalette.Attention,
                 fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space4),
+            )
+        }
+        if (ScanStability.isColorImbalanced(stones)) {
+            Text(
+                text = text.imbalanceWarning(blackStoneCount, whiteStoneCount),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space4),
             )
         }
