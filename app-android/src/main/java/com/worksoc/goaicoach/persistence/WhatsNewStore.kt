@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import androidx.core.content.edit
 
 /**
  * 「새로워진 점」을 마지막으로 본 버전(백로그 #257). 홈 한 줄을 열어 보거나 ✕로 닫으면 지금 버전을 적고, 새로 설치한 사람은 처음 확인할 때 적는다
@@ -17,7 +18,7 @@ internal class WhatsNewStore(context: Context) {
     fun lastSeenVersionCode(): Int? = prefs.getInt(LastSeenKey, NotSeen).takeIf { it != NotSeen }
 
     fun markSeen(versionCode: Int) {
-        prefs.edit().putInt(LastSeenKey, versionCode).apply()
+        prefs.edit { putInt(LastSeenKey, versionCode) }
     }
 
     /**
