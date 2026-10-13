@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -263,10 +264,11 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
 internal fun BotCharacterPickerDialog(
     selected: BotCharacter?,
     adInProgress: Boolean,
-    onSelect: (BotCharacter) -> Unit,
+    onSelect: ((BotCharacter) -> Unit)?,
     onWatchAd: (BotCharacter) -> Unit,
     onPurchase: (BotCharacter) -> Unit,
     onDismiss: () -> Unit,
+    title: String? = null,
 ) {
     val strings = LocalUiStrings.current
     val bots = LocalBotCharacterUiState.current
@@ -291,7 +293,7 @@ internal fun BotCharacterPickerDialog(
         // 햄버거 메뉴에서 열려도(`GameMenuSection`) 대국 설정 로비와 같은 폭으로 뜬다.
         properties = DialogProperties(dismissOnClickOutside = false, usePlatformDefaultWidth = false),
         modifier = Modifier.fillMaxWidth(0.94f),
-        title = { Text(strings.botPickerTitle) },
+        title = { Text(title ?: strings.botPickerTitle) },
         text = {
             val roster = BotCharacterCatalog.fastBeginnerRoster
             // ⓐ 완화책(#49): 지금 상대의 자리에서 연다. 0번에서 열면 5단계를 쓰는 사람이
@@ -339,7 +341,9 @@ internal fun BotCharacterPickerDialog(
                                     return@BotCharacterCard
                                 }
                                 when {
-                                    available -> {
+                                    // 보기 전용(내 정보의 「내 캐릭터」, #256)이면 가진 카드는 눌러도 아무 일이 없다 —
+                                    // 고르기는 캐릭터 대국에서만 한다(이어 두던 대국의 상대가 바뀌지 않게, 사용자 2026-10-13).
+                                    available -> if (onSelect != null) {
                                         onSelect(character)
                                         onDismiss()
                                     }
@@ -592,4 +596,57 @@ internal suspend fun purchaseBotCharacterAndReport(
         is PurchaseOutcome.NotPurchased -> strings.botPurchaseFailedMessage(outcome.reason)
     }
     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+}
+
+/**
+ * 캐릭터 카드 캐러셀 + 광고로 조각 모으기 · 구매 흐름(#10·#11·#18·#20·#69) — 대국 좌석의 상대 고르기와 내 정보의 「내 캐릭터」(#256)가
+ * **한 벌을** 나눠 쓴다(전에는 `PlayerSetupPanel` 안에만 있었다).
+ *
+ * ⚠️ 광고·결제 코루틴은 다이얼로그가 아니라 **이 호스트의 스코프**에서 돈다(#20) — 다이얼로그 안에서 돌리면 픽커가 닫히는 순간
+ * 스코프까지 취소돼 결과 안내도, 끝난 뒤 픽커를 되살리는 것도 못 한다. 그래서 이 호스트는 [visible]과 무관하게 화면에 늘 놓는다.
+ * ⚠️ 조각을 다 모아 **획득한 순간에는 픽커를 되살리지 않는다**(#69) — 축전 팝업과 픽커가 별도 윈도우로 동시에 뜬다(함정 7).
+ *
+ * @param onSelect null이면 **보기 전용** — 가진 카드를 눌러도 아무 일이 없다(내 정보, 사용자 2026-10-13).
+ */
+@Composable
+internal fun BotCharacterRosterHost(
+    visible: Boolean,
+    onVisibleChange: (Boolean) -> Unit,
+    selected: BotCharacter?,
+    onSelect: ((BotCharacter) -> Unit)?,
+    title: String? = null,
+) {
+    var adInProgress by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val bots = LocalBotCharacterUiState.current
+    val strings = LocalUiStrings.current
+    val context = LocalContext.current
+    if (!visible) return
+    BotCharacterPickerDialog(
+        selected = selected,
+        adInProgress = adInProgress,
+        onSelect = onSelect,
+        title = title,
+        onPurchase = { character ->
+            // 광고와 같은 이유로 여기서 돌린다(#20) — 결제 시트도 Activity 전환이라
+            // 다이얼로그 안에서 돌리면 스코프가 취소돼 결과 처리를 못 한다.
+            scope.launch {
+                adInProgress = true
+                purchaseBotCharacterAndReport(character, bots, strings, context)
+                adInProgress = false
+                onVisibleChange(true)
+            }
+        },
+        onWatchAd = { character ->
+            scope.launch {
+                adInProgress = true
+                val acquired = watchAdForShardAndReport(character, bots, strings, context)
+                adInProgress = false
+                // 만에 하나 광고가 픽커를 닫았더라도 여기서 되살린다 — 다만 **획득했을 때는 되살리지 않는다**(#69).
+                // 축전을 닫으면 사용자는 원래 화면으로 돌아가고, 얻은 상대는 픽커를 다시 열어 보면 된다.
+                onVisibleChange(!acquired)
+            }
+        },
+        onDismiss = { onVisibleChange(false) },
+    )
 }

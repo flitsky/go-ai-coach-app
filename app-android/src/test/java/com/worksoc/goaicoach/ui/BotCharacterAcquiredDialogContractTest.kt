@@ -21,7 +21,6 @@ class BotCharacterAcquiredDialogContractTest {
 
     private val dialog = codeOnly(sourceOf("BotCharacterAcquiredDialog.kt"))
     private val uiState = codeOnly(sourceOf("BotCharacterUiState.kt"))
-    private val setupPanel = codeOnly(sourceOf("PlayerSetupPanel.kt"))
     private val claimDialog = codeOnly(sourceOf("AttendanceRewardClaimDialog.kt"))
 
     /**
@@ -90,8 +89,9 @@ class BotCharacterAcquiredDialogContractTest {
     @Test
     fun theTwoWindowsThatCanCollideAreGatedExplicitly() {
         assertTrue(
-            "광고 후 픽커를 무조건 되살린다 — 획득했다면 축전 팝업과 두 윈도우가 겹친다(#69).",
-            setupPanel.contains("showPicker = !acquired"),
+            "광고 후 픽커를 무조건 되살린다 — 획득했다면 축전 팝업과 두 윈도우가 겹친다(#69). " +
+                "픽커 흐름은 #256부터 `BotCharacterRosterHost` 한 벌이다(대국 좌석 · 내 정보).",
+            uiState.contains("onVisibleChange(!acquired)"),
         )
         assertTrue(
             "출석 Claim이 축전을 **대기열에 넣지 않고** 바로 띄우려 한다 — 그 순간 Claim 팝업이 " +
