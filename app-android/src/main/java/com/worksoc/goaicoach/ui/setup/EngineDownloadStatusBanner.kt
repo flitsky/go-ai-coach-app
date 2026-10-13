@@ -14,14 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,31 +33,21 @@ import androidx.compose.ui.unit.dp
 import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.worksoc.goaicoach.engine.EngineDownloadStatus
 import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
+import com.worksoc.goaicoach.platform.openStoreListing
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
+import com.worksoc.goaicoach.ui.l10n.appDownloadWithoutUpdateLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateBeforeEngineLabelFor
+import com.worksoc.goaicoach.ui.l10n.appUpdateShortActionLabelFor
 
 /**
- * 홈 화면의 엔진 받기 안내 (#248 — 2026-10-11 사용자: 「자동 유지 + 홈에 안내」).
- *
- * 팩 받기는 앱을 켜는 순간 시작된다(`createEngineBootstrap`). 그런데 안내 카드([EngineDownloadGuideSection])는
- * 대국 설정 화면에만 있어서, 실측(LTE 197MB ≈ 8초)으로는 사용자가 그 화면에 닿기 전에 받기가 끝나
- * **아무 안내 없이** 받아졌다. 그래서 첫 화면인 홈에도 받는 동안의 상태를 한 줄로 보여 준다.
- * 받기가 없거나 끝나면 아무것도 그리지 않는다 — 모델이 이미 있는 기기에는 노출 0초.
- */
-@Composable
-internal fun EngineDownloadHomeNotice(modifier: Modifier = Modifier) {
-    RegisterCellularConfirmationHandler()
-    val status by currentEngineDownloadTracker().status.collectAsState()
-    EngineDownloadStatusBanner(status = status, modifier = modifier)
-}
-
-/**
- * 받기 상태 한 줄 배너 — 홈([EngineDownloadHomeNotice])과, 대국 설정에서 카드를 닫은 뒤의 미니 배너가 함께 쓴다.
+ * 받기 상태 한 줄 배너 — 홈([HomeTopNotice])과, 대국 설정에서 카드를 닫은 뒤의 미니 배너가 함께 쓴다.
  * 받는 중이면 진행률을, Wi-Fi 대기·실패면 그 동작(「모바일 데이터로 계속」·「다시 시도」)을 보이고, 탭하면 바로 실행한다.
+ * 업데이트를 먼저 권하는 중(#255)이면 「업데이트」 — 탭하면 스토어로 간다(「이대로 받기」는 두 버튼 카드 [EngineUpdateFirstCard]에만).
  * 그 밖의 상태(Idle·Completed)는 그리지 않는다. 언제 보일지는 호출부가 정한다.
  */
 @Composable
@@ -67,6 +57,7 @@ internal fun EngineDownloadStatusBanner(
 ) {
     val strings = LocalUiStrings.current
     val language = strings.language
+    val context = LocalContext.current
     val isFailed = status is EngineDownloadStatus.Failed
     val isConfirmationRequired = status is EngineDownloadStatus.WaitingForWifi && status.isConfirmationRequired
     val accent = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -82,6 +73,10 @@ internal fun EngineDownloadStatusBanner(
         is EngineDownloadStatus.Failed -> Pair(
             UiStringsDownloadGuide.failed(language),
             UiStringsDownloadGuide.retry(language),
+        )
+        EngineDownloadStatus.UpdateFirst -> Pair(
+            appUpdateBeforeEngineLabelFor(language),
+            appUpdateShortActionLabelFor(language),
         )
         EngineDownloadStatus.Idle, EngineDownloadStatus.Completed -> return
     }
@@ -99,6 +94,7 @@ internal fun EngineDownloadStatusBanner(
                         tracker.reopen()
                         tracker.requestCellularConfirmation()
                     }
+                    EngineDownloadStatus.UpdateFirst -> openStoreListing(context)
                     else -> Unit
                 }
             }
@@ -142,6 +138,46 @@ internal fun EngineDownloadStatusBanner(
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     strokeCap = StrokeCap.Round,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * 받기 전에 업데이트를 권하는 카드(#255) — 엔진 준비 화면과 대국 설정의 받기 카드가 함께 쓴다.
+ * 「업데이트」가 기본(채운 버튼 · 스토어로), 「이대로 받기」는 작은 글자 버튼이다(사용자 2026-10-13: 둘 다 둔다).
+ */
+@Composable
+internal fun EngineUpdateFirstCard(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val language = LocalUiStrings.current.language
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(AppRadius.Corner12))
+            .border(AppBorderWidth.Hairline, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(AppRadius.Corner12)),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12)) {
+            Text(
+                text = appUpdateBeforeEngineLabelFor(language),
+                fontSize = AppTextSize.Text14,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(AppSpacing.Space8))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = { currentEngineDownloadTracker().skipUpdate() }) {
+                    Text(appDownloadWithoutUpdateLabelFor(language), fontSize = AppTextSize.Text13)
+                }
+                Spacer(modifier = Modifier.width(AppSpacing.Space8))
+                Button(onClick = { openStoreListing(context) }, shape = RoundedCornerShape(AppRadius.Corner8)) {
+                    Text(appUpdateShortActionLabelFor(language), fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

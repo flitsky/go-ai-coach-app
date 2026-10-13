@@ -75,7 +75,8 @@ internal fun EngineDownloadGuideSection(
     // 카드를 닫은 상태(isDismissed)
     if (isDismissed) {
         val status = downloadStatus
-        val isBlocked = status is EngineDownloadStatus.Failed || status is EngineDownloadStatus.WaitingForWifi
+        val isBlocked = status is EngineDownloadStatus.Failed || status is EngineDownloadStatus.WaitingForWifi ||
+            status == EngineDownloadStatus.UpdateFirst
         // 다운로드 실패 또는 Wi-Fi 대기 중 닫힌 경우, 사용자가 대국을 시작할 수 없는 상태이므로
         // 다시 카드를 열 수 있는 미니 안내 배너를 제공한다 (#247).
         if (isBlocked) {
@@ -319,6 +320,12 @@ internal fun EngineDownloadGuideSection(
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.height(AppSpacing.Space8))
+                }
+
+                // 받기 전에 업데이트를 권하는 중(#255) — 준비 화면과 같은 두 버튼 카드.
+                EngineDownloadStatus.UpdateFirst -> {
+                    EngineUpdateFirstCard()
                     Spacer(modifier = Modifier.height(AppSpacing.Space8))
                 }
 

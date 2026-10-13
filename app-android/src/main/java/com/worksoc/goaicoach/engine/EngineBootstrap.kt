@@ -11,6 +11,7 @@ import com.google.android.play.core.assetpacks.model.AssetPackStatus
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.engine.android.EngineCoreApiFactory
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
+import com.worksoc.goaicoach.platform.processAppUpdateCheck
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import java.io.File
@@ -80,6 +81,11 @@ suspend fun createEngineBootstrap(
     // 3단계: 없는 팩을 받는다 — 둘 다 필수다(위 KDoc 1).
     val packMessages = mutableListOf<String>()
     if (assetPackManager != null && models.missingPacks.isNotEmpty()) {
+        // 새 버전이 있으면 업데이트를 먼저 권한다(#255) — 확인을 못 하면 기다리지 않고 받는다.
+        awaitUpdateBeforeEngineDownload(
+            tracker = currentEngineDownloadTracker(),
+            checkUpdate = { processAppUpdateCheck(context).ensureChecked() },
+        )
         packMessages += fetchAndAwaitAssetPacksWithRetry(
             manager = assetPackManager,
             neededPacks = models.missingPacks,

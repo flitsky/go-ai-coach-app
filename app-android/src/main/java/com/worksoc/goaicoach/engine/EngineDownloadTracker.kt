@@ -36,6 +36,13 @@ sealed interface EngineDownloadStatus {
 
     /** 다운로드 완료 — 받는 팩은 전부 필수라(#249 U-78) 완료는 곧 두 모델이 다 있다는 뜻이다. */
     object Completed : EngineDownloadStatus
+
+    /**
+     * 새 버전이 있어 **받기 전에 업데이트를 권하는 중**(#255 — 사용자 2026-10-13: *"업데이트 먼저 해서 최신 앱에서 엔진을 받게"*).
+     * 받기는 시작하지 않았다 — 사용자가 「이대로 받기」([EngineDownloadTracker.skipUpdate])를 고르면 받기가 이어진다.
+     * 「업데이트」는 스토어로 보낸다. 업데이트가 끝나 새 프로세스가 뜨면 확인이 「최신」이라 바로 받는다.
+     */
+    object UpdateFirst : EngineDownloadStatus
 }
 
 internal class EngineDownloadTracker {
@@ -46,6 +53,7 @@ internal class EngineDownloadTracker {
     val isDismissed: StateFlow<Boolean> = _isDismissed.asStateFlow()
 
     private var retryHandler: (() -> Unit)? = null
+    private var skipUpdateHandler: (() -> Unit)? = null
     /**
      * 「모바일 데이터로 계속」이 띄울 Play 승인 창 핸들러 — 배너가 떠 있는 **화면마다** 하나씩 건다(Activity가 있어야 창이 열린다).
      * ⚠️ 자리 하나였을 때(#252 전) 홈 배너가 건 뒤 엔진 준비 화면이 덮어쓰고, 준비 화면이 닫히며 지우면 자리가 비어
@@ -83,6 +91,17 @@ internal class EngineDownloadTracker {
     fun retry() {
         _isDismissed.value = false
         retryHandler?.invoke()
+    }
+
+    /** [EngineDownloadStatus.UpdateFirst] 동안 「이대로 받기」를 받을 곳 — 받기를 미뤄 둔 부트스트랩이 건다(#255). */
+    fun registerSkipUpdateHandler(handler: () -> Unit) {
+        skipUpdateHandler = handler
+    }
+
+    /** 「이대로 받기」 — 업데이트하지 않고 지금 버전으로 엔진을 받는다(#255). */
+    fun skipUpdate() {
+        _isDismissed.value = false
+        skipUpdateHandler?.invoke()
     }
 
     var lastPermanentFailureCode: Int? = null

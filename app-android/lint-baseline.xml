@@ -542,17 +542,6 @@
 
     <issue
         id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.isSuccess"
-        errorLine2="                                                                       ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/worksoc/goaicoach/ui/settings/AppUpdateUiState.kt"
-            line="130"
-            column="72"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
         message="Use the KTX extension function `SharedPreferences.edit` instead?"
         errorLine1="        prefs.edit()"
         errorLine2="        ~~~~~~~~~~~~">

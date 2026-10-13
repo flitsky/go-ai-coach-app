@@ -127,7 +127,7 @@ private fun EngineSetupGateContent(
     }
 }
 
-/** 화면 맨 아래의 진행 카드 — 받는 중 · Wi-Fi 대기 · 실패는 홈 배너와 같은 부품이고, 끝나면 「시작하기」가 된다. */
+/** 화면 맨 아래의 진행 카드 — 받는 중 · Wi-Fi 대기 · 실패는 홈 배너와 같은 부품이고, 끝나면 「시작하기」가 된다. 새 버전이 있으면 업데이트를 먼저 권한다(#255). */
 @Composable
 private fun EngineSetupProgressCard(
     status: EngineDownloadStatus,
@@ -179,6 +179,9 @@ private fun EngineSetupProgressCard(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)))
             }
         }
+
+        // 받기 전에 업데이트를 권하는 중(#255) — 이 화면에서만 「이대로 받기」를 함께 고를 수 있다.
+        status == EngineDownloadStatus.UpdateFirst -> EngineUpdateFirstCard()
 
         else -> EngineDownloadStatusBanner(status = status)
     }

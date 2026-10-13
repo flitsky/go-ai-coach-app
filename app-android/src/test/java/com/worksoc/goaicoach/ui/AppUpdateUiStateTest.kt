@@ -1,8 +1,8 @@
 package com.worksoc.goaicoach.ui
 
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.worksoc.goaicoach.ui.settings.AppUpdateStatus
-import com.worksoc.goaicoach.ui.settings.appUpdateStatusOf
+import com.worksoc.goaicoach.platform.AppUpdateStatus
+import com.worksoc.goaicoach.platform.appUpdateStatusOf
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

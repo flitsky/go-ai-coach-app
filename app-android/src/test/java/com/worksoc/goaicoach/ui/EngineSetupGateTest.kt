@@ -33,5 +33,9 @@ class EngineSetupGateTest {
         )
         assertFalse(engineSetupCanStart(EngineDownloadStatus.Failed(-6, "x"), EngineMode.Unknown))
         assertFalse(engineSetupCanStart(EngineDownloadStatus.WaitingForWifi(1L, 2L), EngineMode.Unknown))
+        assertFalse(
+            "업데이트를 먼저 권하는 동안(#255)은 받기 전이라 닫혀 있다 — 디버그 미리보기에서 진짜 엔진이 떠 있어도",
+            engineSetupCanStart(EngineDownloadStatus.UpdateFirst, EngineMode.LocalProcess),
+        )
     }
 }

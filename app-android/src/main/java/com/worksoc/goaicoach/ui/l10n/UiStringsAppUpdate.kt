@@ -48,3 +48,39 @@ internal fun appUpToDateLabelFor(language: UiLanguage): String =
 
 internal fun appUpdateCheckStoreLabelFor(language: UiLanguage): String =
     CheckStoreLabels.getValue(language)
+
+/**
+ * #255 — 엔진이 없고 새 버전이 있을 때, 받기 전에 업데이트를 권하는 문구(엔진 준비 화면 · 대국 설정의 받기 카드 · 홈 한 줄).
+ * ⚠️ 스레드가 정한 문구다(2026-10-13) — 사용자 확인 전. 영어·일본어·중국어는 원어민 확인이 없다.
+ */
+private val UpdateBeforeEngineLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "새 버전이 있어요. 업데이트한 뒤 AI 엔진을 받아요.",
+    UiLanguage.English to "A new version is available. Update first, then get the AI engine.",
+    UiLanguage.Japanese to "新しいバージョンがあります。アップデートしてからAIエンジンを受け取ります。",
+    UiLanguage.ChineseSimplified to "有新版本。请先更新，再下载 AI 引擎。",
+)
+
+/** #255 — 한 줄 알림과 받기 카드의 짧은 버튼. 설정의 「업데이트하러 가기」는 그 자리의 버튼이라 그대로 둔다. */
+private val UpdateShortActionLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "업데이트",
+    UiLanguage.English to "Update",
+    UiLanguage.Japanese to "アップデート",
+    UiLanguage.ChineseSimplified to "更新",
+)
+
+/** #255 — 업데이트하지 않고 지금 버전으로 엔진을 받는다(사용자 2026-10-13: 「이대로 받기」를 둔다). */
+private val DownloadWithoutUpdateLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "이대로 받기",
+    UiLanguage.English to "Download anyway",
+    UiLanguage.Japanese to "このまま受け取る",
+    UiLanguage.ChineseSimplified to "直接下载",
+)
+
+internal fun appUpdateBeforeEngineLabelFor(language: UiLanguage): String =
+    UpdateBeforeEngineLabels.getValue(language)
+
+internal fun appUpdateShortActionLabelFor(language: UiLanguage): String =
+    UpdateShortActionLabels.getValue(language)
+
+internal fun appDownloadWithoutUpdateLabelFor(language: UiLanguage): String =
+    DownloadWithoutUpdateLabels.getValue(language)
