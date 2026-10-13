@@ -430,6 +430,9 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.exifinterface)
     implementation(libs.guava)
+    // OpenCV(백로그 #263) — 바둑판 사진 인식의 영상 처리(판 외곽 찾기 · 실시간 미리보기). Apache 2.0.
+    // arm64 `.so` 24.7MB + libc++_shared 1.3MB(압축 약 10MB) — 사용자 2026-10-13: ".so 용량은 이제 부담이 덜하다".
+    implementation(libs.opencv)
 
     // 오픈소스 라이선스 화면(백로그 #195) — 생성된 JSON을 읽는 파서만. 화면은 우리 디자인 토큰으로 직접 그린다.
     implementation(libs.aboutlibraries.core)
