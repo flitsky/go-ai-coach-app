@@ -59,6 +59,10 @@ internal data class BoardScanStrings(
     val analyzing: String,
     val analyze: String,
     val playFromHere: String,
+    // 내보내기(#263)
+    val exportSgf: String,
+    val exportSgfChooser: String,
+    val exportSgfFailed: String,
 )
 
 private fun pct(v: Double) = "%.1f".format(v)
@@ -110,6 +114,9 @@ private val Korean = BoardScanStrings(
     analyzing = "AI가 국면을 분석하고 있습니다...",
     analyze = "AI 추천수 및 형세 분석하기",
     playFromHere = "이 국면부터 AI와 대국하기",
+    exportSgf = "SGF 파일로 보내기",
+    exportSgfChooser = "국면을 SGF로 보내기",
+    exportSgfFailed = "SGF 파일을 보내지 못했습니다.",
 )
 
 private val English = BoardScanStrings(
@@ -159,6 +166,9 @@ private val English = BoardScanStrings(
     analyzing = "The AI is analyzing the position...",
     analyze = "Analyze moves and score",
     playFromHere = "Play the AI from this position",
+    exportSgf = "Send as an SGF file",
+    exportSgfChooser = "Send the position as SGF",
+    exportSgfFailed = "Couldn't send the SGF file.",
 )
 
 private val Japanese = BoardScanStrings(
@@ -208,6 +218,9 @@ private val Japanese = BoardScanStrings(
     analyzing = "AIが局面を分析しています...",
     analyze = "AI推奨手と形勢を分析",
     playFromHere = "この局面からAIと対局",
+    exportSgf = "SGFファイルで送る",
+    exportSgfChooser = "局面をSGFで送る",
+    exportSgfFailed = "SGFファイルを送れませんでした。",
 )
 
 private val Chinese = BoardScanStrings(
@@ -257,6 +270,9 @@ private val Chinese = BoardScanStrings(
     analyzing = "AI正在分析局面...",
     analyze = "分析AI推荐手和形势",
     playFromHere = "从此局面与AI对弈",
+    exportSgf = "以SGF文件发送",
+    exportSgfChooser = "以SGF发送此局面",
+    exportSgfFailed = "无法发送SGF文件。",
 )
 
 internal fun boardScanStringsFor(language: UiLanguage): BoardScanStrings = when (language) {

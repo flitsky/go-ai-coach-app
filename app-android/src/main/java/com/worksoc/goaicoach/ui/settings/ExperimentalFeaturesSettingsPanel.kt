@@ -31,6 +31,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.vision.BoardPhotoShareTarget
 
 /**
  * 설정 화면의 "🧪 실험실 기능" 패널.
@@ -117,6 +118,8 @@ internal fun ExperimentalFeaturesSettingsPanel(modifier: Modifier = Modifier) {
                     onCheckedChange = { nextEnabled ->
                         isCameraBoardScanEnabled = nextEnabled
                         store.setCameraBoardScanEnabled(nextEnabled)
+                        // 다른 앱의 공유 목록에도 함께 뜨고 사라진다(백로그 #263).
+                        BoardPhotoShareTarget.sync(context, nextEnabled)
                     },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.onPrimary,

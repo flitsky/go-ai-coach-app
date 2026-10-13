@@ -71,6 +71,36 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            다른 앱의 「공유」로 바둑판 사진을 받는 문(백로그 #263) — 사진을 캐시에 복사하고 본 화면을 앞으로 부른 뒤 닫힌다.
+            ⚠️ **꺼 둔 채 시작한다** — 실험실 「바둑판 사진 분석」 스위치를 켜야 공유 목록에 뜬다(`BoardPhotoShareTarget`).
+            투명 테마는 복사가 끝날 때까지 빈 화면이 깜박이지 않게.
+        -->
+        <activity
+            android:name=".vision.BoardPhotoShareActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- 인식한 국면을 SGF 파일로 보낼 때 읽기 권한을 빌려준다(백로그 #263, `vision/ScannedPositionShare.kt`). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/sgf_share_paths" />
+        </provider>
     </application>
 
 </manifest>

@@ -60,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.guide.GuideSurface
@@ -99,6 +101,7 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
+import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 
 /**
  * 0 Depth: 홈 화면 (Home Screen)
@@ -150,6 +153,11 @@ internal fun GoCoachHomeScreen(
     var showSubscribeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val isCameraBoardScanEnabled = ExperimentalFeaturesStore(context).isCameraBoardScanEnabled()
+    // 다른 앱에서 「공유」로 받은 바둑판 사진이 있으면 사진 분석으로 간다(백로그 #263) — 사진은 그 화면이 꺼낸다.
+    // 셸이 아니라 여기서 하는 것은 셸의 상태 훅 여유가 0이라서다(함정 3). 다른 화면에 있으면 홈으로 돌아올 때 열린다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (isCameraBoardScanEnabled && SharedBoardPhotoInbox.hasPhoto(context)) onBoardScanClick()
+    }
 
     Column(
         modifier = modifier

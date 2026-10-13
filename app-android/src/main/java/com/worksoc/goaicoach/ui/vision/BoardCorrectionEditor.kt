@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -91,6 +92,7 @@ internal fun BoardCorrectionEditor(
     scoreEstimate: ScoreEstimate?,
     onStartAnalysis: (GameState) -> Unit,
     onPlayFromHere: (GameState) -> Unit,
+    onExportSgf: (GameState) -> Unit,
     onRetake: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -454,6 +456,15 @@ internal fun BoardCorrectionEditor(
                 shape = RoundedCornerShape(AppRadius.Corner12),
             ) {
                 Text(text.playFromHere, fontSize = AppTextSize.Text15)
+            }
+
+            // 인식한 국면을 다른 앱으로(백로그 #263) — 분석·대국보다 덜 쓰이므로 테두리 없는 버튼.
+            TextButton(
+                onClick = { onExportSgf(currentGameState) },
+                enabled = !isAnalyzing,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(text.exportSgf, fontSize = AppTextSize.Text14)
             }
         }
 

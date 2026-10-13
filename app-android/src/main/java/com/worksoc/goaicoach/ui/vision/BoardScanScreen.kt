@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui.vision
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -20,7 +21,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.worksoc.goaicoach.application.engine.EngineOperationBusy
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
@@ -37,6 +41,8 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.DetectedBoard
+import com.worksoc.goaicoach.shared.vision.guessNextPlayer
+import com.worksoc.goaicoach.shared.vision.scannedPositionSgf
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -45,6 +51,9 @@ import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 import com.worksoc.goaicoach.vision.AndroidBoardVisionScanner
+import com.worksoc.goaicoach.vision.BoardPhotoDecoder
+import com.worksoc.goaicoach.vision.ScannedPositionShare
+import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,7 +76,9 @@ internal enum class ScanStep {
  * 3. [CornerPinAdjustmentOverlay]로 어긋난 핀만 미세조정(못 찾았으면 네 핀을 직접)
  * 4. 핀을 **가까운 격자에 붙이고**([AndroidBoardVisionScanner.scan]) 돌 검출
  * 5. [BoardCorrectionEditor]에서 원본 사진과 비교하며 터치 편집, 흑/백 차례, 덤 설정
- * 6. KataGo 비동기 형세 분석 실행 및 '이 국면부터 대국 시작' 연계
+ * 6. KataGo 비동기 형세 분석 실행 및 '이 국면부터 대국 시작' 연계 · SGF 파일로 보내기(#263)
+ *
+ * 사진은 다른 앱의 「공유」로도 들어온다([SharedBoardPhotoInbox], #263) — 그때는 촬영을 건너뛰고 2부터.
  */
 @Composable
 internal fun BoardScanScreen(
@@ -97,6 +108,37 @@ internal fun BoardScanScreen(
     val strings = LocalUiStrings.current
     val text = boardScanStringsFor(strings.language)
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    // 찍었거나 골랐거나 공유로 받은 사진 한 장에서 시작한다 — 판을 스스로 찾고 핀 화면을 연다.
+    fun startFromPhoto(bitmap: Bitmap) {
+        capturedBitmap = bitmap
+        pinCorners = null
+        pinBoardSize = BoardSize.Nineteen
+        analysisResult = null
+        scoreEstimate = null
+        isLocating = true
+        step = ScanStep.PinAdjustment
+        scope.launch {
+            // 판을 스스로 찾는다 — 못 찾으면 핀 화면이 "직접 맞춰 주세요"로 연다. 실패가 아니다.
+            val located = runCatching { AndroidBoardVisionScanner(bitmap).locate() }.getOrNull()
+            if (located != null && capturedBitmap === bitmap) {
+                pinCorners = located.corners
+                pinBoardSize = located.boardSize
+            }
+            isLocating = false
+        }
+    }
+
+    // 다른 앱의 「공유」로 받은 사진(백로그 #263) — 화면이 다시 보일 때마다 받은편지함을 본다. 이 화면에 있는 동안
+    // 새로 받아도 그 사진으로 다시 시작한다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val file = SharedBoardPhotoInbox.take(context) ?: return@LifecycleEventEffect
+        scope.launch {
+            val bitmap = withContext(Dispatchers.IO) { BoardPhotoDecoder.decode(context, Uri.fromFile(file)) }
+            if (bitmap == null) errorMessage = text.photoLoadFailed else startFromPhoto(bitmap)
+        }
+    }
 
     // 단계별 뒤로가기 처리
     BackHandler {
@@ -121,22 +163,7 @@ internal fun BoardScanScreen(
         when (step) {
             ScanStep.Capture -> {
                 CameraCaptureView(
-                    onPhotoCaptured = { bitmap ->
-                        capturedBitmap = bitmap
-                        pinCorners = null
-                        pinBoardSize = BoardSize.Nineteen
-                        isLocating = true
-                        step = ScanStep.PinAdjustment
-                        scope.launch {
-                            // 판을 스스로 찾는다 — 못 찾으면 핀 화면이 "직접 맞춰 주세요"로 연다. 실패가 아니다.
-                            val located = runCatching { AndroidBoardVisionScanner(bitmap).locate() }.getOrNull()
-                            if (located != null && capturedBitmap === bitmap) {
-                                pinCorners = located.corners
-                                pinBoardSize = located.boardSize
-                            }
-                            isLocating = false
-                        }
-                    },
+                    onPhotoCaptured = ::startFromPhoto,
                     onClose = onBackClick,
                 )
             }
@@ -248,6 +275,11 @@ internal fun BoardScanScreen(
                         onPlayFromHere = { stateToPlay ->
                             onStartGameWithState(stateToPlay)
                         },
+                        onExportSgf = { stateToSend ->
+                            runCatching {
+                                ScannedPositionShare.send(context, scannedPositionSgf(stateToSend, SgfApplicationName), text.exportSgfChooser)
+                            }.onFailure { errorMessage = text.exportSgfFailed }
+                        },
                         onRetake = {
                             step = ScanStep.PinAdjustment
                             analysisResult = null
@@ -299,12 +331,16 @@ internal fun boardScanAnalysisErrorMessage(error: Throwable, language: UiLanguag
     }
 }
 
+/** SGF의 `AP`(만든 앱) — 영어 앱 이름(`values-en`의 `app_name`)과 같게. */
+private const val SgfApplicationName = "Go AI Coach"
+
 /**
  * [DetectedBoard] 비전 검출 모델을 게임 상태 [GameState]로 변환.
+ * 다음 차례는 돌 개수로 짐작한 **기본값**이다([guessNextPlayer], 백로그 #263) — 보정 화면에서 고친다.
  */
 private fun DetectedBoard.toGameState(
     ruleset: Ruleset = Ruleset.Japanese,
-    nextPlayer: StoneColor = StoneColor.Black,
+    nextPlayer: StoneColor = guessNextPlayer(stones),
     komi: Double = DefaultKomi,
 ): GameState = GameState(
     boardSize = boardSize,

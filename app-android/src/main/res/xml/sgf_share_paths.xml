@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 인식한 국면을 SGF 파일로 보낼 때(백로그 #263, `vision/ScannedPositionShare.kt`) — 캐시의 `sgf/`만 연다. -->
+<paths>
+    <cache-path name="sgf" path="sgf/" />
+</paths>
