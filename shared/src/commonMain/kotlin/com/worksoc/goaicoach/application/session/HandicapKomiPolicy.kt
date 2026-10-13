@@ -16,7 +16,7 @@ import com.worksoc.goaicoach.shared.domain.HandicapKomi
  *
  * ⚠️ **이관하지 않는다**(사용자 결정). 이미 *"접바둑 + 덤 6.5"* 로 저장된 설정은 그 사용자가 고른
  * 값이므로, 저장을 읽을 때 이 함수를 태우지 말 것. 진행 중·저장된 대국의 덤도 바꾸지 않는다 —
- * 대국 중에는 대국 설정이 잠겨 있고(`isBoardSetupLockedDuringGame`, `GameMenuSection`),
+ * 대국 중에는 대국 설정이 잠겨 있고(`GameMenuSection`이 `canChangeMatchSetup = false`를 넘긴다),
  * `GameSettingsController.changeHandicapCount`도 대국이 끝났을 때만 받는다.
  *
  * *"접바둑"* 은 **2점 이상**이다 — 접바둑 보정(`HandicapBonusRule.whiteHandicapBonus`, #89·#106)과 같은 선이다.
