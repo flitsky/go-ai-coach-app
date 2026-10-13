@@ -31,7 +31,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
-import com.worksoc.goaicoach.vision.BoardPhotoShareTarget
+import com.worksoc.goaicoach.ui.vision.BoardPhotoShareTarget
 
 /**
  * 설정 화면의 "🧪 실험실 기능" 패널.

@@ -78,7 +78,7 @@
             투명 테마는 복사가 끝날 때까지 빈 화면이 깜박이지 않게.
         -->
         <activity
-            android:name=".vision.BoardPhotoShareActivity"
+            android:name=".ui.vision.BoardPhotoShareActivity"
             android:enabled="false"
             android:exported="true"
             android:excludeFromRecents="true"

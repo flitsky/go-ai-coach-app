@@ -7,7 +7,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
-import com.worksoc.goaicoach.vision.BoardPhotoShareTarget
+import com.worksoc.goaicoach.ui.vision.BoardPhotoShareTarget
 
 /**
  * App-wide lifecycle hook — registered via `android:name` in

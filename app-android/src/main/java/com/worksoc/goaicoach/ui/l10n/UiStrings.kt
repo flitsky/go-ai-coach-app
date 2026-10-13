@@ -48,6 +48,13 @@ internal enum class UiLanguage(
 internal val LocalUiStrings = staticCompositionLocalOf { UiStringsKorean }
 
 /**
+ * 저장된 표시 언어 — 이름이 없거나 알 수 없는 값이면 한국어다(값 하나 때문에 앱이 죽지 않게).
+ * 컴포즈 밖(공유로 사진을 받는 문 — 백로그 #263)도 이것으로 읽는다.
+ */
+internal fun savedUiLanguage(store: UiLanguageStore): UiLanguage =
+    store.loadName()?.let { name -> UiLanguage.entries.firstOrNull { it.name == name } } ?: UiLanguage.Korean
+
+/**
  * 화면 표시 언어를 트리 전역에 공급한다.
  *
  * **선택은 저장된다**(#34). 예전에는 `remember`뿐이라 앱을 껐다 켤 때마다 한국어로 돌아갔는데,
@@ -60,13 +67,7 @@ internal fun ProvideUiLanguage(
 ) {
     val context = LocalContext.current
     val store = remember(context) { UiLanguageStore(context) }
-    // 저장된 이름이 없거나 알 수 없는 값이면 한국어로 시작한다 — 값 하나 때문에 앱이 죽지 않게.
-    var language by remember {
-        mutableStateOf(
-            store.loadName()?.let { name -> UiLanguage.entries.firstOrNull { it.name == name } }
-                ?: UiLanguage.Korean,
-        )
-    }
+    var language by remember { mutableStateOf(savedUiLanguage(store)) }
     val strings = remember(language) { UiStrings.forLanguage(language) }
     CompositionLocalProvider(LocalUiStrings provides strings) {
         content(language) { nextLanguage ->
