@@ -337,6 +337,8 @@ class FirstDolGuideContractTest {
         //   "0개여야 한다"는 뜻이 되어 다음에 되살릴 때 엉뚱하게 빨개진다.
         mapOf(
             "MenuCard(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
+            // 홈의 반 폭 타일(#237)도 다시보기가 빌린다(#261 — 대국 기록 · 학습 하기).
+            "MenuTile(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
         ).forEach { (call, allowed) ->
             val callers = uiSources
                 .filterValues { source -> source.contains(call) }

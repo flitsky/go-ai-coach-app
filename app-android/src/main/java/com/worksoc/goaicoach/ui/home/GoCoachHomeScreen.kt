@@ -627,14 +627,14 @@ private val MenuCardPlayButtonSize = 36.dp
 private val MenuCardPlayGlyphSize = 22.dp
 
 /** 홈의 반 폭 타일 하나 — 제목과 그림, 누르면 갈 곳. */
-private class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
+internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
 
 /**
  * 홈의 **반 폭 타일** — 두는 것이 아닌 메뉴(대국 기록 · 학습 하기 · 실험실의 사진 분석)가 쓴다(백로그 #237).
  * [MenuCard]보다 작고 납작하며(그림자 없음) **부제가 없다** — 제목만으로 무엇인지 읽히는 메뉴들이고, 반 폭에는 부제가 설 자리가 없다.
  */
 @Composable
-private fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
+internal fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
     Card(
         onClick = tile.onClick,
         shape = RoundedCornerShape(AppRadius.Corner14),
@@ -841,7 +841,7 @@ private val GameHistoryPreviewGameState: GameState = GameState.empty(
  * 구간의 경계는 `KgsRankTier`, 테두리의 모양과 색은 [RankTierBadge]).
  */
 @Composable
-private fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
+internal fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
     RankTierBadge(rank = rank, label = rankLabel, modifier = Modifier.fillMaxSize())
 }
 
@@ -864,7 +864,7 @@ private fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
  * 없지만, 뒤집히면 안 되는 심볼과 섞이지 않게 기본형을 지킨다).
  */
 @Composable
-private fun GameHistoryBoardIcon() {
+internal fun GameHistoryBoardIcon() {
     Box(modifier = Modifier.fillMaxSize()) {
         GoBoard(
             gameState = GameHistoryPreviewGameState,
@@ -922,7 +922,7 @@ private val StudyPreviewGameState: GameState = GameState.empty(
  * 벡터를 쓴다 — 기기·글꼴에 따라 렌더링이 갈리는 이모지보다 크기·색이 항상 예측 가능하다.
  */
 @Composable
-private fun StudyPreviewIcon() {
+internal fun StudyPreviewIcon() {
     Box(modifier = Modifier.fillMaxSize()) {
         GoBoard(
             gameState = StudyPreviewGameState,

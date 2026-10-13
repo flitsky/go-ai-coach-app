@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui.l10n
 
 import com.worksoc.goaicoach.application.guide.GuideStep
+import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
 
 /**
  * 첫돌이 가이드가 말하는 문구(백로그 #128). 구조는 `UiStringsStudyVideos.kt`와 같다 — **기능 하나가
@@ -79,11 +80,18 @@ private val MatchSetupBody: Map<UiLanguage, String> = mapOf(
  * 돋보기·바둑판 크기에 조건을 붙이면 없는 문턱을 만드는 셈이라 빼 두었는데, 그 둘은 #143·#188이
  * 지웠다 — 이제는 남은 둘이 곧 게이트를 말하는 둘이다.
  */
-private fun inGameEvalBody(language: UiLanguage, label: String): String = when (language) {
-    UiLanguage.Korean -> "«$label»는 지금 누구 집인지 반상에 색으로 보여 줘요. 출석해서 받은 1회권이나 짧은 광고 한 번으로 여실 수 있어요."
-    UiLanguage.English -> "«$label» shades the board to show whose territory is whose. Open it with a ticket from a daily check-in, or one short ad."
-    UiLanguage.Japanese -> "「$label」は今どちらの地かを盤上に色で見せます。出席でもらった1回券か、短い広告1本で開けられます。"
-    UiLanguage.ChineseSimplified -> "「$label」会在棋盘上用颜色显示当前双方的地。用签到获得的单次券或看一段短广告即可开启。"
+/**
+ * ⚠️ **매 판 무료 횟수를 먼저 말한다**(#261, 사용자 2026-10-13 — 「가이드 다시보기 내용이 낡았다」). #242가 캐릭터와 두는 판마다 형세 보기·
+ * 추천 수·무르기를 무료로 열었는데 이 문구는 「1회권이나 광고」만 말하고 있었다. 횟수는 [MatchFreeUses.PerMatch] 한 곳에서 읽는다.
+ */
+private fun inGameEvalBody(language: UiLanguage, label: String): String {
+    val n = MatchFreeUses.PerMatch
+    return when (language) {
+        UiLanguage.Korean -> "«$label»는 지금 누구 집인지 반상에 색으로 보여 줘요. 캐릭터와 두는 판마다 ${n}번은 무료고, 그 뒤엔 1회권이나 짧은 광고 한 번으로 여실 수 있어요."
+        UiLanguage.English -> "«$label» shades the board to show whose territory is whose. Free $n times in each game against a character, then a ticket or one short ad opens it."
+        UiLanguage.Japanese -> "「$label」は今どちらの地かを盤上に色で見せます。キャラクターとの対局では毎局${n}回まで無料、その後は1回券か短い広告1本で開けられます。"
+        UiLanguage.ChineseSimplified -> "「$label」会在棋盘上用颜色显示当前双方的地。与角色对局时每局可免费使用${n}次，之后用单次券或看一段短广告即可开启。"
+    }
 }
 
 /**
@@ -97,11 +105,14 @@ private fun inGameEvalBody(language: UiLanguage, label: String): String = when (
  *
  * `UiStringsGuideTest`가 개수 낱말을 금지한다.
  */
-private fun inGameTopMovesBody(language: UiLanguage, label: String): String = when (language) {
-    UiLanguage.Korean -> "«$label»는 제가 보기에 좋은 최적수 후보를 반상에 표시해요. 이것도 1회권이나 광고 한 번으로 열려요."
-    UiLanguage.English -> "«$label» marks the moves I'd consider best on the board. Same as Eval — a ticket or one short ad opens it."
-    UiLanguage.Japanese -> "「$label」は私が良いと見る候補手を盤上に示します。こちらも1回券か広告1本で開きます。"
-    UiLanguage.ChineseSimplified -> "「$label」会在棋盘上标出我认为不错的候选点。同样用单次券或一段短广告即可开启。"
+private fun inGameTopMovesBody(language: UiLanguage, label: String): String {
+    val n = MatchFreeUses.PerMatch
+    return when (language) {
+        UiLanguage.Korean -> "«$label»는 제가 보기에 좋은 최적수 후보를 반상에 표시해요. 이것도 판마다 ${n}번은 무료예요."
+        UiLanguage.English -> "«$label» marks the moves I'd consider best on the board. Also free $n times in each game."
+        UiLanguage.Japanese -> "「$label」は私が良いと見る候補手を盤上に示します。こちらも毎局${n}回まで無料です。"
+        UiLanguage.ChineseSimplified -> "「$label」会在棋盘上标出我认为不错的候选点。同样每局可免费使用${n}次。"
+    }
 }
 
 /**

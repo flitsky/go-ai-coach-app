@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,22 +26,41 @@ import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.GuideTarget
+import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
+import com.worksoc.goaicoach.shared.policy.KgsRank
+import com.worksoc.goaicoach.ui.board.PlayStoneButton
+import com.worksoc.goaicoach.ui.board.playStoneFaceOf
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
+import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
+import com.worksoc.goaicoach.ui.home.GameHistoryBoardIcon
 import com.worksoc.goaicoach.ui.home.GamePlayPreviewIcon
+import com.worksoc.goaicoach.ui.home.HomeMenuTile
 import com.worksoc.goaicoach.ui.home.MenuCard
+import com.worksoc.goaicoach.ui.home.MenuTile
+import com.worksoc.goaicoach.ui.home.RankMeasureIcon
+import com.worksoc.goaicoach.ui.home.StudyPreviewIcon
 import com.worksoc.goaicoach.ui.home.currentAiCharacterOrDefault
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
+import com.worksoc.goaicoach.ui.l10n.UiStringsGuideReplay
+import com.worksoc.goaicoach.ui.l10n.freeAnalysisMarkFor
 import com.worksoc.goaicoach.ui.l10n.guideBodyFor
 import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
+import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
+import com.worksoc.goaicoach.ui.l10n.myCharactersTitleFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
+import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
+import com.worksoc.goaicoach.ui.l10n.settingsHelpSectionFor
 
 /**
  * **가이드 다시보기**(백로그 #128). 진입점은 **설정 하단** 하나다(`SettingsHelpLinks`, 백로그 #241 — 2026-10-09에 사용자가
@@ -120,6 +140,9 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     // 화면별로 묶는다 — 사용자가 *"그 화면에서 본 것"* 으로 찾는다.
                     ReplaySection(title = strings.myPageTitle) {
                         ReplayLine(guideMyPageGreetingFor(strings.language))
+                        // #261 — 내 정보의 「내 캐릭터」(#256)와 구독. 줄은 실물이 아니라 글로만 — 그 줄은 누르면 캐러셀이 열리는 살아 있는 줄이다.
+                        ReplayLine(UiStringsGuideReplay.myCharacters(strings.language, myCharactersTitleFor(strings.language)))
+                        ReplayLine(UiStringsGuideReplay.premium(strings.language))
                     }
                     ReplaySection(title = strings.attendanceRewardTitle) {
                         ReplayLine(guideBodyFor(strings.language, GuideStep.AttendanceClaim))
@@ -157,6 +180,64 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                                     text = guideBodyFor(strings.language, step, toolLabels = toolLabels),
                                 )
                             }
+                        // #261 — 첫돌이 가이드 뒤에 생긴 대국 화면의 버튼 둘. 같은 방식으로 **실물**을 그린다(누르면 아무 일 없음).
+                        // 착수 확인은 플래그가 꺼진 빌드에서 가르치지 않는다(함정 51 — 조작법 가이드와 같은 판정).
+                        if (FeatureFlags.isPlayConfirmModeEnabled) {
+                            ReplaySampleCard(text = UiStringsGuideReplay.confirmButton(strings.language, strings.confirmPlay, strings.playMove)) {
+                                PlayStoneButton(
+                                    face = playStoneFaceOf(isDirectPlay = false, hasTentativeMove = false),
+                                    label = strings.confirmPlayOnStone,
+                                    enabled = true,
+                                    onClick = {},
+                                    modifier = Modifier.size(ReplayStoneButtonSize),
+                                )
+                            }
+                        }
+                        ReplaySampleCard(text = UiStringsGuideReplay.undo(strings.language, strings.undo)) {
+                            SingleActionButton(
+                                action = GameActionButtonState(
+                                    role = GameActionButtonRole.Undo,
+                                    label = strings.undo,
+                                    // 이벤트는 쏘지 않는다 — 아래 `onEvent`가 빈 람다다.
+                                    event = GameUiEvent.UndoLastTurn,
+                                    enabled = true,
+                                    isFilled = false,
+                                ),
+                                label = strings.undo,
+                                // 대국 화면이 판 시작에 보이는 그 표시(`무료 3`) — 숫자는 상수에서.
+                                mark = freeAnalysisMarkFor(strings.language, MatchFreeUses.PerMatch),
+                                onEvent = {},
+                            )
+                        }
+                    }
+                    // #261 — 홈의 나머지 메뉴. 카드와 타일은 홈이 그리는 **그 컴포저블**이다. 기력은 저장소를 열지 않고 예시(20급)로 —
+                    // 이 다이얼로그는 진행도 저장소를 열지 않는다는 계약이 있고, 보여 주는 것은 "이 카드가 무엇인가"다(캐릭터 대국 카드와 같은 이유).
+                    ReplaySection(title = rankMeasureTitleFor(strings.language)) {
+                        ReplayLine(UiStringsGuideReplay.rankMeasure(strings.language))
+                        MenuCard(
+                            title = rankMeasureTitleFor(strings.language),
+                            subtitle = rankMeasureSubtitleFor(strings.language),
+                            onClick = {},
+                            icon = { RankMeasureIcon(rank = ReplaySampleRank, rankLabel = kgsRankLabelFor(strings.language, ReplaySampleRank)) },
+                        )
+                    }
+                    ReplaySection(title = strings.gameHistoryTitle) {
+                        ReplayLine(UiStringsGuideReplay.gameHistory(strings.language))
+                        MenuTile(HomeMenuTile(strings.gameHistoryTitle, onClick = {}) { GameHistoryBoardIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
+                    }
+                    ReplaySection(title = strings.study) {
+                        ReplayLine(UiStringsGuideReplay.study(strings.language))
+                        MenuTile(HomeMenuTile(strings.study, onClick = {}) { StudyPreviewIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
+                    }
+                    // #261 — 바둑판 조작법(#249·#258)으로 가는 길. 이름은 설정이 쓰는 그 글자다.
+                    ReplaySection(title = settingsHelpSectionFor(strings.language)) {
+                        ReplayLine(
+                            UiStringsGuideReplay.boardControls(
+                                strings.language,
+                                helpTitle = settingsHelpSectionFor(strings.language),
+                                guideTitle = UiStringsDownloadGuide.boardControlsGuide(strings.language),
+                            ),
+                        )
                     }
                 }
             }
@@ -175,6 +256,12 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
  */
 @Composable
 private fun ReplayControlCard(step: GuideStep, text: String) {
+    ReplaySampleCard(text = text) { ReplayControlSample(step) }
+}
+
+/** [ReplayControlCard]의 몸 — 첫 줄에 `첫돌이 + 그 실물`, 아래 설명. #261에서 단계(`GuideStep`)가 없는 버튼(착수 확인 · 무르기)도 같은 상자에 담으려고 뗐다. */
+@Composable
+private fun ReplaySampleCard(text: String, sample: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -187,7 +274,7 @@ private fun ReplayControlCard(step: GuideStep, text: String) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FirstDolAvatar(size = 26.dp, seamColor = MaterialTheme.colorScheme.surfaceVariant)
-            ReplayControlSample(step)
+            sample()
         }
         Text(
             text = text,
@@ -267,3 +354,8 @@ private fun ReplayLine(text: String) {
         )
     }
 }
+
+/** 승급 대국 카드에 보이는 예시 기력(#261) — 처음 시작하는 자리. 진행도 저장소를 열지 않으므로 지금 기력이 아니다. */
+private val ReplaySampleRank = KgsRank.kyu(20)
+
+private val ReplayStoneButtonSize = 56.dp
