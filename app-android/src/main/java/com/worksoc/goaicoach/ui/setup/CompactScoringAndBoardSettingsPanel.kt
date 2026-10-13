@@ -37,9 +37,9 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
  * 대국 설정 화면의 "콤팩트" 레이아웃 — 계가/덤/바둑판 크기/접바둑을 2x2 드롭다운 그리드로
  * 압축해 스크롤 없이 한 화면에 보이게 한다.
  *
- * ⚠️ **이제 이 패널이 유일한 선택지다.** [GameSetupLobby]와 설정 화면이 함께 이것만 그린다 —
- * 분기하던 `GameSetupUxMode`는 #73이, 짝이던 심플 레이아웃(`ScoringAndBoardSettingsPanel`)은
- * #76이 지웠다(2026-09-05).
+ * ⚠️ **이제 이 패널이 유일한 선택지다.** [GameSetupLobby]와 대국 화면 메뉴(`GameMenuSection`)가
+ * 이것만 그린다 — 분기하던 `GameSetupUxMode`는 #73이, 짝이던 심플 레이아웃(`ScoringAndBoardSettingsPanel`)은
+ * #76이 지웠다(2026-09-05). 설정 화면의 사본은 #256(2026-10-13)에서 빠졌다.
  *
  * ## ⚠️ 판 크기·접바둑은 진행 중 대국에서 잠긴다(백로그 #75, 2026-09-05 사용자 결정)
  * 심플 레이아웃이 갖고 있던 게이팅을 이 패널에 **다시 만들었다**(#73·#76이 그 표현을 지웠고,
@@ -56,9 +56,11 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
  * · 잘못 시작했다면 기권하고 다시 여는 비용이 낮다는 것이 사용자 판단이다.
  * · 그래서 규칙이 *"대국 중에는 대국 설정을 못 바꾼다"* 하나로 단순해졌다.
  *
- * ⚠️ **잠글지 판정하는 조건을 여기서 인라인으로 쓰지 말 것** —
- * [com.worksoc.goaicoach.application.preferences.isBoardSetupLockedDuringGame]가 갖고 있다.
- * `isGameEnded` 하나로 판단하면 **대국을 한 번도 하지 않은 사용자에게도 잠긴다.**
+ * ⚠️ **잠글지는 이 패널이 아니라 부르는 쪽이 정한다** — 로비는 늘 열고(넘기지 않는다), 대국 화면
+ * 메뉴는 조건 없이 잠근다(`false`). 「둔 수가 있고 안 끝났으면 잠금」이라는 #75의 조건 판정은 그것을
+ * 쓰던 설정 화면의 사본이 #256에서 빠지며 함께 지웠다. 대국 화면 밖에 이 패널을 다시 두어 잠금이
+ * 필요해지면 그 판정을 다시 세울 것 — `isGameEnded` 하나로 판단하면 **대국을 한 번도 하지 않은
+ * 사용자에게도 잠기고**, 이어할 저장 대국을 빼먹으면 **앱을 껐다 켜는 것만으로 풀린다.**
  */
 @Composable
 internal fun CompactScoringAndBoardSettingsPanel(
@@ -71,8 +73,8 @@ internal fun CompactScoringAndBoardSettingsPanel(
     onHandicapCountChange: (Int) -> Unit,
     onKomiChange: (Double) -> Unit,
     /**
-     * 대국 설정 네 칸(계가·덤·판 크기·접바둑)을 바꿀 수 있는가. 로비는 항상 `true`(늘 대국
-     * 시작 전이다), 설정 화면과 대국 화면 메뉴는 `isBoardSetupLockedDuringGame`의 판정을 넘긴다.
+     * 대국 설정 네 칸(계가·덤·판 크기·접바둑)을 바꿀 수 있는가. 로비는 넘기지 않아 기본값 `true`(늘 대국
+     * 시작 전이다), 대국 화면 메뉴는 조건 없이 `false`를 넘긴다(2026-09-10 사용자 결정).
      * ⚠️ 이름이 `...BoardShape`가 아닌 이유는 2026-09-10에 **계가·덤까지 범위가 넓어졌기** 때문이다.
      */
     canChangeMatchSetup: Boolean = true,

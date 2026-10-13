@@ -211,11 +211,11 @@ internal fun ExpandedGameMenuSection(
             onHandicapCountChange = { count -> onEvent(GameUiEvent.ChangeHandicapCount(count)) },
             onKomiChange = { komi -> onEvent(GameUiEvent.ChangeKomi(komi)) },
             // ⚠️ **여기서는 조건 없이 잠근다**(2026-09-10 사용자 결정). 이 화면에 있다는 것
-            // 자체가 *"대국 중"* 이므로 둘 곳이 아니다 — `isBoardSetupLockedDuringGame`을 쓰면
+            // 자체가 *"대국 중"* 이므로 둘 곳이 아니다 — 「둔 수가 있고 안 끝났나」로 판정하면
             // **0수(막 시작해 아직 안 둔 판)에서 넷이 열려**, 한 수 두는 순간 잠기는 이상한
             // 경계가 생긴다(사용자 제보: *"시작 직후엔 열리는데 한 수 두면 계가·덤만 열린다"*).
-            // 그 정책의 *"아직 안 둔 판은 다음 대국 준비"* 라는 허용은 **로비와 메인 설정**의
-            // 이야기다 — 그 둘은 대국 화면 밖이라 여전히 정책 판정을 쓴다.
+            // *"아직 안 둔 판은 다음 대국 준비"* 라는 허용은 대국 화면 밖의 이야기다 — 로비는 늘 열려 있고,
+            // 그 판정(#75)을 쓰던 설정 화면의 사본은 #256에서 빠지며 판정과 함께 지웠다.
             canChangeMatchSetup = false,
         )
 

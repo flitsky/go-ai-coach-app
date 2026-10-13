@@ -27,9 +27,10 @@ class BoardSetupLockContractTest {
      * ⚠️ **대국 화면 메뉴는 조건 없이 잠근다**(2026-09-10 사용자 결정). 그 화면에 있다는 것
      * 자체가 *"대국 중"* 이므로 정책 판정을 쓸 자리가 아니다.
      *
-     * 여기에 `isBoardSetupLockedDuringGame`을 되돌려 놓으면 **0수(막 시작해 아직 안 둔 판)에서
-     * 넷이 열리고 한 수 두는 순간 잠기는** 경계가 되살아난다 — 사용자가 실제로 제보한 그
+     * 여기에 조건 판정(예전 #75의 「둔 수가 있고 안 끝났나」)을 되돌려 놓으면 **0수(막 시작해 아직
+     * 안 둔 판)에서 넷이 열리고 한 수 두는 순간 잠기는** 경계가 되살아난다 — 사용자가 실제로 제보한 그
      * 증상이다(*"시작 직후엔 열리는데 한 수 두면 계가·덤만 열린다"*).
+     * 그 판정 함수는 #256 뒤 쓰는 곳이 없어 지웠으므로, 함수 이름이 아니라 **넘기는 값**을 본다.
      */
     @Test
     fun theGameMenuLocksMatchSetupUnconditionally() {
@@ -38,18 +39,22 @@ class BoardSetupLockContractTest {
                 "(2026-09-10 사용자 결정).",
             gameMenu.contains("canChangeMatchSetup = false"),
         )
+        val passedValues = Regex("""canChangeMatchSetup\s*=\s*([^,)\n]+)""")
+            .findAll(gameMenu)
+            .map { it.groupValues[1].trim() }
+            .toList()
         assertTrue(
-            "대국 화면 메뉴가 잠금 정책 판정을 다시 쓰고 있다 — 그 함수의 `moveCount > 0` 조건이 " +
-                "0수를 열어 버린다. 이 화면에서는 조건 없이 잠근다.",
-            !gameMenu.contains("isBoardSetupLockedDuringGame"),
+            "대국 화면 메뉴가 잠금을 조건으로 판정한다($passedValues) — 「둔 수가 있고 안 끝났나」 같은 " +
+                "조건은 0수를 열어 버린다. 이 화면에서는 조건 없이 `false`다.",
+            passedValues.all { it == "false" },
         )
     }
 
     /**
      * ⚠️ **설정 화면에는 좌석·판 설정이 없다**(#256, 사용자 2026-10-13). 로비와 대국 화면 메뉴에 같은 패널이 있고,
      * 설정의 셋째 사본은 대국 중에 잠긴 회색 칸과 긴 안내문으로만 남았다(그 잠금이 예전 #75 판정이었다).
-     * 되살리면 잠금 판정(`isBoardSetupLockedDuringGame` + 저장된 대국)을 **다시 넘겨야** 한다 — 패널 기본값이 `true`라
-     * 넘기지 않으면 조용히 항상 열린다. 그 전에 활성 백로그 「서 있는 답」을 볼 것.
+     * 되살리면 잠금 판정을 **다시 세워 넘겨야** 한다 — 그 판정(둔 수가 있고 안 끝났거나, 이어할 저장 대국이 있으면 잠금)은
+     * 쓰는 곳이 없어져 지웠고, 패널 기본값이 `true`라 넘기지 않으면 조용히 항상 열린다. 그 전에 활성 백로그 「서 있는 답」을 볼 것.
      */
     @Test
     fun theSettingsScreenNoLongerCarriesSeatOrBoardSetup() {
