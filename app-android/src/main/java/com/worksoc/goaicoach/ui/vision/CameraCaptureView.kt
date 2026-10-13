@@ -103,12 +103,15 @@ internal fun CameraCaptureView(
         hasCameraPermission = isGranted
     }
 
+    val camera = remember { BoundCamera() }
+
     // 갤러리 이미지 선택기
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         // ⚠️ EXIF 회전 + 긴 변 2048px로 줄여 읽는다(백로그 #210) — 원본 그대로는 옆으로 눕거나 메모리가 모자란다.
-        uri?.let { BoardPhotoDecoder.decode(context, it) ?: run { failure = text.photoLoadFailed; null } }?.let(onPhotoCaptured)
+        val photo = uri?.let { BoardPhotoDecoder.decode(context, it) ?: run { failure = text.photoLoadFailed; null } }
+        if (photo != null) onPhotoCaptured(photo) else camera.analyzer?.enabled = true // 고르지 않고 돌아왔다 — 라이브를 다시 켠다
     }
 
     val imageCapture = remember {
@@ -127,7 +130,16 @@ internal fun CameraCaptureView(
     // ⚠️ 사진 변환(toBitmap·회전·축소)을 메인 스레드에서 하지 않는다 — 1200만 화소를 돌리는 동안 화면이 멎었다.
     val captureExecutor = remember { Executors.newSingleThreadExecutor() }
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
-    val camera = remember { BoundCamera() }
+
+    // 사진첩을 고르는 동안은 라이브 판정을 멈춘다 — 선택 창은 카메라 화면을 다 가리지 않아 카메라가 계속 돈다. 판을 비춘 채 사진첩을
+    // 열면 고르는 사이에 자동 촬영이 끼어들 수 있었다(에뮬레이터: 선택 창 뒤에서 「판을 찾았어요」).
+    fun pickPhoto() {
+        camera.analyzer?.enabled = false
+        steadiness.reset()
+        liveSighting = null
+        liveState = BoardSteadiness.State.Searching
+        galleryLauncher.launch("image/*")
+    }
 
     fun capture() {
         if (isCapturing) return
@@ -208,7 +220,8 @@ internal fun CameraCaptureView(
                         val main = ContextCompat.getMainExecutor(ctx)
                         val analyzer = LiveBoardAnalyzer { found ->
                             main.execute {
-                                if (camera.disposed || isCapturing) return@execute
+                                // 끈 뒤에 도착한 프레임(분석 중이던 것)도 버린다 — 사진첩을 고르는 중이거나 찍는 중이다.
+                                if (camera.disposed || isCapturing || camera.analyzer?.enabled == false) return@execute
                                 // 화면의 작은 일부(타일·체크무늬·키보드)는 판으로 치지 않는다 — 사용자는 판을 비춘다.
                                 val sighting = found?.takeIf { BoardSteadiness.isLargeEnough(it.corners) }
                                 liveSighting = sighting
@@ -320,7 +333,7 @@ internal fun CameraCaptureView(
                 }
                 Spacer(modifier = Modifier.height(AppSpacing.Space12))
                 OutlinedButton(
-                    onClick = { galleryLauncher.launch("image/*") },
+                    onClick = { pickPhoto() },
                     shape = RoundedCornerShape(AppRadius.Corner8),
                 ) {
                     Text(text.loadFromGallery, color = VisionPalette.OnBackdrop)
@@ -390,7 +403,7 @@ internal fun CameraCaptureView(
         ) {
             // 갤러리 불러오기 버튼
             OutlinedButton(
-                onClick = { galleryLauncher.launch("image/*") },
+                onClick = { pickPhoto() },
                 shape = RoundedCornerShape(AppRadius.Corner8),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = VisionPalette.OnBackdrop),
             ) {
