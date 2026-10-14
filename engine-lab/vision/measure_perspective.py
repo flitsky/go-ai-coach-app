@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lab import fixtures, perspective, variants  # noqa: E402
+from lab import fixtures, lattice, perspective, variants  # noqa: E402
 
 
 def measure(name, img, corners):
@@ -40,10 +40,21 @@ def measure(name, img, corners):
     return {"key": name, "before": before, "after": after, "applied": True, "ms": round(ms), "frame": frame, "strength": strength}
 
 
+def lattice_frame(img):
+    """격자 틀 하나를 JSON 꼴로(`frames_for_dir.py`의 `lattice-frames.json`과 같은 꼴) — 못 찾으면 None."""
+    found = lattice.find_board_frame(img)
+    if found is None:
+        return None
+    quad, (w, h), info = found
+    return {"quad": np.round(quad, 2).tolist(), "size": [int(w), int(h)], "lines": [int(x) for x in info["lines"]],
+            "inner": np.round(info["inner"], 2).tolist(), "regularity": [round(float(x), 3) for x in info["regularity"]]}
+
+
 def main(argv):
     export = "--export" in argv
     sets = [a for a in argv if not a.startswith("--")] or ["press"]
     rows = []
+    lattices = {}
     variant_dir = fixtures.REPO / "test-fixtures" / "board-photos" / "variants"
     for set_name in sets:
         for f in fixtures.load_set(set_name):
@@ -51,9 +62,11 @@ def main(argv):
             if img is None:
                 continue
             rows.append(measure(f.key, img, f.corners))
+            lattices[f.key] = lattice_frame(img)
             if set_name == "press":
                 for vname, vimg, vcorners in variants.all_variants(img, f.corners):
                     rows.append(measure(f"{f.key} {vname}", vimg, vcorners))
+                    lattices[f"{f.key} {vname}"] = lattice_frame(vimg)
                     if export:
                         variant_dir.mkdir(parents=True, exist_ok=True)
                         cv2.imwrite(str(variant_dir / f"{f.key} {vname}.png"), vimg)
@@ -73,6 +86,9 @@ def main(argv):
     (out_dir / "frames.json").write_text(frames + "\n", encoding="utf-8")
     if export:
         (fixtures.REPO / "app-android/src/test/resources/board-photos/perspective-frames.json").write_text(frames + "\n", encoding="utf-8")
+        # 격자 틀(`lab/lattice.py`)도 — 앱 JVM 측정표가 기준 이미지·변형을 앱과 같은 후보 경로(`BoardCandidates`)로 잰다
+        (fixtures.REPO / "app-android/src/test/resources/board-photos/lattice-frames.json").write_text(
+            json.dumps(lattices, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(report)
     print(f"\n→ {out_dir.relative_to(fixtures.REPO)}")
 
