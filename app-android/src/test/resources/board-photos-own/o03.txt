@@ -1,0 +1,27 @@
+# 사용자 사진(samsung SM-S908N · 2026:08:26 19:14:52 촬영 · 2026-10-15 사용자 제공) — 원본 KakaoTalk_Image_2026-10-15-05-32-50_003.jpeg
+# 정답(백로그 #263): 모서리는 에이전트가 격자를 그려 보며 판의 가장 바깥 선 교차점에 맞췄고, 돌은 편 확대 그림을 에이전트 둘이 따로(앱 판독은 안 보고)
+# 적어 모두 일치했다. 비스듬한 사진이라 돌이 먼 쪽으로 떠 보인다 — 돌이 닿은 교점으로 적었다(함정 94).
+# 이미지는 저장소에 없다(사용자 사진) — test-fixtures/board-photos-own/ (scripts/prepare-own-board-photos.py로 맞춘 2048px PNG).
+image: o03.png
+size: 19
+corners: 535.8,124.4 1367.0,109.0 1649.5,949.5 321.6,1016.0
+gate: baseline
+........WBBBW......
+.......W.WWBWWW....
+.....W..WWBBBBBWWWW
+...W...WBB.....BBBW
+..W.W.WWWB......B.B
+WW.WWWBWBB......B..
+BW.W.WBWBWBB....B.B
+BBW.WBBBBWWWB...BB.
+BBBWWWWB.BWBB....BB
+...BWBBB.BWBB..BBWB
+...BWBBWBBWBWBBWWWB
+...BBWWWWWWWWWBW.WB
+..BBBBBW.WWWBBBWW.W
+..BWBWBWWBBWB..BWW.
+.BWWWWW.WB.BBBBBW.W
+BBWWW...WBBBWBWBWWW
+..BBWW..WBWWWWWBBBW
+.B.BW....W....WWB.B
+..BBW..........WB..

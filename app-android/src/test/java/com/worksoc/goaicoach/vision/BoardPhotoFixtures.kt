@@ -42,6 +42,15 @@ internal data class BoardPhotoFixture(
 ) {
     val image: ArrayPixelSource? by lazy { loadImage(set, imageName) }
 
+    /** 사진이 폴더에 있는가 — 읽지 않고 본다. */
+    val hasImage: Boolean get() = File(RepoPaths.root, "${set.imageDir}/$imageName").exists()
+
+    /** 사진을 새로 읽는다 — [image]와 달리 붙잡아 두지 않는다. 사진 전부를 도는 일(학습 조각 내보내기)이 힙을 넘지 않게. */
+    fun loadImageOnce(): ArrayPixelSource? = loadImage(set, imageName)
+
+    /** 정답이 「모름」인 교점인가(`?` — 손·소매·돌통에 가려 사람도 못 읽는 자리, 사용자 사진 #263). 채점에서는 어떤 답이든 맞은 것으로 친다. */
+    fun isUnknown(col: Int, row: Int): Boolean = truth[row][col] == '?'
+
     fun truthAt(col: Int, row: Int): StoneColor? = when (truth[row][col]) {
         'B' -> StoneColor.Black
         'W' -> StoneColor.White
@@ -55,6 +64,10 @@ internal data class BoardPhotoFixture(
         val wrong = mutableListOf<String>()
         for (row in 0 until n) {
             for (col in 0 until n) {
+                if (isUnknown(col, row)) {
+                    correct++
+                    continue
+                }
                 val expected = truthAt(col, row)
                 val actual = stones[BoardCoordinate(row = row, column = col)]
                 if (expected == actual) correct++ else wrong += "($col,$row) ${expected.symbol()}→${actual.symbol()}"
@@ -89,7 +102,7 @@ internal data class BoardPhotoFixture(
             val grid = mutableListOf<String>()
             text.lineSequence().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.forEach { line ->
                 val colon = line.indexOf(": ")
-                if (colon > 0 && !line.all { it in "BW." }) meta[line.substring(0, colon)] = line.substring(colon + 2) else grid += line
+                if (colon > 0 && !line.all { it in "BW.?" }) meta[line.substring(0, colon)] = line.substring(colon + 2) else grid += line
             }
             val base = meta["same-as"]?.let { requireNotNull(known[it]) { "$key: same-as $it 를 먼저 읽어야 한다" } }
             val size = base?.boardSize?.value ?: meta.getValue("size").toInt()

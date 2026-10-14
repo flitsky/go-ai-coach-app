@@ -106,7 +106,7 @@ class BoardPhotoReportTest {
             unstableWrong = located?.takeIf { sizeMatches }?.let { loc ->
                 val auto = detect(f, img, loc.corners)
                 val wrong = (0 until n * n).map { BoardCoordinate(row = it / n, column = it % n) }
-                    .filter { c -> f.truthAt(c.column, c.row) != auto[c] }.toSet()
+                    .filter { c -> !f.isUnknown(c.column, c.row) && f.truthAt(c.column, c.row) != auto[c] }.toSet()
                 "${(unstablePoints(f, img, loc.corners) intersect wrong).size}/${wrong.size}"
             },
         )
@@ -128,6 +128,7 @@ class BoardPhotoReportTest {
         val n = f.boardSize.value
         for (row in 0 until n) {
             for (col in 0 until n) {
+                if (f.isUnknown(col, row)) continue
                 val expected = f.truthAt(col, row)
                 val actual = stones[BoardCoordinate(row = row, column = col)]
                 if (expected != actual) kinds.merge("${expected.symbol()}→${actual.symbol()}", 1, Int::plus)
