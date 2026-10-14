@@ -22,7 +22,16 @@ internal object PerspectiveLocate {
     /** 책상 같은 중간 회색 — 기준 이미지 변형의 사진 밖과 같은 값. */
     private const val Backdrop = 0xFF8A8A8A.toInt()
 
-    fun locate(source: PixelSource, frame: PerspectiveFrame): LocatedBoard? {
+    fun locate(source: PixelSource, frame: PerspectiveFrame): LocatedBoard? = flatten(source, frame)?.let { (flat, toSource) -> locateIn(flat, toSource) }
+
+    /**
+     * 편 사진을 세로로 [stretch]배 늘려서 찾는다 — 편 사진의 칸이 납작할 때([BoardLocator.cellAspect]) 정사각에 가깝게 맞춰 준다(#263, 갤러리 f03).
+     */
+    fun locateStretched(source: PixelSource, frame: PerspectiveFrame, stretch: Float): LocatedBoard? =
+        flatten(source, frame.copy(height = (frame.height * stretch).toInt()))?.let { (flat, toSource) -> locateIn(flat, toSource) }
+
+    /** 틀로 편 사진과, 편 좌표 → 원본 좌표 변환. */
+    fun flatten(source: PixelSource, frame: PerspectiveFrame): Pair<ArrayPixelSource, BoardHomography>? {
         val w = frame.width
         val h = frame.height
         if (w <= 0 || h <= 0) return null
@@ -40,7 +49,11 @@ internal object PerspectiveLocate {
                 out[y * w + x] = if (sx >= 0f && sy >= 0f && sx <= maxX && sy <= maxY) BoardWarp.sampleBilinear(source, sx - 0.5f, sy - 0.5f) else Backdrop
             }
         }
-        val located = BoardLocator.locate(ArrayPixelSource(w, h, out)) ?: return null
+        return ArrayPixelSource(w, h, out) to toSource
+    }
+
+    private fun locateIn(flat: ArrayPixelSource, toSource: BoardHomography): LocatedBoard? {
+        val located = BoardLocator.locate(flat) ?: return null
         val back = located.corners.toList().map { toSource.map(it.x.toDouble(), it.y.toDouble()) }
         return located.copy(corners = BoardCornerPoints(back[0], back[1], back[2], back[3]))
     }

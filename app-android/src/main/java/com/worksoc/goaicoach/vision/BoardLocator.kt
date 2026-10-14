@@ -84,6 +84,24 @@ internal object BoardLocator {
     }
 
     /**
+     * 칸이 납작한 정도 — 세로 칸 간격 ÷ 가로 칸 간격(두 축 모두 주기가 또렷할 때만). 원근을 편 사진은 사다리꼴이 직사각형이 될 뿐
+     * 가로세로 비율까지는 맞지 않는다 — 편 사진을 이만큼 세로로 늘리면 칸이 정사각에 가까워진다([BoardCandidates]).
+     * [locate]는 두 축이 0.8~1.25배를 벗어나면 약한 축을 강한 축 쪽으로 다시 찾게 해서 납작한 칸을 정사각으로 잘못 읽는다(갤러리 f03을 펴면 14.7 대 11.3).
+     */
+    fun cellAspect(source: PixelSource): Float? {
+        val (gray, _) = Gray.downscaled(source, WorkingMaxDim)
+        val maps = EvidenceMaps(gray)
+        val theta = rotationAngle(maps)
+        val eu = estimatePeriod(maps.periodProfile(Family.U, theta), gray) ?: return null
+        val ev = estimatePeriod(maps.periodProfile(Family.V, theta), gray) ?: return null
+        if (min(eu.second, ev.second) < ClearPeriod) return null
+        return ev.first / eu.first
+    }
+
+    /** [cellAspect]가 믿는 주기의 또렷함(자기상관 봉우리 높이). ⚠️ 0.4는 스레드가 정한 값이다 — f03을 펴면 0.73·0.56. */
+    private const val ClearPeriod = 0.4f
+
+    /**
      * 손으로 놓은(또는 대략 맞은) 모서리를 **가까운 격자에 붙인다** — 핀 하나가 한 칸 가까이 어긋나도 맞춰 준다.
      * [coarseAlign]으로 어긋난 핀을 [snapToGrid]의 창 안까지 먼저 옮기고, [snapToGrid]로 교점을 끌어당긴다.
      * 모서리가 1.3칸 넘게 움직였다면 엉뚱한 선에 붙은 것이라 손으로 놓은 값을 그대로 둔다.
