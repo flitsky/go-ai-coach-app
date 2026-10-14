@@ -63,6 +63,8 @@ test-fixtures/board-photos/
 
 # 사용자가 S23으로 찍은 실물 판 사진(백로그 #263) — 사진은 커밋하지 않는다(정답 배치만 커밋).
 test-fixtures/board-photos-own/
+# 사용자가 올린 폰 사진 원본(2026-10-15, S22·S26 Ultra) — 사진은 커밋하지 않는다. prepare-own-board-photos.py가 위 폴더로 맞춰 쓴다.
+test-fixtures/s22,s26ultra-photos/
 
 # 바둑판 사진 인식 실험실의 측정 결과(백로그 #263) — 다시 만들 수 있다. 앱에 넘기는 것은 --export의 JSON뿐.
 engine-lab/vision/runs/
