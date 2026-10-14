@@ -1,0 +1,27 @@
+# 인터넷 실물 사진(위키미디어 공용 · CC BY-SA 2.0 · Crispin Semmens) — https://commons.wikimedia.org/wiki/File:Playing_igo_in_japan_(9877775584).jpg
+# 정답: 앱 판독(Flattened 후보, 흑 116 · 백 110)을 사용자 확인(2026-10-14) — 판정 에이전트 둘도 361점 모두 맞다고 봤다 — 그 판독을 그대로 정답으로 고정한다(백로그 #263).
+# corners: 앱이 찾은 격자(바깥 격자선 교차점 TL TR BR BL, 원본 픽셀).
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources.json에 출처).
+image: w28-photo.jpg
+size: 19
+corners: 273.4,47.1 971.1,42.0 1083.5,858.0 148.6,849.3
+gate: gated
+......BBW..WWB...BB
+BB....BW.WWWBB..BBW
+WBB.BBBW.WBWWB..BWW
+WWWB..BWWBBWWB.BWW.
+..WWB..BWBBWB..BW..
+..WBBBB.BBWWB.BWW..
+..WWB..BBWWWB..BW..
+..WBBBBWBBWB...BWW.
+...WBWWWWWWB....BW.
+...WBBWB..WB....BWW
+..WBBBBWBBWB....BBW
+..WBWWBWW.WB....B.B
+..WBWBW..WWB...BBB.
+WWWWW...WBWBBBBWBBB
+BBWBW...WBBBWWBWWBB
+B.BBWB.B.WBW..W..WB
+.BBWWWWB.WBW.W.WWWW
+B.BBWWBWW.W........
+...BBWB............

@@ -1,0 +1,17 @@
+# 인터넷 기보 그림(위키미디어 공용 · Public domain · Участник:Dm) — https://commons.wikimedia.org/wiki/File:GoScoring9x9.png
+# 정답: 앱 판독(Direct 후보, 흑 24 · 백 20)을 사용자 확인(2026-10-14) — 그 판독을 그대로 정답으로 고정한다(백로그 #263).
+# corners: 앱이 찾은 격자(바깥 격자선 교차점 TL TR BR BL, 원본 픽셀).
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources.json에 출처).
+image: w44-diagram.jpg
+size: 9
+corners: 33.3,33.6 526.3,33.7 527.6,529.8 30.8,530.1
+gate: gated
+..WBB.W..
+..WBWW.W.
+..WBWBWWW
+...BWBBBB
+.WWWB....
+WWBBBB...
+WB.B.B...
+WB..BW...
+BBB.B....

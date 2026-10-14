@@ -1,0 +1,27 @@
+# 인터넷 실물 사진(위키미디어 공용 · Public domain · 위키미디어 사용자 Goban1) — https://commons.wikimedia.org/wiki/File:FloorGoban.JPG
+# 정답: 앱 판독(Lattice 후보, 흑 108 · 백 103)을 사용자 확인(2026-10-14) — 판정 에이전트 둘도 361점 모두 맞다고 봤다 — 그 판독을 그대로 정답으로 고정한다(백로그 #263).
+# corners: 앱이 찾은 격자(바깥 격자선 교차점 TL TR BR BL, 원본 픽셀).
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources.json에 출처).
+image: w08-photo.jpg
+size: 19
+corners: 70.5,308.0 648.3,146.8 1054.5,495.5 409.6,731.8
+gate: gated
+.BB.B.........BWW..
+.WBBWB.BBW.W.B.BW..
+BWBWWBBWWW.WB.B.W..
+W.WW.BWW..WB.B.BW..
+W..W.BBWBBW.BB.BWW.
+.WWW...BW.W...W.WB.
+.B.WBB.BW.WBBW..WB.
+.WBBWB..BWWWBW..BW.
+W.WWWB..B..B.W.BBB.
+.WWWB.B...B.WW.B...
+...WWB.B...BBW.WB..
+.BW.BWBB....BW.WBBB
+B.BBWWWWBB...BBWWB.
+.BWWW...WWBB.BWBWWB
+.BB...........WBBB.
+B.B.BBB..BWBBWWWB..
+.BWWWW.BB.BWW.WBBB.
+BW....WWWBBBW.WBBWW
+.W........B....WWW.

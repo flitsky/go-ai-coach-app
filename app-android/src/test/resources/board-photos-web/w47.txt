@@ -1,0 +1,17 @@
+# 인터넷 기보 그림(위키미디어 공용 · CC BY-SA 4.0 · 위키미디어 사용자 Jogador_de_Go) — https://commons.wikimedia.org/wiki/File:End_of_9x9_Go_Match.jpg
+# 정답: 앱 판독(Direct 후보, 흑 22 · 백 20)을 사용자 확인(2026-10-14) — 그 판독을 그대로 정답으로 고정한다(백로그 #263).
+# corners: 앱이 찾은 격자(바깥 격자선 교차점 TL TR BR BL, 원본 픽셀).
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources.json에 출처).
+image: w47-diagram.jpg
+size: 9
+corners: 46.2,48.6 460.1,47.2 459.9,463.3 43.7,463.2
+gate: gated
+B.W.BBW..
+.WWBBWW..
+WWBB.W...
+BB.B.W...
+...B.W...
+...B.W.WW
+...B.WWBB
+..BBWWBB.
+..BWW.B.B
