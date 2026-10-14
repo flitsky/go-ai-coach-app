@@ -12,8 +12,9 @@ import org.junit.Test
  * 인터넷 실물 사진 중 정답을 매긴 것의 인식률(백로그 #263, 2026-10-14) — **앱과 같은 순서**(펴고 찾기)로 잰다.
  *
  * 통과 기준은 정답 파일에 `gate: gated`인 사진만, 기준 이미지와 같은 값이다: 자동 ≥ 98% · 정답 모서리 ≥ 99.5% · 판 크기 일치.
- * 지금 걸린 것은 f17·f33 — 격자가 판 밖 탁자로 2~3줄 나가던 사진이다(판이 아닌 칸으로 범위 바로잡기 — `BoardLocator.leaveForeign`).
- * 나머지(f03 강한 원근 · f19 작은 9줄 판 · f30 노란 조명 백돌 다섯)는 측정만 한다 — [BoardPhotoReportTest]의 `web.md`.
+ * 지금 걸린 것: f17·f33 — 격자가 판 밖 탁자로 2~3줄 나가던 사진(판이 아닌 칸으로 범위 바로잡기 — `BoardLocator.leaveForeign`),
+ * f19 — 큰 장면 속 작은 9줄 판(펴면 틀이 판을 일그러뜨려 그대로 찾은 후보가 뽑힌다 — [BoardCandidates]).
+ * 나머지(f03 강한 원근의 돌 시차 · f22 시차 · f30 노란 조명 백돌 다섯)는 측정만 한다 — [BoardPhotoReportTest]의 `web.md`.
  *
  * ⚠️ 사진은 저장소에 없다(남의 사진 — 평가 갤러리 폴더 `test-fixtures/board-photos-web/`). 사진이나 원근 틀(`frames.json`)이 없으면 건너뛴다.
  */

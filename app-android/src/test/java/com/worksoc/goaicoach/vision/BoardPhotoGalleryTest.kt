@@ -14,7 +14,7 @@ import org.junit.Test
 /**
  * 정답이 없는 사진 묶음을 **앱과 같은 순서로** 인식해 결과를 남긴다(백로그 #263) — 사람이 눈으로 평가하는 갤러리의 재료.
  *
- * 순서: (실험실이 계산한 원근 틀이 있으면) 펴고 찾기 → 아니면 그대로 찾기 → 찾은 모서리로 돌 읽기 → 흔들림([ScanStability]).
+ * 순서: [BoardCandidates] — (실험실이 계산한 원근 틀이 있으면) 펴고 찾기 → 확실하지 않으면 그대로 찾은 것·늘려 찾은 것과 견주기 → 돌 · 흔들림.
  * 앱의 `AndroidBoardVisionScanner`와 같다 — 원근 틀만 OpenCV 대신 실험실 기록(`frames.json`, `engine-lab/vision/frames_for_dir.py`)을 쓴다.
  * 결과는 `app-android/build/reports/board-photos/gallery-<폴더>.json` → `engine-lab/vision/render_gallery.py`가 HTML로 그린다.
  * 통과 기준을 거는 테스트가 아니다. 폴더가 없으면 아무것도 안 한다.
@@ -49,15 +49,16 @@ class BoardPhotoGalleryTest {
 
     private fun recognize(name: String, img: ArrayPixelSource, frame: PerspectiveFrame?): JSONObject {
         val started = System.nanoTime()
-        val flattened = frame?.let { PerspectiveLocate.locate(img, it) }
-        val located = flattened ?: BoardLocator.locate(img)
+        val reading = BoardCandidates.locate(img, frame)
         val out = JSONObject().put("file", name).put("width", img.width).put("height", img.height)
-            .put("perspective", flattened != null).put("located", located != null)
-        if (located == null) return out.put("ms", (System.nanoTime() - started) / 1_000_000)
+            .put("perspective", reading?.kind == BoardCandidates.Kind.Flattened || reading?.kind == BoardCandidates.Kind.Stretched)
+            .put("candidate", reading?.kind?.name ?: JSONObject.NULL)
+            .put("located", reading != null)
+        if (reading == null) return out.put("ms", (System.nanoTime() - started) / 1_000_000)
+        val located = reading.located
         val size = located.boardSize
         val n = size.value
-        val stones = GridStoneDetector.detect(BoardWarp.rectify(img, located.corners, size)).stones
-        val unstable = ScanStability.unstablePoints(img, located.corners, size, stones)
+        val stones = reading.detected.stones
         val grid = JSONArray()
         for (row in 0 until n) {
             grid.put((0 until n).joinToString("") { col -> when (stones[BoardCoordinate(row = row, column = col)]) { StoneColor.Black -> "B"; StoneColor.White -> "W"; null -> "." } })
@@ -67,8 +68,8 @@ class BoardPhotoGalleryTest {
             .put("grid", grid)
             .put("black", stones.values.count { it == StoneColor.Black })
             .put("white", stones.values.count { it == StoneColor.White })
-            .put("unstable", JSONArray(unstable.map { JSONArray(listOf(it.row, it.column)) }))
-            .put("confident", ScanStability.canSkipPins(unstable, stones, size, located.corners, img.width, img.height))
+            .put("unstable", JSONArray(reading.unstable.map { JSONArray(listOf(it.row, it.column)) }))
+            .put("confident", reading.confident)
             .put("plausible", ScanStability.isPlausible(stones, size))
             .put("coverage", ScanStability.coverage(located.corners, img.width, img.height).toDouble())
             .put("ms", (System.nanoTime() - started) / 1_000_000)

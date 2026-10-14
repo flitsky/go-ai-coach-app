@@ -131,9 +131,8 @@ internal data class BoardPhotoFixture(
             }.toMap()
         }
 
-        /** 앱과 같은 순서로 판 찾기 — 틀이 있으면 펴고 찾고, 없으면 그대로 찾는다(`AndroidBoardVisionScanner.locate`). */
-        fun locateLikeTheApp(image: ArrayPixelSource, frame: PerspectiveFrame?): LocatedBoard? =
-            frame?.let { PerspectiveLocate.locate(image, it) } ?: BoardLocator.locate(image)
+        /** 앱과 같은 길로 판 찾기([BoardCandidates] — `AndroidBoardVisionScanner.locate`가 부르는 것). */
+        fun locateLikeTheApp(image: ArrayPixelSource, frame: PerspectiveFrame?): LocatedBoard? = BoardCandidates.locate(image, frame)?.located
 
         /** 사진 파일 하나를 픽셀로 — 정답이 없는 사진 묶음(인터넷 이미지 · #263 갤러리)도 같은 방법으로 읽는다. */
         fun loadPixels(file: File): ArrayPixelSource? {

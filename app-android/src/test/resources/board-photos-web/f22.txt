@@ -1,0 +1,30 @@
+# 인터넷 실물 사진(Flickr · CC BY-SA 2.0 · chadmiller) — https://www.flickr.com/photos/51035573981@N01/8363465
+# 사용자 평가(2026-10-14): 격자는 맞고 몇 점 놓침
+# 정답: 판을 위에서 본 모양으로 편 확대 그림을 에이전트 둘이 따로 읽어 한 점도 다르지 않았고, 앱이 그대로 찾은 격자(돌을 따라 기운 격자)의 판독과도
+# 361점 모두 같다(백로그 #263) — 검출기 출력을 옮겨 적은 것이 아니다.
+# ⚠️ 비스듬히(옆으로도) 찍어 돌이 위·옆으로 최대 반 칸 떠 보인다(함정 94) — 판에 그려진 선의 모서리(아래 corners)로 읽으면 63.7%라 측정만 한다.
+# corners: 앱이 펴고 찾은 격자 그대로(판에 그려진 선과 맞음 · refine으로 0.0px).
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources-flickr.json에 출처).
+image: f22-flickr.jpg
+size: 19
+corners: 46.2,31.7 349.0,39.7 369.3,347.5 56.1,352.2
+gate: baseline
+.WBBBB....W........
+.WWBWB..BW.WBB...BB
+..WWWB..BWWBBWBBBBW
+.WBBWB...BBBWWWBWWW
+BWWBWWBB..BWWWWWW..
+WWWBWWBBBB.BBBW....
+BWBBWWWBWWB.BWW....
+BB.BW..WWB.BBBWB...
+.BBBWBWWBBB.BW.....
+..BWWB..WBB.BWWW...
+.B.BBWWWWB.BWWBBW..
+.WB.WBBBWBBBBBBBW..
+.WBW.BBWWWBWWBBW.BW
+.WBBBBWB.WBW.WWWWWW
+WWWBBWWW.WW.WWWWBBW
+WBWBW...W..W.WBB.BB
+BBBWWW.WBB.B.WBB.B.
+B.BBW.WW....W.WBB..
+.BBWW........WWWWB.

@@ -7,7 +7,7 @@
 image: f19-flickr.jpg
 size: 9
 corners: 278.3,675.9 451.3,678.4 450.2,859.7 263.3,851.2
-gate: baseline
+gate: gated
 BBBW.W...
 W.BWW.WWW
 WBBBBWBBW
