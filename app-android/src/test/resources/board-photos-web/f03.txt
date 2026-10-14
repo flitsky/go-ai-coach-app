@@ -1,0 +1,29 @@
+# 인터넷 실물 사진(Flickr · CC BY-SA 2.0 · chadmiller) — https://www.flickr.com/photos/51035573981@N01/3470036
+# 사용자 평가(2026-10-14): 인식 격자 오류
+# 정답: 판을 위에서 본 모양으로 편 확대 그림을 에이전트 둘이 따로 읽어 한 점도 다르지 않았다(백로그 #263) — 검출기 출력을 옮겨 적은 것이 아니다.
+# 비스듬히 찍은 사진은 돌이 먼 쪽(위)으로 떠 보인다 — 돌이 닿은 교점으로 적었다.
+# corners: 위 두 귀는 원본 확대로, 아래 두 귀는 판 아래쪽이 사진 양옆으로 잘려 LSD 선분으로 바깥선을 이어 잡았다(BL은 사진 왼쪽 끝 2px).
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources-flickr.json에 출처).
+image: f03-flickr.jpg
+size: 19
+corners: 106.4,41.8 402.9,42.1 497.6,328.6 2.3,324.6
+gate: baseline
+...B...............
+.BBWBW.............
+.WB.BW.WBB.WB...BB.
+.WBBBW..W.BBB.BBW..
+..WWW....WWWW..WW..
+...B...W....BWW....
+.......B.WWBBB.....
+....W...BBB....W...
+...W.WWB...BW..W...
+...WW..WBB...W.BW..
+....W.WWB.WWW.WBW..
+...BW..WBBBWBWW.B..
+..W.BWWBBWWBBBWBB..
+..WW...BWWB...BWWW.
+..B..WWWWBBB..BWB..
+...BBW..WWB....BW..
+..B..BWW.B....B.W..
+...................
+...................

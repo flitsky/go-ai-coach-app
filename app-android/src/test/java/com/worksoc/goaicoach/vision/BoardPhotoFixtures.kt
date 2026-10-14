@@ -7,16 +7,19 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.vision.BoardCornerPoints
 import com.worksoc.goaicoach.shared.vision.PointF2D
 import java.io.File
+import org.json.JSONObject
 
 /**
  * 바둑판 사진 묶음 — 정답은 커밋된 리소스 폴더에, 이미지는 저장소 밖 폴더에 있다(둘 다 공개 저장소에 올릴 수 없는 사진이다).
  *
  * - [Press] 언론사·위키 기준 이미지 다섯 장(백로그 #210) — `scripts/fetch-board-photo-fixtures.sh`가 받는다.
  * - [Own] 사용자가 폰으로 찍은 실물 판(백로그 #263 단계 2) — `scripts/prepare-own-board-photos.py`가 앱처럼 세우고 줄여 둔다.
+ * - [Web] 인터넷 실물 사진 중 사용자가 평가해 고른 것(#263, 2026-10-14) — 평가 갤러리 폴더의 사진, 정답은 확대 그림을 둘이 따로 읽어 맞춘 것.
  */
 internal enum class BoardPhotoSet(val answerDir: String, val imageDir: String) {
     Press("board-photos", "test-fixtures/board-photos"),
     Own("board-photos-own", "test-fixtures/board-photos-own"),
+    Web("board-photos-web", "test-fixtures/board-photos-web"),
 }
 
 /**
@@ -112,6 +115,25 @@ internal data class BoardPhotoFixture(
          * `javax.imageio`가 없다. 테스트를 **돌리는** JVM(JDK 17)에는 있으므로 실행 시점에 찾는다. Robolectric을 들이는 것보다 가볍다.
          */
         private fun loadImage(set: BoardPhotoSet, name: String): ArrayPixelSource? = loadPixels(File(RepoPaths.root, "${set.imageDir}/$name"))
+
+        /**
+         * 사진 폴더의 `frames.json`(실험실이 계산한 원근 틀 — `engine-lab/vision/frames_for_dir.py`)을 사진 이름 → 틀로. 없으면 빈 맵.
+         * 앱은 OpenCV로 틀을 구하지만 맥 JVM에서는 OpenCV가 못 돌아서(함정 91) 실험실 기록으로 **앱과 같은 순서**(펴고 찾기)를 낸다.
+         */
+        fun perspectiveFramesIn(dir: File): Map<String, PerspectiveFrame> {
+            val file = File(dir, "frames.json").takeIf { it.isFile } ?: return emptyMap()
+            val json = JSONObject(file.readText())
+            return json.keys().asSequence().mapNotNull { name ->
+                val f = json.optJSONObject(name) ?: return@mapNotNull null
+                val q = f.getJSONArray("quad")
+                val pts = (0 until 4).map { i -> q.getJSONArray(i).let { PointF2D(it.getDouble(0).toFloat(), it.getDouble(1).toFloat()) } }
+                name to PerspectiveFrame(BoardCornerPoints(pts[0], pts[1], pts[2], pts[3]), f.getJSONArray("size").getInt(0), f.getJSONArray("size").getInt(1))
+            }.toMap()
+        }
+
+        /** 앱과 같은 순서로 판 찾기 — 틀이 있으면 펴고 찾고, 없으면 그대로 찾는다(`AndroidBoardVisionScanner.locate`). */
+        fun locateLikeTheApp(image: ArrayPixelSource, frame: PerspectiveFrame?): LocatedBoard? =
+            frame?.let { PerspectiveLocate.locate(image, it) } ?: BoardLocator.locate(image)
 
         /** 사진 파일 하나를 픽셀로 — 정답이 없는 사진 묶음(인터넷 이미지 · #263 갤러리)도 같은 방법으로 읽는다. */
         fun loadPixels(file: File): ArrayPixelSource? {

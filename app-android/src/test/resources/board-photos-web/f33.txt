@@ -1,0 +1,29 @@
+# 인터넷 실물 사진(Flickr · CC BY-SA 2.0 · conskeptical) — https://www.flickr.com/photos/32751486@N00/9880575875
+# 사용자 평가(2026-10-14): 인식 격자 오류
+# 정답: 판을 위에서 본 모양으로 편 확대 그림을 에이전트 둘이 따로 읽어 한 점도 다르지 않았다(백로그 #263) — 검출기 출력을 옮겨 적은 것이 아니다.
+# 비스듬히 찍은 사진은 돌이 먼 쪽(위)으로 떠 보인다 — 돌이 닿은 교점으로 적었다.
+# corners: 앱이 찾은 격자(판보다 아래 2줄로 밀림)를 정수 줄만큼 옮긴 뒤 BoardLocator.refine으로 붙였다.
+# 이미지는 저장소에 없다(남의 사진) — test-fixtures/board-photos-web/ (sources-flickr.json에 출처).
+image: f33-flickr.jpg
+size: 19
+corners: 169.7,55.6 704.2,22.3 810.5,620.9 145.5,676.7
+gate: gated
+...........WBWW....
+....WWWWWWWWBBWW...
+.WWWBBBBBWBBB.BW...
+WWBBBWWWBB....BWW..
+WBB.BWBWB.....BW...
+B....BBWB.....BBW..
+.B...BWWWB....BW...
+.....BBWBBB..BW.W..
+.....BWWB.BBBBW....
+.BBBBBWWWBBWBW.W...
+.BWBWBBBWWWWBW.....
+BWWBWWWBW...WWW.WWW
+.BWWWWWWW..W.BWWBBW
+.BWBBWBBWBB..BWBB.B
+.BB..B.BBWB..BBWBB.
+...B.B.BWWW..WWWB..
+..B..BBWW.W.W..WB..
+......BW.W....WBB..
+......BW......WWB..

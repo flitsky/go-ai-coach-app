@@ -35,11 +35,11 @@ class BoardPhotoGalleryTest {
     @Test
     fun recognizeEveryPhotoInTheGalleryFolders() {
         folders.map { File(RepoPaths.root, it) }.filter { it.isDirectory }.forEach { dir ->
-            val frames = File(dir, "frames.json").takeIf { it.isFile }?.let { JSONObject(it.readText()) }
+            val frames = BoardPhotoFixture.perspectiveFramesIn(dir)
             val results = JSONArray()
             dir.listFiles { f -> isPhoto(f) }.orEmpty().sortedBy { it.name }.forEach { file ->
                 val img = BoardPhotoFixture.loadPixels(file) ?: return@forEach
-                results.put(recognize(file.name, img, frames?.optJSONObject(file.name)))
+                results.put(recognize(file.name, img, frames[file.name]))
             }
             val out = File(RepoPaths.root, "app-android/build/reports/board-photos").apply { mkdirs() }.resolve("gallery-${dir.name}.json")
             out.writeText(results.toString(1))
@@ -47,13 +47,8 @@ class BoardPhotoGalleryTest {
         }
     }
 
-    private fun recognize(name: String, img: ArrayPixelSource, frameJson: JSONObject?): JSONObject {
+    private fun recognize(name: String, img: ArrayPixelSource, frame: PerspectiveFrame?): JSONObject {
         val started = System.nanoTime()
-        val frame = frameJson?.let { f ->
-            val q = f.getJSONArray("quad")
-            val pts = (0 until 4).map { i -> q.getJSONArray(i).let { PointF2D(it.getDouble(0).toFloat(), it.getDouble(1).toFloat()) } }
-            PerspectiveFrame(BoardCornerPoints(pts[0], pts[1], pts[2], pts[3]), f.getJSONArray("size").getInt(0), f.getJSONArray("size").getInt(1))
-        }
         val flattened = frame?.let { PerspectiveLocate.locate(img, it) }
         val located = flattened ?: BoardLocator.locate(img)
         val out = JSONObject().put("file", name).put("width", img.width).put("height", img.height)
