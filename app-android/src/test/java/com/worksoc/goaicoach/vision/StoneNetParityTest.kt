@@ -9,7 +9,7 @@ import org.junit.Test
 /**
  * 앱의 신경망 계산([StoneNet] — 순수 Kotlin)이 실험실(PyTorch, `engine-lab/vision/stone_net.py`)과 **같은 로짓**을 내는가(백로그 #263 단계 5).
  *
- * 가중치(`vision/stone-net.bin`)와 대조 벡터(`vision/stone-net-parity.json` — 빈 점·흑·백 조각 넷씩과 그 로짓)는 실험실이 `--export`로 함께 쓴다.
+ * 가중치(앱에 실린 `vision/stone-net.bin` — [StoneNet.bundled]가 읽는 그 파일)와 대조 벡터(`vision/stone-net-parity.json` — 빈 점·흑·백 조각 넷씩과 그 로짓)는 실험실이 `--export`로 함께 쓴다.
  * 둘이 어긋나면 맥에서 잰 성적이 앱의 성적이 아니다.
  */
 class StoneNetParityTest {
@@ -17,7 +17,7 @@ class StoneNetParityTest {
     @Test
     fun kotlinMatchesPyTorch() {
         val loader = javaClass.classLoader!!
-        val net = StoneNet.load(requireNotNull(loader.getResource("vision/stone-net.bin")).readBytes())
+        val net = requireNotNull(StoneNet.bundled) { "앱에 실린 모델을 못 읽었다: ${StoneNet.ResourcePath}" }
         val parity = JSONObject(requireNotNull(loader.getResource("vision/stone-net-parity.json")).readText())
         val inputs = parity.getJSONArray("inputs")
         val expected = parity.getJSONArray("logits")

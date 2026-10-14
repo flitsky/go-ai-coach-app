@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * 인식 결과 — 돌 배치 + 실제로 쓴(가까운 격자에 붙인) 모서리 + 반듯하게 편 판 사진(보정 화면의 비교용)
- * + 샘플 위치를 흔들면 답이 바뀌는 교점([ScanStability], #263 — 보정 화면의 「확인 필요」).
+ * + 「확인 필요」 교점(#263 — 규칙 판독은 샘플 위치를 흔들면 답이 바뀌는 교점[ScanStability], 신경망 판독은 확률이 낮은 교점[StoneNet]).
  */
 internal class BoardScanResult(
     val detected: DetectedBoard,
@@ -24,7 +24,8 @@ internal class BoardScanResult(
 )
 
 /**
- * ⚠️ **기준 이미지 테스트와 같은 경로를 탄다**(백로그 #210) — 순수 Kotlin [BoardLocator] · [BoardWarp] · [GridStoneDetector].
+ * ⚠️ **기준 이미지 테스트와 같은 경로를 탄다**(백로그 #210) — 순수 Kotlin [BoardLocator] · [BoardWarp] · [GridStoneDetector] · [StoneNet]
+ * (돌 판정은 판마다 고른다 — [BoardCandidates.read]).
  * OpenCV는 원근을 걷어낼 틀만 계산한다(#263, [OpenCvPerspective]) — 펴고 찾는 쪽([PerspectiveLocate])은 JVM 테스트가 기록된 틀로 밟는다.
  * 옛 `AndroidBitmapPerspectiveTransformer`(안드로이드 `Matrix`)는 JVM 테스트가 밟을 수 없어서 걷어냈다.
  * 비트맵은 [BoardPhotoDecoder]로 줄여서 넘길 것 — 픽셀을 한 번 배열로 복사한다.
@@ -62,7 +63,7 @@ internal class AndroidBoardVisionScanner(
         val known = located?.takeIf { it.located.corners == refined && it.located.boardSize == boardSize }
         // 손으로 놓은 핀은 격자선 대비를 재지 않는다 — 판독에는 쓰이지 않는 값이라 1로 둔다.
         val reading = known ?: BoardCandidates.read(BoardCandidates.Kind.Manual, pixels, LocatedBoard(refined, boardSize, 1f))
-        BoardScanResult(reading.detected, refined, photo, reading.unstable, reading.confident)
+        BoardScanResult(reading.detected, refined, photo, reading.uncertain, reading.confident)
     }
 
     override suspend fun detectStones(corners: BoardCornerPoints, boardSize: BoardSize): DetectedBoard =

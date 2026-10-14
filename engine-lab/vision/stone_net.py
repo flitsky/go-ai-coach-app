@@ -5,16 +5,21 @@
     ./gradlew :app-android:testDebugUnitTest --tests '*StonePatchExportTest*' -PexportStonePatches   # 조각 내보내기
     engine-lab/vision/.venv/bin/python -I engine-lab/vision/stone_net.py            # 묶음 교차 검증만(규칙과 견주기)
     engine-lab/vision/.venv/bin/python -I engine-lab/vision/stone_net.py --export   # + 전부로 학습해 앱 자산·대조 벡터를 쓴다
+    engine-lab/vision/.venv/bin/python -I engine-lab/vision/stone_net.py --export-only   # 교차 검증 없이 내보내기만
 
 검증은 **묶음(같은 대국) 단위**로 나눈다 — 같은 대국을 다른 각도로 찍은 사진이 학습과 검증에 함께 들어가면 점수가 부풀려진다.
 검증 점수는 검증 묶음의 「정답 모서리」·「앱이 찾은 모서리」 판만 센다(흔든 모서리·변형은 학습에만).
 
 앱 쪽 실행은 순수 Kotlin(`StoneNet`)이다 — 맥 JVM 테스트가 앱과 같은 계산을 한다(LiteRT는 JVM에서 못 돈다 — 함정 91과 같은 사정).
-내보내는 파일: `app-android/src/test/resources/vision/stone-net.bin`(가중치 — 규칙을 넘기 전까지는 앱에 싣지 않는다) ·
+내보내는 파일: `app-android/src/main/resources/vision/stone-net.bin`(가중치 — 앱에 실린다) ·
 `app-android/src/test/resources/vision/stone-net-parity.json`(대조 벡터).
 
 2026-10-14 첫 결과(묶음 5겹, `--warm`): 정답 모서리 신경망 97.3% · 규칙 97.8%, 앱 모서리 98.6% · 99.5%. 규칙의 흔들리는 교점만 신경망에 맡겨도
 99.41% 대 99.48% — 대국 23묶음이라 그림 양식마다 한 장뿐이어서 처음 보는 양식(기준 이미지 04 · 기보 w48)에서 약했다. 사용자 사진을 더해 다시 잰다.
+
+2026-10-15 사용자 사진 39장(S22 Ultra · 찍은 날 19묶음)을 더해 다시 학습(넓게 · 돌리기 없이): 처음 보는 날의 사용자 사진 정답 모서리 신경망 99.92% · 규칙 93.79%
+(판 전체 34/39 대 3/39). 그림 기보는 여전히 규칙이 낫다(기준 이미지 97.7% 대 100%) — 그래서 앱은 **판마다 고른다**(규칙이 흔들리는 판만 신경망, 함정 97):
+정답 모서리 99.37%(판 전체 55/63) · 앱 모서리 99.68%(30/35). 「확인 필요」는 확률 0.9 미만(`StoneNet.DoubtfulBelow`).
 """
 
 import json
@@ -30,16 +35,17 @@ import torch.nn.functional as F
 
 REPO = Path(__file__).resolve().parents[2]
 PATCHES = REPO / "engine-lab/vision/runs/patches"
-# 앱에 싣기 전까지는 테스트 자산에만 둔다 — 묶음 교차 검증에서 규칙을 넘으면 `src/main/assets/vision/`으로 옮겨 판정 경로에 연결한다.
-ASSET = REPO / "app-android/src/test/resources/vision/stone-net.bin"
+# 앱에 실린다(자바 리소스 — 앱과 JVM 테스트가 같은 파일을 같은 길로 읽는다, `StoneNet.bundled`). 규칙이 흔들리는 판만 이것으로 읽는다.
+ASSET = REPO / "app-android/src/main/resources/vision/stone-net.bin"
 PARITY = REPO / "app-android/src/test/resources/vision/stone-net-parity.json"
 SIZE = 24
 SCALE = 64.0
 FOLDS = 5
 EPOCHS = 14
 SEED = 263
-# 실험 설정(명령줄로 바꾼다): 채널 폭 · 학습 횟수 · 따뜻한 조명·대비 변형
-CONFIG = {"width": (8, 16, 16, 32), "epochs": EPOCHS, "warm": True}
+# 실험 설정(명령줄로 바꾼다): 채널 폭 · 학습 횟수 · 따뜻한 조명·대비 변형 · 돌리기(끄면 좌우 뒤집기만)
+# 2026-10-15 사용자 사진 39장을 더해 넷을 견줬다 — 넓게 · 돌리기 없이가 사용자 사진(처음 보는 날)에서 가장 좋았다(99.92% · 판 전체 34/39).
+CONFIG = {"width": (16, 32, 32, 64), "epochs": EPOCHS, "warm": True, "rotate": False}
 LABELS = ".BW"
 
 
@@ -84,13 +90,19 @@ def load():
     x = np.concatenate(xs)
     bg = np.concatenate(bgs)
     xn = ((x.astype(np.float32) - bg[:, :, None, None]) / SCALE).astype(np.float32)
-    return manifest, xn, np.concatenate(ys), np.concatenate(rules), np.array(groups), np.array(variants), np.array(boards), np.concatenate(shaky)
+    y, rule, grp, var, brd, shk = (np.concatenate(ys), np.concatenate(rules), np.array(groups), np.array(variants), np.array(boards),
+                                   np.concatenate(shaky))
+    known = y != 3  # 정답 「모름」(손에 가린 자리)은 학습·채점에서 뺀다
+    return manifest, xn[known], y[known], rule[known], grp[known], var[known], brd[known], shk[known]
 
 
 def augment(x, rng):
-    """돌리기·뒤집기(돌과 격자는 대칭) · 채널별 밝기 배율과 치우침(조명) · 잡음."""
-    k = int(rng.integers(4))
-    x = torch.rot90(x, k, dims=(2, 3))
+    """돌리기·뒤집기(돌과 격자는 대칭) · 채널별 밝기 배율과 치우침(조명) · 잡음.
+
+    `rotate`를 끄면 좌우 뒤집기만 한다 — 비스듬히 찍은 실물 사진은 돌이 먼 쪽(위)으로 솟아 보여서, 위아래가 정보다(함정 94).
+    """
+    if CONFIG["rotate"]:
+        x = torch.rot90(x, int(rng.integers(4)), dims=(2, 3))
     if rng.random() < 0.5:
         x = torch.flip(x, dims=(3,))
     n = x.shape[0]
@@ -133,8 +145,11 @@ def train(x, y, seed, epochs=None):
 
 
 def predict(model, x):
+    """판정과 그 확률(소프트맥스 최댓값) — 확률은 앱의 「확인 필요」 문턱을 정하는 데 쓴다."""
     with torch.no_grad():
-        return torch.cat([model(torch.from_numpy(x[i:i + 4096])).argmax(1) for i in range(0, len(x), 4096)]).numpy()
+        p = torch.cat([F.softmax(model(torch.from_numpy(x[i:i + 4096])), 1) for i in range(0, len(x), 4096)])
+    best = p.max(1)
+    return best.indices.numpy(), best.values.numpy()
 
 
 def cross_validate(manifest, x, y, rules, groups, variants, boards):
@@ -145,28 +160,33 @@ def cross_validate(manifest, x, y, rules, groups, variants, boards):
     real = np.isin(variants, ["truth", "auto"])
     rows = []
     cv_pred = np.full(len(y), -1)
+    cv_prob = np.zeros(len(y), np.float32)
     for f in range(FOLDS):
         tr, te = folds != f, (folds == f) & real
         t0 = time.time()
         model = train(x[tr], y[tr], SEED + f)
-        pred = predict(model, x[te])
+        pred, prob = predict(model, x[te])
         cv_pred[te] = pred
+        cv_prob[te] = prob
         for b in np.unique(boards[te]):
             sel = boards[te] == b
             m = manifest[b]
             yy = y[te][sel]
-            rows.append(dict(key=m["key"], variant=m["variant"], n=int(m["n"]), net=int((pred[sel] == yy).sum()),
+            rows.append(dict(key=m["key"], set=m["set"], variant=m["variant"], n=int(m["n"]), net=int((pred[sel] == yy).sum()),
                              rules=int((rules[te][sel] == yy).sum()), total=int(sel.sum())))
         print(f"  묶음 {f + 1}/{FOLDS}: 학습 {tr.sum()}조각 · {time.time() - t0:.0f}초", flush=True)
-    return rows, cv_pred
+    return rows, cv_pred, cv_prob
 
 
 def report(rows):
     lines = ["| 사진 | 모서리 | 신경망 | 규칙 | 교점 |", "| --- | --- | --- | --- | --- |"]
     for r in sorted(rows, key=lambda r: (r["key"], r["variant"])):
         lines.append(f"| {r['key']} | {r['variant']} | {100 * r['net'] / r['total']:.1f}% | {100 * r['rules'] / r['total']:.1f}% | {r['total']} |")
-    for v in ("truth", "auto"):
-        sel = [r for r in rows if r["variant"] == v]
+    # 묶음별(기준 이미지 · 인터넷 · 사용자 사진)로도 — 그림 양식과 실물 사진은 성적이 따로 논다
+    for s, v in [(None, "truth"), (None, "auto")] + [(s, v) for s in sorted({r["set"] for r in rows}) for v in ("truth", "auto")]:
+        sel = [r for r in rows if r["variant"] == v and s in (None, r["set"])]
+        if not sel:
+            continue
         net = sum(r["net"] for r in sel)
         rul = sum(r["rules"] for r in sel)
         tot = sum(r["total"] for r in sel)
@@ -175,7 +195,7 @@ def report(rows):
         better = sum(r["net"] > r["rules"] for r in sel)
         worse = sum(r["net"] < r["rules"] for r in sel)
         lines.append("")
-        lines.append(f"**{v}**: 신경망 {100 * net / tot:.2f}% · 규칙 {100 * rul / tot:.2f}% · 판 전체가 맞은 판 신경망 {full_net}/{len(sel)} · 규칙 {full_rul}/{len(sel)} · "
+        lines.append(f"**{s or '전체'} {v}**: 신경망 {100 * net / tot:.2f}% · 규칙 {100 * rul / tot:.2f}% · 판 전체가 맞은 판 신경망 {full_net}/{len(sel)} · 규칙 {full_rul}/{len(sel)} · "
                      f"신경망이 나은 판 {better} · 못한 판 {worse}")
     return "\n".join(lines)
 
@@ -202,23 +222,28 @@ def export(model, x, y):
 
 def main(argv):
     torch.set_num_threads(8)
-    if "--wide" in argv:
-        CONFIG["width"] = (16, 32, 32, 64)
+    if "--narrow" in argv:
+        CONFIG["width"] = (8, 16, 16, 32)
     if "--no-warm" in argv:
         CONFIG["warm"] = False
+    if "--rotate" in argv:
+        CONFIG["rotate"] = True
     for a in argv:
         if a.startswith("--epochs="):
             CONFIG["epochs"] = int(a.split("=")[1])
     print("설정", CONFIG)
     manifest, x, y, rules, groups, variants, boards, shaky = load()
+    if "--export-only" in argv:  # 교차 검증 없이 전부로 학습해 내보내기만(설정을 이미 골랐을 때)
+        export(train(x, y, SEED), x, y)
+        return
     print(f"조각 {len(y)}개 · 판 {len(manifest)}벌 · 묶음 {len(set(groups))}개 · 빈 점 {np.mean(y == 0):.0%} 흑 {np.mean(y == 1):.0%} 백 {np.mean(y == 2):.0%}")
-    rows, cv_pred = cross_validate(manifest, x, y, rules, groups, variants, boards)
+    rows, cv_pred, cv_prob = cross_validate(manifest, x, y, rules, groups, variants, boards)
     text = report(rows)
     out = REPO / "engine-lab/vision/runs" / time.strftime("stone-net-%Y%m%d-%H%M%S")
     out.mkdir(parents=True, exist_ok=True)
     (out / "report.md").write_text(f"## 신경망 돌 판정 — 묶음 {FOLDS}겹 교차 검증(검증 묶음은 학습에 안 씀)\n\n{text}\n", encoding="utf-8")
     print(text)
-    np.savez_compressed(out / "cv.npz", y=y, rules=rules, net=cv_pred, variants=variants, boards=boards, shaky=shaky)
+    np.savez_compressed(out / "cv.npz", y=y, rules=rules, net=cv_pred, prob=cv_prob, variants=variants, boards=boards, shaky=shaky)
     print(f"→ {out.relative_to(REPO)}/report.md")
     if "--export" in argv:
         model = train(x, y, SEED)

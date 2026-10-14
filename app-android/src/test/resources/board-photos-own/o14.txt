@@ -5,7 +5,7 @@
 image: o14.png
 size: 19
 corners: 594.7,117.1 1446.0,98.6 1722.9,956.1 210.6,944.8
-gate: baseline
+gate: gated
 ....WBBBW.WW.......
 .....WBWWWWBWWW..WW
 .WW.WWBWBBBBBBBWWWB

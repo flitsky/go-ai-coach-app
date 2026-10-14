@@ -5,7 +5,7 @@
 image: o17.png
 size: 19
 corners: 521.8,72.6 1422.6,66.9 1795.8,963.8 292.2,1048.6
-gate: baseline
+gate: gated
 .BW................
 .BW.WWWB...WW...W..
 ..BW.WBBBBBWBWWWBW.

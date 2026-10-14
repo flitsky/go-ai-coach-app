@@ -36,7 +36,7 @@ app-android/src/main/jniLibs/
 *.bin.gz
 *.onnx
 # 예외: 직접 학습한 돌 판정 가중치(33KB, 백로그 #263) — 대조 테스트(StoneNetParityTest)가 읽는다. KataGo 모델과 달리 우리 것이고 작다.
-!app-android/src/test/resources/vision/stone-net.bin
+!app-android/src/main/resources/vision/stone-net.bin
 
 # Logs and local data
 logs/

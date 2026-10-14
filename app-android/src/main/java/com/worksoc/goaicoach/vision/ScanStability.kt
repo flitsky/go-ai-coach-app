@@ -27,6 +27,14 @@ internal object ScanStability {
      */
     const val ConfidentRatio = 0.08f
 
+    /**
+     * 흔들리는 교점이 이 비율 이하인 판은 **규칙이 읽은 답을 그대로 쓴다** — 넘으면 신경망([StoneNet])이 읽는다([BoardCandidates.read] · 함정 97).
+     * 그림 기보·화면 캡처·위에서 찍은 깨끗한 사진은 규칙이 흔들림 없이(0~3%) 거의 다 맞히고, 신경망은 처음 보는 그림 양식에서 틀린다.
+     * 실물 사진은 규칙이 10~35% 흔들리고 백돌을 놓친다.
+     * ⚠️ 4%는 스레드가 정한 값이다(2026-10-15 교차 검증 — 신경망이 틀린 그림 판은 2.8% 이하, 규칙이 크게 틀린 판은 5.3% 이상이라 그 가운데).
+     */
+    const val RulesSteadyRatio = 0.04f
+
     /** 판이 사진에서 이만큼(넓이 비율)은 차지해야 확실하다 — 작게 찍힌 판·배경을 판으로 잡은 경우(갤러리 f09)를 거른다. */
     const val MinCoverage = 0.2f
 
@@ -58,6 +66,9 @@ internal object ScanStability {
         }
         return out
     }
+
+    fun rulesAreSteady(unstable: Set<BoardCoordinate>, boardSize: BoardSize): Boolean =
+        unstable.size <= RulesSteadyRatio * boardSize.value * boardSize.value
 
     fun isConfident(unstable: Set<BoardCoordinate>, boardSize: BoardSize): Boolean =
         unstable.size <= ConfidentRatio * boardSize.value * boardSize.value

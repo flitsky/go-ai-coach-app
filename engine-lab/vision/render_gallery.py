@@ -74,7 +74,7 @@ def board(r):
                 cv2.circle(img, ctr, rad, (245, 245, 245), -1, cv2.LINE_AA)
                 cv2.circle(img, ctr, rad, (90, 90, 90), 1, cv2.LINE_AA)
     half = round(step / 2)
-    for row, col in r.get("unstable", []):
+    for row, col in r.get("uncertain", []):
         x, y = round(pad + col * step), round(pad + row * step)
         cv2.rectangle(img, (x - half, y - half), (x + half, y + half), (0, 143, 255), 2)
     return img
@@ -146,8 +146,8 @@ def main(argv):
         if r.get("located"):
             tags.append(f'<span class="tag">{r["boardSize"]}줄 · 흑 {r["black"]} 백 {r["white"]}</span>')
             tags.append('<span class="tag ok">확실 → 핀 화면 건너뜀</span>' if r.get("confident") else '<span class="tag warn">불확실 → 핀 화면</span>')
-            if r.get("unstable"):
-                tags.append(f'<span class="tag warn">확인 필요 {len(r["unstable"])}곳</span>')
+            if r.get("uncertain"):
+                tags.append(f'<span class="tag warn">확인 필요 {len(r["uncertain"])}곳</span>')
         else:
             tags.append('<span class="tag warn">판을 못 찾음 → 핀을 직접</span>')
         if r.get("perspective"):

@@ -36,11 +36,11 @@ class BoardPhotoRobustnessTest {
             BoardPhotoVariants.all(image, f.corners).forEach { v ->
                 val name = "${f.key} ${v.name}"
                 val total = (f.boardSize.value * f.boardSize.value).toFloat()
-                val manual = f.score(GridStoneDetector.detect(BoardWarp.rectify(v.image, v.corners, f.boardSize)).stones).first / total
+                val manual = f.score(BoardPhotoFixture.readLikeTheApp(v.image, v.corners, f.boardSize)).first / total
                 if (name !in manualExempt && manual < 0.98f) failures += "$name 정답 모서리 ${"%.1f".format(manual * 100)}%"
                 val located = BoardLocator.locate(v.image)
                 val auto = if (located != null && located.boardSize == f.boardSize) {
-                    f.score(GridStoneDetector.detect(BoardWarp.rectify(v.image, located.corners, located.boardSize)).stones).first / total
+                    f.score(BoardPhotoFixture.readLikeTheApp(v.image, located.corners, located.boardSize)).first / total
                 } else {
                     0f
                 }

@@ -23,7 +23,8 @@ class BoardPhotoReportTest {
     @Test
     fun measureEverySetThatHasImages() {
         BoardPhotoSet.entries.forEach { set ->
-            val fixtures = BoardPhotoFixture.set(set).filter { it.image != null }
+            // 사진은 한 장씩 읽고 놓는다 — 사용자 사진(2048px) 39장을 한꺼번에 들면 테스트 힙(512MB)을 넘는다
+            val fixtures = BoardPhotoFixture.set(set).filter { it.hasImage }
             if (fixtures.isEmpty()) return@forEach
             if (set == BoardPhotoSet.Press) {
                 // 기준 이미지와 변형의 틀은 실험실이 테스트 리소스로 기록해 둔다(`measure_perspective.py --export`) — 키는 "01" · "01 사다리꼴 12%".
@@ -43,7 +44,7 @@ class BoardPhotoReportTest {
                 val dir = File(RepoPaths.root, set.imageDir)
                 val frames = BoardPhotoFixture.perspectiveFramesIn(dir)
                 val lattices = BoardPhotoFixture.latticeFramesIn(dir)
-                write(set.name, fixtures.map { measure(it, it.key, it.image!!, it.corners, frames[it.imageName], lattices[it.imageName]) })
+                write(set.name, fixtures.map { measure(it, it.key, it.loadImageOnce()!!, it.corners, frames[it.imageName], lattices[it.imageName]) })
             }
         }
     }
@@ -67,10 +68,12 @@ class BoardPhotoReportTest {
         val locateMillis: Long,
         /** [LocatedBoard.confidence] — 판 안 격자선의 세기 대비. 핀 화면을 건너뛸지 가를 후보(#263 단계 6). */
         val confidence: Float?,
-        /** 자동 모서리로 읽은 판에서, 샘플 위치를 0.1칸 흔들면 답이 바뀌는 교점 수(#263 단계 6 — 확신도 후보). */
+        /** 자동 모서리로 읽은 판에서, 샘플 위치를 0.1칸 흔들면 규칙의 답이 바뀌는 교점 수(#263 단계 6 — 확신도). */
         val unstable: Int?,
-        /** 그 흔들리는 교점 가운데 실제로 틀린 것 / 실제로 틀린 교점 수. */
-        val unstableWrong: String?,
+        /** 자동 모서리 판을 무엇이 읽었나 — 규칙 · 신경망(규칙이 흔들리는 판, 함정 97). */
+        val reader: String?,
+        /** 앱의 「확인 필요」 교점 가운데 실제로 틀린 것 / 실제로 틀린 교점 수 / 「확인 필요」 수. */
+        val uncertainWrong: String?,
     )
 
     /** [f]는 정답 배치, [img]·[corners]는 잴 사진과 그 사진의 정답 모서리(변형이면 변형된 모서리). [frame]이 있으면 펴고 찾는다. */
@@ -89,7 +92,8 @@ class BoardPhotoReportTest {
         val locateMillis = (System.nanoTime() - started) / 1_000_000
         val sizeMatches = located?.boardSize == f.boardSize
         val cornerError = located?.takeIf { sizeMatches }?.let { worstCornerError(it.corners, corners) / cell }
-        val autoAccuracy = located?.takeIf { sizeMatches }?.let { accuracy(f, detect(f, img, it.corners)) }
+        val auto = located?.takeIf { sizeMatches }?.let { BoardCandidates.read(BoardCandidates.Kind.Manual, img, it) }
+        val autoAccuracy = auto?.let { accuracy(f, it.detected.stones) }
         val manual = detect(f, img, corners)
         return Row(
             key = key,
@@ -102,22 +106,19 @@ class BoardPhotoReportTest {
             errorKinds = errorKinds(f, manual),
             locateMillis = locateMillis,
             confidence = located?.confidence,
-            unstable = located?.takeIf { sizeMatches }?.let { unstablePoints(f, img, it.corners).size },
-            unstableWrong = located?.takeIf { sizeMatches }?.let { loc ->
-                val auto = detect(f, img, loc.corners)
+            unstable = auto?.unstable?.size,
+            reader = auto?.let { if (it.byNet) "신경망" else "규칙" },
+            uncertainWrong = auto?.let { r ->
                 val wrong = (0 until n * n).map { BoardCoordinate(row = it / n, column = it % n) }
-                    .filter { c -> !f.isUnknown(c.column, c.row) && f.truthAt(c.column, c.row) != auto[c] }.toSet()
-                "${(unstablePoints(f, img, loc.corners) intersect wrong).size}/${wrong.size}"
+                    .filter { c -> !f.isUnknown(c.column, c.row) && f.truthAt(c.column, c.row) != r.detected.stones[c] }.toSet()
+                "${(r.uncertain intersect wrong).size}/${wrong.size}/${r.uncertain.size}"
             },
         )
     }
 
-    /** [ScanStability] — 앱의 「확인 필요」·핀 건너뛰기와 같은 계산. */
-    private fun unstablePoints(f: BoardPhotoFixture, img: ArrayPixelSource, corners: BoardCornerPoints): Set<BoardCoordinate> =
-        ScanStability.unstablePoints(img, corners, f.boardSize, detect(f, img, corners))
-
+    /** 앱의 판독 — 판마다 규칙 또는 신경망([BoardCandidates.read]). */
     private fun detect(f: BoardPhotoFixture, img: ArrayPixelSource, corners: BoardCornerPoints) =
-        GridStoneDetector.detect(BoardWarp.rectify(img, corners, f.boardSize)).stones
+        BoardPhotoFixture.readLikeTheApp(img, corners, f.boardSize)
 
     private fun accuracy(f: BoardPhotoFixture, stones: Map<BoardCoordinate, StoneColor>): Float =
         f.score(stones).first.toFloat() / (f.boardSize.value * f.boardSize.value)
@@ -147,8 +148,8 @@ class BoardPhotoReportTest {
     private fun render(name: String, rows: List<Row>): String = buildString {
         appendLine("## $name — ${rows.size}장")
         appendLine()
-        appendLine("| 사진 | 줄 | 판 찾음 | 확신도 | 흔들림 교점 | 흔들림∩틀림/틀림 | 모서리 오차(칸) | 자동 인식률 | 정답 모서리 인식률 | 틀린 종류(정답 모서리) | locate ms(JVM) |")
-        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        appendLine("| 사진 | 줄 | 판 찾음 | 확신도 | 흔들림 교점 | 판정 | 확인 필요∩틀림/틀림/확인 필요 | 모서리 오차(칸) | 자동 인식률 | 정답 모서리 인식률 | 틀린 종류(정답 모서리) | locate ms(JVM) |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
         rows.forEach { r ->
             val found = when {
                 !r.located -> "✗"
@@ -156,7 +157,7 @@ class BoardPhotoReportTest {
                 else -> "○"
             }
             appendLine(
-                "| ${r.key} | ${r.size} | $found | ${r.confidence?.let { "%.2f".format(it) } ?: "-"} | ${r.unstable ?: "-"} | ${r.unstableWrong ?: "-"} | " +
+                "| ${r.key} | ${r.size} | $found | ${r.confidence?.let { "%.2f".format(it) } ?: "-"} | ${r.unstable ?: "-"} | ${r.reader ?: "-"} | ${r.uncertainWrong ?: "-"} | " +
                     "${r.cornerErrorCells?.let { "%.2f".format(it) } ?: "-"} | " +
                     "${r.autoAccuracy?.let(::pct) ?: "-"} | ${pct(r.manualAccuracy)} | " +
                     "${r.errorKinds.entries.joinToString(" ") { "${it.key} ${it.value}" }.ifEmpty { "-" }} | ${r.locateMillis} |",

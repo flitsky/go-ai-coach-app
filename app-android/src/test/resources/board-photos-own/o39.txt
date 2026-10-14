@@ -5,7 +5,7 @@
 image: o39.png
 size: 19
 corners: 589.6,95.8 1597.6,123.8 1929.0,1098.1 243.2,1032.0
-gate: baseline
+gate: gated
 ...................
 .W..B....WB....B...
 W.WWB.B..WB.B..BW..

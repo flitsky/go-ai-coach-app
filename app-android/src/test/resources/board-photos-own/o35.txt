@@ -5,7 +5,7 @@
 image: o35.png
 size: 19
 corners: 606.5,103.2 1585.0,126.0 2021.5,973.5 298.7,986.6
-gate: baseline
+gate: gated
 WWW....B....BWWWWWW
 WWW....BBBBB.BWWWWW
 WWW....WWWWWB.BWWWW

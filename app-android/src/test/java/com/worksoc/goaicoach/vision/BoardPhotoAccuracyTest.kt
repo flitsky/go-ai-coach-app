@@ -34,7 +34,7 @@ class BoardPhotoAccuracyTest {
     }
 
     private fun accuracy(f: BoardPhotoFixture, image: ArrayPixelSource, corners: BoardCornerPoints): Pair<Float, List<String>> {
-        val stones = GridStoneDetector.detect(BoardWarp.rectify(image, corners, f.boardSize)).stones
+        val stones = BoardPhotoFixture.readLikeTheApp(image, corners, f.boardSize)
         val (correct, wrong) = f.score(stones)
         return correct.toFloat() / (f.boardSize.value * f.boardSize.value) to wrong
     }

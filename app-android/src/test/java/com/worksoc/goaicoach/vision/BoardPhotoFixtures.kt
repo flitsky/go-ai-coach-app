@@ -157,6 +157,10 @@ internal data class BoardPhotoFixture(
             }
         }
 
+        /** 앱과 같은 길로 돌 읽기 — 핀(모서리)을 받은 뒤 보정 화면이 보여 주는 답([BoardCandidates.read] — 판마다 규칙 또는 신경망). */
+        fun readLikeTheApp(image: PixelSource, corners: BoardCornerPoints, boardSize: BoardSize): Map<BoardCoordinate, StoneColor> =
+            BoardCandidates.read(BoardCandidates.Kind.Manual, image, LocatedBoard(corners, boardSize, 1f)).detected.stones
+
         /** 앱과 같은 길로 판 찾기([BoardCandidates] — `AndroidBoardVisionScanner.locate`가 부르는 것). */
         fun locateLikeTheApp(image: ArrayPixelSource, frame: PerspectiveFrame?, lattice: LatticeFrame? = null): LocatedBoard? =
             BoardCandidates.locate(image, frame) { lattice }?.located

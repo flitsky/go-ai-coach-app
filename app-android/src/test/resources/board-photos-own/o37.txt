@@ -5,7 +5,7 @@
 image: o37.png
 size: 19
 corners: 627.4,100.8 1539.1,104.8 1937.2,845.5 370.9,875.5
-gate: baseline
+gate: gated
 ...............W...
 ..WWW....BB..BW.W..
 .WWBBWW.WW..B.BWWW.

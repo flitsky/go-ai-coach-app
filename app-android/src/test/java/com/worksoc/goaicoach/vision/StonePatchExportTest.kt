@@ -27,6 +27,8 @@ import org.junit.Test
  * 조각마다 규칙 판정([GridStoneDetector])도 함께 적는다 — 실험실이 같은 조각에서 신경망과 규칙을 견준다.
  *
  * 묶음(`group`)은 같은 대국이면 같다(w10 = w08) — 실험실이 묶음 단위로 나눠 검증해야 같은 대국이 학습과 검증에 함께 들어가지 않는다.
+ * 사용자 사진은 **같은 날 찍은 것끼리** 한 묶음이다(`sources.json`의 찍은 날짜) — 같은 저녁이면 같은 판·조명·이어지는 수순이라,
+ * 나눠 넣으면 신경망이 처음 보는 사진이 아니게 된다.
  */
 class StonePatchExportTest {
 
@@ -36,7 +38,7 @@ class StonePatchExportTest {
     @Test
     fun exportPatchesForTraining() {
         assumeTrue("-PexportStonePatches를 줄 때만 돈다", System.getProperty("exportStonePatches") == "true")
-        val fixtures = BoardPhotoSet.entries.flatMap { set -> BoardPhotoFixture.set(set) }.filter { it.image != null }
+        val fixtures = BoardPhotoSet.entries.flatMap { set -> BoardPhotoFixture.set(set) }.filter { it.hasImage }
         assumeTrue("정답 있는 사진이 없다", fixtures.isNotEmpty())
         out.deleteRecursively()
         out.mkdirs()
@@ -45,7 +47,7 @@ class StonePatchExportTest {
         val pressLattices = BoardPhotoFixture.latticeFramesIn(res)
         val folderFrames = HashMap<BoardPhotoSet, Pair<Map<String, PerspectiveFrame>, Map<String, LatticeFrame>>>()
         fixtures.forEach { f ->
-            val img = f.image!!
+            val img = f.loadImageOnce()!!
             val group = groupOf(f)
             val key = "${f.set.name.lowercase()}-${f.key}"
             write(key, group, "truth", f, img, f.corners)
@@ -73,10 +75,20 @@ class StonePatchExportTest {
     }
 
     private fun groupOf(f: BoardPhotoFixture): String {
+        if (f.set == BoardPhotoSet.Own) return "own-${ownDays[f.key] ?: f.key}"
         // 같은 대국이면 같은 묶음 — `same-as`가 가리키는 정답(w10 → w08)
         val text = javaClass.classLoader!!.getResource("${f.set.answerDir}/${f.key}.txt")!!.readText()
         val base = Regex("""(?m)^same-as:\s*(\S+)""").find(text)?.groupValues?.get(1) ?: f.key
         return "${f.set.name.lowercase()}-$base"
+    }
+
+    /** 사용자 사진 키 → 찍은 날(`2026-08-26`) — `scripts/prepare-own-board-photos.py`가 적은 `sources.json`. */
+    private val ownDays: Map<String, String> by lazy {
+        val file = File(RepoPaths.root, "${BoardPhotoSet.Own.imageDir}/sources.json")
+        if (!file.exists()) return@lazy emptyMap()
+        val list = JSONArray(file.readText())
+        (0 until list.length()).map { list.getJSONObject(it) }
+            .associate { it.getString("key") to it.getString("taken").take(10).replace(':', '-') }
     }
 
     private fun jitter(c: BoardCornerPoints, n: Int, random: Random): BoardCornerPoints {
@@ -109,7 +121,8 @@ class StonePatchExportTest {
                 for (col in 0 until n) {
                     val idx = row * n + col
                     rec.clear()
-                    rec.put(code(f.truthAt(col, row)).toByte())
+                    // 정답 「모름」(?)은 3 — 실험실이 학습·채점에서 뺀다
+                    rec.put((if (f.isUnknown(col, row)) 3 else code(f.truthAt(col, row))).toByte())
                     rec.put(code(rules[BoardCoordinate(row = row, column = col)]).toByte())
                     rec.put(row.toByte()).put(col.toByte())
                     // 다섯째 바이트: 판 크기(아래 7비트) + 흔들림(맨 위 비트)

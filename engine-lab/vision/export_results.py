@@ -164,7 +164,7 @@ def board_panel(r):
     rad = step * STONE
     # 확인 필요 네모는 **돌 밑에** 돌 크기로 — 돌 위에 칸 크기로 그렸더니 이웃 네모끼리 붙어 주황 그물이 되고 백돌을 깎았다(QA: w37·w50·w51).
     # 돌이 있으면 네 귀만 비죽 나오고, 빈 점이면 네모가 다 보인다.
-    for row, col in r.get("unstable", []):
+    for row, col in r.get("uncertain", []):
         x, y = pad + col * step, pad + row * step
         draw.rectangle([x - rad, y - rad, x + rad, y + rad], outline=UNSURE, width=3)
     for row, line in enumerate(r["grid"]):
@@ -202,10 +202,12 @@ def compose(path, r):
         sure = r.get("confident")
         verdict = "확실 → 핀 화면 건너뜀" if sure else "불확실 → 핀 화면에서 모서리 확인"
         parts = [f"{r['boardSize']}줄", f"흑 {r['black']}", f"백 {r['white']}", verdict]
-        if r.get("unstable"):
-            parts.append(f"확인 필요 {len(r['unstable'])}곳")
+        if r.get("uncertain"):
+            parts.append(f"확인 필요 {len(r['uncertain'])}곳")
         if r.get("perspective"):
             parts.append("원근 폄")
+        if r.get("reader") == "net":
+            parts.append("신경망 판독")
         draw.text((MARGIN, 60), "  ·  ".join(parts), font=font(22, bold=True), fill=SURE if sure else UNSURE)
     else:
         draw.text((MARGIN, 60), "판을 못 찾음 → 핀을 직접 놓는 화면으로", font=font(22, bold=True), fill=UNSURE)
@@ -226,7 +228,7 @@ def compose(path, r):
               "왼쪽: 원본 위에 앱이 찾은 격자(초록 = 확실, 주황 = 불확실) · 회색 = 사진 바깥(격자가 사진 밖까지 이어진 자리) · "
               "모서리 글자는 오른쪽 판의 같은 좌표", font=legend, fill=MUTED)
     draw.text((MARGIN, HEADER + PANEL + 34),
-              "오른쪽: 앱이 읽은 판 · 주황 네모 = 확인 필요(모서리를 조금 흔들면 답이 바뀌는 교점 — 돌이 있으면 네 귀만 보인다)",
+              "오른쪽: 앱이 읽은 판 · 주황 네모 = 확인 필요(규칙 판독은 모서리를 흔들면 답이 바뀌는 교점, 신경망 판독은 확률이 낮은 교점 — 돌이 있으면 네 귀만 보인다)",
               font=legend, fill=MUTED)
     return canvas
 

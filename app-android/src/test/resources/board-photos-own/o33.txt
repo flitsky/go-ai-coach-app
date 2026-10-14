@@ -5,7 +5,7 @@
 image: o33.png
 size: 19
 corners: 667.3,115.3 1613.9,151.6 1952.7,1020.0 412.7,981.3
-gate: baseline
+gate: gated
 .BBWBB.............
 .BWWW.WWW..WW...WWW
 BBW.WWBWBWWWBWWWBBW
