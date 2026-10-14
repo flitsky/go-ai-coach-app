@@ -544,6 +544,9 @@ val architectureContractScannedTrees = listOf(
 
 tasks.withType<Test>().configureEach {
     systemProperty("repo.root", rootDir.absolutePath)
+    // 신경망 돌 판정의 학습 데이터 내보내기(StonePatchExportTest, 백로그 #263) — 판 174벌을 다시 읽어 수십 MB를 쓰므로 `make test`에서는 돌지 않고,
+    // `-PexportStonePatches`를 줄 때만 돈다(engine-lab/vision/README.md 「신경망 돌 판정」).
+    systemProperty("exportStonePatches", project.hasProperty("exportStonePatches"))
     inputs.files(architectureContractScannedTrees.map { dir -> fileTree(dir) })
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)

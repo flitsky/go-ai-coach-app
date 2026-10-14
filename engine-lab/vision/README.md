@@ -66,6 +66,24 @@ engine-lab/vision/.venv/bin/python -I engine-lab/vision/export_results.py test-f
 (`BoardLocator.locateFromLattice`). 앱 쪽은 `OpenCvLattice`(함수 단위로 같은 계산 — 기기 테스트 `OpenCvLatticeDeviceTest`가 변형 30장으로 대조).
 첫 판독이 확실하지 않을 때만 후보로 들어간다(`BoardCandidates`). 판이 작고 흐린 저해상도 사진(500px)에서는 못 잡는다 — 그때는 다른 후보가 이긴다.
 
+## 신경망 돌 판정 (`stone_net.py`, 백로그 #263 단계 5 — 2026-10-14 첫 학습)
+
+교점마다 판을 편 그림에서 ±0.75칸을 24×24로 잘라(`StonePatches` — 앱 판정과 **같은 함수**) 빈 점·흑·백으로 가르는 작은 합성곱망이다(가중치 1만 개 남짓, 33KB).
+
+```sh
+./gradlew :app-android:testDebugUnitTest --tests '*StonePatchExportTest*' -PexportStonePatches   # 정답 있는 사진 → runs/patches/(교점 조각)
+engine-lab/vision/.venv/bin/python -I engine-lab/vision/stone_net.py            # 대국 묶음 5겹 교차 검증 — 규칙과 같은 조각에서 견준다
+engine-lab/vision/.venv/bin/python -I engine-lab/vision/stone_net.py --export   # + 전부로 학습 → 테스트 자산(가중치 · 대조 벡터)
+```
+
+- 학습 데이터: 정답 있는 사진마다 정답 모서리 · 앱이 찾은 모서리 · ±0.2칸 흔든 모서리 넷 · (기준 이미지) 변형 30장. 학습 때 돌리기·뒤집기·밝기·노란 조명 변형.
+- 검증은 **대국 묶음 단위**(같은 대국을 다른 각도로 찍은 사진은 한 묶음)로 — 학습에 안 쓴 대국으로 잰다.
+- 앱 쪽 계산은 순수 Kotlin(`StoneNet`) — 맥 JVM 테스트가 앱과 같은 계산을 한다. `StoneNetParityTest`가 PyTorch와 같은 로짓을 내는지 본다. 실행 엔진 `.so`는 없다.
+- **첫 결과(2026-10-14)**: 정답 모서리 신경망 97.3% · 규칙 97.8%, 앱 모서리 98.6% · 99.5% — 아직 규칙보다 낮다. 규칙이 흔들리는 교점만 맡겨도 99.41% 대 99.48%.
+  실물 판 사진은 거의 같고(w08~w33 100%), **처음 보는 그림 양식**(기준 이미지 04 인쇄 90% · 기보 w48 84%)에서 약하다 — 대국 23묶음이라 양식마다 한 장뿐이다.
+  망을 키우거나 오래 학습해도 그대로였다(데이터 다양성이 한계). 그래서 **앱 판정 경로에는 아직 쓰지 않고** 모델도 테스트 자산에만 둔다.
+  사용자 사진(S23)과 합성 데이터로 다시 학습해 규칙을 넘으면 `src/main/assets/vision/`으로 옮겨 연결한다.
+
 ## 지금까지 잰 것 (2026-10-13, 기준 이미지 5장 + 변형 30장)
 
 - **외곽 사각형(윤곽선)** — 바깥 격자선에 0.3칸 안으로 붙은 것이 35장 중 4장. 판 가장자리·사진 테두리를 잡을 뿐이라 **접었다**.

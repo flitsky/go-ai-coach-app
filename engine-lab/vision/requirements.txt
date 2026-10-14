@@ -2,3 +2,5 @@
 opencv-python-headless==4.12.0.88
 numpy==2.2.6
 pillow==12.3.0
+# 신경망 돌 판정 학습(stone_net.py) — 맥에서만 쓴다. 앱에는 들어가지 않는다(앱 쪽 계산은 순수 Kotlin `StoneNet`).
+torch==2.5.1
