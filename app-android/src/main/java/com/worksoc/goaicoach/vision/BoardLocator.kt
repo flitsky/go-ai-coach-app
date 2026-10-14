@@ -768,20 +768,48 @@ internal object BoardLocator {
      * 네 변마다: 바깥 격자선 바로 안쪽(0.3~0.7칸)의 가로지르는 선 증거 − 바로 바깥쪽(−0.7~−0.3칸)의 증거, 그 합.
      * 증거는 그 자리 선 방향에 수직으로 잰 "가는 어두운 선"의 비율이다(돌이 덮은 자리는 0에 가깝다 — 안쪽만 줄 뿐 바깥을 키우지 않는다).
      */
-    private fun terminationScore(g: Gray, n: Int, h: BoardHomography): Float {
-        fun crossingLine(k: Double, j: Double, alongK: Boolean): Float {
-            // alongK = true면 가로선(행 j)을, false면 세로선(열 k)을 그 자리에서 잰다.
-            val p = h.map(k, j)
-            val dir = if (alongK) direction(h, k - 0.2, j, k + 0.2, j) else direction(h, k, j - 0.2, k, j + 0.2)
-            val nx = -dir.second
-            val ny = dir.first
-            val c = g.bilinear(p.x, p.y, Float.NaN)
-            val a = g.bilinear(p.x - 2 * nx, p.y - 2 * ny, Float.NaN)
-            val b = g.bilinear(p.x + 2 * nx, p.y + 2 * ny, Float.NaN)
-            if (c.isNaN() || a.isNaN() || b.isNaN()) return 0f
-            val side = (a + b) / 2f
-            return max(0f, side - c) / max(side, 16f) * 100f
+    /**
+     * (k, j) 자리에서 가로선(alongK = true면 행 j의 선) 또는 세로선(열 k의 선)이 보이는 정도 — 선에 수직으로 ±2px보다 어두운 비율(×100).
+     * 돌이 덮은 자리·사진 밖은 0에 가깝다.
+     */
+    private fun crossingLine(g: Gray, h: BoardHomography, k: Double, j: Double, alongK: Boolean): Float {
+        val p = h.map(k, j)
+        val dir = if (alongK) direction(h, k - 0.2, j, k + 0.2, j) else direction(h, k, j - 0.2, k, j + 0.2)
+        val nx = -dir.second
+        val ny = dir.first
+        val c = g.bilinear(p.x, p.y, Float.NaN)
+        val a = g.bilinear(p.x - 2 * nx, p.y - 2 * ny, Float.NaN)
+        val b = g.bilinear(p.x + 2 * nx, p.y + 2 * ny, Float.NaN)
+        if (c.isNaN() || a.isNaN() || b.isNaN()) return 0f
+        val side = (a + b) / 2f
+        return max(0f, side - c) / max(side, 16f) * 100f
+    }
+
+    /**
+     * 격자선이 바깥 격자선 **밖으로 이어지는** 정도 — 바깥 0.3~0.7칸의 선 증거 ÷ 안쪽 0.3~0.7칸의 선 증거(0이면 밖에 선이 없다).
+     * 진짜 판의 바깥선 밖은 나무 여백·탁자라 선이 없고, 판보다 작은 격자를 판 안쪽에 잡았으면 선이 그대로 이어진다(갤러리 w13: 19줄 판 안의 13줄 조각).
+     * 판 찾기 후보를 견줄 때 쓴다([BoardCandidates]) — 흔들림만으로는 판 안쪽의 작은 조각도 안정해 보인다.
+     */
+    fun continuation(source: PixelSource, corners: BoardCornerPoints, boardSize: BoardSize): Float {
+        val n = boardSize.value
+        val (gray, scale) = Gray.downscaled(source, WorkingMaxDim)
+        val h = BoardHomography.fit(unitCorners(n), corners.toList().map { it.scaled(scale) }) ?: return 0f
+        var inside = 0f
+        var outside = 0f
+        val offsets = doubleArrayOf(0.3, 0.4, 0.5, 0.6, 0.7)
+        for (j in 0 until n) {
+            for (t in offsets) {
+                inside += crossingLine(gray, h, t, j.toDouble(), true) + crossingLine(gray, h, n - 1 - t, j.toDouble(), true) +
+                    crossingLine(gray, h, j.toDouble(), t, false) + crossingLine(gray, h, j.toDouble(), n - 1 - t, false)
+                outside += crossingLine(gray, h, -t, j.toDouble(), true) + crossingLine(gray, h, n - 1 + t, j.toDouble(), true) +
+                    crossingLine(gray, h, j.toDouble(), -t, false) + crossingLine(gray, h, j.toDouble(), n - 1 + t, false)
+            }
         }
+        return if (inside <= 0f) 0f else outside / inside
+    }
+
+    private fun terminationScore(g: Gray, n: Int, h: BoardHomography): Float {
+        fun crossingLine(k: Double, j: Double, alongK: Boolean): Float = crossingLine(g, h, k, j, alongK)
         var score = 0f
         val offsets = doubleArrayOf(0.3, 0.4, 0.5, 0.6, 0.7)
         for (j in 0 until n) {

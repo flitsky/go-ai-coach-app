@@ -8,7 +8,8 @@ import com.worksoc.goaicoach.shared.vision.DetectedBoard
  *
  * 1. 원근 틀이 있으면 펴고 찾고([PerspectiveLocate]), 없으면 그대로 찾는다([BoardLocator]). 그 판독이 확실하면([ScanStability.canSkipPins]) 끝.
  * 2. 아니면 후보를 더 만든다 — **펴지 않고 그대로 찾은 것**, 편 사진의 칸이 납작하면 **정사각이 되게 세로로 늘려 찾은 것**.
- * 3. 모서리를 흔들면 답이 바뀌는 교점의 비율([ScanStability.unstablePoints])이 가장 낮은 후보 — 판을 바르게 찾았으면 흔들려도 같은 답이 나온다.
+ * 3. 격자선이 판 밖으로 이어지지 않는 후보 중([BoardLocator.continuation]) 모서리를 흔들면 답이 바뀌는 교점의 비율([ScanStability.unstablePoints])이
+ *    가장 낮은 후보 — 판을 바르게 찾았으면 흔들려도 같은 답이 나온다.
  *
  * 왜: ① 원근 틀은 사진 전체의 선으로 구하므로, 판이 큰 장면의 작은 일부면 방·바닥의 선이 틀을 정해 판을 일그러뜨린다 — 갤러리 f19(사진의 5%인
  * 9줄 판)는 펴면 사진 전체를 19줄로 읽었고 그대로 찾으면 정확했다. ② 편 사진은 가로세로 비율이 안 맞아 칸이 납작할 수 있고, 판 찾기는
@@ -36,7 +37,7 @@ internal object BoardCandidates {
     private val PlausibleAspect = 0.55f..1.8f
 
     fun locate(source: PixelSource, frame: PerspectiveFrame?, lattice: (() -> LatticeFrame?)? = null): Reading? =
-        choose(candidates(source, frame, lattice))
+        choose(source, candidates(source, frame, lattice))
 
     /** 후보를 만드는 순서대로 — 첫 판독이 확실하면 그것 하나뿐이다. */
     fun candidates(source: PixelSource, frame: PerspectiveFrame?, lattice: (() -> LatticeFrame?)? = null): List<Reading> {
@@ -57,8 +58,21 @@ internal object BoardCandidates {
         }
     }
 
-    /** 흔들림이 가장 적은 후보 — 같으면 앞의 것(펴고 찾은 것)을 남긴다. */
-    fun choose(readings: List<Reading>): Reading? = readings.minByOrNull { it.unstableRatio }
+    /**
+     * 격자선이 판 밖으로 **이어지지 않는** 후보([BoardLocator.continuation] ≤ [MaxContinuation]) 중 흔들림이 가장 적은 것 — 같으면 앞의 것(펴고 찾은 것).
+     * 모두 이어지면 전체에서 고른다.
+     *
+     * ⚠️ 흔들림만 보면 진짜 판 안쪽의 작은 조각이 이긴다 — 조각도 흔들리지 않는다. 갤러리 w13: 19줄 판(흔들림 5.5%) 대신 판 안의 13줄 조각(5.3%),
+     * w52: 19줄 기보 대신 9줄 조각. 진짜 판의 바깥선 밖은 나무 여백·탁자라 선이 없고(정답 후보 52개: 이어짐 중앙값 0.07 · 최대 0.41), 조각은 선이 이어진다(중앙값 0.60).
+     * ⚠️ 0.4는 스레드가 정한 값이다.
+     */
+    fun choose(source: PixelSource, readings: List<Reading>): Reading? {
+        if (readings.size <= 1) return readings.firstOrNull()
+        val closed = readings.filter { BoardLocator.continuation(source, it.located.corners, it.located.boardSize) <= MaxContinuation }
+        return closed.ifEmpty { readings }.minByOrNull { it.unstableRatio }
+    }
+
+    private const val MaxContinuation = 0.4f
 
     /** 찾은 판의 모서리로 돌을 읽고 흔들어 본다 — 앱의 보정 화면이 쓰는 것과 같은 값이다. */
     fun read(kind: Kind, source: PixelSource, located: LocatedBoard): Reading {
