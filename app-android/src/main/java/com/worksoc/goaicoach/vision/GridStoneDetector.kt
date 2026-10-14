@@ -106,11 +106,13 @@ internal object GridStoneDetector {
         (f.brightContrast > 0.22f || f.backgroundSaturation - f.bodySaturation > 0.16f) &&
             f.bodySaturation < max(0.25f, f.backgroundSaturation * 0.6f) &&
             f.visibleArmRatio < 0.5f && f.darkContrast < 0.15f -> StoneColor.White
-        // 노란 조명 아래 백돌 — 백돌이 판의 노란빛을 받아 채도가 0.5대로 오른다. 판(채도 0.9)보다는 확연히 낮고, 훨씬 밝고,
-        // 격자선을 완전히 덮는다(#263, 인터넷 사진 f30: 밝기 대비 0.57 · 채도 0.56 대 0.89 · 팔 0 — 위 규칙의 「채도 < 판×0.6」을 간발로 못 넘어
-        // 백돌 107개가 전부 빈 점이 됐다). 맨 나무는 격자선이 보여서(팔 1.0) 걸리지 않는다.
-        f.brightContrast > 0.35f && f.visibleArmRatio < 0.25f && f.darkContrast < 0f &&
-            f.bodySaturation < f.backgroundSaturation * 0.75f -> StoneColor.White
+        // 노란 조명 아래 백돌 — 백돌이 판의 노란빛을 받아 채도가 0.5대로 오른다. 판(채도 0.9)보다는 확연히 낮고, 훨씬 밝다
+        // (#263, 인터넷 사진 f30: 밝기 대비 0.57 · 채도 0.56 대 0.89 — 위 규칙의 「채도 < 판×0.6」을 간발로 못 넘어 백돌 107개가 전부 빈 점이 됐다).
+        // ⚠️ 팔은 절반까지 봐준다 — **백돌끼리 붙으면 그 사이 틈이 격자선 같은 어두운 골짜기**로 보여 팔이 0.25~0.4가 됐다(f30 백돌 무리 37개를
+        // 놓쳤다: 밝기 대비 0.50 · 채도 판×0.74). 빈 점은 밝기 대비 0 근처 · 팔 1.0 · 채도 판×1.0이라 멀다. 정답 있는 실물 6장에서 새로 백돌이 된
+        // 47점 중 46점이 맞았다(틀린 1점은 시차가 심한 f22). ⚠️ 0.5·0.85는 스레드가 정한 값이다.
+        f.brightContrast > 0.35f && f.visibleArmRatio <= 0.5f && f.darkContrast < 0f &&
+            f.bodySaturation < f.backgroundSaturation * 0.85f -> StoneColor.White
         // 음영 진 백돌 — 화면·기보의 백돌은 회색 그러데이션이라 밝은 판보다 조금 어둡게 나온다(03 오른쪽 변).
         // 채도가 판보다 확 낮고 격자선을 완전히 덮으면 백돌이다. 흑돌(> 0.40)과는 겹치지 않는다.
         f.backgroundSaturation - f.bodySaturation > 0.25f && f.bodySaturation < 0.15f &&
