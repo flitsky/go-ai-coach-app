@@ -42,7 +42,7 @@ engine-lab/vision/.venv/bin/python -I engine-lab/vision/measure_outline.py      
 **앱과 같은 순서로** 인식해 HTML로 늘어놓는다:
 
 ```sh
-engine-lab/vision/.venv/bin/python -I engine-lab/vision/frames_for_dir.py test-fixtures/board-photos-web       # 원근 틀(OpenCV)
+engine-lab/vision/.venv/bin/python -I engine-lab/vision/frames_for_dir.py test-fixtures/board-photos-web       # 원근 틀 + 격자 틀(OpenCV)
 ./gradlew :app-android:testDebugUnitTest --tests '*BoardPhotoGalleryTest*'                                     # 앱 순서로 인식 → build/reports/board-photos/gallery-*.json
 engine-lab/vision/.venv/bin/python -I engine-lab/vision/render_gallery.py test-fixtures/board-photos-web       # → 그 폴더의 gallery.html
 engine-lab/vision/.venv/bin/python -I engine-lab/vision/export_results.py test-fixtures/board-photos-web      # → 사진마다 옆에 <이름>_인식결과.png
@@ -55,6 +55,16 @@ engine-lab/vision/.venv/bin/python -I engine-lab/vision/export_results.py test-f
 갤러리는 사진마다 원본 위 찾은 격자(초록 = 핀 건너뜀, 주황 = 핀 화면) · 읽은 판(주황 네모 = 확인 필요) · 출처·라이선스(`sources*.json`) ·
 평가 버튼과 메모(브라우저에 저장, 「평가 복사」로 한 번에 옮긴다)를 보인다. 인터넷 이미지는 위키미디어 공용·Flickr(Openverse)의 CC·퍼블릭 도메인만 모았다 —
 재배포하지 않는다. ⚠️ 위키미디어는 미리보기 크기를 한꺼번에 요청하면 600초씩 막는다(429) — 2초 간격, 이미 만들어진 크기(1280·960…)부터.
+
+## 격자 틀 — 판 자체의 격자로 펴고 잘라 내기 (`lab/lattice.py`, 2026-10-14)
+
+원근 틀(`lab/perspective.py`)은 사진 전체에서 가장 센 두 방향으로 소실점을 잡는다 — 다리 달린 판의 옆면·다다미·벽이 이기면 엉뚱하게 펴고,
+잘 펴도 칸이 납작하거나 판이 사진의 일부라 격자 찾기가 엉뚱한 곳을 잡았다(갤러리 w07·w08·w09·w13·w33). 격자 틀은 **같은 간격으로 늘어선 선
+무리 둘**을 찾는다: 긴 LSD 선분 쌍마다 소실점(무작위 없음) → 소실점 둘씩 아핀으로 편 뒤 무리마다 선 위치 히스토그램(긴 선은 중앙값의 2배로 자름)의
+자기상관 = 칸 간격과 고른 정도 → 가장 고른 쌍으로 칸이 정사각인 격자 좌표 ↔ 사진 좌표를 만들고, 찾은 줄 + 여유 3칸(표준 크기보다 덜 셌으면 그만큼 더)을
+틀로 잘라 낸다. 결과 JSON에는 찾은 줄 수(`lines`)와 가장 바깥 줄들의 네 모서리(`inner`, 틀 좌표)도 담는다 — 앱이 그 격자로 판 찾기를 **시작**한다
+(`BoardLocator.locateFromLattice`). 앱 쪽은 `OpenCvLattice`(함수 단위로 같은 계산 — 기기 테스트 `OpenCvLatticeDeviceTest`가 변형 30장으로 대조).
+첫 판독이 확실하지 않을 때만 후보로 들어간다(`BoardCandidates`). 판이 작고 흐린 저해상도 사진(500px)에서는 못 잡는다 — 그때는 다른 후보가 이긴다.
 
 ## 지금까지 잰 것 (2026-10-13, 기준 이미지 5장 + 변형 30장)
 
