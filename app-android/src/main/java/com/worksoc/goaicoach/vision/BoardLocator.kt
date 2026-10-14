@@ -67,10 +67,16 @@ internal object BoardLocator {
         findLattice(maps, theta, lattice.pitchU, lattice.pitchV, mask)?.let { lattice = it }
 
         var fitted = snapToGrid(gray, maps.stone!!, lattice.n, lattice.homography)
-        // 한 번에 한 줄씩만 옮기므로 더 안 움직일 때까지 되풀이한다 — 화면 캡처는 판 위 메뉴줄·이름줄이 겹겹이라 두 줄
-        // 어긋나 시작하기도 한다(갤러리 f06: 첫 격자가 맨 위 메뉴줄에서 시작, 한 번 옮기고도 이름줄을 첫 줄로 읽었다).
+        // 판 범위 바로잡기 — ① 격자가 판이 아닌 것을 한 줄 넘게 덮었으면 ±[ExtentReach]줄 안에서 크게 건너뛰고([leaveForeign])
+        // ② 한 줄씩 더 안 움직일 때까지 다듬는다([adjustExtent]). 판 색 기준은 처음 격자에서 한 번만 잰다.
+        // ⚠️ ±4줄 탐색을 되풀이하면 선 점수의 잡음을 따라 격자가 판 밖으로 흘러갔다 — 판 색 기준까지 탁자 쪽으로 바뀌며 기준 이미지 01
+        // 사다리꼴 변형이 8줄 넘게 밀렸다(69.8% → 33.8%). 크게 건너뛰는 것은 색의 증거가 뚜렷할 때 한 번뿐이다.
+        val ref = boardColorOf(gray, lattice.n, fitted)
+        val jumped = leaveForeign(gray, lattice.n, fitted, ref)
+        if (jumped !== fitted) fitted = snapToGrid(gray, maps.stone!!, lattice.n, jumped)
+        // 화면 캡처는 판 위 메뉴줄·이름줄이 겹겹이라 두 줄 어긋나 시작하기도 한다(갤러리 f06) — 한 줄씩 되풀이한다.
         for (step in 0 until MaxExtentSteps) {
-            val shifted = adjustExtent(gray, lattice.n, fitted)
+            val shifted = adjustExtent(gray, lattice.n, fitted, ref)
             if (shifted === fitted) break
             fitted = snapToGrid(gray, maps.stone!!, lattice.n, shifted)
         }
@@ -549,33 +555,156 @@ internal object BoardLocator {
     /** [adjustExtent]를 되풀이하는 최대 횟수(한 번에 한 줄). ⚠️ 3은 스레드가 정한 값이다 — f06은 두 번이면 된다. */
     private const val MaxExtentSteps = 3
 
+    /** [leaveForeign]이 견주는 범위(줄). ⚠️ 4는 스레드가 정한 값이다 — 인터넷 실물 사진에서 격자가 판 밖 탁자로 2~3줄 나갔다(f17·f33). */
+    private const val ExtentReach = 4
+
+    private fun shiftedBy(h: BoardHomography, n: Int, du: Int, dv: Int): BoardHomography? = if (du == 0 && dv == 0) {
+        h
+    } else {
+        BoardHomography.fit(
+            listOf(PointF2D(0f, 0f), PointF2D(n - 1f, 0f), PointF2D(n - 1f, n - 1f), PointF2D(0f, n - 1f)),
+            listOf(h.map(du.toDouble(), dv.toDouble()), h.map(n - 1.0 + du, dv.toDouble()), h.map(n - 1.0 + du, n - 1.0 + dv), h.map(du.toDouble(), n - 1.0 + dv)),
+        )
+    }
+
     /**
-     * 판의 범위를 **한 줄** 단위로 바로잡는다 — 격자 전체를 가로·세로로 −1·0·+1줄 옮긴 아홉 후보 중, 바깥 격자선 바로
-     * **안쪽에는 가로지르는 선이 있고 바깥쪽에는 없는** 정도가 가장 큰 것을 고른다.
+     * 격자가 **판이 아닌 것을 한 줄 넘게** 덮었으면(지금 격자의 [foreignCells]가 ±[ExtentReach]줄 후보 중 최소보다 한 줄치 이상 많으면)
+     * 판이 아닌 칸이 최소에서 반 줄치 안쪽인 후보 중 [terminationScore]가 가장 큰 곳으로 건너뛴다. 아니면 그대로.
+     *
+     * ⚠️ 한 줄씩만 옮겨 보면 못 빠져나온다 — 격자가 판 밖 탁자로 2~3줄 나가 있으면 한 줄 옮겨도 바깥선이 여전히 탁자 위라 선 점수가
+     * 그대로다(갤러리 f17: 왼쪽 3줄·아래 2줄, f33: 아래 2줄). 작은 사진(한 칸 15px)에서는 선이 흐려 선 점수만으로는 범위를 못 가린다(f17).
+     * ⚠️ 「판 색이 많은 후보」를 고르면 틀린다 — 돌이 빽빽한 판 안쪽보다 나무 탁자·넓은 여백이 더 판 같았고(f22·f30), 밝기로 판 색을
+     * 정하면 조명이 기운 사진에서 판 자체가 판 색이 아니었다(기준 이미지 01·04 조명 기울기 변형이 100% → 34·48%). 그래서 **확실히 판이
+     * 아닌 것**만 센다.
+     */
+    private fun leaveForeign(g: Gray, n: Int, h: BoardHomography, ref: BoardColor?): BoardHomography {
+        val candidates = (-ExtentReach..ExtentReach).flatMap { du -> (-ExtentReach..ExtentReach).mapNotNull { dv -> shiftedBy(h, n, du, dv) } }
+        val foreign = candidates.associateWith { foreignCells(g, n, it, ref) }
+        val least = foreign.values.min()
+        if (foreign.getValue(h) - least < n - 1) return h
+        val ceiling = least + (n - 1) / 2
+        return candidates.filter { foreign.getValue(it) <= ceiling }.maxByOrNull { terminationScore(g, n, it) } ?: h
+    }
+
+    /**
+     * 판의 범위를 **한 줄** 단위로 바로잡는다 — 격자 전체를 가로·세로로 −1·0·+1줄 옮긴 아홉 후보 중, 판이 아닌 칸([foreignCells])이
+     * 늘지 않는(최소에서 반 줄치 안쪽) 것 가운데 바깥 격자선 바로 **안쪽에는 가로지르는 선이 있고 바깥쪽에는 없는** 정도가 가장 큰 것.
      *
      * ⚠️ **실물 판의 나무 가장자리**가 바깥 격자선에서 한 칸쯤 밖에 있고, 그 그림자가 가는 선처럼 보여 바깥 격자선으로
      * 잡혔다(기준 이미지 01: 판 전체가 한 칸 왼쪽·아래로). 격자선은 바깥 격자선에서 **끝나므로**, 진짜 바깥선 밖으로는
      * 가로지르는 선이 없고, 나무 가장자리 바로 안쪽(여백)에도 없다 — 이 차이로 가른다.
      */
-    private fun adjustExtent(g: Gray, n: Int, h: BoardHomography): BoardHomography {
-        fun shifted(du: Int, dv: Int): BoardHomography? = BoardHomography.fit(
-            listOf(PointF2D(0f, 0f), PointF2D(n - 1f, 0f), PointF2D(n - 1f, n - 1f), PointF2D(0f, n - 1f)),
-            listOf(h.map(du.toDouble(), dv.toDouble()), h.map(n - 1.0 + du, dv.toDouble()), h.map(n - 1.0 + du, n - 1.0 + dv), h.map(du.toDouble(), n - 1.0 + dv)),
-        )
-        var best = h
-        var bestScore = terminationScore(g, n, h)
-        for (du in -1..1) {
-            for (dv in -1..1) {
-                if (du == 0 && dv == 0) continue
-                val c = shifted(du, dv) ?: continue
-                val s = terminationScore(g, n, c)
-                if (s > bestScore * 1.05f + 0.5f) {
-                    bestScore = s
-                    best = c
+    private fun adjustExtent(g: Gray, n: Int, h: BoardHomography, ref: BoardColor?): BoardHomography {
+        val candidates = (-1..1).flatMap { du -> (-1..1).mapNotNull { dv -> shiftedBy(h, n, du, dv) } }
+        val foreign = candidates.associateWith { foreignCells(g, n, it, ref) }
+        val ceiling = foreign.values.min() + (n - 1) / 2
+        var best = h.takeIf { foreign.getValue(it) <= ceiling }
+        var bestScore = best?.let { terminationScore(g, n, it) } ?: Float.NEGATIVE_INFINITY
+        for (c in candidates) {
+            if (c === h || foreign.getValue(c) > ceiling) continue
+            val s = terminationScore(g, n, c)
+            if (best == null || s > bestScore * 1.05f + 0.5f) {
+                bestScore = s
+                best = c
+            }
+        }
+        return best ?: h
+    }
+
+    /** 판 바탕의 색상(도, 0~360)과 채도. 채도가 이보다 낮으면(종이·흰 판) 색상으로는 판이 아닌 것을 가리지 않는다. */
+    private class BoardColor(val hue: Float, val saturation: Float, val luma: Float)
+
+    /**
+     * 판이 아닌 색 — 판 색상에서 이만큼(도) 넘게 벗어나고 채도가 판의 이 비율·이 값 이상이면 판이 아니다(남색 천·파란 통·붉은 메뉴).
+     * ⚠️ 40°·0.45·0.157(=40/255)·0.1은 스레드가 정한 값이다 — 인터넷 실물 6장 + 기준 이미지 5장에서 정답 범위가 모두 걸러지지 않는 것을 확인했다.
+     */
+    private const val ForeignHueDegrees = 40f
+    private const val ForeignSaturationRatio = 0.45f
+    private const val ForeignSaturationFloor = 0.157f
+    private const val ColorlessBoard = 0.1f
+
+    /** 다섯 점이 모두 판 밝기의 이 비율보다 어두우면 판이 아니다. ⚠️ 0.45는 스레드가 정한 값이다. */
+    private const val DarkCellRatio = 0.45f
+
+    /**
+     * 판 바탕색 — 격자 가운데 절반의 칸 안 다섯 점(한가운데와 대각선 ±0.25칸) 중 **밝기가 중간(30~70%)인 것**의 색상 평균·채도 중앙값.
+     * 어둡고 밝은 점(흑돌·백돌)을 빼야 판 바탕이 남는다 — 채도 높은 점으로 잡았더니 푸르스름하게 찍힌 돌의 색이 판 색이 됐다(f22).
+     */
+    private fun boardColorOf(g: Gray, n: Int, h: BoardHomography): BoardColor? {
+        val lo = (n - 1) / 4
+        val hi = n - 1 - (n - 1) / 4
+        val luma = ArrayList<Float>()
+        val hue = ArrayList<Float>()
+        val sat = ArrayList<Float>()
+        for (j in lo until hi) {
+            for (k in lo until hi) {
+                for ((du, dv) in CellSamples) {
+                    val p = h.map(k + 0.5 + du, j + 0.5 + dv)
+                    val l = g.bilinear(p.x, p.y, Float.NaN)
+                    val s = g.saturationOr(p.x, p.y, Float.NaN)
+                    val hu = g.hueOr(p.x, p.y, Float.NaN)
+                    if (!l.isNaN() && !s.isNaN() && !hu.isNaN()) {
+                        luma += l
+                        hue += hu
+                        sat += s
+                    }
                 }
             }
         }
-        return best
+        if (luma.size < 8) return null
+        val sorted = luma.sorted()
+        val low = sorted[sorted.size * 3 / 10]
+        val high = sorted[sorted.size * 7 / 10]
+        var sx = 0.0
+        var sy = 0.0
+        val mid = ArrayList<Float>()
+        for (i in luma.indices) {
+            if (luma[i] < low || luma[i] > high) continue
+            val r = Math.toRadians(hue[i].toDouble())
+            sx += kotlin.math.cos(r)
+            sy += kotlin.math.sin(r)
+            mid += sat[i]
+        }
+        if (mid.size < 4) return null
+        val meanHue = ((Math.toDegrees(kotlin.math.atan2(sy, sx)) + 360.0) % 360.0).toFloat()
+        return BoardColor(meanHue, mid.sorted()[mid.size / 2], sorted[sorted.size / 2])
+    }
+
+    /** 칸마다 보는 다섯 점(칸 한가운데 기준, 칸 단위). */
+    private val CellSamples = listOf(0.0 to 0.0, -0.25 to -0.25, 0.25 to -0.25, -0.25 to 0.25, 0.25 to 0.25)
+
+    /**
+     * 판이 아닌 칸의 수 — 다섯 점 중 셋 이상이 판이 아니거나(사진 밖 · 판과 색상이 다른 유채색), **다섯 점이 모두 어두운** 칸.
+     * 판 위 칸은 흑돌에 둘러싸여도 한가운데(교점에서 0.71칸)는 판 바탕이 보인다 — 다섯 점이 다 어두우면 검은 천·그늘진 탁자다(f17: 판 왼쪽의
+     * 거의 검은 천은 채도가 낮아 색상으로는 못 가렸다). 판 색을 못 잡았으면 사진 밖만 세고, 판이 무채색이면 색상은 보지 않는다.
+     */
+    private fun foreignCells(g: Gray, n: Int, h: BoardHomography, ref: BoardColor?): Int {
+        val useHue = ref != null && ref.saturation >= ColorlessBoard
+        val satFloor = if (ref != null) max(ForeignSaturationFloor, ref.saturation * ForeignSaturationRatio) else 0f
+        val darkBelow = if (ref != null) ref.luma * DarkCellRatio else -1f
+        var count = 0
+        for (j in 0 until n - 1) {
+            for (k in 0 until n - 1) {
+                var foreign = 0
+                var dark = 0
+                for ((du, dv) in CellSamples) {
+                    val p = h.map(k + 0.5 + du, j + 0.5 + dv)
+                    if (p.x < 0f || p.y < 0f || p.x > g.w - 1f || p.y > g.h - 1f) {
+                        foreign++
+                        continue
+                    }
+                    if (g.bilinear(p.x, p.y, Float.NaN) < darkBelow) dark++
+                    if (!useHue) continue
+                    val s = g.saturationOr(p.x, p.y, 0f)
+                    val hu = g.hueOr(p.x, p.y, Float.NaN)
+                    if (hu.isNaN() || s < satFloor) continue
+                    val d = abs(hu - ref!!.hue).let { if (it > 180f) 360f - it else it }
+                    if (d > ForeignHueDegrees) foreign++
+                }
+                if (foreign >= 3 || dark == CellSamples.size) count++
+            }
+        }
+        return count
     }
 
     /**
@@ -902,7 +1031,7 @@ internal object BoardLocator {
     }
 
     /** 밝기 영상(작업 해상도). [sat]은 채도(0~1) — 판 여백과 탁자를 가를 때만 쓴다(흐린 사본에는 없다). */
-    internal class Gray(val w: Int, val h: Int, val v: FloatArray, val sat: FloatArray? = null) {
+    internal class Gray(val w: Int, val h: Int, val v: FloatArray, val sat: FloatArray? = null, val hue: ByteArray? = null) {
         fun at(x: Int, y: Int): Float = v[y.coerceIn(0, h - 1) * w + x.coerceIn(0, w - 1)]
 
         /** 가장 가까운 픽셀의 채도. 영상 밖이거나 채도가 없으면 `null`. */
@@ -911,6 +1040,22 @@ internal object BoardLocator {
             val xi = x.roundToInt()
             val yi = y.roundToInt()
             return if (xi in 0 until w && yi in 0 until h) s[yi * w + xi] else null
+        }
+
+        /** [saturationAt]의 상자 없는 판 — 영상 밖이거나 채도가 없으면 [outside]. 칸마다 부르는 고리용(함정 86). */
+        fun saturationOr(x: Float, y: Float, outside: Float): Float {
+            val s = sat ?: return outside
+            val xi = x.roundToInt()
+            val yi = y.roundToInt()
+            return if (xi in 0 until w && yi in 0 until h) s[yi * w + xi] else outside
+        }
+
+        /** 가장 가까운 픽셀의 색상(도, 0~360 — 1바이트라 1.4° 단위). 영상 밖이거나 색상이 없으면 [outside]. */
+        fun hueOr(x: Float, y: Float, outside: Float): Float {
+            val hu = hue ?: return outside
+            val xi = x.roundToInt()
+            val yi = y.roundToInt()
+            return if (xi in 0 until w && yi in 0 until h) (hu[yi * w + xi].toInt() and 0xFF) * (360f / 256f) else outside
         }
 
         /**
@@ -945,14 +1090,16 @@ internal object BoardLocator {
             fun of(source: PixelSource): Gray {
                 val out = FloatArray(source.width * source.height)
                 val sat = FloatArray(source.width * source.height)
+                val hue = ByteArray(source.width * source.height)
                 for (y in 0 until source.height) {
                     for (x in 0 until source.width) {
                         val p = source.getPixel(x, y)
                         out[y * source.width + x] = if (p == BoardWarp.NoData) 255f else luma(p)
                         sat[y * source.width + x] = saturation((p shr 16) and 0xFF, (p shr 8) and 0xFF, p and 0xFF)
+                        hue[y * source.width + x] = hueByte((p shr 16) and 0xFF, (p shr 8) and 0xFF, p and 0xFF)
                     }
                 }
-                return Gray(source.width, source.height, out, sat)
+                return Gray(source.width, source.height, out, sat, hue)
             }
 
             /** 긴 변이 [maxDim] 이하가 되도록 정수배 상자 평균으로 줄인다. 반환값의 두 번째는 축척(작업/원본). */
@@ -963,6 +1110,7 @@ internal object BoardLocator {
                 val h = source.height / f
                 val out = FloatArray(w * h)
                 val sat = FloatArray(w * h)
+                val hue = ByteArray(w * h)
                 for (y in 0 until h) {
                     for (x in 0 until w) {
                         var r = 0
@@ -979,15 +1127,30 @@ internal object BoardLocator {
                         val k = f * f
                         out[y * w + x] = 0.299f * r / k + 0.587f * gg / k + 0.114f * b / k
                         sat[y * w + x] = saturation(r / k, gg / k, b / k)
+                        hue[y * w + x] = hueByte(r / k, gg / k, b / k)
                     }
                 }
-                return Gray(w, h, out, sat) to 1f / f
+                return Gray(w, h, out, sat, hue) to 1f / f
             }
 
             private fun saturation(r: Int, g: Int, b: Int): Float {
                 val hi = max(r, max(g, b))
                 val lo = min(r, min(g, b))
                 return if (hi > 0) (hi - lo).toFloat() / hi else 0f
+            }
+
+            /** 색상(0~360°)을 1바이트(0~255)로 — 무채색은 0. 판이 아닌 색을 가리는 데만 쓴다(판 범위 바로잡기). */
+            private fun hueByte(r: Int, g: Int, b: Int): Byte {
+                val hi = max(r, max(g, b))
+                val lo = min(r, min(g, b))
+                val d = hi - lo
+                if (d == 0) return 0
+                val deg = when (hi) {
+                    r -> 60f * (((g - b).toFloat() / d) % 6f)
+                    g -> 60f * ((b - r).toFloat() / d + 2f)
+                    else -> 60f * ((r - g).toFloat() / d + 4f)
+                }.let { if (it < 0f) it + 360f else it }
+                return (deg * 256f / 360f).toInt().coerceIn(0, 255).toByte()
             }
 
             private fun luma(p: Int): Float =
