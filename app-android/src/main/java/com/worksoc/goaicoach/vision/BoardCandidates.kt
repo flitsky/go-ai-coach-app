@@ -17,8 +17,8 @@ import com.worksoc.goaicoach.shared.vision.DetectedBoard
  */
 internal object BoardCandidates {
 
-    /** 판독이 어디서 왔나 — 펴고 찾음 · 그대로 찾음 · 편 사진을 늘려 찾음 · 손으로 놓은 핀. */
-    enum class Kind { Flattened, Direct, Stretched, Manual }
+    /** 판독이 어디서 왔나 — 펴고 찾음 · 그대로 찾음 · 편 사진을 늘려 찾음 · 격자로 펴고 잘라 찾음 · 손으로 놓은 핀. */
+    enum class Kind { Flattened, Direct, Stretched, Lattice, Manual }
 
     /** 후보 하나의 판독 — 찾은 판 · 돌 · 흔들리는 교점 · 핀 화면을 건너뛸 만큼 확실한가. */
     class Reading(
@@ -35,20 +35,30 @@ internal object BoardCandidates {
     private val SquareEnough = 0.85f..1.18f
     private val PlausibleAspect = 0.55f..1.8f
 
-    fun locate(source: PixelSource, frame: PerspectiveFrame?): Reading? {
+    fun locate(source: PixelSource, frame: PerspectiveFrame?, lattice: (() -> LatticeFrame?)? = null): Reading? =
+        choose(candidates(source, frame, lattice))
+
+    /** 후보를 만드는 순서대로 — 첫 판독이 확실하면 그것 하나뿐이다. */
+    fun candidates(source: PixelSource, frame: PerspectiveFrame?, lattice: (() -> LatticeFrame?)? = null): List<Reading> {
         val flattened = frame?.let { PerspectiveLocate.locate(source, it) }
-        val first = flattened?.let { read(Kind.Flattened, source, it) } ?: BoardLocator.locate(source)?.let { read(Kind.Direct, source, it) }
-        if (first?.confident == true || frame == null || flattened == null) return first
-        val more = buildList {
-            BoardLocator.locate(source)?.let { add(read(Kind.Direct, source, it)) }
-            val aspect = PerspectiveLocate.flatten(source, frame)?.let { (flat, _) -> BoardLocator.cellAspect(flat) }
-            if (aspect != null && aspect !in SquareEnough && aspect in PlausibleAspect) {
-                PerspectiveLocate.locateStretched(source, frame, 1f / aspect)?.let { add(read(Kind.Stretched, source, it)) }
+        val direct by lazy { BoardLocator.locate(source) }
+        val first = flattened?.let { read(Kind.Flattened, source, it) } ?: direct?.let { read(Kind.Direct, source, it) }
+        if (first?.confident == true) return listOf(first)
+        return buildList {
+            first?.let { add(it) }
+            if (flattened != null) {
+                direct?.let { add(read(Kind.Direct, source, it)) }
+                val aspect = frame.let { f -> PerspectiveLocate.flatten(source, f)?.let { (flat, _) -> BoardLocator.cellAspect(flat) } }
+                if (aspect != null && aspect !in SquareEnough && aspect in PlausibleAspect) {
+                    PerspectiveLocate.locateStretched(source, frame, 1f / aspect)?.let { add(read(Kind.Stretched, source, it)) }
+                }
             }
+            lattice?.invoke()?.let { f -> PerspectiveLocate.locateLattice(source, f) }?.let { add(read(Kind.Lattice, source, it)) }
         }
-        // 흔들림이 같으면 앞의 것(펴고 찾은 것)을 남긴다.
-        return (listOfNotNull(first) + more).minByOrNull { it.unstableRatio }
     }
+
+    /** 흔들림이 가장 적은 후보 — 같으면 앞의 것(펴고 찾은 것)을 남긴다. */
+    fun choose(readings: List<Reading>): Reading? = readings.minByOrNull { it.unstableRatio }
 
     /** 찾은 판의 모서리로 돌을 읽고 흔들어 본다 — 앱의 보정 화면이 쓰는 것과 같은 값이다. */
     fun read(kind: Kind, source: PixelSource, located: LocatedBoard): Reading {

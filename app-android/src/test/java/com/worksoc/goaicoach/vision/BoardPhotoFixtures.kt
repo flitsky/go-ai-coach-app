@@ -120,8 +120,8 @@ internal data class BoardPhotoFixture(
          * 사진 폴더의 `frames.json`(실험실이 계산한 원근 틀 — `engine-lab/vision/frames_for_dir.py`)을 사진 이름 → 틀로. 없으면 빈 맵.
          * 앱은 OpenCV로 틀을 구하지만 맥 JVM에서는 OpenCV가 못 돌아서(함정 91) 실험실 기록으로 **앱과 같은 순서**(펴고 찾기)를 낸다.
          */
-        fun perspectiveFramesIn(dir: File): Map<String, PerspectiveFrame> {
-            val file = File(dir, "frames.json").takeIf { it.isFile } ?: return emptyMap()
+        fun perspectiveFramesIn(dir: File, fileName: String = "frames.json"): Map<String, PerspectiveFrame> {
+            val file = File(dir, fileName).takeIf { it.isFile } ?: return emptyMap()
             val json = JSONObject(file.readText())
             return json.keys().asSequence().mapNotNull { name ->
                 val f = json.optJSONObject(name) ?: return@mapNotNull null
@@ -131,8 +131,22 @@ internal data class BoardPhotoFixture(
             }.toMap()
         }
 
+        /** 격자로 펴고 잘라 낸 틀(`lattice-frames.json` — `engine-lab/vision/lab/lattice.py`, 앱의 `OpenCvLattice`). */
+        fun latticeFramesIn(dir: File): Map<String, LatticeFrame> {
+            val frames = perspectiveFramesIn(dir, "lattice-frames.json")
+            if (frames.isEmpty()) return emptyMap()
+            val json = JSONObject(File(dir, "lattice-frames.json").readText())
+            return frames.mapValues { (name, frame) ->
+                val f = json.getJSONObject(name)
+                val q = f.getJSONArray("inner")
+                val pts = (0 until 4).map { i -> q.getJSONArray(i).let { PointF2D(it.getDouble(0).toFloat(), it.getDouble(1).toFloat()) } }
+                LatticeFrame(frame, f.getJSONArray("lines").getInt(0), f.getJSONArray("lines").getInt(1), BoardCornerPoints(pts[0], pts[1], pts[2], pts[3]))
+            }
+        }
+
         /** 앱과 같은 길로 판 찾기([BoardCandidates] — `AndroidBoardVisionScanner.locate`가 부르는 것). */
-        fun locateLikeTheApp(image: ArrayPixelSource, frame: PerspectiveFrame?): LocatedBoard? = BoardCandidates.locate(image, frame)?.located
+        fun locateLikeTheApp(image: ArrayPixelSource, frame: PerspectiveFrame?, lattice: LatticeFrame? = null): LocatedBoard? =
+            BoardCandidates.locate(image, frame) { lattice }?.located
 
         /** 사진 파일 하나를 픽셀로 — 정답이 없는 사진 묶음(인터넷 이미지 · #263 갤러리)도 같은 방법으로 읽는다. */
         fun loadPixels(file: File): ArrayPixelSource? {

@@ -41,11 +41,13 @@ internal class AndroidBoardVisionScanner(
     /**
      * 판을 스스로 찾는다 — 못 찾으면 `null`(수동 핀으로).
      * 원근이 센 사진은 **먼저 펴고** 찾고(#263 — [OpenCvPerspective]가 틀을 주면 [PerspectiveLocate]), 그 판독이 확실하지 않으면
-     * 그대로 찾은 것·늘려 찾은 것과 견줘 덜 흔들리는 쪽을 고른다([BoardCandidates]). OpenCV를 못 올렸거나 원근이 약하면 틀이 없다.
+     * 그대로 찾은 것·늘려 찾은 것·**격자로 펴고 잘라 찾은 것**([OpenCvLattice])과 견줘 덜 흔들리는 쪽을 고른다([BoardCandidates]).
+     * OpenCV를 못 올렸거나 원근이 약하면 틀이 없다.
      */
     suspend fun locate(): LocatedBoard? = withContext(Dispatchers.Default) {
         val frame = runCatching { OpenCvPerspective.frameOf(sourceBitmap) }.getOrNull()
-        BoardCandidates.locate(pixels, frame).also { located = it }?.located
+        // 격자 틀은 첫 판독이 확실하지 않을 때만 구한다(BoardCandidates가 부를 때) — 잘 되는 사진은 그만큼 빠르다.
+        BoardCandidates.locate(pixels, frame) { runCatching { OpenCvLattice.frameOf(sourceBitmap) }.getOrNull() }.also { located = it }?.located
     }
 
     /**

@@ -25,12 +25,25 @@ class BoardPhotoReportTest {
         BoardPhotoSet.entries.forEach { set ->
             val fixtures = BoardPhotoFixture.set(set).filter { it.image != null }
             if (fixtures.isEmpty()) return@forEach
-            val frames = BoardPhotoFixture.perspectiveFramesIn(File(RepoPaths.root, set.imageDir))
-            write(set.name, fixtures.map { measure(it, it.key, it.image!!, it.corners, frames[it.imageName]) })
             if (set == BoardPhotoSet.Press) {
+                // 기준 이미지와 변형의 틀은 실험실이 테스트 리소스로 기록해 둔다(`measure_perspective.py --export`) — 키는 "01" · "01 사다리꼴 12%".
+                val dir = File(requireNotNull(javaClass.classLoader!!.getResource(set.answerDir)).toURI())
+                val frames = BoardPhotoFixture.perspectiveFramesIn(dir, "perspective-frames.json")
+                val lattices = BoardPhotoFixture.latticeFramesIn(dir)
+                write(set.name, fixtures.map { measure(it, it.key, it.image!!, it.corners, frames[it.key], lattices[it.key]) })
                 // 같은 사진을 돌리고·기울이고·줄인 변형(#210) — 알려진 약점이 여기 있다(자동 인식이 놓치는 사다리꼴·축소).
-                val variants = fixtures.flatMap { f -> BoardPhotoVariants.all(f.image!!, f.corners).map { v -> measure(f, "${f.key} ${v.name}", v.image, v.corners) } }
+                val variants = fixtures.flatMap { f ->
+                    BoardPhotoVariants.all(f.image!!, f.corners).map { v ->
+                        val key = "${f.key} ${v.name}"
+                        measure(f, key, v.image, v.corners, frames[key], lattices[key])
+                    }
+                }
                 write("${set.name}-variants", variants)
+            } else {
+                val dir = File(RepoPaths.root, set.imageDir)
+                val frames = BoardPhotoFixture.perspectiveFramesIn(dir)
+                val lattices = BoardPhotoFixture.latticeFramesIn(dir)
+                write(set.name, fixtures.map { measure(it, it.key, it.image!!, it.corners, frames[it.imageName], lattices[it.imageName]) })
             }
         }
     }
@@ -61,11 +74,18 @@ class BoardPhotoReportTest {
     )
 
     /** [f]는 정답 배치, [img]·[corners]는 잴 사진과 그 사진의 정답 모서리(변형이면 변형된 모서리). [frame]이 있으면 펴고 찾는다. */
-    private fun measure(f: BoardPhotoFixture, key: String, img: ArrayPixelSource, corners: BoardCornerPoints, frame: PerspectiveFrame? = null): Row {
+    private fun measure(
+        f: BoardPhotoFixture,
+        key: String,
+        img: ArrayPixelSource,
+        corners: BoardCornerPoints,
+        frame: PerspectiveFrame?,
+        lattice: LatticeFrame?,
+    ): Row {
         val n = f.boardSize.value
         val cell = cellSize(corners, n)
         val started = System.nanoTime()
-        val located = BoardPhotoFixture.locateLikeTheApp(img, frame)
+        val located = BoardPhotoFixture.locateLikeTheApp(img, frame, lattice)
         val locateMillis = (System.nanoTime() - started) / 1_000_000
         val sizeMatches = located?.boardSize == f.boardSize
         val cornerError = located?.takeIf { sizeMatches }?.let { worstCornerError(it.corners, corners) / cell }

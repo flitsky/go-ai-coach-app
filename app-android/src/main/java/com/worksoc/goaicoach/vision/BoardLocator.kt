@@ -65,22 +65,61 @@ internal object BoardLocator {
             listOf(-0.6, -0.6, n0 - 0.4, -0.6, n0 - 0.4, n0 - 0.4, -0.6, n0 - 0.4).chunked(2).map { (x, y) -> lattice.homography.map(x, y) },
         )
         findLattice(maps, theta, lattice.pitchU, lattice.pitchV, mask)?.let { lattice = it }
+        return finish(gray, maps.stone!!, lattice.n, lattice.homography, lattice.contrast, scale)
+    }
 
-        var fitted = snapToGrid(gray, maps.stone!!, lattice.n, lattice.homography)
+    /**
+     * 격자 틀(`OpenCvLattice` — 고르게 늘어선 선 무리 둘로 판을 펴고 잘라 낸 사진)에서 판을 찾는다 — 틀이 알려 준 줄로 **시작**한다.
+     * [inner]는 틀이 찾은 가장 바깥 줄들의 네 모서리(이 사진 좌표), [cols]·[rows]는 그 줄 수다.
+     *
+     * 왜 [locate]를 쓰지 않는가: 깨끗이 편 실물 판에서도 [locate]는 판 크기를 잘못 고른다 — 나무 판 가장자리가 바깥 격자선에서 한 칸쯤 밖에 있어
+     * 「바깥 한 줄은 약하다」는 조건에 걸려 19줄 구간 점수가 깎이고, 판 한가운데 9줄 구간이 이겼다(갤러리 w07·w13: 9줄, w33: 13줄).
+     * 줄 수는 틀이 이미 셌으니 판 크기는 가장 가까운 표준 크기로 정하고, 몇 줄 어긋남은 [finish]의 범위 바로잡기에 맡긴다.
+     */
+    fun locateFromLattice(source: PixelSource, inner: BoardCornerPoints, cols: Int, rows: Int): LocatedBoard? {
+        if (cols < 2 || rows < 2) return null
+        val n = standardSize(max(cols, rows))
+        val (gray, scale) = Gray.downscaled(source, WorkingMaxDim)
+        val found = BoardHomography.fit(
+            listOf(PointF2D(0f, 0f), PointF2D(cols - 1f, 0f), PointF2D(cols - 1f, rows - 1f), PointF2D(0f, rows - 1f)),
+            inner.toList().map { it.scaled(scale) },
+        ) ?: return null
+        // 찾은 줄 묶음의 가운데에 n줄 판을 놓는다 — 덜 셌거나 더 셌으면 바로잡기가 옮긴다.
+        val du = ((cols - n) / 2.0).roundToInt().toDouble()
+        val dv = ((rows - n) / 2.0).roundToInt().toDouble()
+        val start = BoardHomography.fit(
+            unitCorners(n),
+            listOf(found.map(du, dv), found.map(du + n - 1, dv), found.map(du + n - 1, dv + n - 1), found.map(du, dv + n - 1)),
+        ) ?: return null
+        val pitch = localPitch(start, n / 2, n / 2)
+        if (pitch < 3f) return null
+        return finish(gray, StoneResponse(gray, pitch), n, start, 1f, scale)
+    }
+
+    /** 찾은 줄 수에 맞는 표준 판 크기 — 14줄 이상은 19줄(가장자리 몇 줄을 덜 셌다), 10~13은 13줄, 그보다 적으면 9줄. */
+    private fun standardSize(lines: Int): Int = when {
+        lines >= 14 -> 19
+        lines >= 10 -> 13
+        else -> 9
+    }
+
+    /** 첫 격자를 교점에 붙이고 판의 범위를 바로잡는다 — [locate]·[locateFromLattice]의 공통 끝. */
+    private fun finish(gray: Gray, stone: StoneResponse, n: Int, start: BoardHomography, contrast: Float, scale: Float): LocatedBoard {
+        var fitted = snapToGrid(gray, stone, n, start)
         // 판 범위 바로잡기 — ① 격자가 판이 아닌 것을 한 줄 넘게 덮었으면 ±[ExtentReach]줄 안에서 크게 건너뛰고([leaveForeign])
         // ② 한 줄씩 더 안 움직일 때까지 다듬는다([adjustExtent]). 판 색 기준은 처음 격자에서 한 번만 잰다.
         // ⚠️ ±4줄 탐색을 되풀이하면 선 점수의 잡음을 따라 격자가 판 밖으로 흘러갔다 — 판 색 기준까지 탁자 쪽으로 바뀌며 기준 이미지 01
         // 사다리꼴 변형이 8줄 넘게 밀렸다(69.8% → 33.8%). 크게 건너뛰는 것은 색의 증거가 뚜렷할 때 한 번뿐이다.
-        val ref = boardColorOf(gray, lattice.n, fitted)
-        val jumped = leaveForeign(gray, lattice.n, fitted, ref)
-        if (jumped !== fitted) fitted = snapToGrid(gray, maps.stone!!, lattice.n, jumped)
+        val ref = boardColorOf(gray, n, fitted)
+        val jumped = leaveForeign(gray, n, fitted, ref)
+        if (jumped !== fitted) fitted = snapToGrid(gray, stone, n, jumped)
         // 화면 캡처는 판 위 메뉴줄·이름줄이 겹겹이라 두 줄 어긋나 시작하기도 한다(갤러리 f06) — 한 줄씩 되풀이한다.
         for (step in 0 until MaxExtentSteps) {
-            val shifted = adjustExtent(gray, lattice.n, fitted, ref)
+            val shifted = adjustExtent(gray, n, fitted, ref)
             if (shifted === fitted) break
-            fitted = snapToGrid(gray, maps.stone!!, lattice.n, shifted)
+            fitted = snapToGrid(gray, stone, n, shifted)
         }
-        return LocatedBoard(cornersOf(fitted, lattice.n, 1f / scale), BoardSize(lattice.n), lattice.contrast.coerceIn(0f, 1f))
+        return LocatedBoard(cornersOf(fitted, n, 1f / scale), BoardSize(n), contrast.coerceIn(0f, 1f))
     }
 
     /**

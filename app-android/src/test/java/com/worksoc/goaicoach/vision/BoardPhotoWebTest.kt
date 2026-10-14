@@ -22,7 +22,9 @@ class BoardPhotoWebTest {
 
     @Test
     fun gatedWebPhotosAreReadLikeTheApp() {
-        val frames = BoardPhotoFixture.perspectiveFramesIn(File(RepoPaths.root, BoardPhotoSet.Web.imageDir))
+        val dir = File(RepoPaths.root, BoardPhotoSet.Web.imageDir)
+        val frames = BoardPhotoFixture.perspectiveFramesIn(dir)
+        val lattices = BoardPhotoFixture.latticeFramesIn(dir)
         val fixtures = BoardPhotoFixture.set(BoardPhotoSet.Web).filter { it.gated && it.image != null }
         assumeTrue("인터넷 사진·원근 틀이 없다 — test-fixtures/board-photos-web/ (engine-lab/vision/README.md 「평가 갤러리」)", fixtures.isNotEmpty() && frames.isNotEmpty())
         fixtures.forEach { f ->
@@ -30,7 +32,7 @@ class BoardPhotoWebTest {
             val n = f.boardSize.value
             fun accuracy(corners: BoardCornerPoints) =
                 f.score(GridStoneDetector.detect(BoardWarp.rectify(img, corners, f.boardSize)).stones).first / (n * n).toFloat()
-            val located = BoardPhotoFixture.locateLikeTheApp(img, frames[f.imageName])
+            val located = BoardPhotoFixture.locateLikeTheApp(img, frames[f.imageName], lattices[f.imageName])
             assertTrue("${f.key} 판을 못 찾았다", located != null)
             assertEquals("${f.key} 판 크기", f.boardSize, located!!.boardSize)
             val auto = accuracy(located.corners)

@@ -10,6 +10,12 @@ import com.worksoc.goaicoach.shared.vision.PointF2D
 internal data class PerspectiveFrame(val quad: BoardCornerPoints, val width: Int, val height: Int)
 
 /**
+ * 격자 틀 — 고르게 늘어선 선 무리 둘로 판을 펴고 잘라 낸 틀(백로그 #263, `OpenCvLattice` · 실험실 `lab/lattice.py`).
+ * [frame]으로 펴면 칸이 정사각이고 줄이 축과 나란하다. [inner]는 찾은 가장 바깥 줄들의 네 모서리(편 사진 좌표), [cols]·[rows]는 그 줄 수다.
+ */
+internal data class LatticeFrame(val frame: PerspectiveFrame, val cols: Int, val rows: Int, val inner: BoardCornerPoints)
+
+/**
  * 원근을 걷어낸 사진에서 판을 찾는다 — 틀로 펴고 → [BoardLocator.locate] → 찾은 모서리를 원본 좌표로 되돌린다.
  *
  * 왜 따로 있는가: 지금의 격자 찾기는 회전(±20°)·판 옆 글자·여백은 견디지만 **원근(사다리꼴)** 은 못 견딘다(2026-10-13 측정 —
@@ -52,9 +58,17 @@ internal object PerspectiveLocate {
         return ArrayPixelSource(w, h, out) to toSource
     }
 
-    private fun locateIn(flat: ArrayPixelSource, toSource: BoardHomography): LocatedBoard? {
-        val located = BoardLocator.locate(flat) ?: return null
-        val back = located.corners.toList().map { toSource.map(it.x.toDouble(), it.y.toDouble()) }
-        return located.copy(corners = BoardCornerPoints(back[0], back[1], back[2], back[3]))
+    /** 격자 틀로 펴고, 틀이 센 줄로 시작해 판을 찾는다([BoardLocator.locateFromLattice]). */
+    fun locateLattice(source: PixelSource, lattice: LatticeFrame): LocatedBoard? =
+        flatten(source, lattice.frame)?.let { (flat, toSource) ->
+            BoardLocator.locateFromLattice(flat, lattice.inner, lattice.cols, lattice.rows)?.let { back(it, toSource) }
+        }
+
+    private fun locateIn(flat: ArrayPixelSource, toSource: BoardHomography): LocatedBoard? =
+        BoardLocator.locate(flat)?.let { back(it, toSource) }
+
+    private fun back(located: LocatedBoard, toSource: BoardHomography): LocatedBoard {
+        val p = located.corners.toList().map { toSource.map(it.x.toDouble(), it.y.toDouble()) }
+        return located.copy(corners = BoardCornerPoints(p[0], p[1], p[2], p[3]))
     }
 }

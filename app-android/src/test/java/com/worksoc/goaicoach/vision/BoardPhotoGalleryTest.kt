@@ -36,10 +36,11 @@ class BoardPhotoGalleryTest {
     fun recognizeEveryPhotoInTheGalleryFolders() {
         folders.map { File(RepoPaths.root, it) }.filter { it.isDirectory }.forEach { dir ->
             val frames = BoardPhotoFixture.perspectiveFramesIn(dir)
+            val lattices = BoardPhotoFixture.latticeFramesIn(dir)
             val results = JSONArray()
             dir.listFiles { f -> isPhoto(f) }.orEmpty().sortedBy { it.name }.forEach { file ->
                 val img = BoardPhotoFixture.loadPixels(file) ?: return@forEach
-                results.put(recognize(file.name, img, frames[file.name]))
+                results.put(recognize(file.name, img, frames[file.name], lattices[file.name]))
             }
             val out = File(RepoPaths.root, "app-android/build/reports/board-photos").apply { mkdirs() }.resolve("gallery-${dir.name}.json")
             out.writeText(results.toString(1))
@@ -47,11 +48,11 @@ class BoardPhotoGalleryTest {
         }
     }
 
-    private fun recognize(name: String, img: ArrayPixelSource, frame: PerspectiveFrame?): JSONObject {
+    private fun recognize(name: String, img: ArrayPixelSource, frame: PerspectiveFrame?, lattice: LatticeFrame?): JSONObject {
         val started = System.nanoTime()
-        val reading = BoardCandidates.locate(img, frame)
+        val reading = BoardCandidates.locate(img, frame) { lattice }
         val out = JSONObject().put("file", name).put("width", img.width).put("height", img.height)
-            .put("perspective", reading?.kind == BoardCandidates.Kind.Flattened || reading?.kind == BoardCandidates.Kind.Stretched)
+            .put("perspective", reading?.kind in setOf(BoardCandidates.Kind.Flattened, BoardCandidates.Kind.Stretched, BoardCandidates.Kind.Lattice))
             .put("candidate", reading?.kind?.name ?: JSONObject.NULL)
             .put("located", reading != null)
         if (reading == null) return out.put("ms", (System.nanoTime() - started) / 1_000_000)
