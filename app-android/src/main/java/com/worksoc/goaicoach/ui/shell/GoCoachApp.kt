@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureAccessPolicy
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.MatchInPlay
+import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.rankmeasure.withEndedRankMeasureGame
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
@@ -886,7 +887,13 @@ private fun GoCoachScreen(
         LocalConsumableUiState provides consumableUiState,
         // 구독은 프리미엄 배선이 만들어진 **뒤에야** 알 수 있어 여기서 얹는다(#157).
         LocalBotCharacterUiState provides botCharacterUiState.copy(subscriptionActive = premiumUiState.isPurchased),
-        LocalRankMeasureUiState provides rankMeasureUiState,
+        // 급수 초기화는 이어 두던 **승급 대국** 판도 지운다(사용자 2026-10-15) — 남겨 두면 그 판이 끝날 때 옛 기력으로 다시 셈한다.
+        LocalRankMeasureUiState provides rankMeasureUiState.copy(
+            reset = {
+                rankMeasureUiState.reset()
+                if (savedSessionToPrompt?.playerSetup?.rankMeasureMatchup() != null) dispatch(GameUiEvent.DismissResumePrompt)
+            },
+        ),
     ) {
     // 받아 가지 않은 출석 보상이 있으면 홈 위에 Claim 다이얼로그를 띄운다(킥오프 플랜 5.1절) —
     // 체크인/지급/상태는 전부 ui/monetization/AttendanceRewardClaimDialog.kt가 들고 있다(상태 훅 예산 절약).

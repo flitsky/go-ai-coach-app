@@ -374,3 +374,32 @@ internal fun seatMatchupLabelWithRanksFor(strings: UiStrings, playerSetup: Playe
 
 private fun SidePlayerSetup.customRankOrNull(): KgsRank? =
     if (controller == SeatController.Ai) playLevel.customRank() else null
+
+/** 급수 초기화(사용자 2026-10-15) — 승급 대국 창의 제목 줄 · 내 정보의 기력 카드 오른쪽 아래. */
+internal fun rankResetFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "급수 초기화하기"
+    UiLanguage.English -> "Reset rank"
+    UiLanguage.Japanese -> "級位をリセット"
+    UiLanguage.ChineseSimplified -> "重置级位"
+}
+
+internal fun rankResetConfirmTitleFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "급수를 초기화할까요?"
+    UiLanguage.English -> "Reset your rank?"
+    UiLanguage.Japanese -> "級位をリセットしますか？"
+    UiLanguage.ChineseSimplified -> "要重置级位吗？"
+}
+
+internal fun rankResetConfirmBodyFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "지금 기력과 최고 기력이 지워지고 처음처럼 시작 급수를 다시 고를 수 있어요. 이어 두던 승급 대국도 지워져요. 대국 기록은 그대로예요."
+    UiLanguage.English -> "Your current and best rank are cleared, and you can pick a starting rank again. An unfinished rank game is removed too. Your game records stay."
+    UiLanguage.Japanese -> "現在の棋力と最高棋力が消え、最初のように開始級位を選び直せます。続きの昇級対局も消えます。対局記録はそのままです。"
+    UiLanguage.ChineseSimplified -> "当前棋力和最高棋力将被清除，可以像第一次一样重新选择起始级位。未下完的升级对局也会删除。对局记录保持不变。"
+}
+
+internal fun rankResetConfirmFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "초기화"
+    UiLanguage.English -> "Reset"
+    UiLanguage.Japanese -> "リセット"
+    UiLanguage.ChineseSimplified -> "重置"
+}

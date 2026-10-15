@@ -33,6 +33,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.RankTierBadge
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
+import com.worksoc.goaicoach.ui.home.RankResetButton
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
 import com.worksoc.goaicoach.ui.l10n.myPageCurrentRankCaptionFor
@@ -80,12 +81,19 @@ internal fun MyPageProfileHeader(modifier: Modifier = Modifier) {
             winRate = winRate,
         ),
         modifier = modifier,
+        // 급수 초기화(사용자 2026-10-15) — 승급 대국을 열 수 있는 기기에서만(기력이 보일 때만).
+        resetAction = if (rankMeasure.isAvailable) ({ RankResetButton(rankMeasure) }) else null,
     )
 }
 
 /** [MyPageProfileHeader]의 그림 — 값만 받아 그린다(구간마다의 모습을 나란히 찍어 볼 수 있게 나눴다). */
 @Composable
-internal fun MyPageProfileCard(profile: MyPageProfile, modifier: Modifier = Modifier) {
+internal fun MyPageProfileCard(
+    profile: MyPageProfile,
+    modifier: Modifier = Modifier,
+    /** 카드 오른쪽 아래의 동작 — 「급수 초기화하기」. 없으면 자리를 비우지 않는다. */
+    resetAction: (@Composable () -> Unit)? = null,
+) {
     val strings = LocalUiStrings.current
     val language = strings.language
     Surface(
@@ -93,6 +101,7 @@ internal fun MyPageProfileCard(profile: MyPageProfile, modifier: Modifier = Modi
         shape = ActionButtonShape,
         tonalElevation = AppElevation.Level1,
     ) {
+        Column {
         Row(
             modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
             verticalAlignment = Alignment.CenterVertically,
@@ -158,6 +167,10 @@ internal fun MyPageProfileCard(profile: MyPageProfile, modifier: Modifier = Modi
                     }
                 }
             }
+        }
+        resetAction?.let { action ->
+            Row(modifier = Modifier.fillMaxWidth().padding(end = AppSpacing.Space4), horizontalArrangement = Arrangement.End) { action() }
+        }
         }
     }
 }

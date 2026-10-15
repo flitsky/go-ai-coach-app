@@ -57,6 +57,7 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardChangedFor
@@ -78,6 +79,10 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasureStepCapNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureStrongerFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureWeakerFor
+import com.worksoc.goaicoach.ui.l10n.rankResetConfirmBodyFor
+import com.worksoc.goaicoach.ui.l10n.rankResetConfirmFor
+import com.worksoc.goaicoach.ui.l10n.rankResetConfirmTitleFor
+import com.worksoc.goaicoach.ui.l10n.rankResetFor
 import kotlinx.coroutines.delay
 
 /**
@@ -114,6 +119,11 @@ internal data class RankMeasureUiState(
      */
     val pendingChange: RankMeasureChange? = null,
     val dismissChange: () -> Unit = {},
+    /**
+     * 「급수 초기화하기」(사용자 2026-10-15) — 저장된 기력을 처음으로 되돌린다. 셸이 감싸 이어 두던 승급 대국 판도 지운다(`GoCoachApp`).
+     * 이미 기력에 반영한 마지막 판의 표지(`lastCountedGameId`)만 남긴다 — 지우면 그 판을 처음 기력에 다시 셀 수 있다.
+     */
+    val reset: () -> Unit = {},
 )
 
 internal val LocalRankMeasureUiState = staticCompositionLocalOf { RankMeasureUiState() }
@@ -152,6 +162,11 @@ internal fun buildRankMeasureUiState(
         },
         pendingChange = pendingChange,
         dismissChange = { pendingChange = null },
+        reset = {
+            val next = RankMeasureState(lastCountedGameId = state.lastCountedGameId)
+            store.save(next)
+            state = next
+        },
     )
 }
 
@@ -324,14 +339,20 @@ internal fun RankMeasureSetupDialog(
     val strings = LocalUiStrings.current
     val language = strings.language
     val canChoose = rankMeasure.state.canChooseStartingRank
-    var rank by remember { mutableStateOf(rankMeasure.state.rank) }
+    // 급수를 초기화하면 처음 기력(20급)과 시작 급수 고르기로 돌아온다 — 저장된 상태가 바뀌면 다시 읽는다.
+    var rank by remember(rankMeasure.state.rank, canChoose) { mutableStateOf(rankMeasure.state.rank) }
     var userColor by remember { mutableStateOf(StoneColor.Black) }
     var preferredBoardSize by remember { mutableStateOf(BoardSize.Nine) }
     val allowedBoardSizes = rankMeasureBoardSizesFor(rank)
     val boardSize = rankMeasureBoardSizeFor(rank, preferredBoardSize)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(rankMeasureTitleFor(language), fontWeight = FontWeight.Bold) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(rankMeasureTitleFor(language), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                RankResetButton(rankMeasure)
+            }
+        },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -400,6 +421,37 @@ internal fun RankMeasureSetupDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(strings.cancel) } },
     )
+}
+
+/**
+ * 「급수 초기화하기」(사용자 2026-10-15) — 저장된 기력을 처음으로 되돌린다: 20급 · 시작 급수를 다시 고를 수 있음 · 최고 기력 없음 · 연패 0
+ * ([RankMeasureUiState.reset] — 이어 두던 승급 대국 판도 지운다). 승급 대국 창의 제목 줄과 내 정보의 기력 카드가 이것 하나를 쓴다.
+ * 되돌릴 기록이 없으면(처음 그대로면) 보이지 않는다. 확인 창을 한 번 거친다. 대국 기록은 건드리지 않는다.
+ */
+@Composable
+internal fun RankResetButton(rankMeasure: RankMeasureUiState, modifier: Modifier = Modifier) {
+    val language = LocalUiStrings.current.language
+    val strings = LocalUiStrings.current
+    val fresh = RankMeasureState(lastCountedGameId = rankMeasure.state.lastCountedGameId)
+    if (rankMeasure.state == fresh) return
+    var confirming by remember { mutableStateOf(false) }
+    TextButton(onClick = { confirming = true }, modifier = modifier) {
+        Text(rankResetFor(language), fontSize = AppTextSize.Text13)
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(rankResetConfirmTitleFor(language), fontWeight = FontWeight.Bold) },
+            text = { Text(rankResetConfirmBodyFor(language)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    rankMeasure.reset()
+                }) { Text(rankResetConfirmFor(language)) }
+            },
+            dismissButton = { TextButton(onClick = { confirming = false }) { Text(strings.cancel) } },
+        )
+    }
 }
 
 /** 제목 한 줄과 그 아래의 선택 버튼들 — 고른 것은 채워서, 못 고르는 것은 흐리게. */
