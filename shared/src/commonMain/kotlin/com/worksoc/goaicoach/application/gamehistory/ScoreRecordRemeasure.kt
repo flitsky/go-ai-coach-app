@@ -57,13 +57,7 @@ suspend fun remeasureScoreRecord(
     waitMillis: suspend (Long) -> Unit = { millis -> delay(millis) },
 ): GameReplayData {
     if (!replay.scoreSnapshots.hasProvisionalScores()) return replay
-    val timeline = buildGameReplayTimeline(
-        boardSize = BoardSize(entry.boardSize),
-        ruleset = entry.ruleset,
-        handicapCount = entry.handicapCount,
-        komi = entry.komi,
-        moves = replay.moves,
-    )
+    val timeline = buildGameReplayTimeline(setup = entry.setup, moves = replay.moves)
     val provisionalMoveNumbers = replay.scoreSnapshots
         .filter { snapshot -> snapshot.source == ScoreSnapshotSource.HumanNetworkEstimate }
         .map { snapshot -> snapshot.moveNumber }

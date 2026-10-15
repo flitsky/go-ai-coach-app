@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -24,10 +25,7 @@ class GameReplayTimelineTest {
 
     private fun timelineOf(moves: List<Move>, handicapCount: Int = 0) =
         buildGameReplayTimeline(
-            boardSize = BoardSize.Nine,
-            ruleset = Ruleset.Chinese,
-            handicapCount = handicapCount,
-            komi = 6.5,
+            setup = GameSetup.standard(BoardSize.Nine, Ruleset.Chinese, handicapCount = handicapCount, komi = 6.5),
             moves = moves,
         )
 

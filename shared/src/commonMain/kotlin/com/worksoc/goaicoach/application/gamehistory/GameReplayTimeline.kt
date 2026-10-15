@@ -2,10 +2,9 @@ package com.worksoc.goaicoach.application.gamehistory
 
 import com.worksoc.goaicoach.application.movereview.MoveReviewMarker
 import com.worksoc.goaicoach.application.movereview.deriveMoveReviewMarkersFromScoreSwing
-import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
-import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import kotlin.math.abs
 
@@ -45,17 +44,11 @@ data class GameReplayTimeline(
  * 대국당 한 번만 만든다.
  */
 fun buildGameReplayTimeline(
-    boardSize: BoardSize,
-    ruleset: Ruleset,
-    handicapCount: Int,
-    komi: Double,
+    setup: GameSetup,
     moves: List<Move>,
 ): GameReplayTimeline {
-    val initial = if (handicapCount > 0) {
-        GameState.withHandicap(boardSize, ruleset, handicapCount, komi = komi)
-    } else {
-        GameState.empty(boardSize = boardSize, ruleset = ruleset, komi = komi)
-    }
+    // 첫 국면은 판을 다시 세우는 다른 자리와 같은 한 곳이 낸다 — 시작 배치(사진에서 시작한 판, 백로그 #266) · 접바둑 · 빈 판.
+    val initial = GameState.withHandicap(setup)
 
     val states = mutableListOf(initial)
     var truncatedAt: Int? = null

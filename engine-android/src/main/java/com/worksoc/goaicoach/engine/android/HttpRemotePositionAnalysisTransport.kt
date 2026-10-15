@@ -171,6 +171,21 @@ internal object RemotePositionAnalysisJsonCodec {
         json.put("ruleset", setup.ruleset.name)
         json.put("komi", setup.komi)
         json.put("handicapCount", setup.handicapCount)
+        // 시작 배치(사진에서 시작한 판, 백로그 #266)는 **있을 때만** 싣는다 — 보통의 판은 와이어가 예전 그대로다.
+        // 서버는 지금 판(`stones`)과 수순을 받으므로 국면은 이것 없이도 맞다. 수순으로 판을 다시 세우는 서버라면 여기서 시작한다.
+        if (setup.setupStones.isNotEmpty()) {
+            json.put(
+                "setupStones",
+                JSONArray().also { stones ->
+                    setup.setupStones.entries
+                        .sortedWith(compareBy({ it.key.row }, { it.key.column }))
+                        .forEach { (coordinate, color) ->
+                            stones.put(JSONObject().put("point", coordinate.label(setup.boardSize)).put("color", color.name))
+                        }
+                },
+            )
+            json.put("firstPlayer", setup.firstPlayer.name)
+        }
     }
 
     internal fun encodeMove(

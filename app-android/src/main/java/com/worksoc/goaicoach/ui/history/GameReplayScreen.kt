@@ -134,13 +134,7 @@ internal fun GameReplayScreen(
     BackHandler { onBackClick() }
 
     val timeline = remember(entry.id, replay) {
-        buildGameReplayTimeline(
-            boardSize = BoardSize(entry.boardSize),
-            ruleset = entry.ruleset,
-            handicapCount = entry.handicapCount,
-            komi = entry.komi,
-            moves = replay.moves,
-        )
+        buildGameReplayTimeline(setup = entry.setup, moves = replay.moves)
     }
     // ⚠️ **저장된 `replay.moveEvaluations`를 읽지 않는다**(2026-09-20 개정) — 그건 대국이
     // 끝나던 순간의 코드로 캐시해 둔 값이라, 임계값·집계 방식을 바꿔도 이미 기록된 대국에는

@@ -33,7 +33,7 @@ data class GameSessionSettingsState(
 
     /** 다음 대국의 정체성 네 값 — 새 대국과 로비 미리보기가 이것 **하나**로 판을 만든다(refactor backlog #22). */
     val nextGameSetup: GameSetup
-        get() = GameSetup(boardSize = boardSize, ruleset = ruleset, handicapCount = handicapCount, komi = komi)
+        get() = GameSetup.standard(boardSize = boardSize, ruleset = ruleset, handicapCount = handicapCount, komi = komi)
 
     fun applyPlayerSetup(nextSetup: PlayerSetup): GameSessionSettingsState =
         copy(playerSetup = nextSetup)

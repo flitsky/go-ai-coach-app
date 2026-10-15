@@ -126,6 +126,8 @@ internal fun BoardCorrectionEditor(
             stones = stones,
             moves = emptyList(),
             komi = komi,
+            // 이 돌이 대국의 **시작 배치**다(백로그 #266) — 「이 국면부터 대국」한 판을 수순으로 다시 세울 때(엔진 · 이어하기 · 무르기 · 기록) 여기서 시작한다.
+            setupStones = stones,
         )
     }
 
@@ -145,6 +147,8 @@ internal fun BoardCorrectionEditor(
     val blackStoneCount = remember(stones) { stones.values.count { it == StoneColor.Black } }
     val whiteStoneCount = remember(stones) { stones.values.count { it == StoneColor.White } }
     val stonesWithoutLiberty = remember(stones, boardSize) { stonesWithoutLiberties(stones, boardSize).size }
+    // 숨 없는 돌이 있는 판은 엔진이 받지 않는다(KataGo가 그 시작판을 거부한다 — 함정 98) — 고칠 때까지 분석·대국을 막는다(#266).
+    val engineAccepts = stonesWithoutLiberty == 0
 
     Column(
         modifier = modifier
@@ -475,7 +479,7 @@ internal fun BoardCorrectionEditor(
                 ScanAnalysisView.entries.forEach { view ->
                     Button(
                         onClick = { analyze(view) },
-                        enabled = !isAnalyzing,
+                        enabled = !isAnalyzing && engineAccepts,
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp),
@@ -504,7 +508,8 @@ internal fun BoardCorrectionEditor(
 
             OutlinedButton(
                 onClick = { onPlayFromHere(currentGameState) },
-                enabled = !isAnalyzing,
+                // 돌이 하나도 없는 판은 「이 국면부터」가 아니다 — 새 대국으로 둔다. 빈 판에서 백부터 두는 판은 무르기·이어하기에서 깨졌다(#266 검토).
+                enabled = !isAnalyzing && engineAccepts && stones.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -528,7 +533,7 @@ internal fun BoardCorrectionEditor(
 }
 
 /** 보정 화면의 AI 분석 둘(사용자 2026-10-15) — 「AI 추천수」(후보 수 탐색) · 「형세 분석」(영역 · 승률 · 집 차이). 판에는 한 번에 하나만 보인다. */
-internal enum class ScanAnalysisView { TopMoves, Score }
+internal enum class ScanAnalysisView { Score, TopMoves }
 
 /** 분석 결과와 그것을 낸 국면 — 판을 고치면 그 국면이 아니므로 보이지 않는다. */
 internal class AnalyzedPosition<T>(val state: GameState, val result: T)

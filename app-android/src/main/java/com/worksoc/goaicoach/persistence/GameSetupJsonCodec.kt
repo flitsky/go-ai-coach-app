@@ -1,9 +1,12 @@
 package com.worksoc.goaicoach.persistence
 
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -20,12 +23,18 @@ import org.json.JSONObject
  *
  * 새 칸을 [GameSetup]에 더하면 `GameSetupJsonCodecTest`가 이 파일에 키가 없다고 빨개진다 — 키를 더하고, 그 키가
  * 없는 옛 저장분을 무엇으로 읽을지 기본값을 정할 것.
+ *
+ * 시작 배치 두 키(`setupStones` · `firstPlayer`, 백로그 #266)는 **시작 배치가 있을 때만** 쓴다 — 보통의 판은 저장 바이트가
+ * 예전과 한 바이트도 다르지 않다(기기 골든 그대로). 없으면 빈 배치 · 접바둑이면 백, 아니면 흑으로 읽는다(옛 저장분 전부가 그랬다).
+ * 돌은 `[["B","D4"], …]` — GTP 좌표 이름(판 크기에 따라 읽는다).
  */
 internal object GameSetupJsonCodec {
     const val BoardSizeKey = "boardSize"
     const val RulesetKey = "ruleset"
     const val HandicapCountKey = "handicapCount"
     const val KomiKey = "komi"
+    const val SetupStonesKey = "setupStones"
+    const val FirstPlayerKey = "firstPlayer"
 
     /** 저장분마다 네 키를 넣어 온 순서. 바꾸면 그 저장분의 기기 바이트가 바뀐다. */
     enum class Order {
@@ -49,15 +58,40 @@ internal object GameSetupJsonCodec {
                 json.put(HandicapCountKey, setup.handicapCount)
             }
         }
+        if (setup.setupStones.isNotEmpty()) {
+            val stones = JSONArray()
+            setup.setupStones.entries
+                .sortedWith(compareBy({ it.key.row }, { it.key.column }))
+                .forEach { (coordinate, color) -> stones.put(JSONArray().put(color.code()).put(coordinate.label(setup.boardSize))) }
+            json.put(SetupStonesKey, stones)
+            json.put(FirstPlayerKey, setup.firstPlayer.code())
+        }
         return json
     }
 
     /** 지원하지 않는 판 크기면 던진다(`BoardSize`) — 두 코덱 모두 그 저장분 하나를 버리는 쪽으로 받는다. */
-    fun read(json: JSONObject): GameSetup =
-        GameSetup(
-            boardSize = BoardSize(json.optInt(BoardSizeKey, BoardSize.Nine.value)),
+    fun read(json: JSONObject): GameSetup {
+        val boardSize = BoardSize(json.optInt(BoardSizeKey, BoardSize.Nine.value))
+        val handicapCount = json.optInt(HandicapCountKey, 0)
+        val setupStones = buildMap {
+            json.optJSONArray(SetupStonesKey)?.let { stones ->
+                for (i in 0 until stones.length()) {
+                    val pair = stones.getJSONArray(i)
+                    put(BoardCoordinate.fromLabel(pair.getString(1), boardSize), colorOf(pair.getString(0)))
+                }
+            }
+        }
+        return GameSetup(
+            boardSize = boardSize,
             ruleset = enumOrDefault(json.optString(RulesetKey), Ruleset.Japanese),
-            handicapCount = json.optInt(HandicapCountKey, 0),
+            handicapCount = handicapCount,
             komi = json.optDouble(KomiKey, DefaultKomi),
+            setupStones = setupStones,
+            firstPlayer = json.optString(FirstPlayerKey).takeIf { it.isNotEmpty() }?.let(::colorOf) ?: GameSetup.firstPlayerFor(handicapCount),
         )
+    }
+
+    private fun StoneColor.code(): String = if (this == StoneColor.Black) "B" else "W"
+
+    private fun colorOf(code: String): StoneColor = if (code == "W") StoneColor.White else StoneColor.Black
 }

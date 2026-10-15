@@ -33,9 +33,23 @@ data class LocalEngineMoveResult(
     val endgame: AiEndgameResolution? = null,
 )
 
+/**
+ * 엔진 판을 [state]로 맞춘다 — 첫 국면을 세우고 둔 수를 차례로 둔다.
+ *
+ * 첫 국면이 **밖에서 받은 국면**이면(시작 배치 — 바둑판 사진에서 「이 국면부터 대국」, 백로그 #266) 정적 국면으로 세운다
+ * (`syncStaticPosition` — GTP는 `loadsgf`, JSON 분석은 `initialStones`). 예전에는 시작 배치를 몰라 둔 수가 하나라도 있으면
+ * 「새 판 + 수순」으로 맞췄고, AI가 둘째 수부터 사진의 돌이 없는 판을 봤다. 시작 배치 없이 수순도 없이 돌만 있는 국면
+ * (보정 화면의 분석)은 그 돌을 시작 배치로 본다.
+ */
 suspend fun EngineCoreApi.syncToGameState(state: GameState): EngineStatus {
-    if (state.handicapCount == 0 && state.moves.isEmpty() && state.stones.isNotEmpty()) {
-        return syncStaticPosition(state)
+    val setupStones = state.setupStones.ifEmpty {
+        if (state.handicapCount == 0 && state.moves.isEmpty()) state.stones else emptyMap()
+    }
+    if (setupStones.isNotEmpty()) {
+        val start = GameState.withHandicap(state.setup.copy(setupStones = setupStones))
+        val status = syncStaticPosition(start)
+        state.moves.forEach { move -> playMove(move) }
+        return status
     }
     val status = newGame(state.boardSize, state.ruleset, state.handicapCount, state.komi)
     state.moves.forEach { move ->

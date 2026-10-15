@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.GameSetup
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
@@ -34,10 +35,7 @@ class GameBranchApplicationTest {
 
     private fun timelineOf(moves: List<Move>, handicapCount: Int = 0) =
         buildGameReplayTimeline(
-            boardSize = BoardSize.Nine,
-            ruleset = Ruleset.Chinese,
-            handicapCount = handicapCount,
-            komi = 6.5,
+            setup = GameSetup.standard(BoardSize.Nine, Ruleset.Chinese, handicapCount = handicapCount, komi = 6.5),
             moves = moves,
         )
 

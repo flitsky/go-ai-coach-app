@@ -44,7 +44,12 @@ class RemoteGameSetupWireGoldenTest {
         val properties = GameSetup::class.java.declaredFields
             .filterNot { java.lang.reflect.Modifier.isStatic(it.modifiers) }
             .map { it.name }
-        val encoded = RemotePositionAnalysisJsonCodec.encodeState(GameState.empty(BoardSize.Nine))
+        // 시작 배치 두 키(#266)는 시작 배치가 있을 때만 실리므로, 사진에서 시작한 판으로 잰다.
+        val photo = GameState.empty(BoardSize.Nine).let { empty ->
+            val stones = mapOf(BoardCoordinate(row = 4, column = 4) to StoneColor.Black)
+            empty.copy(stones = stones, setupStones = stones, nextPlayer = StoneColor.White)
+        }
+        val encoded = RemotePositionAnalysisJsonCodec.encodeState(photo)
 
         properties.forEach { property -> assertTrue("와이어에 `$property`가 없다", encoded.has(property)) }
     }

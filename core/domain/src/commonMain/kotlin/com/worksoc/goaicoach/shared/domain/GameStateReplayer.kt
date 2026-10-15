@@ -30,13 +30,8 @@ object GameStateReplayer {
      * 따로 넘기다 하나를 빠뜨리면(#1의 덤) 기본 인자가 조용히 채웠다. 이 경로는 빠뜨릴 칸이 없다.
      */
     fun replay(setup: GameSetup, moves: List<Move>): GameState =
-        replay(
-            boardSize = setup.boardSize,
-            ruleset = setup.ruleset,
-            moves = moves,
-            handicapCount = setup.handicapCount,
-            komi = setup.komi,
-        )
+        // 첫 국면은 [GameState.withHandicap] 한 곳이 낸다 — 시작 배치(백로그 #266) · 접바둑 · 빈 판.
+        moves.fold(GameState.withHandicap(setup)) { state, move -> state.play(move) }
 }
 
 fun GameState.replayWithoutLastMoves(count: Int): GameState {

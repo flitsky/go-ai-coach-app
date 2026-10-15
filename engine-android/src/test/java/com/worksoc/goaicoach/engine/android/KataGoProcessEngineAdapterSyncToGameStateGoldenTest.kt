@@ -107,6 +107,36 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
         )
     }
 
+    /**
+     * 사진 국면에서 시작해 두 수를 둔 판(백로그 #266) — 시작 배치를 정적 국면으로 세운 뒤 수를 둔다. 예전에는 둔 수가 있으면
+     * 「새 판 + 수순」으로 맞춰 사진의 돌이 엔진에서 사라졌다(AI가 빈 판의 수를 뒀다).
+     */
+    @Test
+    fun photoGameAfterTwoMoves() = runBlocking {
+        adapter.initialize(EngineProfile())
+        val photoStart = StaticWhiteToMove.copy(setupStones = StaticWhiteToMove.stones)
+        val afterTwo = photoStart
+            .play(play(StoneColor.White, "C7"))
+            .play(play(StoneColor.Black, "G3"))
+        adapter.syncToGameState(afterTwo)
+        adapter.analyze(JsonPathLimit)
+
+        assertGolden(
+            gtp = InitializeCommands + listOf(
+                "kata-set-rules japanese",
+                "komi 6.5",
+                StaticPositionLoad,
+                "play W C7",
+                "play B G3",
+            ),
+            queries = listOf(
+                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"W","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[["W","C7"],["B","G3"]],"analyzeTurns":[2],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m2","overrideSettings":{}}""",
+            ),
+        )
+        // 엔진이 읽는 시작판은 사진의 돌과 첫 차례(백)다 — 둔 두 수는 그 위에 `play`로 둔다.
+        assertEquals("(;GM[1]FF[4]SZ[9]KM[6.5]PL[W]AB[fd][ee]AW[df])", staticPositionSgf())
+    }
+
     /** 맞바둑 3수(홀수) 뒤 — `newGame` + `play` 셋으로 다시 세운다. */
     @Test
     fun evenGameAfterThreeMoves() = runBlocking {

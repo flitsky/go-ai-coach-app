@@ -203,11 +203,8 @@ private fun buildOpeningStates(finalState: GameState): List<GameState> =
         // The move history of a handicap game starts with White. Replay from
         // the same initial handicap position rather than an empty Black-to-play
         // board, otherwise the first White move violates the game rules.
-        var state = GameState.withHandicap(
-            boardSize = finalState.boardSize,
-            ruleset = finalState.ruleset,
-            handicapCount = finalState.handicapCount,
-        )
+        // 시작 배치(사진에서 시작한 판, 백로그 #266)도 같은 한 곳이 놓는다.
+        var state = GameState.withHandicap(finalState.setup)
         finalState.moves.forEach { move ->
             state = state.play(move)
             if (

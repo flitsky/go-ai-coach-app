@@ -260,6 +260,11 @@ data class GameState(
     val koForbiddenFor: StoneColor? = null,
     val handicapCount: Int = 0,
     val komi: Double = DefaultKomi,
+    /**
+     * 첫 수 전에 판에 놓여 있던 돌(백로그 #266) — 바둑판 사진에서 「이 국면부터 대국」한 판만 있다. 수를 두면 그대로 따라간다(`copy`).
+     * 판을 수순으로 다시 세우는 모든 자리가 [setup]을 거쳐 이것부터 놓는다 — [stones](지금 판)와 다르다.
+     */
+    val setupStones: Map<BoardCoordinate, StoneColor> = emptyMap(),
 ) {
     /**
      * 이 판의 정체성 네 값([boardSize]·[ruleset]·[handicapCount]·[komi])을 한 값으로(refactor backlog #22).
@@ -269,7 +274,15 @@ data class GameState(
      * 지금 모양을 쓰고 있어서, 이것을 저장 필드로 바꾸면 호출부가 전부 흔들린다. 이것은 **파생**이라 따로 어긋날 수 없다.
      */
     val setup: GameSetup
-        get() = GameSetup(boardSize = boardSize, ruleset = ruleset, handicapCount = handicapCount, komi = komi)
+        get() = GameSetup(
+            boardSize = boardSize,
+            ruleset = ruleset,
+            handicapCount = handicapCount,
+            komi = komi,
+            setupStones = setupStones,
+            // 둔 수가 있으면 첫 수의 색이 첫 차례다 — 없으면 지금 차례가 곧 첫 차례.
+            firstPlayer = moves.firstOrNull()?.player ?: nextPlayer,
+        )
 
     fun stoneAt(coordinate: BoardCoordinate): StoneColor? = stones[coordinate]
 
@@ -305,14 +318,30 @@ data class GameState(
                 komi = komi,
             )
 
-        /** [setup]의 첫 국면 — 접바둑이면 흑돌을 화점에 놓고 백부터, 아니면 빈 판에 흑부터(refactor backlog #22). */
+        /**
+         * [setup]의 첫 국면(refactor backlog #22) — 시작 배치가 있으면 그 돌과 그 차례(백로그 #266), 접바둑이면 흑돌을 화점에 놓고 백부터,
+         * 아니면 빈 판에 흑부터. 판을 수순으로 다시 세우는 자리(이어하기 · 무르기 · 대국 기록 · 엔진)는 모두 여기서 시작한다.
+         */
         fun withHandicap(setup: GameSetup): GameState =
-            withHandicap(
-                boardSize = setup.boardSize,
-                ruleset = setup.ruleset,
-                handicapCount = setup.handicapCount,
-                komi = setup.komi,
-            )
+            if (setup.setupStones.isNotEmpty()) {
+                GameState(
+                    boardSize = setup.boardSize,
+                    ruleset = setup.ruleset,
+                    nextPlayer = setup.firstPlayer,
+                    stones = setup.setupStones,
+                    moves = emptyList(),
+                    handicapCount = setup.handicapCount,
+                    komi = setup.komi,
+                    setupStones = setup.setupStones,
+                )
+            } else {
+                withHandicap(
+                    boardSize = setup.boardSize,
+                    ruleset = setup.ruleset,
+                    handicapCount = setup.handicapCount,
+                    komi = setup.komi,
+                )
+            }
 
         /**
          * 접바둑 초기 상태를 생성합니다.

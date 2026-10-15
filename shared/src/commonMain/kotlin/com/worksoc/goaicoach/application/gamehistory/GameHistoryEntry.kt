@@ -84,7 +84,7 @@ data class GameHistoryEntry(
     ) : this(
         id = id,
         playedAtMillis = playedAtMillis,
-        setup = GameSetup(boardSize = BoardSize(boardSize), ruleset = ruleset, handicapCount = handicapCount, komi = komi),
+        setup = GameSetup.standard(boardSize = BoardSize(boardSize), ruleset = ruleset, handicapCount = handicapCount, komi = komi),
         playerSetup = playerSetup,
         moveCount = moveCount,
         humanColor = humanColor,
