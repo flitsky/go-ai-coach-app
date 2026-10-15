@@ -258,7 +258,7 @@ internal fun SettingsScreen(
         ) {
             // ## 절 — 언어 및 글자 크기 · 대국 셋(바둑판 · 착수 · AI 코치) · 도움말 · 앱 정보(#256 「A 정리형」 → #261 제목을 분명하게, 사용자 2026-10-13)
             // 실험실 패널은 1.5.0에서 내렸다 — 하나뿐이던 「바둑판 사진 분석」이 본 기능이 됐다(사용자 2026-10-15). 새 실험을 올리면
-            // 도움말 아래(앱 정보 위)에 되살린다: `git show 9c52be0b:app-android/src/main/java/com/worksoc/goaicoach/ui/settings/ExperimentalFeaturesSettingsPanel.kt`.
+            // 도움말 아래(앱 정보 위)에 되살린다 — `3ebe64d5`가 지운 패널(`ExperimentalFeaturesSettingsPanel`)과 저장소는 그 부모 `9c52be0b`에 있다(#265).
             SettingsSectionTitle(settingsDisplaySectionFor(strings.language))
             LanguageSettingsPanel(
                 selectedLanguage = selectedLanguage,

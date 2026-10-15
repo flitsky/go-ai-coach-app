@@ -380,7 +380,7 @@ kotlin {
 // ⚠️ **OpenCV도 같다(백로그 #263, 2026-10-15)** — 플러그인은 `org.opencv:opencv`(Apache-2.0) 한 줄만 안다.
 // `libopencv_java4.so` 안의 부품은 **바이너리의 빌드 정보**(`strings`의 "3rdparty dependencies"·"build"·"builtin")
 // 그대로 골랐다(추측 아님): libjpeg-turbo·libpng·libtiff·libwebp·openjpeg·openexr·protobuf·ittnotify·cpufeatures =
-// OpenCV 4.14.0 태그 `3rdparty/<부품>`의 라이선스 파일(libjpeg-turbo는 `LICENSE.md` + `README.ijg`, ittnotify는 BSD 쪽,
+// OpenCV 4.14.0 태그 `3rdparty/<부품>`의 라이선스 파일(libjpeg-turbo는 LICENSE 문서 + `README.ijg`, ittnotify는 BSD 쪽,
 // cpufeatures는 `LICENSE`에 더해 `cpu-features.c` 머리말) · carotene = `hal/carotene`의 소스 머리말(`functions.hpp`,
 // FAST는 `src/fast.cpp`) · FlatBuffers = `3rdparty/flatbuffers/LICENSE.txt` · 빌드가 내려받는 oneTBB v2022.1.0·
 // KleidiCV 26.03·ADE v0.1.2e = 각 저장소 그 태그의 LICENSE(OpenCV cmake의 다운로드 MD5와 일치 확인). FlatBuffers·
