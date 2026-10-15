@@ -68,7 +68,6 @@ import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
-import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -152,11 +151,10 @@ internal fun GoCoachHomeScreen(
     val showsPremiumPrompt = !subscribed && FeatureFlags.isPurchaseEnabled
     var showSubscribeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val isCameraBoardScanEnabled = ExperimentalFeaturesStore(context).isCameraBoardScanEnabled()
     // 다른 앱에서 「공유」로 받은 바둑판 사진이 있으면 사진 분석으로 간다(백로그 #263) — 사진은 그 화면이 꺼낸다.
     // 셸이 아니라 여기서 하는 것은 셸의 상태 훅 여유가 0이라서다(함정 3). 다른 화면에 있으면 홈으로 돌아올 때 열린다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (isCameraBoardScanEnabled && SharedBoardPhotoInbox.hasPhoto(context)) onBoardScanClick()
+        if (SharedBoardPhotoInbox.hasPhoto(context)) onBoardScanClick()
     }
 
     Column(
@@ -340,13 +338,11 @@ internal fun GoCoachHomeScreen(
 
             // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
             // 순서는 그대로다: 「대국 기록」이 먼저(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다), 그다음 「학습 하기」.
-            // 🧪 「사진 분석」은 실험실 기능(#179)이라 설정 > 실험실에서 켠 경우에만 셋째 타일로 붙는다 — 홀로 남은 타일도 반 폭을 지킨다.
+            // 「사진 분석」이 셋째 타일이다 — 1.5.0부터 본 기능(사용자 2026-10-15, 그 전에는 실험실에서 켜야 붙었다). 홀로 남은 타일도 반 폭을 지킨다.
             val tiles = buildList {
                 add(HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() })
                 add(HomeMenuTile(strings.study, onStudyClick) { StudyPreviewIcon() })
-                if (isCameraBoardScanEnabled) {
-                    add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
-                }
+                add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
             }
             tiles.chunked(2).forEach { row ->
                 Spacer(modifier = Modifier.height(AppSpacing.Space12))
@@ -638,7 +634,7 @@ private val MenuCardPlayGlyphSize = 22.dp
 internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
 
 /**
- * 홈의 **반 폭 타일** — 두는 것이 아닌 메뉴(대국 기록 · 학습 하기 · 실험실의 사진 분석)가 쓴다(백로그 #237).
+ * 홈의 **반 폭 타일** — 두는 것이 아닌 메뉴(대국 기록 · 학습 하기 · 사진 분석)가 쓴다(백로그 #237).
  * [MenuCard]보다 작고 납작하며(그림자 없음) **부제가 없다** — 제목만으로 무엇인지 읽히는 메뉴들이고, 반 폭에는 부제가 설 자리가 없다.
  */
 @Composable

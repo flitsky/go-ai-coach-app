@@ -92,7 +92,6 @@ import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.DeviceIdentityStore
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
-import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
 import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
@@ -972,28 +971,24 @@ private fun GoCoachScreen(
             StudyScreen(onBackClick = { currentDestination = ScreenDestination.Home })
         }
         ScreenDestination.BoardScan -> {
-            if (!ExperimentalFeaturesStore(context).isCameraBoardScanEnabled()) {
-                exitToHome()
-            } else {
-                BoardScanScreen(
-                    engineClient = engineClient,
-                    onBackClick = exitToHome,
-                    onStartGameWithState = { scannedState ->
-                        sessionStore.clear()
-                        dispatch(
-                            GameUiEvent.ResumeSavedSession(
-                                SavedGameSnapshot(
-                                    gameState = scannedState,
-                                    playerSetup = screenState.playerSetup,
-                                    playLevel = screenState.playLevel,
-                                    topMovesEnabled = topMovesEnabled,
-                                    savedAtMillis = System.currentTimeMillis(),
-                                )
+            BoardScanScreen(
+                engineClient = engineClient,
+                onBackClick = exitToHome,
+                onStartGameWithState = { scannedState ->
+                    sessionStore.clear()
+                    dispatch(
+                        GameUiEvent.ResumeSavedSession(
+                            SavedGameSnapshot(
+                                gameState = scannedState,
+                                playerSetup = screenState.playerSetup,
+                                playLevel = screenState.playLevel,
+                                topMovesEnabled = topMovesEnabled,
+                                savedAtMillis = System.currentTimeMillis(),
                             )
                         )
-                    },
-                )
-            }
+                    )
+                },
+            )
         }
         ScreenDestination.GameHistory -> {
             GameHistoryScreen(

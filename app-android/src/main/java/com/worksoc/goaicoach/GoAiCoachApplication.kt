@@ -6,8 +6,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
-import com.worksoc.goaicoach.persistence.ExperimentalFeaturesStore
-import com.worksoc.goaicoach.ui.vision.BoardPhotoShareTarget
 
 /**
  * App-wide lifecycle hook — registered via `android:name` in
@@ -45,8 +43,6 @@ class GoAiCoachApplication : Application() {
         ReleaseResetCoordinator(this).applyIfNeeded()
         ProcessLifecycleOwner.get().lifecycle.addObserver(ForegroundObserver)
         AttendanceCheckInCoordinator(this).start()
-        // 공유 목록에 「바둑판 사진 분석」을 띄울지 실험실 스위치와 맞춘다(백로그 #263) — 컴포넌트 상태는 백업으로 돌아오지 않는다.
-        BoardPhotoShareTarget.sync(this, ExperimentalFeaturesStore(this).isCameraBoardScanEnabled())
     }
 
     /**

@@ -68,7 +68,7 @@ import org.json.JSONObject
  *  5. **파서 가장자리** — 다음 줄로 넘어간 후행 람다, `;`로 이은 문장, 백틱 이름 같은 드문 문법은 L12·L2로
  *     닫힌 쪽으로 실패한다. 한 줄에서 안 닫힌 문자열은 메시지의 줄 번호를 밀 수 있는데, 컴파일 안 되는
  *     코드에서만 생긴다. 모양 검사는 글자만 본다(예: 별칭·지역 함수 한 겹은 따라가지만 그 너머는 못 본다).
- *  6. **L13·L16의 사각지대** — 식 안의 생성(`GoCoachApp.kt`의 `ExperimentalFeaturesStore(context)` 같은 것)과
+ *  6. **L13·L16의 사각지대** — 식 안의 생성(`Store(context).read()`처럼 문장 한가운데서 만드는 것 — 1.5.0 전 `GoCoachApp.kt`의 실험실 저장소가 그랬다)과
  *     람다(onClick·content) 안의 생성자는 보지 않는다. 함수 본문의 "문장 층"(if/when/for/while/try 블록은
  *     투명, 람다는 불투명)만 본다. ⚠️ **MainActivity는 합성 전체가 `setContent { CompositionLocalProvider { … } }`
  *     람다 안이라 L13·L16이 거기서는 한 번도 발화할 수 없다** — #45·#47이 MainActivity로 상태를 옮길 때 리뷰가 볼 몫이다.

@@ -131,44 +131,42 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.4.0): 한국어 331자 · 영어 486자.
+⚠️ **언어당 500자 이내.** 지금(1.5.0): 한국어 256자 · 영어 492자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
-   · **꺼진 기능·옵트인 베타는 적지 않는다**(함정 51) — 닉네임·아바타(`ShowUserProfileRow = false`), 카메라 바둑판 인식(실험실).
+   · **꺼진 기능·옵트인 베타는 적지 않는다**(함정 51) — 닉네임·아바타(`ShowUserProfileRow = false`). 카메라 바둑판 인식은 1.5.0에서 실험실을 졸업해 이제 적는다.
    · **"첫 출시" 계열 문구는 영영 쓰지 말 것**(2026-09-11에 한 번 틀렸다).
    · 두 언어가 **같은 범위**를 말한다. 영어는 앱의 영어 UI 라벨(Review · Turning points · Enlarge on drag …)을 그대로 쓴다.
    · 지난 버전 본문은 git에 있다 — 1.0.0(기준선 905): `git show da57097b:work/play-store-assets/store_listing.txt`
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.4.0 (versionCode 10400, 2026-10-13) ────────
+──────── 지금 붙여넣을 것 — 1.5.0 (versionCode 10500, 2026-10-15) ────────
 
-✅ **기준선은 1.3.6**(프로덕션 10306 — 2026-10-11~12). 1.3.6 이후 사용자가 체감하는 것만 적었다 —
-   #255 새 버전 알림(홈 한 줄) · #257 업데이트 뒤 「새로워진 점」 · #256·#261 설정 정리 · #256 「마이 페이지」→「내 정보」 + #260 내 캐릭터 ·
-   #258 조작법 직접 해 보기 · #259 승급 대국 규칙. 앱 안 「새로워진 점」 1.4.0 묶음(`UiStringsWhatsNew.kt`)과 같은 범위다.
-   적지 않은 것: 「엔진이 없고 새 버전이 있으면 받기 전에 업데이트를 고르게」(#255 — 새로 설치한 사람에게만 해당) · 기력 「최근 5판」 삭제(#259).
-⚠️ 언어당 500자 이내 — 지금: 한국어 331자 · 영어 486자. 본문은 스레드가 쓴 초안이다(2026-10-13) — 콘솔에 붙이기 전에 사용자가 본다.
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.4.0이 나간 뒤의 기준선은 1.4.0이다.
-   지난 본문: 1.3.6 `git show b3cc0d0a:work/play-store-assets/store_listing.txt`
+✅ **기준선은 1.4.0**(프로덕션 10400 — 2026-10-13). 1.4.0 이후 사용자가 체감하는 것:
+   #263 「바둑판 사진 분석」 — **1.5.0에서 실험실을 졸업해 본 기능이 됐다**(사용자 2026-10-15: "OpenCV를 담으면서는 실험실 기능이 아니라 본 기능으로").
+   라이브 카메라 자동 촬영 · 사진첩 · 공유로 받기 · 보정 · 이 국면부터 대국 · AI 분석(FeatureId.BoardScan — 광고 1시간 또는 구독) · SGF 보내기.
+   #209 구독 확인 72시간 강등을 두던 판이 끝날 때까지 미룬다.
+   적지 않은 것: 개발자 화면의 「72시간 지난 구독」 버튼(디버그 전용) · 인식 엔진 안쪽(OpenCV · 신경망)은 사용자 말로 「판을 찾아」·「읽어요」로만.
+   앱 안 「새로워진 점」 1.5.0 묶음(`UiStringsWhatsNew.kt`)과 같은 범위다.
+⚠️ 언어당 500자 이내 — 지금: 한국어 256자 · 영어 492자. 본문은 스레드가 쓴 초안이다(2026-10-15) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.5.0이 나간 뒤의 기준선은 1.5.0이다.
+   지난 본문: 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt` · 1.3.6 `git show b3cc0d0a:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
-설정과 「내 정보」를 알기 쉽게 정리했습니다.
+바둑판 사진으로 국면을 옮겨 오는 「바둑판 사진 분석」이 생겼습니다.
 
-· 새 버전이 나오면 홈 화면에서 알려 드리고, 업데이트한 뒤에는 달라진 점을 한 번 보여 드려요(설정 › 앱 정보 「새로워진 점」에서 다시 볼 수 있어요)
-· 설정: 「언어 및 글자 크기」와 대국 바둑판 · 착수 · AI 코치 설정으로 나눴습니다
-· 「마이 페이지」가 「내 정보」가 되었어요 — 모은 캐릭터를 한눈에 보고, 광고로 조각을 모을 수 있습니다
-· 바둑판 조작법: 판을 누르면 바로 직접 해 볼 수 있어요
-· 승급 대국: 이긴 집 차이 10집마다 한 단계씩 올라요(한 판에 최대 7단계). 단은 10집 이상 차이로 이기면 올라갑니다
+· 홈의 「바둑판 사진 분석」: 바둑판을 비추면 판을 찾아 자동으로 찍어요. 사진첩의 사진이나 다른 앱에서 「공유」한 사진도 읽어요
+· 읽은 국면을 보정한 뒤 그 자리부터 AI와 대국하거나, AI 추천 수와 형세를 볼 수 있어요(프리미엄). SGF 파일로 보낼 수도 있어요
+· 인터넷이 오래 끊겨 구독을 확인하지 못해도, 두고 있던 판은 끝날 때까지 프리미엄 기능을 그대로 쓸 수 있어요
 </ko-KR>
 <en-US>
-Clearer Settings and My info.
+New: Board Photo Analysis brings a real board into the app.
 
-· The home screen tells you when a new version is out, and shows what changed once after you update (again in Settings › What's new)
-· Settings: Language and text size, then board, stone placement and AI coach
-· My page is now My info: see your characters and collect pieces via ads
-· Board Controls Guide: touch the board to try it right away
-· Rank games: up one step per 10 points you win by (max 7 per game); in dan ranks, a 10+ point win moves you up
+· Board Photo Analysis on the home screen: point the camera at a board and it finds and captures it. It also reads photos from your gallery or ones shared from other apps
+· Fix up the position, then play the AI from there or see AI moves and the score (Premium). You can also send it as an SGF file
+· If your subscription can't be confirmed for a long time (e.g. offline), your current game keeps its Premium features until it ends
 </en-US>
 
 ──────────────────────────────────────────────

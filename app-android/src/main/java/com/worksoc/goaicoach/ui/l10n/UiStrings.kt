@@ -984,38 +984,6 @@ internal data class UiStrings(
             }
         }
 
-    fun labsTitle(): String =
-        when (language) {
-            UiLanguage.Korean -> "실험실"
-            UiLanguage.English -> "Labs"
-            UiLanguage.Japanese -> "実験室"
-            UiLanguage.ChineseSimplified -> "实验室"
-        }
-
-    fun labsSubtitle(): String =
-        when (language) {
-            UiLanguage.Korean -> "개발 중인 새로운 기능들을 미리 체험해 볼 수 있습니다"
-            UiLanguage.English -> "Try out experimental features currently under development"
-            UiLanguage.Japanese -> "開発中の新機能をいち早くお試しいただけます"
-            UiLanguage.ChineseSimplified -> "提前体验正在开发中的新功能"
-        }
-
-    fun cameraBoardScanToggleTitle(): String =
-        when (language) {
-            UiLanguage.Korean -> "카메라 바둑판 사진 분석 (Beta)"
-            UiLanguage.English -> "Camera Board Scan (Beta)"
-            UiLanguage.Japanese -> "盤面写真スキャン (Beta)"
-            UiLanguage.ChineseSimplified -> "棋盘拍照分析 (Beta)"
-        }
-
-    fun cameraBoardScanToggleDescription(): String =
-        when (language) {
-            UiLanguage.Korean -> "촬영하거나 선택한 바둑판 사진을 인식하여 형세를 분석합니다"
-            UiLanguage.English -> "Recognize and analyze positions from captured or chosen photos"
-            UiLanguage.Japanese -> "撮影または選択した碁盤写真の局面を認識・分析します"
-            UiLanguage.ChineseSimplified -> "识别拍摄或选取的棋盘照片并进行形势分析"
-        }
-
     /** 모르는 종류(상위 버전에서 온 소모품)는 저장 키를 그대로 보여준다 — 지급 사실을 숨기지 않는다. */
     /**
      * 소모품의 **전체** 이름("형세 보기 1회권"). 마이 페이지처럼 여러 종류를 나란히 놓는 자리는

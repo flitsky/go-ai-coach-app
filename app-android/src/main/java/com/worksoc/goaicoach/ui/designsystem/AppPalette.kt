@@ -111,7 +111,7 @@ internal object ScoreGraphPalette {
 }
 
 /**
- * 카메라 바둑판 인식(실험실 기능) — **사진 위**에 그리므로 테마와 무관한 어두운 바탕·흰 글자다.
+ * 카메라 바둑판 인식(사진 분석) — **사진 위**에 그리므로 테마와 무관한 어두운 바탕·흰 글자다.
  */
 internal object VisionPalette {
     val Backdrop = Color.Black

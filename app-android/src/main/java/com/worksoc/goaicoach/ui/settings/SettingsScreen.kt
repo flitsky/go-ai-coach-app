@@ -257,7 +257,8 @@ internal fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             // ## 절 — 언어 및 글자 크기 · 대국 셋(바둑판 · 착수 · AI 코치) · 도움말 · 앱 정보(#256 「A 정리형」 → #261 제목을 분명하게, 사용자 2026-10-13)
-            // 실험실은 도움말 아래로 내렸다 — Beta 하나가 언어·글꼴 바로 아래 셋째 자리를 차지하고 있었다.
+            // 실험실 패널은 1.5.0에서 내렸다 — 하나뿐이던 「바둑판 사진 분석」이 본 기능이 됐다(사용자 2026-10-15). 새 실험을 올리면
+            // 도움말 아래(앱 정보 위)에 되살린다: `git show 9c52be0b:app-android/src/main/java/com/worksoc/goaicoach/ui/settings/ExperimentalFeaturesSettingsPanel.kt`.
             SettingsSectionTitle(settingsDisplaySectionFor(strings.language))
             LanguageSettingsPanel(
                 selectedLanguage = selectedLanguage,
@@ -297,9 +298,6 @@ internal fun SettingsScreen(
             // ## 도움말 — 바둑판 조작법 · 가이드 다시보기 · 내 기록의 보관(#241·#245, 줄 목록은 #256). 설정의 아래쪽이라는 자리는 2026-10-09 결정 그대로다.
             SettingsSectionTitle(settingsHelpSectionFor(strings.language))
             SettingsHelpLinks()
-
-            // 실험실 기능(#179 소프트랜딩) — 자체 저장소와 상태를 가져 이 화면의 상태를 쓰지 않는다. 자기 카드에 제목(🧪)이 있다.
-            ExperimentalFeaturesSettingsPanel()
 
             // 로그인 기능 자체가 꺼져 있으면(FeatureFlags.isLoginEnabled = false) 계정 섹션을
             // 통째로 숨긴다 — 로그인 수단이 하나도 없는데 "게스트로 이용 중입니다. 로그인하면..."

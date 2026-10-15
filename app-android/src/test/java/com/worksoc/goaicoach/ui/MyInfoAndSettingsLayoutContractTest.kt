@@ -31,7 +31,6 @@ class MyInfoAndSettingsLayoutContractTest {
             "SearchTimeSettingsPanel(",
             "settingsHelpSectionFor(",
             "SettingsHelpLinks()",
-            "ExperimentalFeaturesSettingsPanel()",
             "settingsAboutSectionFor(",
             "AppUpdateRow(",
             "if (isDeveloperModeEnabled) {",
