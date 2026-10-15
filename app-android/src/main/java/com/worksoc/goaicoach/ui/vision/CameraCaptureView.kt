@@ -208,6 +208,8 @@ internal fun CameraCaptureView(
                     }
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
                     cameraProviderFuture.addListener({
+                        // 카메라가 준비되기 전에 화면을 닫았으면 걸지 않는다 — 걸면 액티비티 수명에 묶여 다른 화면에서도 카메라가 켜진다.
+                        if (camera.disposed) return@addListener
                         val cameraProvider = cameraProviderFuture.get()
                         camera.provider = cameraProvider
                         // 미리보기와 분석을 **같은 4:3**으로 — 그래야 분석 프레임의 좌표를 미리보기 위에 그대로 옮겨 그릴 수 있다.

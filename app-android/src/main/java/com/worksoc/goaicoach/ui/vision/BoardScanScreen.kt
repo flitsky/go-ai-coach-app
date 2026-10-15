@@ -21,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.Lifecycle
@@ -56,7 +57,9 @@ import com.worksoc.goaicoach.vision.BoardPhotoDecoder
 import com.worksoc.goaicoach.vision.BoardScanResult
 import com.worksoc.goaicoach.vision.ScannedPositionShare
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -115,8 +118,20 @@ internal fun BoardScanScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // 사진 하나에 스캐너 하나 — 픽셀을 배열로 한 번만 복사한다(찾기·읽기·핀 붙이기가 함께 쓴다).
-    val scanner = remember(capturedBitmap) { capturedBitmap?.let(::AndroidBoardVisionScanner) }
+    // 사진 하나에 스캐너 하나 — 픽셀을 배열로 한 번만 복사하고, 자동 인식이 고른 판독을 핀 확인이 다시 쓴다(찾기·읽기·핀 붙이기가 함께 쓴다).
+    var scanner by remember { mutableStateOf<AndroidBoardVisionScanner?>(null) }
+    // 그 사진의 찾기·읽기 작업 — 사진을 버리거나 바꾸면 끊는다(버린 사진의 결과가 뒤늦게 화면을 바꾸지 않게, #263).
+    var photoWork by remember { mutableStateOf<Job?>(null) }
+
+    fun dropPhoto() {
+        photoWork?.cancel()
+        photoWork = null
+        capturedBitmap = null
+        scanner = null
+        pinCorners = null
+        isLocating = false
+        isScanning = false
+    }
 
     fun showResult(result: BoardScanResult, boardSize: BoardSize) {
         // 핀이 붙은 자리를 기억해 둔다 — 핀 화면으로 돌아오면 붙은 핀에서 다시 시작한다.
@@ -131,6 +146,7 @@ internal fun BoardScanScreen(
     // 찍었거나 골랐거나 공유로 받은 사진 한 장에서 시작한다 — 판을 스스로 찾고, **확실하면 핀 화면 없이 바로 결과로**(#263),
     // 아니면 핀 화면을 연다.
     fun startFromPhoto(bitmap: Bitmap) {
+        photoWork?.cancel()
         capturedBitmap = bitmap
         pinCorners = null
         pinBoardSize = BoardSize.Nineteen
@@ -140,7 +156,8 @@ internal fun BoardScanScreen(
         isLocating = true
         step = ScanStep.PinAdjustment
         val photoScanner = AndroidBoardVisionScanner(bitmap)
-        scope.launch {
+        scanner = photoScanner
+        photoWork = scope.launch {
             // 판을 스스로 찾는다 — 못 찾으면 핀 화면이 "직접 맞춰 주세요"로 연다. 실패가 아니다.
             val located = runCatching { photoScanner.locate() }.getOrNull()
             if (located != null && capturedBitmap === bitmap) {
@@ -150,7 +167,7 @@ internal fun BoardScanScreen(
                 val result = runCatching { photoScanner.scan(located.corners, located.boardSize, snap = false) }.getOrNull()
                 if (result != null && result.isConfident && capturedBitmap === bitmap) showResult(result, located.boardSize)
             }
-            isLocating = false
+            if (capturedBitmap === bitmap) isLocating = false
         }
     }
 
@@ -182,8 +199,7 @@ internal fun BoardScanScreen(
             }
             ScanStep.PinAdjustment -> {
                 step = ScanStep.Capture
-                capturedBitmap = null
-                pinCorners = null
+                dropPhoto()
             }
             ScanStep.Capture -> {
                 onBackClick()
@@ -215,23 +231,25 @@ internal fun BoardScanScreen(
                                 initialBoardSize = pinBoardSize,
                                 onCornersConfirmed = { corners, boardSize ->
                                     isScanning = true
-                                    scope.launch {
+                                    val photoScanner = scanner ?: AndroidBoardVisionScanner(bitmap).also { scanner = it }
+                                    photoWork = scope.launch {
                                         try {
                                             // 핀을 안 건드렸으면 자동 인식(또는 지난 인식)이 이미 격자에 붙인 자리다 — 다시 붙이지 않는다.
                                             val untouched = corners == pinCorners && boardSize == pinBoardSize
-                                            val result = (scanner ?: AndroidBoardVisionScanner(bitmap)).scan(corners, boardSize, snap = !untouched)
-                                            showResult(result, boardSize)
+                                            val result = photoScanner.scan(corners, boardSize, snap = !untouched)
+                                            if (capturedBitmap === bitmap) showResult(result, boardSize)
+                                        } catch (e: CancellationException) {
+                                            throw e
                                         } catch (e: Exception) {
-                                            errorMessage = text.scanFailed
+                                            if (capturedBitmap === bitmap) errorMessage = text.scanFailed
                                         } finally {
-                                            isScanning = false
+                                            if (capturedBitmap === bitmap) isScanning = false
                                         }
                                     }
                                 },
                                 onRetake = {
                                     step = ScanStep.Capture
-                                    capturedBitmap = null
-                                    pinCorners = null
+                                    dropPhoto()
                                 },
                             )
                         }
@@ -337,7 +355,9 @@ private fun ScanProgressBackdrop(label: String) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(VisionPalette.Backdrop.copy(alpha = 0.6f)),
+            .background(VisionPalette.Backdrop.copy(alpha = 0.6f))
+            // 도는 동안 아래 핀 화면의 「확인」·「다시 찍기」가 눌리지 않게 손가락을 받아 둔다
+            .pointerInput(Unit) { awaitPointerEventScope { while (true) awaitPointerEvent() } },
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

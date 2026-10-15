@@ -16,3 +16,11 @@
 # androidx 라이브러리들의 consumer rules로도 대부분 커버되지만, 없어도 비용이 거의 없어
 # 명시적으로 남긴다.
 -keepattributes *Annotation*
+
+# OpenCV(백로그 #263) — AAR에 consumer 규칙이 없다. 네이티브 코드가 이름으로 찾는 org.opencv 클래스는
+# `org/opencv/core/CvException` 하나뿐인데(`strings libopencv_java4.so` — 나머지는 java.lang·java.util), 자바 쪽에서 그것을
+# 쓰는 곳은 앱이 부르지 않는 `Utils.exportResource`뿐이라 R8이 지운다. 그러면 cv::Exception을 자바 예외로 바꾸던
+# `FindClass("org/opencv/core/CvException")`가 실패한 채 다음 FindClass를 불러 ART가 프로세스를 abort한다 —
+# `runCatching`으로 잡히지 않고 앱이 죽는다(디버그 빌드는 축소하지 않아 드러나지 않는다). native 메서드와 그 클래스 이름은
+# AGP 기본 규칙(`-keepclasseswithmembernames class * { native <methods>; }`)이 이미 지킨다.
+-keep class org.opencv.core.CvException { <init>(java.lang.String); }

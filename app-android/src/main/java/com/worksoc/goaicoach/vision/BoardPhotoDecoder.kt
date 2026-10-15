@@ -38,12 +38,20 @@ internal object BoardPhotoDecoder {
         limit(applyOrientation(decoded, orientation), maxDimension)
     }.getOrNull()
 
-    /** 긴 변이 [maxDimension]을 넘으면 비율을 지켜 줄인다. */
+    /**
+     * 긴 변이 [maxDimension]을 넘으면 비율을 지켜 줄이고, 픽셀 형식을 **ARGB_8888로 맞춘다** — 촬영본·갤러리·공유 사진이 모두 여기를 지난다.
+     * ⚠️ OpenCV의 `Utils.bitmapToMat`은 RGBA_8888·RGB_565만 받는다(백로그 #263) — 16비트 PNG는 RGBA_F16, 10비트 HEIF는 RGBA_1010102로
+     * 풀려 네이티브 단언이 실패한다. 그 오류가 릴리스 빌드에서 어떻게 끝나는지는 `proguard-rules.pro`의 OpenCV 절.
+     */
     fun limit(bitmap: Bitmap, maxDimension: Int = MaxDimension): Bitmap {
         val longest = max(bitmap.width, bitmap.height)
-        if (longest <= maxDimension) return bitmap
-        val f = maxDimension.toFloat() / longest
-        return bitmap.scale((bitmap.width * f).roundToInt(), (bitmap.height * f).roundToInt())
+        val sized = if (longest <= maxDimension) {
+            bitmap
+        } else {
+            val f = maxDimension.toFloat() / longest
+            bitmap.scale((bitmap.width * f).roundToInt(), (bitmap.height * f).roundToInt())
+        }
+        return if (sized.config == Bitmap.Config.ARGB_8888) sized else sized.copy(Bitmap.Config.ARGB_8888, false) ?: sized
     }
 
     private fun applyOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
