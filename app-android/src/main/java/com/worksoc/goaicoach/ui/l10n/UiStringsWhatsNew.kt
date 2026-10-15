@@ -19,28 +19,32 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
-        // 1.5.0 — #263 바둑판 사진 분석(실험실을 졸업해 본 기능 — 사용자 2026-10-15) · #209 두던 판은 끝까지 프리미엄.
+        // 1.5.0 — #263 바둑판 사진 분석(실험실을 졸업해 본 기능 — 사용자 2026-10-15) · #209 두던 판은 끝까지 프리미엄 · 급수 초기화.
         WhatsNewRelease(versionCode = 10500, versionName = "1.5.0") { language ->
             when (language) {
                 UiLanguage.Korean -> listOf(
                     "홈의 「바둑판 사진 분석」: 바둑판을 비추면 판을 찾아 자동으로 찍어요. 사진첩이나 다른 앱에서 「공유」한 사진도 읽어요.",
                     "읽은 국면을 보정한 뒤 그 자리부터 AI와 대국하거나, AI 추천 수와 형세를 볼 수 있어요(프리미엄). SGF 파일로 보낼 수도 있어요.",
                     "인터넷이 오래 끊겨 구독을 확인하지 못해도, 두고 있던 판은 끝날 때까지 프리미엄 기능을 그대로 쓸 수 있어요.",
+                    "승급 대국은 「급수 초기화하기」로 기력을 처음부터 다시 잴 수 있어요(승급 대국 창 · 내 정보).",
                 )
                 UiLanguage.English -> listOf(
                     "Board Photo Analysis on the home screen: point the camera at a board and it finds and captures it. It also reads photos from your gallery or shared from other apps.",
                     "Fix up the position, then play the AI from there or see AI moves and the score (Premium). You can also send it as an SGF file.",
                     "If your subscription can't be confirmed for a long time (e.g. offline), your current game keeps its Premium features until it ends.",
+                    "Rank games: reset your rank to measure it again (Rank game window or My info).",
                 )
                 UiLanguage.Japanese -> listOf(
                     "ホームの「盤面写真分析」：碁盤を映すと盤を見つけて自動で撮影します。アルバムの写真や他のアプリから「共有」した写真も読み取れます。",
                     "読み取った局面を補正したら、そこからAIと対局したり、AI推奨手と形勢を見たりできます（プレミアム）。SGFファイルで送ることもできます。",
                     "インターネットに長くつながらず購読を確認できなくても、対局中の一局は終わるまでプレミアム機能をそのまま使えます。",
+                    "昇級対局は「級位をリセット」で棋力を最初から測り直せます（昇級対局の画面・マイ情報）。",
                 )
                 UiLanguage.ChineseSimplified -> listOf(
                     "首页的「棋盘拍照分析」：对准棋盘即可自动找到并拍摄。也能读取相册中的照片或从其他应用「分享」来的照片。",
                     "校正识别出的局面后，可以从这里与 AI 对局，或查看 AI 推荐手和形势（高级版）。也可以作为 SGF 文件发送。",
                     "即使长时间断网无法确认订阅，正在下的这一局在结束前仍可继续使用高级版功能。",
+                    "升级对局可以通过「重置级位」从头重新测定棋力（升级对局窗口 · 我的信息）。",
                 )
             }
         },
