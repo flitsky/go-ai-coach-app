@@ -91,10 +91,14 @@ internal fun BoardCorrectionEditor(
     boardPhoto: Bitmap?,
     /** 인식이 확신하지 못한 교점(#263) — 주황 네모로 보이고, 그 자리를 한 번 누르면(고치면) 표시가 사라진다. */
     attentionPoints: Set<BoardCoordinate>,
-    isAnalyzing: Boolean,
-    analysisResult: AnalysisResult?,
-    scoreEstimate: ScoreEstimate?,
-    onStartAnalysis: (GameState) -> Unit,
+    /** 지금 계산 중인 분석 — 없으면 `null`. 도는 동안은 판·버튼을 잠근다(엔진은 한 번에 하나). */
+    analyzing: ScanAnalysisView?,
+    /** 마지막 「AI 추천수」와 그것을 낸 국면. */
+    topMoves: AnalyzedPosition<AnalysisResult>?,
+    /** 마지막 「형세 분석」과 그것을 낸 국면. */
+    score: AnalyzedPosition<ScoreEstimate>?,
+    /** [ScanAnalysisView]를 그 국면으로 계산해 달라 — 같은 국면의 결과가 이미 있으면 부르지 않고 바로 보인다. */
+    onAnalyze: (ScanAnalysisView, GameState) -> Unit,
     onPlayFromHere: (GameState) -> Unit,
     onExportSgf: (GameState) -> Unit,
     onRetake: () -> Unit,
@@ -108,6 +112,9 @@ internal fun BoardCorrectionEditor(
     var selectedTool by remember { mutableStateOf(BoardEditTool.Toggle) }
     var showPhoto by remember { mutableStateOf(false) }
     var attention by remember(attentionPoints) { mutableStateOf(attentionPoints) }
+    // 판에 보이는 분석 — 한 번에 하나(사용자 2026-10-15: 둘을 한 판에 겹치면 형세가 추천수에 묻혔다).
+    var shown by remember { mutableStateOf<ScanAnalysisView?>(null) }
+    val isAnalyzing = analyzing != null
     val text = boardScanStringsFor(LocalUiStrings.current.language)
     val photoBitmap = remember(boardPhoto) { boardPhoto?.asImageBitmap() }
 
@@ -120,6 +127,19 @@ internal fun BoardCorrectionEditor(
             moves = emptyList(),
             komi = komi,
         )
+    }
+
+    // 결과는 **그 결과를 낸 국면일 때만** 보인다 — 분석한 뒤 돌을 고치면 지난 판의 추천수·형세가 남아 있었다.
+    val shownTopMoves = topMoves?.takeIf { shown == ScanAnalysisView.TopMoves && it.state == currentGameState }?.result
+    val shownScore = score?.takeIf { shown == ScanAnalysisView.Score && it.state == currentGameState }?.result
+
+    fun analyze(view: ScanAnalysisView) {
+        shown = view
+        val cached = when (view) {
+            ScanAnalysisView.TopMoves -> topMoves?.state == currentGameState
+            ScanAnalysisView.Score -> score?.state == currentGameState
+        }
+        if (!cached) onAnalyze(view, currentGameState)
     }
 
     val blackStoneCount = remember(stones) { stones.values.count { it == StoneColor.Black } }
@@ -228,12 +248,12 @@ internal fun BoardCorrectionEditor(
                 )
             } else GoBoard(
                 gameState = currentGameState,
-                candidateMoves = analysisResult?.candidates ?: emptyList(),
+                candidateMoves = shownTopMoves?.candidates ?: emptyList(),
                 moveReviews = emptyList(),
-                ownershipEstimate = scoreEstimate?.ownership,
+                ownershipEstimate = shownScore?.ownership,
                 uxOptions = KaTrainUxOptions(
                     showCoordinates = true,
-                    showOwnershipOverlay = scoreEstimate?.ownership != null,
+                    showOwnershipOverlay = shownScore?.ownership != null,
                 ),
                 inputEnabled = !isAnalyzing,
                 engineActivityIndicator = null,
@@ -393,8 +413,8 @@ internal fun BoardCorrectionEditor(
             }
         }
 
-        // 5. 분석 결과 영역 (결과가 있을 때 표시)
-        if (analysisResult != null || scoreEstimate != null) {
+        // 5. 분석 결과 영역 — 보이는 분석 하나의 요약
+        if (shownTopMoves != null || shownScore != null) {
             Spacer(modifier = Modifier.height(AppSpacing.Space12))
             Card(
                 modifier = Modifier
@@ -405,14 +425,14 @@ internal fun BoardCorrectionEditor(
             ) {
                 Column(modifier = Modifier.padding(AppSpacing.Space14)) {
                     Text(
-                        text = text.analysisTitle,
+                        text = if (shownScore != null) text.analyzeScore else text.analyzeTopMoves,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.Space6))
 
-                    scoreEstimate?.let { estimate ->
+                    shownScore?.let { estimate ->
                         estimate.whiteWinRate?.let { whiteWin ->
                             val blackWin = (1.0 - whiteWin) * 100
                             Text(
@@ -430,15 +450,12 @@ internal fun BoardCorrectionEditor(
                         }
                     }
 
-                    analysisResult?.let { result ->
-                        if (result.candidates.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(AppSpacing.Space4))
-                            Text(
-                                text = text.candidatesFound(result.candidates.size),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                    shownTopMoves?.let { result ->
+                        Text(
+                            text = text.candidatesFound(result.candidates.size),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
                     }
                 }
             }
@@ -453,24 +470,35 @@ internal fun BoardCorrectionEditor(
                 .padding(horizontal = AppSpacing.Space16),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
         ) {
-            Button(
-                onClick = { onStartAnalysis(currentGameState) },
-                enabled = !isAnalyzing,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(AppRadius.Corner12),
-            ) {
-                if (isAnalyzing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                    Spacer(modifier = Modifier.width(AppSpacing.Space10))
-                    Text(text.analyzing, fontSize = AppTextSize.Text16, fontWeight = FontWeight.Bold)
-                } else {
-                    Text(text.analyze, fontSize = AppTextSize.Text16, fontWeight = FontWeight.Bold)
+            // AI 분석 둘을 나란히(사용자 2026-10-15) — 「AI 추천수」 · 「형세 분석」. 누른 쪽의 결과만 판에 보인다.
+            Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+                ScanAnalysisView.entries.forEach { view ->
+                    Button(
+                        onClick = { analyze(view) },
+                        enabled = !isAnalyzing,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(AppRadius.Corner12),
+                    ) {
+                        if (analyzing == view) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text(
+                                text = when (view) {
+                                    ScanAnalysisView.TopMoves -> text.analyzeTopMoves
+                                    ScanAnalysisView.Score -> text.analyzeScore
+                                },
+                                fontSize = AppTextSize.Text16,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -498,3 +526,9 @@ internal fun BoardCorrectionEditor(
         Spacer(modifier = Modifier.height(AppSpacing.Space24))
     }
 }
+
+/** 보정 화면의 AI 분석 둘(사용자 2026-10-15) — 「AI 추천수」(후보 수 탐색) · 「형세 분석」(영역 · 승률 · 집 차이). 판에는 한 번에 하나만 보인다. */
+internal enum class ScanAnalysisView { TopMoves, Score }
+
+/** 분석 결과와 그것을 낸 국면 — 판을 고치면 그 국면이 아니므로 보이지 않는다. */
+internal class AnalyzedPosition<T>(val state: GameState, val result: T)

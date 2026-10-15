@@ -105,9 +105,10 @@ internal fun BoardScanScreen(
 
     var isLocating by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
-    var isAnalyzing by remember { mutableStateOf(false) }
-    var analysisResult by remember { mutableStateOf<AnalysisResult?>(null) }
-    var scoreEstimate by remember { mutableStateOf<ScoreEstimate?>(null) }
+    // 보정 화면의 AI 분석 둘 — 결과는 그것을 낸 국면과 함께 기억한다(판을 고치면 보이지 않고, 같은 국면이면 다시 계산하지 않는다).
+    var analyzing by remember { mutableStateOf<ScanAnalysisView?>(null) }
+    var topMoves by remember { mutableStateOf<AnalyzedPosition<AnalysisResult>?>(null) }
+    var score by remember { mutableStateOf<AnalyzedPosition<ScoreEstimate>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
@@ -151,8 +152,8 @@ internal fun BoardScanScreen(
         pinCorners = null
         pinBoardSize = BoardSize.Nineteen
         attentionPoints = emptySet()
-        analysisResult = null
-        scoreEstimate = null
+        topMoves = null
+        score = null
         isLocating = true
         step = ScanStep.PinAdjustment
         val photoScanner = AndroidBoardVisionScanner(bitmap)
@@ -194,8 +195,8 @@ internal fun BoardScanScreen(
         when (step) {
             ScanStep.Correction -> {
                 step = ScanStep.PinAdjustment
-                analysisResult = null
-                scoreEstimate = null
+                topMoves = null
+                score = null
             }
             ScanStep.PinAdjustment -> {
                 step = ScanStep.Capture
@@ -270,39 +271,47 @@ internal fun BoardScanScreen(
                         initialGameState = initialGameState,
                         boardPhoto = boardPhoto,
                         attentionPoints = attentionPoints,
-                        isAnalyzing = isAnalyzing,
-                        analysisResult = analysisResult,
-                        scoreEstimate = scoreEstimate,
-                        onStartAnalysis = { stateToAnalyze ->
+                        analyzing = analyzing,
+                        topMoves = topMoves,
+                        score = score,
+                        onAnalyze = { view, stateToAnalyze ->
                             val access = premiumUiState.resolve(FeatureId.BoardScan)
                             if (access !is FeatureAccess.Allowed) {
                                 showPremiumUpsellDialog = true
                             } else {
-                                isAnalyzing = true
+                                analyzing = view
                                 scope.launch {
                                     try {
-                                        val estimate = withContext(Dispatchers.Default) {
-                                            engineClient.estimateScoreForState(
-                                                state = stateToAnalyze,
-                                                profile = EngineProfile(
-                                                    analysisLimit = AnalysisLimit(visits = 120, timeMillis = 3500)
-                                                ),
-                                                syncFirst = true,
+                                        when (view) {
+                                            // 「형세 분석」 — 영역(소유) · 승률 · 집 차이. 평가 한 번이다.
+                                            ScanAnalysisView.Score -> score = AnalyzedPosition(
+                                                stateToAnalyze,
+                                                withContext(Dispatchers.Default) {
+                                                    engineClient.estimateScoreForState(
+                                                        state = stateToAnalyze,
+                                                        profile = EngineProfile(analysisLimit = ScanAnalysisLimit),
+                                                        syncFirst = true,
+                                                    )
+                                                },
+                                            )
+                                            // 「AI 추천수」 — 후보 수 탐색.
+                                            ScanAnalysisView.TopMoves -> topMoves = AnalyzedPosition(
+                                                stateToAnalyze,
+                                                withContext(Dispatchers.Default) {
+                                                    engineClient.analyzePosition(
+                                                        state = stateToAnalyze,
+                                                        limit = ScanAnalysisLimit,
+                                                        searchMode = EngineSearchMode.JsonPositionAnalysis,
+                                                    )
+                                                },
                                             )
                                         }
-                                        val analysis = withContext(Dispatchers.Default) {
-                                            engineClient.analyzePosition(
-                                                state = stateToAnalyze,
-                                                limit = AnalysisLimit(visits = 120, timeMillis = 3500),
-                                                searchMode = EngineSearchMode.JsonPositionAnalysis,
-                                            )
-                                        }
-                                        scoreEstimate = estimate
-                                        analysisResult = analysis
+                                    } catch (e: CancellationException) {
+                                        throw e
                                     } catch (e: Exception) {
                                         errorMessage = boardScanAnalysisErrorMessage(e, strings.language)
                                     } finally {
-                                        isAnalyzing = false
+                                        analyzing = null
                                     }
                                 }
                             }
@@ -317,8 +326,8 @@ internal fun BoardScanScreen(
                         },
                         onRetake = {
                             step = ScanStep.PinAdjustment
-                            analysisResult = null
-                            scoreEstimate = null
+                            topMoves = null
+                            score = null
                         },
                     )
                 } else {
@@ -367,6 +376,9 @@ private fun ScanProgressBackdrop(label: String) {
         }
     }
 }
+
+/** 보정 화면의 AI 분석 깊이 — 「AI 추천수」·「형세 분석」 둘 다(나누기 전과 같은 값). */
+private val ScanAnalysisLimit = AnalysisLimit(visits = 120, timeMillis = 3500)
 
 /**
  * 스캔한 국면의 AI 분석이 끝나지 못했을 때 보일 문구.
