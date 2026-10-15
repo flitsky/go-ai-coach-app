@@ -1,0 +1,17 @@
+{
+  "uniqueId": "bundled.native:cpufeatures",
+  "artifactVersion": "",
+  "name": "cpufeatures (Android NDK)",
+  "description": "CPU feature detection. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://developer.android.com/ndk/guides/cpu-features.html",
+  "developers": [
+    {
+      "name": "The Android Open Source Project"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "cpufeatures-bsd-2-clause",
+    "cpufeatures-apache-2.0"
+  ]
+}

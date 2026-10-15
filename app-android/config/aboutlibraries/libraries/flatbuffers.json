@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:flatbuffers",
+  "artifactVersion": "25.9.23",
+  "name": "FlatBuffers",
+  "description": "Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://github.com/google/flatbuffers",
+  "developers": [
+    {
+      "name": "Google Inc."
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "Apache-2.0"
+  ]
+}

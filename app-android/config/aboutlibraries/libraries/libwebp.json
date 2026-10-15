@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:libwebp",
+  "artifactVersion": "1.6.0",
+  "name": "libwebp",
+  "description": "WebP codec. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://chromium.googlesource.com/webm/libwebp",
+  "developers": [
+    {
+      "name": "Google Inc."
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "libwebp-bsd-3-clause"
+  ]
+}

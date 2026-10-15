@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:onetbb",
+  "artifactVersion": "2022.1.0",
+  "name": "oneAPI Threading Building Blocks (oneTBB)",
+  "description": "Parallel framework. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://github.com/uxlfoundation/oneTBB",
+  "developers": [
+    {
+      "name": "Intel Corporation"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "Apache-2.0"
+  ]
+}

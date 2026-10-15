@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:libpng",
+  "artifactVersion": "1.6.57",
+  "name": "libpng",
+  "description": "PNG codec. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "http://www.libpng.org",
+  "developers": [
+    {
+      "name": "The PNG Reference Library Authors"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "libpng-license"
+  ]
+}

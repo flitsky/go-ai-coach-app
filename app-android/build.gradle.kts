@@ -377,6 +377,16 @@ kotlin {
 // 판, scripts/build-katago-android-spike.sh) · 신경망 = katagotraining.org/network_license/의
 // "KataGo Neural Network License" 블록 · Eigen = eigen-3.4.0 `COPYING.MPL2` · tclap·ghc filesystem·
 // nlohmann/json·sha2 = KataGo v1.16.4 `cpp/external`·`cpp/core/sha2.cpp`의 라이선스 원문.
+// ⚠️ **OpenCV도 같다(백로그 #263, 2026-10-15)** — 플러그인은 `org.opencv:opencv`(Apache-2.0) 한 줄만 안다.
+// `libopencv_java4.so` 안의 부품은 **바이너리의 빌드 정보**(`strings`의 "3rdparty dependencies"·"build"·"builtin")
+// 그대로 골랐다(추측 아님): libjpeg-turbo·libpng·libtiff·libwebp·openjpeg·openexr·protobuf·ittnotify·cpufeatures =
+// OpenCV 4.14.0 태그 `3rdparty/<부품>`의 라이선스 파일(libjpeg-turbo는 `LICENSE.md` + `README.ijg`, ittnotify는 BSD 쪽,
+// cpufeatures는 `LICENSE`에 더해 `cpu-features.c` 머리말) · carotene = `hal/carotene`의 소스 머리말(`functions.hpp`,
+// FAST는 `src/fast.cpp`) · FlatBuffers = `3rdparty/flatbuffers/LICENSE.txt` · 빌드가 내려받는 oneTBB v2022.1.0·
+// KleidiCV 26.03·ADE v0.1.2e = 각 저장소 그 태그의 LICENSE(OpenCV cmake의 다운로드 MD5와 일치 확인). FlatBuffers·
+// oneTBB·KleidiCV·ADE는 저작권 줄 없는 일반 Apache-2.0 원문이라 `Apache-2.0.json`을 함께 쓴다. zlib은 시스템
+// `libz.so`라 넣지 않았다. AAR이 함께 싣는 `libc++_shared.so`(KataGo `.so`에도 정적 링크) = 그 `.so`를 만든 NDK
+// 툴체인의 llvm-project 커밋 d8003a45의 `libcxx/LICENSE.TXT`·`libcxxabi/LICENSE.TXT`.
 aboutLibraries {
     // 빌드가 네트워크에 기대지 않게 한다. ⚠️ 오프라인이면 플러그인이 SPDX 본문(Apache-2.0·MIT·BSD-3-Clause)을
     // 못 받아 **이름만 남는다** — 그래서 셋의 원문을 `config/aboutlibraries/licenses/`에 한 번 받아 두었다

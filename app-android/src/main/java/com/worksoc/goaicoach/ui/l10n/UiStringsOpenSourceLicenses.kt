@@ -24,12 +24,15 @@ private val Intros: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "本应用包含的开源软件及其许可证。点按条目可展开或收起许可证全文。",
 )
 
-/** 목록 맨 위 구획 — Gradle 의존성이 아니라 앱이 직접 싣는 엔진·신경망과 엔진 안에 컴파일된 부품. */
+/**
+ * 목록 맨 위 구획 — Gradle 의존성이 아니라 앱이 직접 싣는 엔진·신경망과 `.so` 안에 컴파일된 부품.
+ * 2026-10-15(1.5.0)부터 OpenCV `.so`에 들어 있는 부품(libjpeg-turbo·libpng …)도 여기 온다 — 그래서 제목에 OpenCV를 함께 적는다.
+ */
 private val EngineSectionTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "AI 엔진 (KataGo)",
-    UiLanguage.English to "AI engine (KataGo)",
-    UiLanguage.Japanese to "AIエンジン (KataGo)",
-    UiLanguage.ChineseSimplified to "AI 引擎 (KataGo)",
+    UiLanguage.Korean to "AI 엔진 (KataGo) · 사진 인식 (OpenCV)",
+    UiLanguage.English to "AI engine (KataGo) · Photo recognition (OpenCV)",
+    UiLanguage.Japanese to "AIエンジン (KataGo) · 写真認識 (OpenCV)",
+    UiLanguage.ChineseSimplified to "AI 引擎 (KataGo) · 照片识别 (OpenCV)",
 )
 
 private val LibrarySectionTitles: Map<UiLanguage, String> = mapOf(

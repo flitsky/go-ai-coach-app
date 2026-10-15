@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:openexr",
+  "artifactVersion": "2.3.0",
+  "name": "OpenEXR",
+  "description": "OpenEXR codec (IlmImf). Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://www.openexr.com/",
+  "developers": [
+    {
+      "name": "Industrial Light & Magic"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "openexr-bsd-3-clause"
+  ]
+}

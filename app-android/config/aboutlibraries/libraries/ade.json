@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:ade",
+  "artifactVersion": "0.1.2e",
+  "name": "ADE Framework",
+  "description": "Graph framework used by OpenCV G-API. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://github.com/opencv/ade",
+  "developers": [
+    {
+      "name": "Intel Corporation"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "Apache-2.0"
+  ]
+}

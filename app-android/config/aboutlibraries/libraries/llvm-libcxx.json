@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:llvm-libcxx",
+  "artifactVersion": "",
+  "name": "LLVM libc++",
+  "description": "C++ standard library from the Android NDK (LLVM 18). Shipped as libc++_shared.so with OpenCV, and statically linked into the KataGo engine (libkatago.so).",
+  "website": "https://libcxx.llvm.org/",
+  "developers": [
+    {
+      "name": "LLVM Team"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "libcxx-apache-2.0-llvm-exception"
+  ]
+}

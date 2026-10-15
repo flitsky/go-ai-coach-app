@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:libtiff",
+  "artifactVersion": "4.7.1",
+  "name": "LibTIFF",
+  "description": "TIFF codec. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://libtiff.gitlab.io/libtiff/",
+  "developers": [
+    {
+      "name": "Sam Leffler, Silicon Graphics, Inc."
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "libtiff-license"
+  ]
+}

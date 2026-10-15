@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:protobuf",
+  "artifactVersion": "3.19.1",
+  "name": "Protocol Buffers",
+  "description": "Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://github.com/protocolbuffers/protobuf",
+  "developers": [
+    {
+      "name": "Google Inc."
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "protobuf-bsd-3-clause"
+  ]
+}

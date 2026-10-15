@@ -14,7 +14,7 @@ internal data class OpenSourceEntry(
     val description: String?,
     val website: String?,
     val licenses: List<OpenSourceLicense>,
-    /** 앱이 직접 싣는 엔진·신경망·엔진 안 부품(Gradle 의존성이 아니다) — 목록 맨 위 구획. */
+    /** 앱이 직접 싣는 엔진·신경망과 `.so` 안 부품(KataGo · OpenCV — Gradle 의존성이 아니다) — 목록 맨 위 구획. */
     val isBundledEngine: Boolean,
 )
 
@@ -41,6 +41,25 @@ internal val BundledNativeOrder: List<String> = listOf(
     "bundled.native:ghc-filesystem",
     "bundled.native:nlohmann-json",
     "bundled.native:sha2",
+    // C++ 런타임 — KataGo `.so`에는 정적으로, OpenCV와는 `libc++_shared.so`로 실린다(백로그 #263, 2026-10-15).
+    "bundled.native:llvm-libcxx",
+    "bundled.native:llvm-libcxxabi",
+    // OpenCV 4.14.0 `libopencv_java4.so`에 컴파일된 부품(그 `.so`의 빌드 정보 「3rdparty dependencies」 그대로 — 백로그 #263).
+    // OpenCV 자체는 Gradle 의존성이라 플러그인이 「앱 라이브러리」 구획에 싣는다.
+    "bundled.native:libjpeg-turbo",
+    "bundled.native:libpng",
+    "bundled.native:libtiff",
+    "bundled.native:libwebp",
+    "bundled.native:openjpeg",
+    "bundled.native:openexr",
+    "bundled.native:protobuf",
+    "bundled.native:flatbuffers",
+    "bundled.native:onetbb",
+    "bundled.native:ittnotify",
+    "bundled.native:kleidicv",
+    "bundled.native:carotene",
+    "bundled.native:cpufeatures",
+    "bundled.native:ade",
 )
 
 /** 생성된 `aboutlibraries.json` 본문 → 화면 항목. 엔진 구획이 먼저, 그다음 앱 라이브러리를 이름순으로. */

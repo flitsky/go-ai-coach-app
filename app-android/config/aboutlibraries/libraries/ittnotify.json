@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:ittnotify",
+  "artifactVersion": "3.25.4",
+  "name": "Intel ITT API (ittnotify)",
+  "description": "Tracing API. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://github.com/intel/ittapi",
+  "developers": [
+    {
+      "name": "Intel Corporation"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "ittnotify-bsd-3-clause"
+  ]
+}

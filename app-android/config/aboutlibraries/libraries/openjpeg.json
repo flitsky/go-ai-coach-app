@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:openjpeg",
+  "artifactVersion": "2.5.3",
+  "name": "OpenJPEG",
+  "description": "JPEG 2000 codec. Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://github.com/uclouvain/openjpeg",
+  "developers": [
+    {
+      "name": "Universite catholique de Louvain (UCL) and other OpenJPEG contributors"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "openjpeg-bsd-2-clause"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "uniqueId": "bundled.native:libjpeg-turbo",
+  "artifactVersion": "3.1.2",
+  "name": "libjpeg-turbo",
+  "description": "JPEG codec. Compiled into OpenCV's native library (libopencv_java4.so). This software is based in part on the work of the Independent JPEG Group.",
+  "website": "https://github.com/libjpeg-turbo/libjpeg-turbo",
+  "developers": [
+    {
+      "name": "The libjpeg-turbo Project, Independent JPEG Group"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "libjpeg-turbo-bsd-3-clause",
+    "libjpeg-turbo-ijg"
+  ]
+}

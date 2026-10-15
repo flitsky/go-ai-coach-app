@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:llvm-libcxxabi",
+  "artifactVersion": "",
+  "name": "LLVM libc++abi",
+  "description": "C++ ABI runtime from the Android NDK (LLVM 18). Part of libc++_shared.so shipped with OpenCV, and statically linked into the KataGo engine (libkatago.so).",
+  "website": "https://libcxxabi.llvm.org/",
+  "developers": [
+    {
+      "name": "LLVM Team"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "libcxxabi-apache-2.0-llvm-exception"
+  ]
+}

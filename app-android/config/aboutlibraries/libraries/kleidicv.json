@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.native:kleidicv",
+  "artifactVersion": "26.03",
+  "name": "KleidiCV",
+  "description": "Arm image processing routines (OpenCV HAL). Compiled into OpenCV's native library (libopencv_java4.so).",
+  "website": "https://gitlab.arm.com/kleidi/kleidicv",
+  "developers": [
+    {
+      "name": "Arm Limited and/or its affiliates"
+    }
+  ],
+  "tag": "bundled-native",
+  "licenses": [
+    "Apache-2.0"
+  ]
+}
