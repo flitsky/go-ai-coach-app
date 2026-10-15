@@ -124,6 +124,7 @@ import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
 import com.worksoc.goaicoach.ui.history.GameHistoryScreen
 import com.worksoc.goaicoach.ui.home.GoCoachHomeScreen
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
+import com.worksoc.goaicoach.ui.home.RankMeasureChangeDialog
 import com.worksoc.goaicoach.ui.home.RankMeasureRecordedEffect
 import com.worksoc.goaicoach.ui.home.beginRankMeasureGame
 import com.worksoc.goaicoach.ui.home.buildRankMeasureUiState
@@ -932,7 +933,9 @@ private fun GoCoachScreen(
             onRerun = controllers.benchmarkController::rerun,
             onBlockedDismissed = { benchmarkUiState = benchmarkUiState.clearBlocked() },
         ) &&
-        !ReleaseResetNoticeDialog(context)
+        // 홈의 기력 변동 팝업·승급을 고르는 창(#219 · #268) — 고르지 않은 승급은 저장돼 콜드 스타트에 바로 뜰 수 있어 이 줄에 선다:
+        // 스플래시·엔진 준비 화면 뒤에, 출석 팝업 앞에(그 판의 일이 먼저다). 대국 화면은 판정 창이 닫힌 뒤 제 자리에서 띄운다(`GoCoachContent`).
+        !ReleaseResetNoticeDialog(context) && !(currentDestination == ScreenDestination.Home && RankMeasureChangeDialog(rankMeasureUiState))
     ) {
         AttendanceRewardClaimDialog(context) { next -> premiumState = next }
     }

@@ -77,7 +77,7 @@ Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the op
 
 [WHAT'S INSIDE]
 - Play the AI: five opponent characters from 15 kyu to 7 dan, each playing like a person of that strength — choosing your opponent is how you choose the difficulty (ranks follow the AI model, not a certified rating)
-- Rank Match: play an AI at your own rank; win to move up, lose twice in a row to move down, and find where you stand (20 kyu to 9 dan)
+- Rank Match: play an AI at your own rank; win to move up, lose three in a row to move down, and find where you stand (20 kyu to 9 dan)
 - The AI offers to resign: when the game has swung far against it, the AI offers to resign — accept and end it, or keep playing
 - Collect opponents: two unlock with shards from short ads (5 and 10), two by checking in daily (day 7 and day 28). Every opponent, up to the strongest, is reachable without paying
 - Move review: every move is scored by the points it lost against the engine's best, shaded from deep green (best) to red (a real mistake)
@@ -131,7 +131,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.5.0): 한국어 313자 · 영어 488자.
+⚠️ **언어당 500자 이내.** 지금(1.5.1): 한국어 349자 · 영어 488자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -142,17 +142,18 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.5.0 (versionCode 10500, 2026-10-15) ────────
+──────── 지금 붙여넣을 것 — 1.5.1 (versionCode 10501, 2026-10-15) ────────
 
-✅ **기준선은 1.4.0**(프로덕션 10400 — 2026-10-13). 1.4.0 이후 사용자가 체감하는 것:
-   #263 「바둑판 사진 분석」 — **1.5.0에서 실험실을 졸업해 본 기능이 됐다**(사용자 2026-10-15: "OpenCV를 담으면서는 실험실 기능이 아니라 본 기능으로").
-   라이브 카메라 자동 촬영 · 사진첩 · 공유로 받기 · 보정 · 이 국면부터 대국 · AI 분석(FeatureId.BoardScan — 광고 1시간 또는 구독) · SGF 보내기.
-   #209 구독 확인 72시간 강등을 두던 판이 끝날 때까지 미룬다. · 급수 초기화(사용자 2026-10-15 — 승급 대국 창 · 내 정보).
+✅ **기준선은 여전히 1.4.0**(프로덕션 10400 — 2026-10-13). 1.5.0(10500)은 인터널 트랙에만 올라갔고 프로덕션에 나가지 않았다 —
+   1.4.0 사용자는 1.5.1로 곧바로 온다. 그래서 1.5.0의 네 줄을 그대로 두고 승급 대국 줄만 #268로 바꿨다.
+   #263 「바둑판 사진 분석」(1.5.0에서 실험실을 졸업해 본 기능) · #209 구독 확인 72시간 강등을 두던 판이 끝날 때까지 미룬다 ·
+   #267 급수 초기화 · **#268 승급은 15집마다 고른다(한 판에 최대 3급 · 단도 15집 이상이면 승단을 고른다) · 강급은 3연패**(사용자 2026-10-15).
    적지 않은 것: 개발자 화면의 「72시간 지난 구독」 버튼(디버그 전용) · 인식 엔진 안쪽(OpenCV · 신경망)은 사용자 말로 「판을 찾아」·「읽어요」로만.
-   앱 안 「새로워진 점」 1.5.0 묶음(`UiStringsWhatsNew.kt`)과 같은 범위다.
-⚠️ 언어당 500자 이내 — 지금: 한국어 313자 · 영어 488자. 본문은 스레드가 쓴 초안이다(2026-10-15) — 콘솔에 붙이기 전에 사용자가 본다.
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.5.0이 나간 뒤의 기준선은 1.5.0이다.
-   지난 본문: 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt` · 1.3.6 `git show b3cc0d0a:work/play-store-assets/store_listing.txt`
+   앱 안 「새로워진 점」은 1.5.0 · 1.5.1 두 묶음이다(`UiStringsWhatsNew.kt`) — 1.4.0 사용자는 둘 다 본다.
+⚠️ 언어당 500자 이내 — 지금: 한국어 349자 · 영어 488자. 본문은 스레드가 쓴 초안이다(2026-10-15) — 콘솔에 붙이기 전에 사용자가 본다.
+   영어는 500자에 맞추려 사진 줄을 줄였다(「Board Photo Analysis on the home screen:」 → 첫 줄이 이름을 말한다 · 「an SGF file」 → 「SGF」).
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.5.1이 나간 뒤의 기준선은 1.5.1이다.
+   지난 본문: 1.5.0 초안(나가지 않음) `git show 03c6b83b:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
 바둑판 사진으로 국면을 옮겨 오는 「바둑판 사진 분석」이 생겼습니다.
@@ -160,15 +161,15 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 · 홈의 「바둑판 사진 분석」: 바둑판을 비추면 판을 찾아 자동으로 찍어요. 사진첩의 사진이나 다른 앱에서 「공유」한 사진도 읽어요
 · 읽은 국면을 보정한 뒤 그 자리부터 AI와 대국하거나, AI 추천 수와 형세를 볼 수 있어요(프리미엄). SGF 파일로 보낼 수도 있어요
 · 인터넷이 오래 끊겨 구독을 확인하지 못해도, 두고 있던 판은 끝날 때까지 프리미엄 기능을 그대로 쓸 수 있어요
-· 승급 대국: 「급수 초기화하기」로 기력을 처음부터 다시 잴 수 있어요(승급 대국 창 · 내 정보)
+· 승급 대국: 15집 이상 차로 이기면 몇 급 오를지 직접 골라요(한 판에 최대 3급). 강급은 3연패부터예요. 「급수 초기화하기」로 처음부터 다시 잴 수도 있어요
 </ko-KR>
 <en-US>
 New: Board Photo Analysis brings a real board into the app.
 
-· Board Photo Analysis on the home screen: point the camera at a board and it captures it. Gallery photos and photos shared from other apps work too
-· Fix the position, then play the AI from there or see AI moves and the score (Premium), or send it as an SGF file
-· If your subscription can't be confirmed for a long time, your current game keeps Premium until it ends
-· Rank games: you can reset your rank and measure it again
+· Point the camera at a board and it captures it; gallery and shared photos work too
+· Fix the position, then play the AI from there or see AI moves and the score (Premium), or send it as SGF
+· If your subscription can't be checked for a while, your current game keeps Premium until it ends
+· Rank games: win by 15+ to choose how far to move up (max 3). You drop a step only after 3 losses in a row, and you can reset your rank
 </en-US>
 
 ──────────────────────────────────────────────

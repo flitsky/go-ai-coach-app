@@ -19,6 +19,27 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.5.1 — #268 승급은 고른다(15집마다 · 한 판에 최대 3급) · 강급은 3연패. ⚠️ 출시 버전이 바뀌면(사용자 2026-10-15: 1.5.1로 바로, 또는 기능을 더한 뒤) 번호를 고친다.
+        WhatsNewRelease(versionCode = 10501, versionName = "1.5.1") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "승급 대국은 15집 이상 차로 이기면 몇 급 오를지 직접 골라요(한 판에 최대 3급). 단도 15집 이상 차로 이기면 승단할지 골라요.",
+                    "승급 대국의 강급은 3연패부터예요. 빨리 다시 재고 싶으면 「급수 초기화하기」를 쓰세요.",
+                )
+                UiLanguage.English -> listOf(
+                    "Rank games: win by 15 points or more and you choose how far to move up (at most 3 ranks per game). In the dan ranks, a win by 15 or more lets you choose to move up one dan.",
+                    "Rank games now drop you a step only after 3 losses in a row. To measure again quickly, use Reset rank.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "昇級対局は15目以上の差で勝つと、何級上がるかを自分で選べます（1局で最大3級）。段も15目以上の差で勝つと昇段するかを選べます。",
+                    "昇級対局の降級は3連敗からになりました。すぐに測り直したいときは「級位をリセット」を使ってください。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "升级对局赢15目以上时，可以自己选择升几级（每局最多3级）。段位赢15目以上时可选择是否升段。",
+                    "升级对局改为3连败才降一档。想尽快重新测定，可使用「重置级位」。",
+                )
+            }
+        },
         // 1.5.0 — #263 바둑판 사진 분석(실험실을 졸업해 본 기능 — 사용자 2026-10-15) · #209 두던 판은 끝까지 프리미엄 · 급수 초기화.
         WhatsNewRelease(versionCode = 10500, versionName = "1.5.0") { language ->
             when (language) {

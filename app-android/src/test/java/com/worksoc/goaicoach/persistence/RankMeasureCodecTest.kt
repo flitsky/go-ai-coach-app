@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
+import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
@@ -26,6 +27,29 @@ class RankMeasureCodecTest {
 
         assertEquals(state, RankMeasureCodec.decode(RankMeasureCodec.encode(state)))
         assertEquals(RankMeasureState(), RankMeasureCodec.decode(RankMeasureCodec.encode(RankMeasureState())))
+        val pending = state.copy(rank = KgsRank.kyu(15), promotionOffer = RankPromotionOffer(steps = 2, margin = 41.0, byResignation = true))
+        assertEquals(pending, RankMeasureCodec.decode(RankMeasureCodec.encode(pending)))
+        val halfPoint = pending.copy(promotionOffer = RankPromotionOffer(steps = 1, margin = 15.5))
+        assertEquals(halfPoint, RankMeasureCodec.decode(RankMeasureCodec.encode(halfPoint)))
+    }
+
+    /**
+     * 고르지 않은 승급(#268)은 키 하나로 더해졌다(함정 69 — 스키마 번호는 그대로). 키가 없던 옛 저장분은 고를 것이 없고,
+     * 깨진 값(폭 0 · 집 수 차이 없음)도 고를 것이 없는 것으로 읽는다. 폭은 한 판의 최대(3)로 당긴다.
+     */
+    @Test
+    fun thePromotionOfferIsOneOptionalKey() {
+        val old = RankMeasureCodec.decode("""{"schema":1,"rankStep":9,"hasStarted":true}""")
+        assertNull(old?.promotionOffer)
+        assertEquals(KgsRank.kyu(12), old?.rank)
+
+        assertNull(RankMeasureCodec.decode("""{"promotionOffer":{"steps":0,"margin":40}}""")?.promotionOffer)
+        assertNull(RankMeasureCodec.decode("""{"promotionOffer":{"steps":2}}""")?.promotionOffer)
+        assertNull(RankMeasureCodec.decode("""{"promotionOffer":"??"}""")?.promotionOffer)
+        assertEquals(
+            RankPromotionOffer(steps = 3, margin = 120.0),
+            RankMeasureCodec.decode("""{"promotionOffer":{"steps":9,"margin":120}}""")?.promotionOffer,
+        )
     }
 
     /**

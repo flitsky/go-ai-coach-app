@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDemotionLosses
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStringsGuideReplay
@@ -39,6 +40,8 @@ class GuideReplayCopyTest {
             val confirm = UiStringsGuideReplay.confirmButton(language, "<CONFIRM>", "<PLAY>")
             assertTrue("$language: 착수 확인 문구에 두 버튼 이름이 다 있어야 한다", confirm.contains("<CONFIRM>") && confirm.contains("<PLAY>"))
             assertTrue("$language: 무르기 문구에 무료 횟수가 없다", UiStringsGuideReplay.undo(language, "<UNDO>").contains(n))
+            // 강급 연패 수는 규칙의 상수에서 읽는다(#268 — 2연패 → 3연패 때 이 문구가 옛 숫자로 남을 뻔했다).
+            assertTrue("$language: 승급 대국 문구에 강급 연패 수가 없다", UiStringsGuideReplay.rankMeasure(language).contains(RankMeasureDemotionLosses.toString()))
             val board = UiStringsGuideReplay.boardControls(language, "<HELP>", "<GUIDE>")
             assertTrue("$language: 조작법으로 가는 길에 절·줄 이름이 다 있어야 한다", board.contains("<HELP>") && board.contains("<GUIDE>"))
         }

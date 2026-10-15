@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui.l10n
 
 import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureDemotionLosses
 
 /**
  * 「가이드 다시보기」에만 있는 문구(#261, 사용자 2026-10-13 — *"내용이 낡았다"*). 첫 실행 가이드의 단계 문구(`UiStringsGuide.kt`)와 달리
@@ -8,7 +9,7 @@ import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
  * 무르기 · 내 캐릭터 · 구독 · 바둑판 조작법)을 소개한다.
  *
  * ⚠️ 화면의 이름(버튼·메뉴·절 이름)은 **여기 다시 적지 않고 끼워 넣는다** — 화면에서 이름이 바뀌면 다시보기도 함께 바뀐다.
- * ⚠️ 없는 것을 약속하지 않는다(함정 51) — 숫자는 상수에서 읽는다([MatchFreeUses.PerMatch]). 스레드가 정한 문구다(영·일·중 원어민 확인 없음).
+ * ⚠️ 없는 것을 약속하지 않는다(함정 51) — 숫자는 상수에서 읽는다([MatchFreeUses.PerMatch] · [RankMeasureDemotionLosses]). 스레드가 정한 문구다(영·일·중 원어민 확인 없음).
  */
 internal object UiStringsGuideReplay {
     fun myCharacters(language: UiLanguage, title: String): String = when (language) {
@@ -26,10 +27,10 @@ internal object UiStringsGuideReplay {
     }
 
     fun rankMeasure(language: UiLanguage): String = when (language) {
-        UiLanguage.Korean -> "같은 기력의 AI와 둬요. 크게 이길수록 기력이 많이 오르고, 두 판 연달아 지면 한 단계 내려가요. 형세 보기 같은 도움 없이 실력으로만 둬요."
-        UiLanguage.English -> "Play an AI of your own rank. The bigger you win, the further you move up; lose two in a row to drop one step. No hints here — just your own play."
-        UiLanguage.Japanese -> "同じ棋力のAIと打ちます。大きく勝つほど棋力が上がり、2連敗すると1段階下がります。形勢表示などの手助けなしで、実力だけで打ちます。"
-        UiLanguage.ChineseSimplified -> "与同等棋力的 AI 对弈。赢得越多，棋力升得越多；连输两局降一级。没有形势判断等帮助，全凭实力。"
+        UiLanguage.Korean -> "같은 기력의 AI와 둬요. 크게 이기면 몇 급 오를지 직접 고르고, ${RankMeasureDemotionLosses}판 연달아 지면 한 단계 내려가요. 형세 보기 같은 도움 없이 실력으로만 둬요."
+        UiLanguage.English -> "Play an AI of your own rank. Win big and you choose how far to move up; lose $RankMeasureDemotionLosses in a row to drop one step. No hints here — just your own play."
+        UiLanguage.Japanese -> "同じ棋力のAIと打ちます。大きく勝つと何級上がるかを自分で選べ、${RankMeasureDemotionLosses}連敗すると1段階下がります。形勢表示などの手助けなしで、実力だけで打ちます。"
+        UiLanguage.ChineseSimplified -> "与同等棋力的 AI 对弈。赢得多时可自己选择升几级；连输${RankMeasureDemotionLosses}局降一级。没有形势判断等帮助，全凭实力。"
     }
 
     fun gameHistory(language: UiLanguage): String = when (language) {

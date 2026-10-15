@@ -397,8 +397,8 @@ internal fun GoCoachHomeScreen(
             dismissButton = { TextButton(onClick = { showRankMeasureOverwriteWarning = false }) { Text(strings.cancel) } },
         )
     }
-    // 기력 변동 팝업(사용자 2026-10-07) — 뒤로 가기로 기권한 판은 나온 뒤 여기서 알린다(2연패 강급 등).
-    RankMeasureChangeDialog(rankMeasure)
+    // 기력 변동 팝업·승급을 고르는 창(#219 · #268)은 셸이 홈 위에 띄운다 — 스플래시·엔진 준비 화면을 기다리고 출석 팝업과 겹치지 않게
+    // 시작 팝업들의 줄에 서야 한다(`GoCoachApp`). 뒤로 가기로 기권한 판의 강급·승급도 홈에 나온 뒤 거기서 뜬다.
     if (showRankMeasureDialog) {
         RankMeasureSetupDialog(
             rankMeasure = rankMeasure,

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.gamehistory.findRecordedGame
 import com.worksoc.goaicoach.application.orchestration.GameSettingsController
@@ -36,14 +39,16 @@ import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureAdjustment
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureChange
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
+import com.worksoc.goaicoach.application.rankmeasure.RankPromotionCap
+import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
 import com.worksoc.goaicoach.application.rankmeasure.StrongestStartingRank
+import com.worksoc.goaicoach.application.rankmeasure.choosePromotion
 import com.worksoc.goaicoach.application.rankmeasure.chooseStartingRank
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureBoardSizeFor
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureBoardSizesFor
-import com.worksoc.goaicoach.application.rankmeasure.rankMeasureHitsStepCap
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
-import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePromotionSteps
+import com.worksoc.goaicoach.application.rankmeasure.rankPromotionCapFor
 import com.worksoc.goaicoach.application.rankmeasure.runRankMeasureAdjustment
 import com.worksoc.goaicoach.application.rankmeasure.started
 import com.worksoc.goaicoach.application.rankmeasure.withRankForNextMeasureGame
@@ -56,8 +61,10 @@ import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
+import com.worksoc.goaicoach.ui.designsystem.ActionButtonMinHeight
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.rankMeasureBoardChangedFor
@@ -79,6 +86,10 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasureStepCapNoteFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureStrongerFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureWeakerFor
+import com.worksoc.goaicoach.ui.l10n.rankPromotionChoiceReasonFor
+import com.worksoc.goaicoach.ui.l10n.rankPromotionChoiceTitleFor
+import com.worksoc.goaicoach.ui.l10n.rankPromotionStayFor
+import com.worksoc.goaicoach.ui.l10n.rankPromotionUpFor
 import com.worksoc.goaicoach.ui.l10n.rankResetConfirmBodyFor
 import com.worksoc.goaicoach.ui.l10n.rankResetConfirmFor
 import com.worksoc.goaicoach.ui.l10n.rankResetConfirmTitleFor
@@ -114,8 +125,9 @@ internal data class RankMeasureUiState(
      */
     val countLatestRecordedGame: () -> RankMeasureAdjustment? = { null },
     /**
-     * 아직 사용자에게 알리지 않은 **기력 변동**(승급·강급·이미 9단) — [RankMeasureChangeDialog]가 팝업으로 띄운다
-     * (사용자 2026-10-07: 몇 급이 올랐는지 알 수 있게 팝업으로). 판을 반영한 쪽이 올려 두고, 사용자가 닫으면 비운다.
+     * 아직 사용자에게 알리지 않은 **기력 변동**(강급·이미 9단) — [RankMeasureChangeDialog]가 팝업으로 띄운다
+     * (사용자 2026-10-07). 판을 반영한 쪽이 올려 두고, 사용자가 닫으면 비운다. 오를 수 있는 승리는 여기가 아니라 저장된 상태의
+     * [RankMeasureState.promotionOffer]다 — 같은 자리에서 고르는 창이 뜬다(#268).
      */
     val pendingChange: RankMeasureChange? = null,
     val dismissChange: () -> Unit = {},
@@ -280,22 +292,33 @@ internal fun RankMeasureRecordedEffect(
 }
 
 /**
- * **기력 변동 팝업**(사용자 2026-10-07) — 승급·강급을 한 줄 알림이 아니라 팝업으로 알린다: 어디서 어디로(`15급 → 9급`),
- * 왜·몇 단계(`61집 차로 이겨 6단계 올랐습니다`). 알릴 것이 없으면 아무것도 그리지 않는다.
+ * **기력 변동 팝업**(사용자 2026-10-07)과 **승급을 고르는 창**(#268) — 홈(셸의 시작 팝업 줄)과 대국 화면이 이것 하나를 부른다.
  *
- * 홈과 대국 화면이 함께 부른다 — 계가로 끝난 판은 대국 화면에서, 뒤로 가기로 기권한 판은 나간 뒤 홈에서 뜬다.
- * ⚠️ 대국 화면은 **판정 결과 창이 닫힌 뒤에** 부른다: 다이얼로그는 저마다 별도 윈도우라 함께 뜨면 위아래가 정해지지 않는다(함정 7).
+ * - 고르지 않은 승급이 있으면([RankMeasureState.promotionOffer]) 그 창을 먼저 띄운다([RankPromotionChoiceDialog]).
+ * - 아니면 알릴 변동(강급 `11급 → 12급` · 이미 9단)을 팝업으로. 알릴 것이 없으면 아무것도 그리지 않는다.
+ *
+ * 계가로 끝난 판은 대국 화면에서, 뒤로 가기로 기권한 판은 나간 뒤 홈에서 뜬다.
+ * ⚠️ 다이얼로그는 저마다 별도 윈도우라 함께 뜨면 위아래가 정해지지 않는다(함정 7) — 대국 화면은 **판정 결과 창이 닫힌 뒤에** 부르고,
+ * 홈은 셸이 스플래시·엔진 준비 화면 뒤 · 출석 팝업 앞에 세운다(고르지 않은 승급은 저장돼 콜드 스타트에 바로 뜰 수 있다).
+ *
+ * @return 무엇이든 그렸는가 — 셸의 시작 팝업 줄이 뒤의 팝업을 미루는 데 쓴다.
  */
 @Composable
-internal fun RankMeasureChangeDialog(rankMeasure: RankMeasureUiState) {
-    val change = rankMeasure.pendingChange ?: return
+internal fun RankMeasureChangeDialog(rankMeasure: RankMeasureUiState): Boolean {
     val strings = LocalUiStrings.current
     val language = strings.language
-    val title = rankMeasureChangeTitleFor(language, change) ?: return
-    // 크게 이겼는데 1단에서 멈췄으면 단계 수가 집 수 차이보다 적다 — 그 까닭을 한 줄 덧붙인다.
-    val stoppedAtOneDan = change is RankMeasureChange.Promoted && !change.from.isDan && rankMeasurePromotionSteps(change.margin) > change.steps
-    // 한 판의 최대(7단계)에 걸렸으면 그것도 한 줄 — 1단에서 멈춘 경우는 위 줄이 더 정확한 까닭이라 그쪽이 이긴다(#259).
-    val hitStepCap = change is RankMeasureChange.Promoted && !change.from.isDan && !stoppedAtOneDan && rankMeasureHitsStepCap(change.margin)
+    val offer = rankMeasure.state.promotionOffer
+    val change = rankMeasure.pendingChange
+    val title = change?.let { rankMeasureChangeTitleFor(language, it) }
+    if (offer == null && title == null) return false
+    // ⚠️ 떠 있는 동안 첫돌이 가이드를 **기록하지 않는다** — 홈의 말풍선이 이 창 뒤에 깔린 채 "봤음"으로 소진되는 것을 막는다
+    //   (그 사유는 `GuideBlockingOverlays`의 KDoc — 시작 팝업들이 모두 같은 일을 한다).
+    GuideBlockingOverlays.TrackWhileShown()
+    if (offer != null) {
+        RankPromotionChoiceDialog(rankMeasure, offer)
+        return true
+    }
+    if (change == null || title == null) return false
     AlertDialog(
         onDismissRequest = rankMeasure.dismissChange,
         title = { Text(title, fontWeight = FontWeight.Bold) },
@@ -311,16 +334,61 @@ internal fun RankMeasureChangeDialog(rankMeasure: RankMeasureUiState) {
                     )
                 }
                 rankMeasureChangeMessageFor(language, change)?.let { message -> Text(message) }
-                if (stoppedAtOneDan || hitStepCap) {
-                    Text(
-                        text = if (stoppedAtOneDan) rankMeasureKyuCapNoteFor(language) else rankMeasureStepCapNoteFor(language),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                }
             }
         },
         confirmButton = { TextButton(onClick = rankMeasure.dismissChange) { Text(strings.confirm) } },
+    )
+    return true
+}
+
+/**
+ * **승급을 고르는 창**(사용자 2026-10-15, #268) — 「승급하시겠습니까?」 아래 세로로 「현재 급수에 머무른다」 · 「+1급 승급한다」 … 고를 수 있는
+ * 만큼만([RankPromotionOffer.steps], 사용자가 고른 안). 단 구간은 「현재 단에 머무른다」 · 「+1단 승단한다」.
+ *
+ * - 버튼 사이를 넉넉히 띄우고([RankPromotionChoiceGap]) 버튼을 대국 버튼만큼 높인다 — 잘못 누르지 않게(사용자).
+ * - **고르기 전에는 닫히지 않는다** — 뒤로 가기·바깥 탭으로 닫히면 고른 적 없이 사라진다(스레드가 정했다). 고르면 곧바로 저장되고 창이 닫힌다 —
+ *   따로 「승급!」 팝업을 띄우지 않는다(고른 것이 곧 결과다).
+ */
+@Composable
+private fun RankPromotionChoiceDialog(rankMeasure: RankMeasureUiState, offer: RankPromotionOffer) {
+    val language = LocalUiStrings.current.language
+    val rank = rankMeasure.state.rank
+    val choose: (Int) -> Unit = { steps -> rankMeasure.update(rankMeasure.latestState().choosePromotion(steps)) }
+    AlertDialog(
+        onDismissRequest = {},
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+        title = { Text(rankPromotionChoiceTitleFor(language, rank), fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
+            ) {
+                Text(rankPromotionChoiceReasonFor(language, offer))
+                when (rankPromotionCapFor(rank, offer.margin)) {
+                    RankPromotionCap.OneDan -> rankMeasureKyuCapNoteFor(language)
+                    RankPromotionCap.PerGame -> rankMeasureStepCapNoteFor(language)
+                    RankPromotionCap.None -> null
+                }?.let { note ->
+                    Text(text = note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                }
+                Column(
+                    modifier = Modifier.padding(top = AppSpacing.Space8),
+                    verticalArrangement = Arrangement.spacedBy(RankPromotionChoiceGap),
+                ) {
+                    OutlinedButton(
+                        onClick = { choose(0) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = ActionButtonMinHeight).testTag(RankPromotionStayTag),
+                    ) { Text(rankPromotionStayFor(language, rank)) }
+                    (1..offer.steps).forEach { steps ->
+                        FilledTonalButton(
+                            onClick = { choose(steps) },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = ActionButtonMinHeight).testTag(rankPromotionUpTag(steps)),
+                        ) { Text(rankPromotionUpFor(language, rank, steps)) }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
     )
 }
 
@@ -490,6 +558,12 @@ internal const val RankMeasureWeakerTag = "rank-measure-weaker"
 internal const val RankMeasureStrongerTag = "rank-measure-stronger"
 internal const val RankMeasureStartTag = "rank-measure-start"
 internal const val RankMeasureChangeRanksTag = "rank-measure-change-ranks"
+internal const val RankPromotionStayTag = "rank-promotion-stay"
+
+internal fun rankPromotionUpTag(steps: Int): String = "rank-promotion-up-$steps"
+
+/** 고르는 창의 버튼 사이 — 잘못 누르지 않게 넉넉히(사용자 2026-10-15, #268 — 값은 스레드가 정했다). */
+private val RankPromotionChoiceGap = AppSpacing.Space16
 
 private val ChoiceButtonPadding = PaddingValues(horizontal = AppSpacing.Space8)
 

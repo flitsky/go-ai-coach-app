@@ -1,8 +1,10 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureMaxPromotionSteps
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureStorePort
+import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
 import com.worksoc.goaicoach.shared.policy.KgsRank
 import org.json.JSONObject
 
@@ -42,6 +44,7 @@ internal object RankMeasureCodec {
             .put("peakRankStep", state.peakRank?.step ?: JSONObject.NULL)
             .put("consecutiveLosses", state.consecutiveLosses)
             .put("lastCountedGameId", state.lastCountedGameId ?: JSONObject.NULL)
+            .put("promotionOffer", state.promotionOffer?.let(::encodeOffer) ?: JSONObject.NULL)
             .toString()
 
     fun decode(raw: String): RankMeasureState? {
@@ -56,6 +59,26 @@ internal object RankMeasureCodec {
             // 옛 저장분의 `consecutiveWins`·`rally`(2026-10-06의 랠리 규칙)와 `recentDanResults`(2026-10-07의 「최근 5판 중 3판」 — #259가
             // 「10집 이상 승리」로 갈아 끼웠다)는 읽지 않는다 — 규칙이 바뀌었다. 키가 남아 있어도 해가 없다(스키마 번호는 그대로, 함정 69).
             lastCountedGameId = json.optString("lastCountedGameId", "").takeIf { it.isNotBlank() && !json.isNull("lastCountedGameId") },
+            promotionOffer = json.optJSONObject("promotionOffer")?.let(::decodeOffer),
+        )
+    }
+
+    /** 고르지 않은 승급(#268) — 키가 없던 옛 저장분은 `null`(고를 것이 없다). */
+    private fun encodeOffer(offer: RankPromotionOffer): JSONObject =
+        JSONObject()
+            .put("steps", offer.steps)
+            .put("margin", offer.margin)
+            .put("byResignation", offer.byResignation)
+
+    /** 폭이 1보다 작거나 집 수 차이가 없으면 깨진 것이다 — 고를 것이 없는 것으로 읽는다. 폭은 한 판의 최대로 당긴다. */
+    private fun decodeOffer(json: JSONObject): RankPromotionOffer? {
+        val steps = json.optInt("steps", 0)
+        val margin = json.optDouble("margin", Double.NaN)
+        if (steps < 1 || margin.isNaN()) return null
+        return RankPromotionOffer(
+            steps = steps.coerceAtMost(RankMeasureMaxPromotionSteps),
+            margin = margin,
+            byResignation = json.optBoolean("byResignation", false),
         )
     }
 }
