@@ -166,9 +166,8 @@ internal class KataGoProcessEngineAdapter(
     }
 
     override suspend fun syncStaticPosition(state: GameState): EngineStatus {
-        // 보내는 명령은 없다 — 오늘처럼 GTP 프로세스를 띄워 두기만 한다(기동 실패도 여기서 드러난다).
         startupBoardSize = state.boardSize
-        acquireGtp()
+        val gtp = acquireGtp()
         this.boardSize = state.boardSize
         this.ruleset = state.ruleset
         this.handicapCount = state.handicapCount
@@ -178,6 +177,16 @@ internal class KataGoProcessEngineAdapter(
         this.initialStones = state.stones
         this.playedMoves.clear()
         this.playedMoves += state.moves
+        // GTP 판에도 그 국면을 세운다(백로그 #264). 예전에는 아무것도 보내지 않았다 — JSON 분석은 쿼리에 돌을 싣으므로 맞았지만,
+        // GTP 판을 그대로 쓰는 것(형세 평가 `kata-raw-nn` · 사람 정책 · `genmove` · GTP 분석 폴백)은 **사진의 판이 아닌 이전 판**을 봤다 —
+        // 사진 분석의 형세가 엉뚱했고(영역이 안 보였다) 「이 국면부터 대국」의 AI 첫 수도 그랬다(#179부터).
+        // 규칙과 덤을 먼저 건다 — `loadsgf`는 `RU`가 없으면 지금 규칙을 쓴다. 차례는 SGF의 `PL`이 세운다(기록을 남기지 않는다).
+        KataGoProtocolCommands.ruleCommands(state.ruleset).forEach { command -> sendCommand(gtp, command) }
+        sendCommand(gtp, KataGoProtocolCommands.komi(state.komi))
+        val file = runtime.staticPositionFile()
+        file.writeText(KataGoProtocolCommands.staticPositionSgf(state))
+        sendCommand(gtp, KataGoProtocolCommands.loadSgf(file.absolutePath))
+        state.moves.forEach { move -> sendCommand(gtp, KataGoProtocolCommands.play(move, boardSize)) }
         return EngineStatus.ready("KataGo static position synced: ${state.stones.size} stone(s), ${state.nextPlayer} turn")
     }
 

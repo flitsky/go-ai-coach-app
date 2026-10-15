@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader
@@ -96,6 +97,11 @@ internal class FakeEngineProcessRuntime : EngineProcessRuntime {
     override fun analysisConfigPathOrNull(): String? = analysisConfigPath
 
     override fun startAnalysis(analysisConfigPath: String): EngineProcessPipes = start(Kind.Analysis)
+
+    /** [EngineProcessRuntime.staticPositionFile] — 테스트마다 새 임시 파일. 어댑터가 쓴 SGF를 테스트가 읽어 본다. */
+    val staticPositionFile: File by lazy { File.createTempFile("static-position", ".sgf").apply { deleteOnExit() } }
+
+    override fun staticPositionFile(): File = staticPositionFile
 
     fun processes(kind: Kind): List<FakeEngineProcess> = started.filter { it.kind == kind }
 

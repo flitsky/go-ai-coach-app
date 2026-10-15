@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -34,6 +35,10 @@ import org.junit.Test
  *
  * ⚠️ 이 골든이 빨개지면 먼저 **의도한 변경인지** 확인한다. 의도했다면 그 커밋에서 기대값을 갱신하고,
  * 아니라면 그 변경이 오늘의 대국 경로를 건드린 것이다.
+ *
+ * 2026-10-15 의도한 변경(백로그 #264): 정적 국면 동기화가 GTP 판에도 그 국면을 세운다 — 규칙 · 덤 · `loadsgf`(돌과 차례를 담은 SGF).
+ * 그전에는 아무것도 보내지 않아 형세 평가·AI 착수가 사진의 판이 아닌 이전 판을 봤다. `loadsgf`의 임시 경로는 [StaticPositionLoad]로 바꿔 비교하고,
+ * SGF 내용은 따로 잰다.
  */
 class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
     private val fake = FakeKataGoExecutable.create()
@@ -57,7 +62,10 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
 
         assertGolden(
             gtp = InitializeCommands + listOf(
-                // 정적 국면 동기화는 GTP에 아무것도 보내지 않는다(오늘의 동작 그대로 — 이 파일은 고치지 않고 고정만 한다).
+                // 정적 국면 동기화는 GTP 판에도 그 국면을 세운다(#264) — 규칙 · 덤 · 돌과 차례를 담은 SGF.
+                "kata-set-rules japanese",
+                "komi 6.5",
+                StaticPositionLoad,
                 "kata-set-param maxVisits 16",
                 "kata-set-param maxTime",
                 "kata-search_analyze W",
@@ -70,6 +78,8 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"W","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m0","overrideSettings":{}}""",
             ),
         )
+        // 차례는 SGF의 PL이 세운다(`set_position`은 늘 흑 차례라 백 차례 국면의 형세를 흑 차례로 쟀을 것이다). 좌표는 SGF의 열·행(a = 왼쪽·맨 위).
+        assertEquals("(;GM[1]FF[4]SZ[9]KM[6.5]PL[W]AB[fd][ee]AW[df])", staticPositionSgf())
     }
 
     /** 스캔한 정적 국면(흑 차례). */
@@ -82,6 +92,9 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
 
         assertGolden(
             gtp = InitializeCommands + listOf(
+                "kata-set-rules chinese",
+                "komi 7.5",
+                StaticPositionLoad,
                 "kata-set-param maxVisits 16",
                 "kata-set-param maxTime",
                 "kata-search_analyze B",
@@ -235,6 +248,9 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
 
         assertGolden(
             gtp = InitializeCommands + listOf(
+                "kata-set-rules japanese",
+                "komi 6.5",
+                StaticPositionLoad,
                 "boardsize 9",
                 "komi 6.5",
                 "kata-set-rules japanese",
@@ -256,11 +272,18 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
     }
 
     private fun assertGolden(gtp: List<String>, queries: List<String>) {
-        assertEquals("GTP commands", gtp, fake.gtpCommands())
+        assertEquals("GTP commands", gtp, fake.gtpCommands().map { if (it.startsWith("loadsgf ")) StaticPositionLoad else it })
         assertEquals("analysis queries", queries, fake.rawQueryLines().map(::normalizeQueryId))
     }
 
+    /** 어댑터가 `loadsgf`로 읽힌 SGF — 실행 파일 가짜의 설정 파일 옆에 쓴다(`staticPositionFile`). */
+    private fun staticPositionSgf(): String =
+        File(File(fake.processConfig.configPath).absoluteFile.parentFile, "static-position.sgf").readText()
+
     private companion object {
+        /** `loadsgf <임시 경로>` — 경로는 실행마다 달라 이 표지로 바꿔 비교한다. */
+        const val StaticPositionLoad = "loadsgf <static-position.sgf>"
+
         val JsonPathLimit = AnalysisLimit(
             visits = 16,
             candidateCount = 5,

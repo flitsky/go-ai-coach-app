@@ -57,6 +57,12 @@ internal interface EngineProcessRuntime {
 
     /** JSON analysis 엔진을 띄운다. */
     fun startAnalysis(analysisConfigPath: String): EngineProcessPipes
+
+    /**
+     * 정적 국면을 KataGo에 넘길 SGF 파일 자리(백로그 #264 — `loadsgf`). 앱이 쓰고 KataGo가 읽는다 — 같은 앱 프로세스의 자식이라
+     * 앱 파일 폴더를 읽을 수 있다. 하나를 덮어 쓴다(GTP 명령은 한 번에 하나다).
+     */
+    fun staticPositionFile(): File
 }
 
 /**
@@ -93,6 +99,9 @@ internal class LocalKataGoProcessRuntime(
         get() = config.humanModelPath?.let { File(it).isFile } == true
 
     override fun analysisConfigPathOrNull(): String? = config.resolveAnalysisConfigPath()
+
+    // KataGo 설정 파일 옆(앱 파일 폴더) — 엔진 파일을 준비하는 쪽이 이미 만들어 둔 곳이다.
+    override fun staticPositionFile(): File = File(File(config.configPath).absoluteFile.parentFile, "static-position.sgf")
 
     override fun startAnalysis(analysisConfigPath: String): EngineProcessPipes =
         spawn(

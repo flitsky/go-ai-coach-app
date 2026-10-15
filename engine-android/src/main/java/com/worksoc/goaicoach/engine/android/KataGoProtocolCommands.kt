@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.engine.android
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.HandicapBonusRule
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
@@ -33,6 +34,32 @@ internal object KataGoProtocolCommands {
         )
 
     fun clearBoard(): String = "clear_board"
+
+    /** [path]의 SGF를 판으로 읽는다 — 정적 국면을 세우는 데 쓴다([staticPositionSgf]). ⚠️ 경로에 빈칸이 없어야 한다(GTP는 빈칸으로 가른다). */
+    fun loadSgf(path: String): String {
+        require(path.none { it.isWhitespace() }) { "GTP loadsgf path must not contain whitespace: $path" }
+        return "loadsgf $path"
+    }
+
+    /**
+     * 밖에서 받은 국면(사진으로 읽은 판 — 수순 없이 돌만)을 KataGo가 그대로 읽을 SGF로(백로그 #264).
+     * `set_position`이 아니라 SGF인 이유: `set_position`은 둘 차례를 늘 흑으로 둔다. 형세 평가(`kata-raw-nn`)는 차례를 받지 않으므로
+     * 백 차례 국면을 흑 차례로 재게 된다. SGF의 `PL`은 기록을 남기지 않고 차례를 세운다(`play B pass`로 바꾸면 기록에 통과가 남는다).
+     * 규칙은 싣지 않는다 — 부르는 쪽이 먼저 `kata-set-rules`로 걸고, `loadsgf`는 `RU`가 없으면 지금 규칙을 쓴다.
+     */
+    fun staticPositionSgf(state: GameState): String = buildString {
+        append("(;GM[1]FF[4]SZ[").append(state.boardSize.value).append(']')
+        append("KM[").append(state.komi).append(']')
+        append("PL[").append(state.nextPlayer.toGtpColor()).append(']')
+        for (color in listOf(StoneColor.Black, StoneColor.White)) {
+            val points = state.stones.filterValues { it == color }.keys.sortedWith(compareBy({ it.row }, { it.column }))
+            if (points.isEmpty()) continue
+            append(if (color == StoneColor.Black) "AB" else "AW")
+            // SGF 좌표: 첫 글자가 열(a = 왼쪽), 둘째가 행(a = 맨 위) — 앱의 BoardCoordinate(row 0 = 맨 위)와 같은 방향이다.
+            points.forEach { p -> append('[').append('a' + p.column).append('a' + p.row).append(']') }
+        }
+        append(')')
+    }
 
     fun setFreeHandicap(positions: List<BoardCoordinate>, boardSize: BoardSize): String {
         val vertices = positions.joinToString(" ") { it.label(boardSize) }
