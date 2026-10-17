@@ -211,13 +211,9 @@ private fun GoCoachScreen(
     val context = LocalContext.current
     val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
-    // AndroidAuthClient는 내부 상태가 없는 얇은 래퍼라 재구성마다 새로 만들어도 비용/동작
-    // 차이가 없다 — 별도로 캐시해 두지 않고 그대로 둬서 상태 훅 예산을 아낀다.
-    val authClient: AuthClientPort = AndroidAuthClient()
-    // DeviceIdentityStore도 authClient와 같은 이유로 캐시해 두지 않는다(내부 상태 없는 얇은 래퍼).
-    val deviceIdentityStore: DeviceIdentityStorePort = DeviceIdentityStore(context)
-    // Credential Manager 호출도 내부 상태가 없는 얇은 래퍼라 authClient와 동일하게 캐시하지 않는다.
-    val credentialManagerClient = GoogleCredentialManagerClient()
+    val authClient: AuthClientPort = remember { AndroidAuthClient() }
+    val deviceIdentityStore: DeviceIdentityStorePort = remember(context) { DeviceIdentityStore(context) }
+    val credentialManagerClient = remember { GoogleCredentialManagerClient() }
     // 첫 화면 판단(로그인 기능 온/오프 포함)은 InitialDestination.kt의 initialDestination으로
     // 뺐다 — 별도 훅을 새로 추가하지 않고 이 초기값 계산식만 함수 호출로 바꾼다(이 파일의
     // 상태 훅 예산이 거의 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
@@ -226,10 +222,9 @@ private fun GoCoachScreen(
     }
     var showResignConfirmFromBack by remember { mutableStateOf(false) }
     var showResumeDialog by remember { mutableStateOf(false) }
-    // PremiumStateStore도 AndroidAuthClient와 같은 이유로 remember하지 않는다(내부 상태
-    // 없는 얇은 래퍼, 상태 훅 예산 절약). 백그라운드에서 시스템이 프로세스를 종료했다 재시작해도
-    // (사용자의 명시적 강제 종료와 구분 불가) 활성화 상태가 사라지지 않도록 저장소에서 복원한다.
-    val premiumStateStore: PremiumStateStorePort = PremiumStateStore(context)
+    // 백그라운드에서 시스템이 프로세스를 종료했다 재시작해도(사용자의 명시적 강제 종료와 구분 불가)
+    // 활성화 상태가 사라지지 않도록 저장소에서 복원한다.
+    val premiumStateStore: PremiumStateStorePort = remember(context) { PremiumStateStore(context) }
     var premiumState by remember { mutableStateOf(premiumStateStore.load()) }
     // 포트가 아니라 어댑터 타입으로 쥔다 — 디버그 리포트용 원문(#86)은 어댑터에만 있다.
     val sessionStore = remember(context) { GameSessionStore(context) }

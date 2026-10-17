@@ -283,12 +283,7 @@ internal object ShellStateLedger {
      * ⚠️ **줄기만 한다**(#45가 넷을 `remember`로 감싸 0으로 만든다). 여기에 이름을 더하는 것은 옛 "숫자 상향"이고
      * 사용자 결정이 필요하다 — 새로 생겼으면 더하지 말고 `remember(context) { … }`로 감싼다. 사유는 이력 주석에.
      */
-    val FROZEN_UNREMEMBERED_INSTANCES: Set<String> = setOf(
-        "GoCoachScreen.authClient",
-        "GoCoachScreen.deviceIdentityStore",
-        "GoCoachScreen.credentialManagerClient",
-        "GoCoachScreen.premiumStateStore",
-    )
+    val FROZEN_UNREMEMBERED_INSTANCES: Set<String> = emptySet()
 
     /**
      * 프로덕션 소스 전체에서 `object`/`companion object`/`enum class`/최상위에 사는 컴포즈 상태(L14) — 한 겹 건너
