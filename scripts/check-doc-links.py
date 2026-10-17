@@ -152,6 +152,21 @@ def is_sealed(rel: str) -> bool:
 PLACEHOLDER = re.compile(r"(FILE\.md|<[^>]+>\.md)")
 
 BARE_NAME = re.compile(r"`([A-Za-z_][A-Za-z0-9_.-]*\.md)`")
+# ── 절 참조 (2026-10-17 신설) ─────────────────────────────────────────────────────────
+# `ARCHITECTURE.md 「관측 포트」`처럼 **파일명 바로 뒤의 「절 이름」** 은 파일이 있어도 그 절이 없으면 죽은 참조다.
+# 위 맨 파일명 검사는 파일까지만 봐서 이것을 못 잡았다 — 2026-10-17 다른 스레드가 아키텍처 문서 셋을 한 문서로 다시
+# 쓰며 코드 주석 30곳을 새 파일명으로 바꿨는데, 가리키는 절(「포트가 아는 것」·「관측 포트」 등)이 새 문서에 하나도 없었고
+# 이 도구는 초록이었다. 판정은 **그 절 이름이 대상 문서 본문 어딘가에 있는가**(강조·백틱 표기는 걷고 본다)다.
+# ⚠️ 좁게 건다 — 파일명과 「 사이가 14자 이하이고 백틱·「가 없을 때만 그 파일의 절로 본다. 사이에 `)`나 「위 」·
+#    「아래 」가 있으면 같은 줄의 **다른** 문서나 지금 문서를 가리키는 것이라 건너뛴다(건너뛴 수는 찍는다).
+#    봉인·동결 문서와 갱신 이력 줄은 그때의 기록이라 보지 않는다.
+SECTION_REF = re.compile(r"`?([A-Za-z0-9_\-]+\.md)`?([^「`\n]{0,14}?)「([^」\n]{2,80})」")
+SECTION_REF_ELSEWHERE = re.compile(r"\)|(^|\s|\()(위|아래)\s")
+
+
+def section_text(text: str) -> str:
+    """절 이름 대조용 — 강조(`*`·`_`)와 백틱을 걷는다."""
+    return re.sub(r"[*`_]", "", text)
 MD_LINK = re.compile(r"\]\(([^)\s#]+\.md)(?:#[^)]*)?\)")
 # ⚠️ **접두어 화이트리스트였던 것을 2026-09-06에 넓혔다.** 예전 패턴은
 # `(docs|scripts|shared|app-android|engine-android)/` 로 시작하는 것만 봤고, 그 결과
@@ -412,6 +427,9 @@ def main() -> int:
     sealed_skipped = 0
     source_broken: list[tuple[str, int, str, str]] = []
     source_ok = source_frozen_skipped = source_annotated = 0
+    section_broken: list[tuple[str, int, str, str]] = []
+    section_ok = section_elsewhere = 0
+    section_cache: dict[str, str] = {}
     src_index = source_index(root)
     modules = gradle_modules(root)
     # 저장소에 실재하는 문서의 이름 → 경로들. 맨 파일명 표기를 이것으로 판정한다.
@@ -497,6 +515,26 @@ def main() -> int:
             if row not in broken:
                 broken.append(row)
 
+        # ⚠️ 절 참조 — 파일명 뒤의 「절 이름」이 그 문서에 있는가(위 `SECTION_REF` 절).
+        if not (is_sealed(rel) or rel in FROZEN_DOCS):
+            for lineno, line in enumerate(text.split("\n"), 1):
+                if CHANGELOG_LINE.match(line):
+                    continue
+                for match in SECTION_REF.finditer(line):
+                    name, between, section = match.groups()
+                    if SECTION_REF_ELSEWHERE.search(between):
+                        section_elsewhere += 1
+                        continue
+                    hits = by_name.get(name, [])
+                    if len(hits) != 1:
+                        continue  # 없는 이름·겹치는 이름은 위 맨 파일명 검사가 잡는다
+                    if hits[0] not in section_cache:
+                        section_cache[hits[0]] = section_text(open(os.path.join(root, hits[0]), encoding="utf-8").read())
+                    if section_text(section) in section_cache[hits[0]]:
+                        section_ok += 1
+                    else:
+                        section_broken.append((rel, lineno, name, section))
+
         # 참조 표기 정책: 예외 두 곳 밖에서는 문서를 마크다운 링크로 잇지 않는다.
         if is_md and rel not in EXEMPT:
             for match in MD_LINK.finditer(text):
@@ -553,6 +591,15 @@ def main() -> int:
         for src, kind, target in sorted(broken):
             print(f"  [{kind}] {src} → {target}")
 
+    # 절 참조도 **따로 한 줄**(2026-10-17) — 위 줄의 글자를 바꾸지 않으려고.
+    section_tally = f"확인 {section_ok}건 · 같은 줄의 다른 문서·지금 문서를 가리켜 건너뜀 {section_elsewhere}건"
+    if not section_broken:
+        print(f"절 참조 점검 통과 ({section_tally})")
+    else:
+        print(f"없는 절을 가리킴 {len(section_broken)}건 ({section_tally})")
+        for src, lineno, name, section in sorted(section_broken):
+            print(f"  {src}:{lineno} → {name} 「{section}」")
+
     # ⚠️ 소스 경로는 **따로 한 줄** — 위 줄은 이 검사가 생기기 전과 글자 하나 다르지 않다.
     annotated_note = f" · 이력 주석이 붙은 옛 소스 경로 {source_annotated}건" if source_annotated else ""
     frozen_note = (f" · 봉인·동결 문서·갱신 이력 줄 안의 옛 소스 경로 {source_frozen_skipped}건"
@@ -567,7 +614,7 @@ def main() -> int:
             now = src_index.get(token.rsplit("/", 1)[-1], [])
             hint = f"  (같은 이름: {', '.join(now)})" if 0 < len(now) <= 3 else ""
             print(f"  [{kind}] {src}:{lineno} → {token}{hint}")
-    return 1 if broken or source_broken else 0
+    return 1 if broken or source_broken or section_broken else 0
 
 
 if __name__ == "__main__":
