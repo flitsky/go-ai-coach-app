@@ -21,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -34,18 +33,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
-import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
-import com.worksoc.goaicoach.application.auth.state.AuthProvider
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.match.hasDeepSearchingAi
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
@@ -53,15 +48,10 @@ import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.ui.account.EmailSignInDialog
-import com.worksoc.goaicoach.ui.account.SocialLoginButton
-import com.worksoc.goaicoach.ui.account.attemptAccountDeletion
-import com.worksoc.goaicoach.ui.account.attemptEmailSignIn
-import com.worksoc.goaicoach.ui.account.attemptGoogleSignIn
+import com.worksoc.goaicoach.ui.account.AccountSettingsSection
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
-import com.worksoc.goaicoach.ui.designsystem.GoogleBrandBlue
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -76,7 +66,6 @@ import com.worksoc.goaicoach.ui.play.LanguageSettingsPanel
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuPanel
 import com.worksoc.goaicoach.ui.setup.SearchTimeSettingsPanel
 import com.worksoc.goaicoach.wipeToFreshInstall
-import kotlinx.coroutines.launch
 
 // AdMob·Play Billing 등 Play Console 필수 제출 항목(개인정보처리방침 URL)과 동일한 문서를
 // 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과
@@ -129,7 +118,6 @@ internal fun SettingsScreen(
 ) {
     val strings = LocalUiStrings.current
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val developerModeStore = remember(context) { DeveloperModeStore(context) }
     var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
     // ⚠️ **2차는 저장하지 않는다**(백로그 #77). 1차와 달리 `DeveloperModeStore`에 남기지 않으므로
@@ -149,70 +137,6 @@ internal fun SettingsScreen(
     // 백로그 #53 — 화면이 열릴 때 한 번만 묻고, 결과가 오면 그때 아래 줄이 나타난다.
     // 실패는 조용히 넘어간다(`AppUpdateRow`의 폴백 경로).
     val updateStatus = rememberAppUpdateStatus()
-    var authState by remember { mutableStateOf(authClient.currentAuthState()) }
-    var showEmailDialog by remember { mutableStateOf(false) }
-    var isEmailSubmitting by remember { mutableStateOf(false) }
-    var showDeleteAccountDialog by remember { mutableStateOf(false) }
-    var isDeletingAccount by remember { mutableStateOf(false) }
-    val hasRealAccount = authState.provider == AuthProvider.Google || authState.provider == AuthProvider.Email
-
-    fun deleteAccount() {
-        isDeletingAccount = true
-        scope.launch {
-            val result = attemptAccountDeletion(authClient, diagnosticEventLog)
-            isDeletingAccount = false
-            result
-                .onSuccess {
-                    showDeleteAccountDialog = false
-                    authState = authClient.currentAuthState()
-                    Toast.makeText(context, strings.settingsDeleteAccountSuccessMessage, Toast.LENGTH_SHORT).show()
-                }
-                .onFailure { error ->
-                    val message = if (error is FirebaseAuthRecentLoginRequiredException) {
-                        strings.settingsDeleteAccountRecentLoginRequiredMessage
-                    } else {
-                        strings.settingsDeleteAccountFailedMessage
-                    }
-                    // 실패 사유는 성공 안내보다 읽고 판단할 시간이 더 필요해 LENGTH_LONG을 쓴다.
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                }
-        }
-    }
-
-    fun signInWithGoogle() {
-        scope.launch {
-            attemptGoogleSignIn(context, authClient, credentialManagerClient, diagnosticEventLog)
-                .onSuccess { newState ->
-                    authState = newState
-                    Toast.makeText(context, strings.googleSignedInToastMessage, Toast.LENGTH_SHORT).show()
-                }
-                .onFailure {
-                    Toast.makeText(context, strings.googleSignInFailedMessage, Toast.LENGTH_LONG).show()
-                }
-        }
-    }
-
-    fun submitEmailSignIn(email: String, password: String) {
-        isEmailSubmitting = true
-        scope.launch {
-            val result = attemptEmailSignIn(authClient, email, password, diagnosticEventLog)
-            isEmailSubmitting = false
-            result
-                .onSuccess { newState ->
-                    authState = newState
-                    showEmailDialog = false
-                    Toast.makeText(context, strings.emailSignedInToastMessage, Toast.LENGTH_SHORT).show()
-                }
-                .onFailure { error ->
-                    val message = if (error is FirebaseAuthWeakPasswordException) {
-                        strings.emailSignInWeakPasswordMessage
-                    } else {
-                        strings.emailSignInFailedMessage
-                    }
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                }
-        }
-    }
 
     if (showOpenSourceLicenses) {
         OpenSourceLicensesScreen(onBackClick = { showOpenSourceLicenses = false }, modifier = modifier)
@@ -306,61 +230,10 @@ internal fun SettingsScreen(
             if (FeatureFlags.isLoginEnabled) {
                 Spacer(modifier = Modifier.height(AppSpacing.Space4))
                 HorizontalDivider()
-            }
-
-            if (FeatureFlags.isLoginEnabled) {
-                Text(
-                    text = strings.settingsAccountSectionTitle,
-                    fontSize = AppTextSize.Text14,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-
-                Text(
-                    text = when (authState.provider) {
-                        AuthProvider.Google -> strings.settingsGoogleStatusMessage
-                        AuthProvider.Email -> strings.settingsEmailStatusMessage
-                        else -> strings.settingsGuestStatusMessage
-                    },
-                    fontSize = AppTextSize.Text13,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-
-                // 게스트(로컬 ID만 있는 상태)는 삭제할 서버 계정 자체가 없어 숨긴다. Google Play
-                // 정책상 계정 생성을 지원하는 앱은 인앱 삭제 경로가 필수라 BuildConfig.DEBUG로
-                // 게이팅하지 않는다 — 실제 사용자가 릴리스 빌드에서 항상 쓸 수 있어야 한다.
-                if (hasRealAccount) {
-                    TextButton(
-                        onClick = { showDeleteAccountDialog = true },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    ) {
-                        Text(strings.settingsDeleteAccountButtonLabel)
-                    }
-                }
-            }
-
-            if (FeatureFlags.isLoginEnabled && !hasRealAccount) {
-                SocialLoginButton(
-                    label = strings.continueWithGoogle,
-                    leadingGlyph = "G",
-                    glyphColor = GoogleBrandBlue,
-                    onClick = { signInWithGoogle() },
-                )
-            }
-
-            if (FeatureFlags.isLoginEnabled) {
-                SocialLoginButton(
-                    label = strings.continueWithApple,
-                    leadingGlyph = "🍎",
-                    onClick = { Toast.makeText(context, strings.notImplementedMessage, Toast.LENGTH_SHORT).show() },
-                )
-            }
-
-            if (FeatureFlags.isLoginEnabled && !hasRealAccount) {
-                SocialLoginButton(
-                    label = strings.continueWithEmail,
-                    leadingGlyph = "✉",
-                    onClick = { showEmailDialog = true },
+                AccountSettingsSection(
+                    authClient = authClient,
+                    credentialManagerClient = credentialManagerClient,
+                    diagnosticEventLog = diagnosticEventLog,
                 )
             }
 
@@ -556,43 +429,5 @@ internal fun SettingsScreen(
 
     if (showDiagnosticLog) {
         DiagnosticLogDialog(context = context, onDismiss = { showDiagnosticLog = false })
-    }
-
-    if (showEmailDialog) {
-        EmailSignInDialog(
-            titleText = strings.continueWithEmail,
-            emailLabel = strings.emailFieldLabel,
-            passwordLabel = strings.passwordFieldLabel,
-            continueLabel = strings.emailSignInSubmitLabel,
-            cancelLabel = strings.cancel,
-            isSubmitting = isEmailSubmitting,
-            onDismiss = { showEmailDialog = false },
-            onSubmit = ::submitEmailSignIn,
-        )
-    }
-
-    if (showDeleteAccountDialog) {
-        AlertDialog(
-            onDismissRequest = { if (!isDeletingAccount) showDeleteAccountDialog = false },
-            title = { Text(strings.settingsDeleteAccountConfirmTitle, fontWeight = FontWeight.Bold) },
-            text = { Text(strings.settingsDeleteAccountConfirmMessage) },
-            confirmButton = {
-                TextButton(
-                    onClick = ::deleteAccount,
-                    enabled = !isDeletingAccount,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) {
-                    Text(strings.settingsDeleteAccountButtonLabel)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteAccountDialog = false },
-                    enabled = !isDeletingAccount,
-                ) {
-                    Text(strings.cancel)
-                }
-            },
-        )
     }
 }

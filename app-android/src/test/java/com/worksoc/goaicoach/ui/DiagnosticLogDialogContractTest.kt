@@ -99,8 +99,8 @@ class DiagnosticLogDialogContractTest {
         )
         // 그리고 실제로 다른 다이얼로그들과 같은 자리인지 — 형제 하나를 기준으로 확인한다.
         assertTrue(
-            "기존 다이얼로그 형제(`showEmailDialog`)를 찾지 못했다 — 이 계약의 기준이 사라졌다.",
-            settings.contains("\n    if (showEmailDialog) {"),
+            "기존 다이얼로그 형제(`showDeveloperModeOptIn`)를 찾지 못했다 — 이 계약의 기준이 사라졌다.",
+            settings.contains("\n    if (showDeveloperModeOptIn) {"),
         )
     }
 

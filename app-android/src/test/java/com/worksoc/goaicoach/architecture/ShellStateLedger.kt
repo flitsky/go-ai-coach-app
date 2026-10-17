@@ -268,11 +268,11 @@ internal object ShellStateLedger {
             "GoCoachScreen.LaunchedEffect(isGameEnded)" to DebtState.OWED,
         ),
         "settingsScreen" to mapOf(
-            "SettingsScreen.authState" to DebtState.OWED,
-            "SettingsScreen.showEmailDialog" to DebtState.OWED,
-            "SettingsScreen.isEmailSubmitting" to DebtState.OWED,
-            "SettingsScreen.showDeleteAccountDialog" to DebtState.OWED,
-            "SettingsScreen.isDeletingAccount" to DebtState.OWED,
+            "SettingsScreen.authState" to DebtState.PAID,
+            "SettingsScreen.showEmailDialog" to DebtState.PAID,
+            "SettingsScreen.isEmailSubmitting" to DebtState.PAID,
+            "SettingsScreen.showDeleteAccountDialog" to DebtState.PAID,
+            "SettingsScreen.isDeletingAccount" to DebtState.PAID,
         ),
         "developerTestSection" to emptyMap(),
     )

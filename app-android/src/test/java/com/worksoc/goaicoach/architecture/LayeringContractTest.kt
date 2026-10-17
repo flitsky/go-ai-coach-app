@@ -442,7 +442,7 @@ class LayeringContractTest {
      * 허용 목록은 **(파일, 금지 접두사) 짝**으로 둔다. 길이가 곧 부채의 지표다(docs/ARCHITECTURE.md의
      * 원칙) — 누수가 고쳐지면 [staleAllowances]가 목록에서 지우라고 빨개진다.
      *  - `BannerAdView.kt` × `gms.ads` — Compose `AndroidView`로 광고 뷰를 그린다. 화면이라 정당하다.
-     *  - `AccountDeletionFlow.kt`·`OnboardingScreen.kt`·`SettingsScreen.kt` × `firebase.` — **알려진
+     *  - `AccountDeletionFlow.kt`·`OnboardingScreen.kt` × `firebase.` — **알려진
      *    누수.** Firebase 예외 타입(`FirebaseAuthRecentLoginRequiredException` 등)으로 분기한다. 고치려면
      *    `AndroidAuthClient`가 타입 있는 실패로 매핑해야 하는데 동작 변경이라 순수 이동 밖이다.
      *
@@ -465,7 +465,6 @@ class LayeringContractTest {
             "BannerAdView.kt" to "import com.google.android.gms.",
             "AccountDeletionFlow.kt" to "import com.google.firebase.",
             "OnboardingScreen.kt" to "import com.google.firebase.",
-            "SettingsScreen.kt" to "import com.google.firebase.",
         )
         check(allowances.all { (_, forbidden) -> forbidden in forbiddenImports }) {
             "허용 목록이 금지 목록에 없는 접두사를 든다 — 허공을 허용하고 있다."
