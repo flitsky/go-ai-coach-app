@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
+import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
@@ -15,7 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 /**
- * **디버그 빌드 전용** — 다음 `analyze()` 한 번을 일부러 멈추게 한다(refactor backlog #74 실기 확인용). `fail:N`은
+ * **디버그 빌드 전용** — 다음 `analyze()` 또는 `humanPolicy()` 한 번을 일부러 멈추게 한다(refactor backlog #74 실기 확인용). `fail:N`은
  * 다음 N번의 AI 차례를 진짜로 실패시킨다(#109).
  *
  * 시간 초과는 손으로 낼 방법이 없다. 가장 짧은 제한이 1초인데 보이는 단계(16방문)의 탐색은 그 안에 끝나고,
@@ -25,17 +26,17 @@ import kotlinx.coroutines.withTimeout
  * ```
  * adb shell run-as com.zenit9hub.ai.baduk sh -c 'echo late:25000 > files/debug-engine-stall'
  * ```
- * 다음 `analyze()`가 파일을 읽고 **지운 뒤** 그 모드로 돈다(한 번만). 모드:
+ * 다음 `analyze()` 또는 `humanPolicy()`가 파일을 읽고 **지운 뒤** 그 모드로 돈다(한 번만). 모드:
  * - `slow:N` — N밀리초 기다렸다가 진짜 결과를 낸다. 기다림은 **취소된다**(무르기 확인용).
  * - `late:N` — 취소를 무시하고 N밀리초 기다린 뒤 **시간 초과**를 던진다. 늦게라도 돌아오는 답(프로세스의
  *   `withTimeout`이 끊는 경우)을 흉내 낸다 — 실제 KataGo처럼 그동안은 취소에 반응하지 않는다.
  * - `wedge` — 「엔진 다시 시작하기」(forceReset)가 올 때까지 취소를 무시하고 붙잡은 뒤, 파이프가 닫힌 것처럼
  *   `IllegalStateException`을 던진다. 진짜로 멎은 엔진(설계 F4)을 흉내 낸다.
- * - `fail:N` — 다음 N번의 AI 차례가 **진짜로 실패**한다(refactor backlog #109 — 시간 초과도 취소도 아니다). 분석 N번과
+ * - `fail:N` — 다음 N번의 AI 차례가 **진짜로 실패**한다(refactor backlog #109 — 시간 초과도 취소도 아니다). 분석/인간정책 N번과
  *   `genMove` N번이 곧바로 `IllegalStateException`을 던진다 — 분석만 실패하면 `genMove` 폴백이 두므로 둘 다다.
- *   파일은 첫 분석이 읽고 지우고, 남은 수는 메모리에 둔다(forceReset도 지우지 않는다).
+ *   파일은 첫 호출이 읽고 지우고, 남은 수는 메모리에 둔다(forceReset도 지우지 않는다).
  *
- * ⚠️ 한 번 건 스위치는 **그 다음 분석** 하나가 먹는다 — 추천 수·착수 평가의 분석도 분석이다. 확인하는 동안은
+ * ⚠️ 한 번 건 스위치는 **그 다음 분석(`analyze`/`humanPolicy`)** 하나가 먹는다 — 추천 수·착수 평가의 분석도 분석이다. 확인하는 동안은
  * 둘을 끄고, 같은 국면이 분석 캐시에 있으면 엔진까지 가지 않으니 새 국면에서 건다.
  *
  * ⚠️ 멈춤은 3계층의 오퍼레이션 락을 **쥔 채**다(refactor backlog #15) — 진짜 멈춘 엔진과 같다. `wedge` 동안 형세·추천 수는
@@ -53,6 +54,16 @@ internal class DebugEngineStallInjector(
     private val failingGenMoves = AtomicInteger(0)
 
     override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
+        applyStallOrFail("analysis")
+        return delegate.analyze(limit)
+    }
+
+    override suspend fun humanPolicy(profile: String): HumanPolicy {
+        applyStallOrFail("humanPolicy")
+        return delegate.humanPolicy(profile)
+    }
+
+    private suspend fun applyStallOrFail(operationName: String) {
         when (val stall = takeArmedStall()) {
             null -> Unit
             is Stall.Fail -> {
@@ -71,8 +82,7 @@ internal class DebugEngineStallInjector(
                 error("KataGo process ended while waiting (debug wedge released by forceReset)")
             }
         }
-        if (failingAnalyses.takeOne()) error("KataGo analysis failed (debug fail switch)")
-        return delegate.analyze(limit)
+        if (failingAnalyses.takeOne()) error("KataGo $operationName failed (debug fail switch)")
     }
 
     override suspend fun genMove(player: StoneColor): MoveResult {

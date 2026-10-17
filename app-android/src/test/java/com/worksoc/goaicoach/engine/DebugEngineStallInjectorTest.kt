@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
+import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import java.io.File
 import java.nio.file.Files
@@ -113,16 +114,39 @@ class DebugEngineStallInjectorTest {
         assertEquals(0, engine.analyzeCalls)
     }
 
+    @Test
+    fun humanPolicyConsumesArmedStallAndFailJustLikeAnalyze() = runBlocking {
+        armFile.writeText("late:0\n")
+        val lateThrown = runCatching { injector.humanPolicy("preaz_15k") }.exceptionOrNull()
+        assertTrue("humanPolicy도 late 스위치를 소비해 TimeoutCancellationException을 던진다: $lateThrown", lateThrown is TimeoutCancellationException)
+        assertFalse(armFile.exists())
+        assertEquals(0, engine.humanPolicyCalls)
+
+        armFile.writeText("fail:1")
+        val failThrown = runCatching { injector.humanPolicy("preaz_15k") }.exceptionOrNull()
+        assertTrue("humanPolicy도 fail 스위치를 소비해 IllegalStateException을 던진다: $failThrown", failThrown is IllegalStateException)
+        assertEquals(0, engine.humanPolicyCalls)
+
+        injector.humanPolicy("preaz_15k")
+        assertEquals("스위치 소진 뒤에는 그대로 위임한다", 1, engine.humanPolicyCalls)
+    }
+
     private class CountingEngine(
         private val base: EngineCoreApi = EngineCoreApiFactory.stub(),
     ) : EngineCoreApi by base {
         var analyzeCalls = 0
+        var humanPolicyCalls = 0
         var genMoveCalls = 0
         var resets = 0
 
         override suspend fun analyze(limit: AnalysisLimit): AnalysisResult {
             analyzeCalls += 1
             return AnalysisResult(status = EngineStatus.ready("counted"), candidates = emptyList(), summary = "counted")
+        }
+
+        override suspend fun humanPolicy(profile: String): HumanPolicy {
+            humanPolicyCalls += 1
+            return HumanPolicy(profile = profile, moves = emptyMap(), passProbability = 1.0)
         }
 
         override suspend fun genMove(player: StoneColor): MoveResult {
