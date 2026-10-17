@@ -6,13 +6,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * **포트 시그니처 가드**(refactor backlog #83) — `docs/ARCHITECTURE.md` 4계층 「포트가 아는 것」의 ⓐ를 기계로 잰다.
+ * **포트 시그니처 가드**(refactor backlog #83) — `ARCHITECTURE.md` 4계층 「포트가 아는 것」의 ⓐ를 기계로 잰다.
  *
  * ## 무엇을 막는가
  * 포트는 위 계층의 **값**은 알아도 되지만 **동작**은 몰라야 한다. 그래서 포트 시그니처의 매개변수·반환 타입은
  * 필드 폐포가 값이어야 한다 — 폐포 안에 함수·인터페이스·`var`·가변 컨테이너·포트/클라이언트/컨트롤러가 없어야
  * 한다. 이 규칙은 `#73`이 문서로 정했고 그때 사람이 잰 실측(계약 20개, 폐포 69타입, 위반 0)이 이 가드의 첫
- * 기준선이다(로드맵 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 4계층 「포트가 아는 것」).
+ * 기준선이다(`LAYER_4_EXTERNAL_INTEGRATION.md` 「포트가 아는 것」).
  *
  * ## 왜 import 규칙이 아닌가
  * 포트 19개 중 8개가 자기가 싣는 값과 **같은 패키지**에 있어 import 줄이 없다. 패키지 규칙은 같은 패키지의
@@ -41,12 +41,12 @@ class PortSignatureContractTest {
      *
      * ⚠️ 여기가 빨개졌다면 위반을 기준선에 적어 초록을 만들지 마라. 값이 아닌 것을 포트가 받거나 돌려주게 된
      * 것이다 — 콜백은 값의 흐름으로, 클라이언트·컨트롤러는 포트 밖으로, `var`는 `val`로 고친다. 규칙은
-     * `docs/ARCHITECTURE.md` 4계층 「포트가 아는 것」 ⓐ에 있다.
+     * `ARCHITECTURE.md` 4계층 「포트가 아는 것」 ⓐ에 있다.
      */
     @Test
     fun everyPortSignatureCarriesOnlyValues() {
         assertEquals(
-            "포트 시그니처가 값이 아닌 것을 싣는다(docs/ARCHITECTURE.md 4계층 「포트가 아는 것」 ⓐ). 경로는 " +
+            "포트 시그니처가 값이 아닌 것을 싣는다(ARCHITECTURE.md 4계층 「포트가 아는 것」 ⓐ). 경로는 " +
                 "`계약.메서드(매개변수) › 타입.필드`다.\n" + realReport.violations.joinToString("\n") { "  - $it" } + baselineSummary(),
             emptyList<String>(),
             realReport.violations,

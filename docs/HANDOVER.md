@@ -185,7 +185,7 @@ make doctor
 - `make test` (검증) · `make dev` (디버그 빌드) · `make install-dev` (설치) · `make seed-engine` (KataGo 모델 주입)
 - ⚠️ KataGo 모델을 안 넣으면 앱이 **조용히 스텁 AI로 폴백**합니다(즉시 착수하는 가짜 AI). `make doctor`가 경고해 줍니다.
 - iOS 타깃은 기본 꺼져 있고 `-PenableIosTargets=true`로만 켜집니다. **2026-08-24에 한 번 깨졌다가 복구됐습니다**
-  (`docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md` "플랫폼 누수 회귀 복구" 참고 — 에러 49개, 원인은 `import java.` 검사를
+  (`docs/architecture/LAYER_5_APPLICATION_DOMAIN.md` "플랫폼 누수 회귀 복구" 참고 — 에러 49개, 원인은 `import java.` 검사를
   통과해버리는 `System.currentTimeMillis()`/`kotlin.synchronized`/`Dispatchers.IO`였습니다).
   ⚠️ **평소 안드로이드 빌드/테스트가 그린이어도 이 타깃은 조용히 깨질 수 있습니다** — 아무도 안 켜기 때문입니다.
   그래서 `shared/`나 `core/`를 건드린 일감은 아래 명령까지 돌리는 것이 백로그의 규칙입니다(세 모듈의 본·테스트 컴파일):
@@ -255,7 +255,8 @@ git branch -a --no-merged main
 | 방법론 규칙 전문 · 빈 템플릿 (**신규 프로덕트용 정리본**) | [`work/knowhow-docs/`](./work/knowhow-docs/) |
 | 문서/폴더 전체 지도, 보존 정책 | [`DOCS_INDEX.md`](./DOCS_INDEX.md) |
 | 제품 요구사항·로드맵 | [`PRD.md`](./PRD.md) |
-| 7계층 아키텍처 원칙 (신규 코드 배치 기준) | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
-| 현재 패키지 지도와 갭 | [`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) |
+| 7계층 아키텍처 원칙 (신규 코드 배치 기준) | [`ARCHITECTURE.md`](./architecture/ARCHITECTURE.md) |
+| 아키텍처 지도(계층 → 파일, 모듈 지도, 계층을 가로지르는 갭) | [`GO_AI_COACH_ARCHITECTURE_ROADMAP.md`](./architecture/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) |
+| 계층마다 지금 위치·지키는 테스트·남은 일 | [`docs/architecture/`](./architecture/)의 `LAYER_1_…` ~ `LAYER_7_…`, `COMPOSITION_ROOT.md` |
 | 엔진 탐색 모드·레벨 매핑 | [`ENGINE.md`](./ENGINE.md) |
 | 기능 유/무료 정책 | [`FEATURE_ACCESS_PRINCIPLES.md`](./spec/FEATURE_ACCESS_PRINCIPLES.md) |

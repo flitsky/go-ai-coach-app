@@ -211,7 +211,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   **사람 정책 확률이 높은 수일수록 빨리**(평균 ∝ scale ÷ (확률 + 0.10)), 감마 분포로 흔들고 상한으로 자른다. **성향 = scale, 상한 = 사용자의 최대 탐색 시간.**
 - **도메인의 첫 칸은 이미 있다**: 5계층 패키지 `shared/playstyle/`(`HumanPlayStyle` 캐릭터 → 프로필 · `HumanMoveSampler` · `HopelessPosition`). 성향은 여기서 넓힌다.
 - ⚠️ **층 규칙**: AI 착수 경로(`match` · `application.autoai` · `shared.policy` · `shared.playstyle`)는 5계층, 캐릭터(`application/botcharacter/BotCharacter.kt` — 성향 필드가 없다)는 6계층이고 **5계층은 6계층을 못 부른다**(`LayeringContractTest`).
-  패키지를 새로 만들면 `ContractSymbols`의 `LAYER_5_PACKAGES`와 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`에 등록한다. 캐릭터와 잇는 키는 **카탈로그(또는 id)만 내린다.** 표시 문구는 `ui/l10n`(4개 언어) — 도메인에 문자열 금지.
+  패키지를 새로 만들면 `ContractSymbols`의 `LAYER_5_PACKAGES`와 `LAYER_5_APPLICATION_DOMAIN.md`의 「계층 배정」 블록에 등록한다(둘이 다르면 `LayerDocContractTest`가 빨갛다). 캐릭터와 잇는 키는 **카탈로그(또는 id)만 내린다.** 표시 문구는 `ui/l10n`(4개 언어) — 도메인에 문자열 금지.
 - **시간이 쓰이는 자리**(2026-10-03 조사 — #215로 AI 차례의 길이 바뀌었으니 착수 때 다시 확인한다): 사용자 상한이 단계의 시간을 덮어쓰는 `SearchTimeSettings.applyTo`(「끔」이면 null) ·
   AI 차례에만 거는 엔진 프로필 `toAiTurnEngineProfile` · 차례 시간 초과 `buildAutoAiTurnExecutionContext`(`AutoAiPolicyApplication.kt`). AI 차례는 `LocalEngineCoreSessionDelegate.runAutoAiTurn`이 돈다.
   ⚠️ 추천 수·형세의 공용 프로필(`RuntimePlayLevelSelection.kt`)에는 **성향을 얹지 말 것.** ⚠️ 연출한 대기가 와치독(`EngineTurnWatchdog` — 사용자 상한으로 잰다)에 「엔진 응답 지연」으로 읽히지 않게 한다(엔진 대기가 아니다).
@@ -464,5 +464,5 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 | 출시·콘솔 절차 · 등재문·출시 노트·스크린샷 | `GOOGLE_PLAY_LAUNCH_PLAN.md` §0 · `work/play-store-assets/` |
 | 사진 인식의 실험실(측정·학습·갤러리) | `engine-lab/vision/README.md` |
 | 권한·게이팅 정책 · 화면 구조 | `docs/spec/FEATURE_ACCESS_PRINCIPLES.md` · `APP_IA_AND_UI_SPEC.md` |
-| 계층 매핑(새 패키지를 만들 때) | `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` |
+| 계층 매핑(새 패키지를 만들 때) | 그 계층 파일 `LAYER_N_….md`(지도: `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`) |
 | 저장소 전체 안내 | `HANDOVER.md` · `DOCS_INDEX.md` |

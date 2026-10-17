@@ -45,12 +45,12 @@ sealed interface FeatureAccess {
  * 6계층(Session & Continuity) — 기능별 접근 정책 판정. [PremiumState]("이 세션이 지금 뭘
  * 가졌는가")를 입력으로 받아 [FeatureId] 하나에 대해 "지금 쓸 수 있는가, 없다면 무엇으로
  * 풀 수 있는가"를 순수 함수로 판정한다. [PremiumState]를 파라미터로 받는 판정 로직은 5계층이
- * 아니라 6계층이다 — 5계층은 6계층을 몰라야 하기 때문에([docs/ARCHITECTURE.md] 5계층 경계
+ * 아니라 6계층이다 — 5계층은 6계층을 몰라야 하기 때문에([ARCHITECTURE.md] 5계층 경계
  * 원칙), [PremiumState.isActive]가 이미 같은 이유로 [PremiumState] 자신에 있는 것과 같은
  * 선례를 따른다.
  *
  * 정책이 바뀔 때(무료/광고/구매/클레임 중 어느 조합을 어느 기능에 허용할지) 고칠 곳을 이
- * 함수의 `when` 분기 하나로 좁히는 것이 이 타입의 목적이다 — `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`
+ * 함수의 `when` 분기 하나로 좁히는 것이 이 타입의 목적이다 — `LAYER_6_SESSION_CONTINUITY.md`
  * "6계층 — 기능 엔타이틀먼트 정책 도입" 항목 참고.
  *
  * [UnlockOption.Purchase]는 [com.worksoc.goaicoach.ui.foundation.FeatureFlags.isPurchaseEnabled] 여부와

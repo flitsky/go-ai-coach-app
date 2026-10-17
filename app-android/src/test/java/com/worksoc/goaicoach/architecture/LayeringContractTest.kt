@@ -388,7 +388,7 @@ class LayeringContractTest {
     /**
      * 루트 패키지(조립 전용)의 파일 목록을 **정확히** 못박는다(refactor backlog #26).
      *
-     * docs/ARCHITECTURE.md는 루트를 "전 계층 참조 허용"인 예외로 두는 대신 **목록을 짧게, 그 길이를
+     * ARCHITECTURE.md는 루트를 "전 계층 참조 허용"인 예외로 두는 대신 **목록을 짧게, 그 길이를
      * 지표로** 삼으라고 한다. 루트의 파일은 계층 가드가 보지 않으므로, 여기에 규칙이 섞여 들어오면
      * **영구히 감시 밖**이 된다. 그래서 루트에 파일을 더하려면 이 목록을 고쳐야 한다 — 그 자체가
      * "의식적인 결정"의 기록이 된다.
@@ -427,7 +427,7 @@ class LayeringContractTest {
         assertEquals(
             "루트 패키지(조립 전용)의 파일 목록이 바뀌었다. 조립이라면 여기 목록에 더하고 이유를 적고, " +
                 "규칙(if/when으로 무엇을 판정하는 코드)이라면 shared application으로 보내라 — 루트는 계층 " +
-                "가드가 보지 않는다(docs/ARCHITECTURE.md, #26).",
+                "가드가 보지 않는다(ARCHITECTURE.md, #26).",
             expected,
             actual,
         )
@@ -439,7 +439,7 @@ class LayeringContractTest {
      * #25는 SDK 어댑터를 `platform/`으로 뺐다 — 그래서 지금 `import ui.X`는 "화면"을 뜻한다.
      * 이 가드가 없으면 다음 어댑터가 습관대로 `ui/`에 생기고, 그 뜻은 시간이 지나며 거짓이 된다.
      *
-     * 허용 목록은 **(파일, 금지 접두사) 짝**으로 둔다. 길이가 곧 부채의 지표다(docs/ARCHITECTURE.md의
+     * 허용 목록은 **(파일, 금지 접두사) 짝**으로 둔다. 길이가 곧 부채의 지표다(ARCHITECTURE.md의
      * 원칙) — 누수가 고쳐지면 [staleAllowances]가 목록에서 지우라고 빨개진다.
      *  - `BannerAdView.kt` × `gms.ads` — Compose `AndroidView`로 광고 뷰를 그린다. 화면이라 정당하다.
      *  - `AccountDeletionFlow.kt`·`OnboardingScreen.kt` × `firebase.` — **알려진
@@ -581,7 +581,7 @@ class LayeringContractTest {
      *
      * 예전에는 `SavedGameStorePort.readRawJson(): String?`·`EngineBenchmarkStorePort.loadText(): String`·
      * `path(): String`이 있었다 — 타입으로는 문자열이라 값이지만, 포트를 쥔 흐름 코드가 저장 형식을 읽을
-     * 수 있게 만든다(`docs/ARCHITECTURE.md` 4계층 ⓐ *"타입이 값이어도 저장 형식 자체는 싣지 않는다"*).
+     * 수 있게 만든다(`ARCHITECTURE.md` 4계층 ⓐ *"타입이 값이어도 저장 형식 자체는 싣지 않는다"*).
      * 디버그 리포트용 원문은 이제 어댑터의 포트 밖 메서드를 조립 루트가 텍스트 공급자로 꽂는다.
      *
      * ⚠️ 이 둘에만 거는 **회귀 고정**이다. 원칙 문서가 적었듯 *"문자열인데 저장 형식인가"* 는 타입으로
@@ -1534,9 +1534,9 @@ class LayeringContractTest {
             duplicated,
         )
         assertEquals(
-            "계층이 배정되지 않은 패키지가 있다 — 로드맵(docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md) 계층 " +
-                "절에서 자리를 정하고 ContractSymbols의 LAYER_5_PACKAGES·LAYER_6_PACKAGES·" +
-                "SHARED_PACKAGES_BELOW_LAYER_5 중 하나에 적어라(refactor backlog #84).",
+            "계층이 배정되지 않은 패키지가 있다 — 원칙(ARCHITECTURE.md)으로 자리를 정하고 ContractSymbols의 " +
+                "LAYER_2_PACKAGES·LAYER_3_PACKAGES·LAYER_4_ALPHA_PACKAGES·LAYER_5_PACKAGES·LAYER_6_PACKAGES 중 " +
+                "하나에 적은 뒤, 그 계층 문서(LAYER_N_*.md)의 「계층 배정」 블록에도 적어라(refactor backlog #84).",
             emptyList<String>(),
             unassigned,
         )

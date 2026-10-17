@@ -86,7 +86,7 @@ internal interface GoCoachAppWiringContext {
     val postUndoSync: PostUndoSyncSlot
 
     // 디버그 리포트에만 싣는 저장 원문(refactor backlog #86). 포트가 아니라 어댑터가 낸다 —
-    // 저장 형식(JSON 원문)은 저장 포트 위로 올라가지 않는다(`docs/ARCHITECTURE.md` ⓐ).
+    // 저장 형식(JSON 원문)은 저장 포트 위로 올라가지 않는다(`ARCHITECTURE.md` ⓐ).
     fun savedSessionRawJson(): String?
     fun storedBenchmarkText(): String
 

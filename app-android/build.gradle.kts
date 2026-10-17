@@ -576,6 +576,11 @@ tasks.withType<Test>().configureEach {
     inputs.file(rootDir.resolve("core/domain/build.gradle.kts"))
         .withPropertyName("coreDomainBuildScript")
         .withPathSensitivity(PathSensitivity.RELATIVE)
+    // 계층 문서(2026-10-17) — `LayerDocContractTest`가 `docs/architecture/LAYER_*.md`의 「계층 배정」 블록을 실행 중에
+    // 읽어 `ContractSymbols`의 계층 목록과 대조한다. 스캔 트리 밖이라 선언하지 않으면 문서만 고친 빌드가 UP-TO-DATE로 건너뛰어진다.
+    inputs.dir(rootDir.resolve("docs/architecture"))
+        .withPropertyName("architectureLayerDocs")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 // import 순서 게이트(refactor backlog #72). 어떤 ktlint 규칙이 도는지는 루트 .editorconfig가 정한다 —

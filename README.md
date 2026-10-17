@@ -39,7 +39,8 @@ Quick links to the main documents:
 - `HANDOVER.md` — how development is handed over and continued (working method, current live track)
 - `PRD.md` — product requirements, target end state, roadmap
 - `ARCHITECTURE.md` — the 7-layer (compressible to 4) architecture principles, app-agnostic
-- `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — the current package map for each layer, gaps, and roadmap, with dated current-code metrics
+- `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — the architecture map: which file holds each layer, the Gradle module map, and the gaps that cross layers
+- `LAYER_1_PHYSICAL_COMPUTE.md` … `LAYER_7_PRESENTATION.md`, `COMPOSITION_ROOT.md` — one file per layer: where it lives in the code, which tests guard it, what is left (the three above live together in `docs/architecture/`)
 - `ENGINE.md` — the two engine search modes, level→mode mapping, benchmark results
 - `OPERATIONS.md` — stack decision, score/endgame policy, current menu/options, diagnostic + runtime logging
 

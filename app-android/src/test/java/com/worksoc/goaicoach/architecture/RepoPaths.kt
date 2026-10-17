@@ -122,6 +122,12 @@ internal object RepoPaths {
     val architectureBudgets: File get() = root.resolve("app-android/architecture-budgets.json")
 
     /**
+     * 계층 문서 폴더 — `LayerDocContractTest`가 계층 파일의 「계층 배정」 블록을 읽는다.
+     * ⚠️ 옮기면 app-android/build.gradle.kts의 architectureLayerDocs 입력도 옮길 것(#103과 같은 이유).
+     */
+    val architectureDocs: File get() = root.resolve("docs/architecture")
+
+    /**
      * 도메인 커널 모듈의 빌드 스크립트 — `DomainModuleBuildScriptContractTest`가 "본 소스셋 의존 0"을 읽는다
      * (refactor backlog #49). ⚠️ 옮기면 app-android/build.gradle.kts의 coreDomainBuildScript 입력도 옮길 것.
      */
@@ -195,7 +201,7 @@ internal object RepoPaths {
      * 루트 패키지(`com.worksoc.goaicoach`, 조립 전용) 바로 아래의 파일 하나. refactor backlog #26이
      * `ui/`에 숨어 있던 조립 코드(`*ControllerWiring`·`PremiumPurchaseGlue`·`GameExitRecording`)를
      * 여기로 옮겼다 — `composition/` 하위 패키지를 따로 두지 않은 이유는 루트가 이미 조립 전용으로
-     * 명문화돼 있고(docs/ARCHITECTURE.md), 매니페스트에 묶인 `MainActivity`가 루트를 떠날 수 없어서다.
+     * 명문화돼 있고(ARCHITECTURE.md), 매니페스트에 묶인 `MainActivity`가 루트를 떠날 수 없어서다.
      */
     fun compositionFile(fileName: String): File = appAndroid(fileName)
 

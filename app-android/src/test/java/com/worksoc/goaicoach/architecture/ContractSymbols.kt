@@ -175,8 +175,11 @@ internal object ContractSymbols {
 
     // ── :shared 패키지의 계층 배정(refactor backlog #84) ───────────────────
     // 계층 배정이 **처음으로 코드에 생긴 자리**다. 그전까지는 로드맵 문장과 KDoc에만 있었다.
-    // 정본 매핑은 docs/spec/GO_AI_COACH_ARCHITECTURE_ROADMAP.md의 5·6계층 절이고, 여기는 그것을
-    // [LayeringContractTest]가 읽을 수 있게 옮긴 것이다. 매핑을 바꾸면 두 곳을 함께 고친다.
+    // **배정의 정본은 이 목록들이다**(2026-10-17부터). 계층 문서(`LAYER_2_MIDDLEWARE_BRIDGE.md`~
+    // `LAYER_6_SESSION_CONTINUITY.md`, ui 층은 `LAYER_7_PRESENTATION.md`)의 「계층 배정」 블록은 사본이고,
+    // [LayerDocContractTest]가 둘이 양방향으로 같은지 본다 — 배정을 바꾸면 여기를 고치고, 빨개지면 그 블록을
+    // 따라 고친다. 예전에는 문서가 정본이고 "두 곳을 함께 고친다"였는데, 손으로 맞추다 `shared.playstyle`·
+    // `shared.content`가 문서의 5계층 절에서 빠져 있었다.
     //  - 전부 **정확한 패키지 이름**이다(접두사가 아니다). 하위 패키지는 따로 적는다.
     //  - 배정은 **패키지 단위**다. 5·6계층 패키지 안에 선언된 4계층 α 포트(예: `gamehistory`의
     //    `GameHistoryStorePort`, `attendance`의 `AttendanceStorePort`)는 파일 단위 예외로 보고
@@ -248,24 +251,33 @@ internal object ContractSymbols {
         "com.worksoc.goaicoach.shared.scoring",
     )
 
-    /**
-     * :shared 안에 있지만 5계층보다 **아래**인 패키지 — 2계층 엔진 계약, 3계층 엔진 서비스,
-     * 4계층 α 포트. 이번 가드의 규칙 대상은 아니고, "모든 :shared 패키지가 배정받았다"를 세려고 둔다.
-     */
-    val SHARED_PACKAGES_BELOW_LAYER_5: List<String> = listOf(
-        // 2계층 — Middleware / Bridge(엔진 원시 계약)
+    /** 2계층 — Middleware / Bridge(엔진 원시 계약). `engine-android`의 구현체는 이 목록 밖이다. */
+    val LAYER_2_PACKAGES: List<String> = listOf(
         "com.worksoc.goaicoach.shared.enginecontract",
-        // 3계층 — Extended API(엔진 서비스)
+    )
+
+    /** 3계층 — Extended API(엔진 서비스). */
+    val LAYER_3_PACKAGES: List<String> = listOf(
         "com.worksoc.goaicoach.application.analysis",
         "com.worksoc.goaicoach.application.cacheoptimization",
         "com.worksoc.goaicoach.application.engine",
         "com.worksoc.goaicoach.application.engine.operation",
         "com.worksoc.goaicoach.application.safety",
-        // 4계층 α — 순수 포트/모델
+    )
+
+    /** 4계층 α — 순수 포트/모델만. 어댑터(`app-android`)는 이 목록 밖이다. */
+    val LAYER_4_ALPHA_PACKAGES: List<String> = listOf(
         "com.worksoc.goaicoach.application.auth.port",
         "com.worksoc.goaicoach.application.premium.port",
         "com.worksoc.goaicoach.shared.vision",
     )
+
+    /**
+     * :shared 안에 있지만 5계층보다 **아래**인 패키지 — 2계층 엔진 계약, 3계층 엔진 서비스,
+     * 4계층 α 포트. 이번 가드의 규칙 대상은 아니고, "모든 :shared 패키지가 배정받았다"를 세려고 둔다.
+     * 2026-10-17에 계층 문서와 대조하려고 셋으로 갈랐다 — 이 합은 그대로다.
+     */
+    val SHARED_PACKAGES_BELOW_LAYER_5: List<String> = LAYER_2_PACKAGES + LAYER_3_PACKAGES + LAYER_4_ALPHA_PACKAGES
 
     /** 가드가 쓰는 `forbiddenImports` 표기(`import <fqn>`)로 감싼다. */
     fun importOf(fqn: String): String = "import $fqn"

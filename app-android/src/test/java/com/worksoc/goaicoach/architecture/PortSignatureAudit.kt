@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.architecture
 
 /**
- * 포트 시그니처 규칙 ⓐ의 **판정기**(refactor backlog #83) — `docs/ARCHITECTURE.md` 4계층 「포트가 아는 것」.
+ * 포트 시그니처 규칙 ⓐ의 **판정기**(refactor backlog #83) — `ARCHITECTURE.md` 4계층 「포트가 아는 것」.
  *
  * 계약(포트 인터페이스)의 매개변수·반환 타입을 [TypeDeclarationIndex]로 선언까지 풀고, 그 **필드 폐포**
  * (주 생성자 프로퍼티 + 본문 저장 프로퍼티, sealed는 하위 타입까지)를 걸으며 규칙을 잰다. 테스트 픽스처와

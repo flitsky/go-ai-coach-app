@@ -4,7 +4,7 @@ package com.worksoc.goaicoach.architecture
  * 소스에서 읽은 **타입 선언 색인** — 선언 종류와 필드 타입까지 본다(refactor backlog #83).
  *
  * ## 왜 필요한가
- * 포트 시그니처 규칙(`docs/ARCHITECTURE.md` 4계층 「포트가 아는 것」 ⓐ)은 *"시그니처 타입의 필드 폐포가
+ * 포트 시그니처 규칙(`ARCHITECTURE.md` 4계층 「포트가 아는 것」 ⓐ)은 *"시그니처 타입의 필드 폐포가
  * 값인가"* 를 묻는다. import 줄로는 못 잰다 — 포트 여럿이 자기가 싣는 값과 **같은 패키지**에 있어 import
  * 줄이 아예 없고, 패키지 규칙은 같은 패키지의 정책 객체·컨트롤러까지 허용해 버린다. 그래서 타입 이름을
  * **선언까지 풀어** 그 선언이 무엇인지(데이터 클래스인가 인터페이스인가)와 필드가 무엇인지를 알아야 한다.
@@ -120,7 +120,7 @@ internal sealed interface Resolution {
 }
 
 /**
- * 표준 라이브러리 타입의 지위(`docs/ARCHITECTURE.md` 4계층 ⓐ 1번과 *"표준 라이브러리 타입이라고 다 값은 아니다"*).
+ * 표준 라이브러리 타입의 지위(`ARCHITECTURE.md` 4계층 ⓐ 1번과 *"표준 라이브러리 타입이라고 다 값은 아니다"*).
  * 목록에 없는 표준 타입은 전부 값이 아니다(기본 거부) — 여기 이름을 적는 것은 **허용**하거나 **거부 이유를
  * 또렷이 말하기** 위해서다.
  */
@@ -248,7 +248,7 @@ internal data class TypeDeclaration(
     /** 이 선언의 **안쪽** 자리 — 필드·멤버 타입을 풀 때. 자기 자신과 자기 중첩 타입이 이름으로 보인다. */
     val memberScope: DeclarationScope get() = scope.copy(enclosing = scope.enclosing + fqn)
 
-    /** 필드 — 주 생성자 프로퍼티와 본문 저장 프로퍼티(`docs/ARCHITECTURE.md` ⓐ *"값은 필드 폐포로 정한다"*). */
+    /** 필드 — 주 생성자 프로퍼티와 본문 저장 프로퍼티(`ARCHITECTURE.md` ⓐ *"값은 필드 폐포로 정한다"*). */
     val storedFields: List<PropertyDeclaration>
         get() = constructorFields + bodyProperties.filter { it.storage == PropertyStorage.STORED }
 }

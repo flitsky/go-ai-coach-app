@@ -40,7 +40,7 @@
 >
 > ⚠️ **용어 주의**: 앱 기능인 **'계정 없이 시작하기'**(로컬 UUID)와 **파이어베이스 Auth의 익명 로그인 활성화 여부**(콘솔 설정, 현재 비활성)는 서로 다른 개념이며 혼용하지 않는다.
 >
-> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
+> 그 결과 **"익명 → 실계정 승격"을 전제로 쓴 아래 서술은 전부 성립하지 않는다** — Step 2/3의 `linkWithCredential` 승격 경로, Step 4의 목표 정의, 그리고 `LAYER_6_SESSION_CONTINUITY.md`의 옛 로드맵 7번이 그것이다. 로드맵 7번은 "착수 전에 목표를 다시 정의해야 한다"고 이미 표시해 뒀다(예: "게스트(로컬 ID) → 실계정 승격"). 승격 코드 자체(`AuthProvider.Anonymous`, `isPromotableAnonymousSession`, `linkGoogleCredential`/`linkEmailCredential`)는 무해해서 지우지 않고 남겨 뒀다.
 >
 > ⚠️ 여기에 더해 **로그인 기능 전체가 2026-08-09에 꺼졌다**(`ui/foundation/FeatureFlags.kt`의 `isLoginEnabled = false`) — 아래 "결정 번복: 이번 출시에서 로그인 기능 전체를 끄기로 결정" 절 참고.
 

@@ -12,6 +12,8 @@
 
 ⚠️ **계층 정렬(Stage A~C)의 현행 정본은 이 문서가 아니다.** 2026-09-23에 실측 기반 진단서 `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md`가 세워지면서, "계층을 어떻게 강제할 것인가"의 처방과 일감은 그쪽(과 `260923-_ACTIVE_BACKLOG.md`)으로 넘어갔다. 이 문서에 남은 살아 있는 축은 **원격 엔진(Stage D~F)** 이다.
 
+⚠️ **계층별 현재 상태는 이 문서가 아니라 계층 파일에 있다**(2026-10-17). `docs/architecture/`의 `LAYER_1_PHYSICAL_COMPUTE.md`~`LAYER_7_PRESENTATION.md`가 계층마다 지금 위치·지키는 테스트·남은 일을 갖는다 — 아래 §2의 체크와 §3의 Stage 서술은 적힌 날짜 기준의 기록이다. 그중 아직 열려 있는 둘(원격 코덱이 덤·접바둑 돌 수를 보내지 않는 구멍, 여러 원격 후보의 신뢰도 판단)은 `LAYER_2_MIDDLEWARE_BRIDGE.md`·`LAYER_3_EXTENDED_API.md`에도 적혀 있다.
+
 ## 1. 배경과 목표
 
 2026-07-30에 아키텍처 문서를 재정립했지만, `GO_AI_COACH_ARCHITECTURE_ROADMAP.md`가 명시하듯 **코드는 아직 옮기지 않았다** — 재정의는 개념적 재배치였다. 이 계획서의 목표는 그 개념적 재배치를 실제 코드/테스트로 하나씩 실현하면서, 최종적으로 "카타고 엔진이 다른 사용자의 폰이나 서버에서 물리적으로 돌아가도 앱 상위 계층은 그대로"라는 원래 비전을 완수하는 것이다.
@@ -106,7 +108,7 @@
 ## 6. 관련 문서
 
 - `ARCHITECTURE.md` — 레이어 원칙(앱 비종속)
-- `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 계층별 현재 매핑, 알려진 갭
+- `GO_AI_COACH_ARCHITECTURE_ROADMAP.md` — 아키텍처 지도. 계층별 현재 매핑과 갭은 2026-10-17부터 계층마다 한 파일(`LAYER_1_PHYSICAL_COMPUTE.md`~`LAYER_7_PRESENTATION.md`)
 - `260923-260928_ARCHITECTURE_DIAGNOSIS_AND_REFACTORING.md` — **계층 정렬 축의 현행 정본**(실측 진단 + 처방 + 함정 A~J). 이 계획서의 Stage A~C를 이어받았다
 - `PREMIUM_MODE.md`, `LOGIN_AND_ACCOUNT_SYSTEM.md` — Stage B/C의 1차 소스 문서
 - `260818-_REMOTE_ENGINE_MQ_TRANSPORT.md` — Stage F 전용 킥오프(2026-09-23 **개명** — 옛 이름 `REMOTE_ENGINE_MQ_TRANSPORT_KICKOFF_PLAN_260818_0825.md`). 파이썬 프로토타입 완료, 앱 이식만 남음
