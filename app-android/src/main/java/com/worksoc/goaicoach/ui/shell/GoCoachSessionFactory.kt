@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.engine.EngineBenchmarkStorePort
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.preferences.InitialUserPreferencesPlan
 import com.worksoc.goaicoach.application.preferences.toGameSessionSettingsState
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.session.AutoAiTurnUiState
 import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
@@ -14,6 +15,8 @@ import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.buildGameSessionControllerState
+import com.worksoc.goaicoach.presentation.GameScreenState
+import com.worksoc.goaicoach.shared.domain.GameState
 
 internal fun buildInitialSessionState(
     initialPlan: InitialUserPreferencesPlan,
@@ -60,3 +63,16 @@ internal fun buildInitialSessionState(
     autoAiTurn = AutoAiTurnUiState(),
     positionCacheOptimization = PositionAnalysisCacheOptimizationUiState(),
 )
+
+/**
+ * 밖에서 받은 국면(바둑판 사진 — #263 · #266)에서 대국을 시작하는 저장분. 「이어하기」와 같은 길(`ResumeSavedSession`)을 타며,
+ * 좌석·단계·추천 수 설정은 지금 화면의 값을 그대로 쓴다. 셸에 두면 줄 예산(`architecture-budgets.json`)을 먹어 여기로 뺐다(#269).
+ */
+internal fun snapshotStartingFrom(state: GameState, screenState: GameScreenState, topMovesEnabled: Boolean): SavedGameSnapshot =
+    SavedGameSnapshot(
+        gameState = state,
+        playerSetup = screenState.playerSetup,
+        playLevel = screenState.playLevel,
+        topMovesEnabled = topMovesEnabled,
+        savedAtMillis = System.currentTimeMillis(),
+    )

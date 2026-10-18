@@ -62,7 +62,6 @@ import com.worksoc.goaicoach.application.runtime.RuntimeLogContext
 import com.worksoc.goaicoach.application.runtime.runtimeAppStartLog
 import com.worksoc.goaicoach.application.runtime.runtimeScoreSnapshotsChangedLog
 import com.worksoc.goaicoach.application.savedgame.SavedGamePersistenceRunRequest
-import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionPromptRunRequest
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
 import com.worksoc.goaicoach.application.savedgame.buildEndedGameRestoreDisplayPlan
@@ -981,17 +980,7 @@ private fun GoCoachScreen(
                 onBackClick = exitToHome,
                 onStartGameWithState = { scannedState ->
                     sessionStore.clear()
-                    dispatch(
-                        GameUiEvent.ResumeSavedSession(
-                            SavedGameSnapshot(
-                                gameState = scannedState,
-                                playerSetup = screenState.playerSetup,
-                                playLevel = screenState.playLevel,
-                                topMovesEnabled = topMovesEnabled,
-                                savedAtMillis = System.currentTimeMillis(),
-                            )
-                        )
-                    )
+                    dispatch(GameUiEvent.ResumeSavedSession(snapshotStartingFrom(scannedState, screenState, topMovesEnabled)))
                 },
             )
         }
