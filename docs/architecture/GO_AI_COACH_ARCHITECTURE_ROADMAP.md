@@ -83,7 +83,7 @@
 
 우선순위 순서가 아니라 계층별로 정리한 것이며, 착수 순서는 별도 착수 계획서에서 정한다.
 
-⚠️ **착수 계획서는 `work/roadmap/`에 `시작일-완결일_이름.md` 형태로 둔다**(완결 전에는 뒤를 비운다 — 예: `261015-_ACTIVE_BACKLOG.md`, 완결 후 예: `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md`). 2026-10-08부터 그 폴더의 맨 위에는 활성 백로그 하나만 두고, 완결·보류 문서는 `work/roadmap/archive/`에 둔다. 2026-07-30판이 지시하던 *"`refactoring/`에 `YYMMDD HHhMMm` 타임스탬프 관례로 추가"* 는 **따르면 안 된다** — `docs/refactoring/` 폴더는 2026-08-17에 삭제됐고 `docs/DOCS_INDEX.md`가 **"되살리지 말 것"** 으로 못박았다. 시분 타임스탬프 관례도 그때 함께 폐기됐다.
+⚠️ **착수 계획서는 `work/roadmap/`에 `시작일-완결일_이름.md` 형태로 둔다**(완결 전에는 뒤를 비운다 — 예: `261018-_ACTIVE_BACKLOG.md`, 완결 후 예: `260919-260922_STUDY_CONTENT_AND_1_0_RELEASE.md`). 2026-10-08부터 그 폴더의 맨 위에는 활성 백로그 하나만 두고, 완결·보류 문서는 `work/roadmap/archive/`에 둔다. 2026-07-30판이 지시하던 *"`refactoring/`에 `YYMMDD HHhMMm` 타임스탬프 관례로 추가"* 는 **따르면 안 된다** — `docs/refactoring/` 폴더는 2026-08-17에 삭제됐고 `docs/DOCS_INDEX.md`가 **"되살리지 말 것"** 으로 못박았다. 시분 타임스탬프 관례도 그때 함께 폐기됐다.
 
 계층별 항목(옛 1~7번)은 각 계층 파일의 「갭과 남은 일」로 옮겼다 — 번호는 그대로다(1→2계층, 2→3계층, 3→1계층, 4→4계층, 5→5계층, 6·7→6계층).
 
@@ -102,5 +102,5 @@
 - 그 원칙을 초도 발행에 구체 적용한 전략/체크리스트: `work/plans/GOOGLE_PLAY_LAUNCH_PLAN.md`
 - 함정 번호 정본(영구불변, 재사용 없음): `docs/spec/PITFALLS.md` — 진단서 §4의 함정 A~J가 **67~76번**으로 들어가 있다
 - 원격 엔진 Stage 로그(계층 정렬 Stage A~C는 위 진단서로 이관): `work/plans/REMOTE_ENGINE_AND_LAYERING.md`
-- 지금 무엇을 할 것인가(활성 백로그): `work/roadmap/261015-_ACTIVE_BACKLOG.md`
+- 지금 무엇을 할 것인가(활성 백로그): `work/roadmap/261018-_ACTIVE_BACKLOG.md`
 - 이 7계층 모델이 정착하기까지의 리팩토링 과정: 날짜별 작업 로그는 2026-08-17 문서 보존 정책 전환으로 삭제됐다(git 히스토리로만 보존). **진행 중인 로드맵은 `work/roadmap/`(보류·완결분은 그 아래 `archive/`)에 있다** — `docs/refactoring/` 폴더는 없어졌고 되살리지 않는다(`docs/DOCS_INDEX.md` 「문서 보존 정책」).
