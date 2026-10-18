@@ -246,6 +246,8 @@ internal object ContractSymbols {
         "com.worksoc.goaicoach.shared.content",
         "com.worksoc.goaicoach.shared.diagnostic",
         "com.worksoc.goaicoach.shared.domain",
+        // #269 「기보 보기」 — SGF를 본 수순 한 줄로 읽는다(순수 Kotlin, 도메인 모델만 쓴다).
+        "com.worksoc.goaicoach.shared.gamerecord",
         "com.worksoc.goaicoach.shared.playstyle",
         "com.worksoc.goaicoach.shared.policy",
         "com.worksoc.goaicoach.shared.scoring",

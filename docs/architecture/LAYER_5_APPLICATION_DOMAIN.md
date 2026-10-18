@@ -35,6 +35,7 @@ match
 shared.content
 shared.diagnostic
 shared.domain
+shared.gamerecord
 shared.playstyle
 shared.policy
 shared.scoring
