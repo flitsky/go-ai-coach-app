@@ -53,4 +53,4 @@ L8 shell
 
 - `UiPackageCycleRatchetTest` — 순환 0, 간선은 낮은 층으로만, `ui/` 루트 0파일.
 - `DesignTokenLiteralRatchetTest` — 색 리터럴은 `designsystem`에만.
-- `ShellStateLedgerContractTest` — 셸(`GoCoachApp`·`SettingsScreen` 등)의 줄 예산과 상태 훅 원장(`architecture-budgets.json`).
+- `LayeringContractTest.goCoachAppStaysWithinShrinkingUiShellBudget` · `settingsScreenStaysAShellAndTheDeveloperSectionStaysItsOwnRole` — 셸(`GoCoachApp`·`SettingsScreen`·`DeveloperTestSection`)의 줄 예산과 훅 자리를 원장(`architecture-budgets.json`)과 대조한다. 판정기는 `ShellStateLedger`, 원장 파일과 판정기의 자기검증은 `ShellStateLedgerContractTest`.

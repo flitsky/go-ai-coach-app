@@ -74,7 +74,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - **24** 초록 ≠ 안전 — 검사가 그 표기를 실제로 보는지 일부러 깨서 확인
 - **51** 등재문이 앱보다 늦게 늙는다 — 그물(`AppNameContractTest`)이 **이름 하나만** 본다. 기능을 지우면 `[주요 기능]`·`[요금 안내]`·`[차별점]`을 **대괄호 표제로** grep
 - **67** `GoCoachApp`의 `wiringContext` `remember` 키를 지우지 않는다 — 지역 값이 붙잡혀 **조용히 동결**되고 CI가 못 잡는다(`WiringContextFreezeContractTest`)
-- **3** 셸(`GoCoachApp`) 예산 — 조이는 것은 줄 수가 아니라 **상태 훅(여유 0)**이다. 새 상태는 그 상태를 쓰는 역할의 파일에 둔다(숫자 정본은 `LayeringContractTest`)
+- **3** 셸(`GoCoachApp`) 예산 — 조이는 것은 줄 수가 아니라 **상태 훅**이다. 새 상태는 그 상태를 쓰는 역할의 파일에 둔다 — 셸에 꼭 둬야 하면 원장에 이름·종류·사유로 적고, 금지 종류(부채)는 늘릴 수 없다(정본 `app-android/architecture-budgets.json` — 셸 상태 원장)
 - **80·83** 커밋은 **경로를 지정해서**. `git mv` 뒤에는 옛 경로도 pathspec에 넣고 `git show --stat`에 `R`이 보이는지 확인(빠지면 커밋 트리에 파일이 두 벌 남는다)
 - **84** spotless는 **모듈별 `src/**/*.kt`만** — 루트 `**`로 걸면 `.claude/worktrees`의 남의 워크트리까지 쓸어 담는다
 
