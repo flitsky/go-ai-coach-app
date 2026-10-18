@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.music:zen_oriental_senbazuru",
+  "artifactVersion": "",
+  "name": "Senbazuru",
+  "description": "Music: \"Senbazuru\" by Kevin MacLeod (incompetech.com). Licensed under Creative Commons: By Attribution 4.0 License. ISRC USUAN1100821. Played as the app background music (res/raw/bgm_zen_oriental_senbazuru.ogg, re-encoded to Ogg Vorbis 128 kbps).",
+  "website": "https://incompetech.com",
+  "developers": [
+    {
+      "name": "Kevin MacLeod"
+    }
+  ],
+  "tag": "bundled-music",
+  "licenses": [
+    "CC-BY-4.0"
+  ]
+}

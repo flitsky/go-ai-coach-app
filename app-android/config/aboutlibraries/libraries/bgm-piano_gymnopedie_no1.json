@@ -1,0 +1,16 @@
+{
+  "uniqueId": "bundled.music:piano_gymnopedie_no1",
+  "artifactVersion": "",
+  "name": "Gymnopedie No 1",
+  "description": "Music: \"Gymnopedie No 1\" by Kevin MacLeod (incompetech.com). Licensed under Creative Commons: By Attribution 4.0 License. ISRC USUAN1100787. Played as the app background music (res/raw/bgm_piano_gymnopedie_no1.ogg, re-encoded to Ogg Vorbis 128 kbps).",
+  "website": "https://incompetech.com",
+  "developers": [
+    {
+      "name": "Kevin MacLeod"
+    }
+  ],
+  "tag": "bundled-music",
+  "licenses": [
+    "CC-BY-4.0"
+  ]
+}

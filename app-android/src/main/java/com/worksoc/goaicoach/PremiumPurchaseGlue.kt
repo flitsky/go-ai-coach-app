@@ -195,7 +195,11 @@ internal suspend fun showRewardedAdOnce(context: Context): AdRewardOutcome {
         // 동의를 얻지 못했다 — 이미 있는 실패 경로를 그대로 탄다.
         return AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
     }
-    return AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
+    // 광고 동안 앱 배경음악을 멈춘다(#244) — 광고가 앱 안의 화면이라 앱이 뒤로 가지 않고, 그대로 두면 광고가 포커스를 가져간 뒤 다시 틀지 않는다.
+    val backgroundMusic = (activity.application as GoAiCoachApplication).backgroundMusic
+    return backgroundMusic.whileFullScreenAdShows {
+        AndroidRewardedInterstitialAdClient(activity, AdUnitIds.rewardedInterstitialAdUnitId).showRewardedAd()
+    }
 }
 
 /**

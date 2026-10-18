@@ -35,6 +35,14 @@ private val EngineSectionTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "AI 引擎 (KataGo) · 照片识别 (OpenCV)",
 )
 
+/** 앱 배경음악 곡(백로그 #244) — 엔진 구획 바로 아래. 곡 이름과 라이선스 원문은 번역하지 않는다(위 KDoc). */
+private val MusicSectionTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "앱 배경음악 (Kevin MacLeod · CC BY 4.0)",
+    UiLanguage.English to "App background music (Kevin MacLeod · CC BY 4.0)",
+    UiLanguage.Japanese to "アプリのBGM (Kevin MacLeod · CC BY 4.0)",
+    UiLanguage.ChineseSimplified to "应用背景音乐 (Kevin MacLeod · CC BY 4.0)",
+)
+
 private val LibrarySectionTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "앱 라이브러리",
     UiLanguage.English to "App libraries",
@@ -66,6 +74,8 @@ internal fun openSourceLicensesTitleFor(language: UiLanguage): String = Titles.g
 internal fun openSourceLicensesIntroFor(language: UiLanguage): String = Intros.getValue(language)
 
 internal fun openSourceLicensesEngineSectionFor(language: UiLanguage): String = EngineSectionTitles.getValue(language)
+
+internal fun openSourceLicensesMusicSectionFor(language: UiLanguage): String = MusicSectionTitles.getValue(language)
 
 internal fun openSourceLicensesLibrarySectionFor(language: UiLanguage): String = LibrarySectionTitles.getValue(language)
 

@@ -61,6 +61,7 @@ import com.worksoc.goaicoach.ui.l10n.settingsAboutSectionFor
 import com.worksoc.goaicoach.ui.l10n.settingsDisplaySectionFor
 import com.worksoc.goaicoach.ui.l10n.settingsGameSectionFor
 import com.worksoc.goaicoach.ui.l10n.settingsHelpSectionFor
+import com.worksoc.goaicoach.ui.l10n.settingsSoundSectionFor
 import com.worksoc.goaicoach.ui.monetization.AdPrivacyOptionsRow
 import com.worksoc.goaicoach.ui.play.LanguageSettingsPanel
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuPanel
@@ -180,7 +181,7 @@ internal fun SettingsScreen(
                 .padding(horizontal = AppSpacing.Space24),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
-            // ## 절 — 언어 및 글자 크기 · 대국 셋(바둑판 · 착수 · AI 코치) · 도움말 · 앱 정보(#256 「A 정리형」 → #261 제목을 분명하게, 사용자 2026-10-13)
+            // ## 절 — 언어 및 글자 크기 · 소리(#244) · 대국 셋(바둑판 · 착수 · AI 코치) · 도움말 · 앱 정보(#256 「A 정리형」 → #261 제목을 분명하게, 사용자 2026-10-13)
             // 실험실 패널은 1.5.0에서 내렸다 — 하나뿐이던 「바둑판 사진 분석」이 본 기능이 됐다(사용자 2026-10-15). 새 실험을 올리면
             // 도움말 아래(앱 정보 위)에 되살린다 — `3ebe64d5`가 지운 패널(`ExperimentalFeaturesSettingsPanel`)과 저장소는 그 부모 `9c52be0b`에 있다(#265).
             SettingsSectionTitle(settingsDisplaySectionFor(strings.language))
@@ -192,6 +193,10 @@ internal fun SettingsScreen(
             // 글꼴 크기(#106) — 언어와 같은 "표시" 성격이라 바로 아래에 둔다.
             // ⚠️ 저장소는 이 패널이 스스로 갖는다 — 이 화면의 상태는 원장으로 묶여 있다(#102).
             FontScaleSettingsPanel()
+
+            // ## 소리 — 「앱 배경음악」(#244, 사용자 2026-10-18 — 첫 절 바로 아래의 새 절. 대국 중 음악 설정도 나중에 이 절에 온다).
+            SettingsSectionTitle(settingsSoundSectionFor(strings.language))
+            BackgroundMusicSettingsPanel()
 
             // ## 대국 쪽 절 셋 — 「대국 바둑판 설정」·「대국 착수 설정」·「대국 내 AI 코치 설정」(#261, 사용자 2026-10-13 — 펼친 채)
             // ⚠️ **좌석(흑·백)과 판 크기·접바둑·계가·덤은 여기 두지 않는다**(#256, 사용자 2026-10-13). 로비(`GameSetupLobby`)와

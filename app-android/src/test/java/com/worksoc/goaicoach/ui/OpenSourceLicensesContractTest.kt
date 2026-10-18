@@ -7,8 +7,10 @@ import com.worksoc.goaicoach.ui.l10n.openSourceLicensesEngineSectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesIntroFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesLibrarySectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesLoadFailedFor
+import com.worksoc.goaicoach.ui.l10n.openSourceLicensesMusicSectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesTitleFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesViewLicenseFor
+import com.worksoc.goaicoach.ui.settings.BundledMusicTag
 import com.worksoc.goaicoach.ui.settings.BundledNativeOrder
 import com.worksoc.goaicoach.ui.settings.BundledNativeTag
 import com.worksoc.goaicoach.ui.settings.openSourceEntriesFrom
@@ -69,19 +71,30 @@ class OpenSourceLicensesContractTest {
         // 번들에 싣는 신경망은 둘이다(백로그 #215) — 사람 모델도 같은 신경망 라이선스의 고지를 단다(그 라이선스가 Human SL Network를 이름으로 든다).
         val humanNetwork = entries.first { it.id == "bundled.native:katago-human-network" }
         assertEquals(listOf("KataGo Neural Network License"), humanNetwork.licenses.map { it.name })
-        assertEquals("엔진 구획 뒤에 앱 라이브러리가 온다", "androidx.activity:activity", entries[engineIds.size].id)
+        // 엔진 구획 바로 아래가 앱 배경음악(#244 — CC BY 4.0 저작자 표시), 그 뒤가 앱 라이브러리다.
+        val musicIds = entries.drop(engineIds.size).takeWhile { it.isBackgroundMusic }.map { it.id }
+        assertEquals(
+            "배경음악 손 항목이 전부 엔진 구획 바로 아래에 와야 한다",
+            jsonFiles("libraries").filter { it.name.startsWith("bgm-") }.size,
+            musicIds.size,
+        )
+        assertEquals("배경음악 구획 뒤에 앱 라이브러리가 온다", "androidx.activity:activity", entries[engineIds.size + musicIds.size].id)
     }
 
-    /** 손 항목은 전부 [BundledNativeTag]를 단다 — 태그를 잊으면 엔진 구획에서 빠져 이름순 목록 한가운데로 숨는다. */
+    /**
+     * 손 항목은 전부 [BundledNativeTag]를 단다 — 태그를 잊으면 엔진 구획에서 빠져 이름순 목록 한가운데로 숨는다.
+     * 앱 배경음악 곡(`bgm-*.json`, #244)만 [BundledMusicTag]를 단다.
+     */
     @Test
     fun everyHandWrittenEntryIsTaggedAndCarriesItsLicenseText() {
         val libraryFiles = jsonFiles("libraries")
         assertTrue("손 항목이 없다 — 설정 경로가 바뀌었나", libraryFiles.size >= BundledNativeOrder.size)
         libraryFiles.forEach { file ->
             val library = JSONObject(file.readText())
-            assertEquals("${file.name}: 태그", BundledNativeTag, library.getString("tag"))
+            val expectedTag = if (file.name.startsWith("bgm-")) BundledMusicTag else BundledNativeTag
+            assertEquals("${file.name}: 태그", expectedTag, library.getString("tag"))
         }
-        openSourceEntriesFrom(bundleJson()).filter { it.isBundledEngine }.forEach { entry ->
+        openSourceEntriesFrom(bundleJson()).filter { it.isBundledEngine || it.isBackgroundMusic }.forEach { entry ->
             assertTrue("${entry.id}: 라이선스 원문이 비었다", entry.licenses.isNotEmpty() && entry.licenses.all { !it.content.isNullOrBlank() })
         }
     }
@@ -148,6 +161,7 @@ class OpenSourceLicensesContractTest {
                 openSourceLicensesTitleFor(language),
                 openSourceLicensesIntroFor(language),
                 openSourceLicensesEngineSectionFor(language),
+                openSourceLicensesMusicSectionFor(language),
                 openSourceLicensesLibrarySectionFor(language),
                 openSourceLicensesViewLicenseFor(language),
                 openSourceLicensesLoadFailedFor(language),

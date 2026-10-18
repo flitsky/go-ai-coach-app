@@ -26,6 +26,9 @@ class MyInfoAndSettingsLayoutContractTest {
             "settingsDisplaySectionFor(",
             "LanguageSettingsPanel(",
             "FontScaleSettingsPanel()",
+            // 「소리」 절 — 첫 절 바로 아래(#244, 사용자 2026-10-18).
+            "settingsSoundSectionFor(",
+            "BackgroundMusicSettingsPanel()",
             "KaTrainUxMenuPanel(",
             "settingsGameSectionFor(",
             "SearchTimeSettingsPanel(",

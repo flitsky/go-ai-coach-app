@@ -16,6 +16,8 @@ internal data class OpenSourceEntry(
     val licenses: List<OpenSourceLicense>,
     /** 앱이 직접 싣는 엔진·신경망과 `.so` 안 부품(KataGo · OpenCV — Gradle 의존성이 아니다) — 목록 맨 위 구획. */
     val isBundledEngine: Boolean,
+    /** 앱 배경음악으로 싣는 곡(백로그 #244 — CC BY 4.0이라 저작자 표시가 조건이다) — 엔진 구획 바로 아래 구획. */
+    val isBackgroundMusic: Boolean = false,
 )
 
 internal data class OpenSourceLicense(val name: String, val url: String?, val content: String?)
@@ -25,6 +27,9 @@ internal data class OpenSourceLicense(val name: String, val url: String?, val co
  * KataGo 엔진·신경망과 엔진에 컴파일된 C++ 부품은 거기 직접 적는다.
  */
 internal const val BundledNativeTag = "bundled-native"
+
+/** 앱 배경음악 곡의 손 항목이 다는 태그(백로그 #244) — `config/aboutlibraries/libraries/bgm-*.json`. */
+internal const val BundledMusicTag = "bundled-music"
 
 /**
  * 맨 위 구획의 순서. ⚠️ **KataGo 코드와 신경망이 첫 두 줄이다** — 고지 의무가 가장 분명한 둘이고
@@ -62,7 +67,7 @@ internal val BundledNativeOrder: List<String> = listOf(
     "bundled.native:ade",
 )
 
-/** 생성된 `aboutlibraries.json` 본문 → 화면 항목. 엔진 구획이 먼저, 그다음 앱 라이브러리를 이름순으로. */
+/** 생성된 `aboutlibraries.json` 본문 → 화면 항목. 엔진 구획이 먼저, 그다음 배경음악(#244), 그다음 앱 라이브러리를 이름순으로. */
 internal fun openSourceEntriesFrom(json: String): List<OpenSourceEntry> {
     val libs = Libs.Builder().withJson(json).build()
     val entries = libs.libraries.map { library ->
@@ -84,13 +89,15 @@ internal fun openSourceEntriesFrom(json: String): List<OpenSourceEntry> {
                 )
             },
             isBundledEngine = library.tag == BundledNativeTag,
+            isBackgroundMusic = library.tag == BundledMusicTag,
         )
     }
-    val (engine, apps) = entries.partition { it.isBundledEngine }
+    val (engine, rest) = entries.partition { it.isBundledEngine }
+    val (music, apps) = rest.partition { it.isBackgroundMusic }
     val engineOrdered = engine.sortedWith(
         compareBy<OpenSourceEntry> { entry ->
             BundledNativeOrder.indexOf(entry.id).let { if (it < 0) Int.MAX_VALUE else it }
         }.thenBy { it.name.lowercase() },
     )
-    return engineOrdered + apps.sortedBy { it.name.lowercase() }
+    return engineOrdered + music.sortedBy { it.name.lowercase() } + apps.sortedBy { it.name.lowercase() }
 }

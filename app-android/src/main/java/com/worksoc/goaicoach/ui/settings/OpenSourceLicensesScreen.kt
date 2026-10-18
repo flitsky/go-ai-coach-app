@@ -43,6 +43,7 @@ import com.worksoc.goaicoach.ui.l10n.openSourceLicensesEngineSectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesIntroFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesLibrarySectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesLoadFailedFor
+import com.worksoc.goaicoach.ui.l10n.openSourceLicensesMusicSectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesTitleFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesViewLicenseFor
 
@@ -51,7 +52,7 @@ import com.worksoc.goaicoach.ui.l10n.openSourceLicensesViewLicenseFor
  *
  * - 맨 위 구획은 **KataGo 엔진·신경망**과 엔진 안에 컴파일된 C++ 부품이다(`config/aboutlibraries/`의 손 항목).
  *   KataGo 코드·신경망 두 줄은 **처음부터 펼쳐 둔다** — 고지 전문이 열자마자 보여야 한다.
- * - 그 아래는 Gradle 플러그인이 빌드마다 모은 라이브러리(`R.raw.aboutlibraries`)다. 누르면 전문이 펼쳐진다.
+ * - 그 아래는 앱 배경음악 곡(백로그 #244 — CC BY 4.0 저작자 표시), 그다음 Gradle 플러그인이 빌드마다 모은 라이브러리(`R.raw.aboutlibraries`)다. 누르면 전문이 펼쳐진다.
  *
  * ⚠️ **`ScreenDestination`이 아니다** — 설정 화면의 하위 상태다(선례: 학습 허브 #163, 다시보기 #156).
  * 그래서 시스템 뒤로가기를 **여기서** 잡는다: 셸의 `BackHandler`는 홈으로 튄다.
@@ -117,10 +118,18 @@ internal fun OpenSourceLicensesScreen(
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
-            val (engine, apps) = entries.partition { it.isBundledEngine }
+            val (engine, rest) = entries.partition { it.isBundledEngine }
+            val (music, apps) = rest.partition { it.isBackgroundMusic }
             if (engine.isNotEmpty()) {
                 item(key = "section-engine") { SectionTitle(openSourceLicensesEngineSectionFor(language)) }
                 items(engine, key = { it.id }) { entry ->
+                    OpenSourceEntryRow(entry, expanded[entry.id] == true, language) { expanded[entry.id] = expanded[entry.id] != true }
+                }
+            }
+            // 앱 배경음악(#244) — CC BY 4.0의 저작자 표시. 곡 이름과 「Kevin MacLeod」가 줄에 바로 보이고, 누르면 라이선스 고지가 펼쳐진다.
+            if (music.isNotEmpty()) {
+                item(key = "section-music") { SectionTitle(openSourceLicensesMusicSectionFor(language)) }
+                items(music, key = { it.id }) { entry ->
                     OpenSourceEntryRow(entry, expanded[entry.id] == true, language) { expanded[entry.id] = expanded[entry.id] != true }
                 }
             }

@@ -27,6 +27,9 @@ class GoAiCoachApplication : Application() {
      */
     internal val processRuntime: GoCoachProcessRuntime by lazy { GoCoachProcessRuntime.forApplication(this) }
 
+    /** 앱 배경음악(백로그 #244) — 프로세스에 하나. 전면 광고 동안 멈추려고 광고를 띄우는 곳(`showRewardedAdOnce`)이 여기서 찾는다. */
+    internal val backgroundMusic: BackgroundMusicCoordinator by lazy { BackgroundMusicCoordinator(this) }
+
     override fun onCreate() {
         super.onCreate()
         applyAdContentRating()
@@ -43,6 +46,7 @@ class GoAiCoachApplication : Application() {
         ReleaseResetCoordinator(this).applyIfNeeded()
         ProcessLifecycleOwner.get().lifecycle.addObserver(ForegroundObserver)
         AttendanceCheckInCoordinator(this).start()
+        backgroundMusic.start()
     }
 
     /**
