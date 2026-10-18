@@ -71,3 +71,6 @@ engine-lab/vision/runs/
 
 # 인터넷에서 모은 바둑판·기보 이미지(백로그 #263, 위키미디어 공용 — 출처·라이선스는 그 폴더의 sources.json). 재배포하지 않는다.
 test-fixtures/board-photos-web/
+
+# 「기보 보기」(백로그 #269)에 실을 기보 후보 — 사용자가 고르기 전의 검토용 사본(CWI 공개 모음에서 받는다). 고른 판만 앱 리소스로 옮겨 커밋한다.
+test-fixtures/game-records-candidates/
