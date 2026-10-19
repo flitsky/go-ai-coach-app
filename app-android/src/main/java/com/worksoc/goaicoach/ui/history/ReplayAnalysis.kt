@@ -153,6 +153,8 @@ internal class ReplayAnalysisUi(
  *
  * @param replayKey 판이 바뀌면 원장·결과를 모두 버린다(기록 id).
  * @param positionAt 수순 번호 → 그 국면(`GameReplayTimeline::stateAt`).
+ * @param precomputedEstimate 수순 번호 → **미리 잰 형세**(앱에 실은 기보, 백로그 #269). 있으면 형세 보기는 엔진에 묻지 않고 이 값을 결과로 쓴다 —
+ *   누가 무엇으로 여는지(게이트·1회권 차감·켜진 채 따라가기)는 그대로 이 파일이 정한다(사용자 2026-10-19 「다시보기와 같게」).
  */
 @Composable
 internal fun rememberReplayAnalysis(
@@ -160,6 +162,7 @@ internal fun rememberReplayAnalysis(
     replayKey: String,
     moveNumber: Int,
     positionAt: (Int) -> GameState,
+    precomputedEstimate: ((Int) -> ScoreEstimate?)? = null,
 ): ReplayAnalysisUi {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
@@ -168,6 +171,7 @@ internal fun rememberReplayAnalysis(
     val consumables by rememberUpdatedState(LocalConsumableUiState.current)
     val currentStrings by rememberUpdatedState(strings)
     val currentPositionAt by rememberUpdatedState(positionAt)
+    val currentPrecomputed by rememberUpdatedState(precomputedEstimate)
 
     var evalLedger by remember(replayKey) { mutableStateOf(ReplayFeatureLedger()) }
     var topMovesLedger by remember(replayKey) { mutableStateOf(ReplayFeatureLedger()) }
@@ -271,13 +275,20 @@ internal fun rememberReplayAnalysis(
         // 결과가 이미 있는 국면이다(값을 치른 수순으로 돌아왔거나, 자격이 사라진 뒤에 다시 눌렀다) — 엔진에 묻지 않고 바로 맺는다.
         if (wantsEstimate && !needsEstimate) conclude(FeatureId.Eval, evalLedger) { evalLedger = it }
         if (wantsCandidates && !needsCandidates) conclude(FeatureId.TopMoves, topMovesLedger) { topMovesLedger = it }
-        if (!needsEstimate && !needsCandidates) return@LaunchedEffect
+        // 미리 잰 형세가 있는 국면(앱에 실은 기보, #269)은 엔진을 기다리지 않고 바로 맺는다 — 자동 진행에도 끊기지 않는다. 정산은 엔진 결과와 같다.
+        val precomputed = if (needsEstimate) currentPrecomputed?.invoke(moveNumber) else null
+        if (precomputed != null) {
+            estimates = estimates + (moveNumber to precomputed)
+            conclude(FeatureId.Eval, evalLedger) { evalLedger = it }
+        }
+        val asksEngineForEstimate = needsEstimate && precomputed == null
+        if (!asksEngineForEstimate && !needsCandidates) return@LaunchedEffect
 
         delay(ReplayStepSettleMillis)
         val position = analysablePosition(currentPositionAt, moveNumber)
         try {
             // ⚠️ **차례로 묻는다** — 둘을 한꺼번에 띄우면 뒤의 것이 앞의 것이 쥔 엔진에 막혀 포기한다.
-            if (needsEstimate) {
+            if (asksEngineForEstimate) {
                 inFlight = FeatureId.Eval
                 runCatchingEngine { deferWhileBusy { engine.estimate(position) } }
                     .onSuccess { estimate ->
@@ -322,7 +333,9 @@ internal fun rememberReplayAnalysis(
         }
     }
 
-    val shownEstimate = estimates[moveNumber].takeIf { evalLedger.isShownAt(moveNumber, evalUnlimited) }
+    // 미리 잰 형세(#269)는 보일 자격이 있는 국면이면 효과를 기다리지 않고 바로 쓴다 — 자동 진행 중 버튼 문구가 한 프레임씩 비어 깜빡이지 않게.
+    // 자격 판정(`isShownAt` — 구독·광고 1시간, 또는 1회권을 치른 그 국면)은 그대로다.
+    val shownEstimate = (estimates[moveNumber] ?: currentPrecomputed?.invoke(moveNumber)).takeIf { evalLedger.isShownAt(moveNumber, evalUnlimited) }
     val shownCandidates = candidates[moveNumber].takeIf { topMovesLedger.isShownAt(moveNumber, topMovesUnlimited) }
     // 켜져 있는 동안은 라벨 자체를 점수차로 바꾼다 — 대국 화면의 버튼과 같다(잔량 표기는 그때 지운다).
     val scoreLabel = shownEstimate?.whiteScoreLead?.let(strings::scoreLeadButtonLabel)

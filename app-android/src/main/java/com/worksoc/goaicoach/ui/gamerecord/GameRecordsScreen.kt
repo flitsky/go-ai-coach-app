@@ -143,7 +143,17 @@ internal fun GameRecordsScreen(
                     subtitle = record?.let { playersAndResult(language, it) } ?: "",
                     comingSoonLabel = null,
                     onClick = record?.let { loaded ->
-                        { opened = OpenedGameRecord(key = "bundled:${row.entry.asset}", title = bundledTitle(language, row.entry), record = loaded) }
+                        {
+                            scope.launch {
+                                val evaluation = withContext(Dispatchers.IO) { loadEvaluation(context, row.entry) }
+                                opened = OpenedGameRecord(
+                                    key = "bundled:${row.entry.asset}",
+                                    title = bundledTitle(language, row.entry),
+                                    record = loaded,
+                                    evaluation = evaluation,
+                                )
+                            }
+                        }
                     },
                 )
             }
@@ -180,6 +190,11 @@ private fun fileTitle(language: UiLanguage, record: GameRecord): String =
 private fun loadBundled(context: Context, entry: BundledGameRecord): GameRecord? = runCatching {
     val bytes = context.assets.open(entry.assetPath).use { it.readBytes() }
     (openGameRecord(bytes) as? GameRecordOpen.Opened)?.record
+}.getOrNull()
+
+/** 그 판의 미리 잰 형세(`*.eval`, #269) — 없거나 읽지 못하면 null이고, 그 판은 형세 기록 없이 열린다(엔진에 묻는 형세 보기는 그대로). */
+private fun loadEvaluation(context: Context, entry: BundledGameRecord): GameRecordEvaluation? = runCatching {
+    context.assets.open(entry.evaluationPath).use { it.readBytes() }.let(::readGameRecordEvaluation)
 }.getOrNull()
 
 private fun openFromFile(context: Context, uri: Uri): FileOpen {

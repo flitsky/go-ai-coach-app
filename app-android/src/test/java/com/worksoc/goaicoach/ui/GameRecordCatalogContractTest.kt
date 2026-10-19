@@ -57,6 +57,64 @@ class GameRecordCatalogContractTest {
         }
     }
 
+    /**
+     * 실은 판마다 **미리 잰 형세**(`.eval`, #269)가 있고, 그 머리가 앱이 기보를 읽은 해석과 같다 — 판 크기 · 규칙 · 덤 · 국면 수(수 + 1).
+     * 해석이 바뀌었거나(덤·규칙 매핑) 기보를 바꾸고 다시 재지 않았으면 여기서 빨개진다 — `engine-lab/tools/game_record_evals.py`로 다시 잰다.
+     */
+    @Test
+    fun everyShippedRecordHasAPrecomputedEvaluationMatchingHowTheAppReadsIt() {
+        val evaluations = assetDir.listFiles().orEmpty().map { it.name }.filter { it.endsWith(".eval") }.sorted()
+        assertEquals("짝 없는 .eval이 있거나 빠진 판이 있다", BundledGameRecords.map { it.asset.removeSuffix(".sgf") + ".eval" }.sorted(), evaluations)
+        BundledGameRecords.forEach { entry ->
+            val record = (openGameRecord(bytesOf(entry.asset)) as GameRecordOpen.Opened).record
+            val evaluation = com.worksoc.goaicoach.ui.gamerecord.readGameRecordEvaluation(bytesOf(entry.evaluationPath.substringAfter('/')))
+            assertTrue("${entry.asset}: .eval을 읽지 못했다", evaluation != null)
+            evaluation!!
+            assertEquals("${entry.asset}: 국면 수", record.moves.size + 1, evaluation.positions)
+            assertEquals("${entry.asset}: 판 크기", record.setup.boardSize.value, evaluation.boardSize)
+            assertEquals("${entry.asset}: 덤", record.setup.komi, evaluation.komi, 0.001)
+            val expectedRules = if (record.setup.ruleset == com.worksoc.goaicoach.shared.domain.Ruleset.Chinese) 1 else 0
+            assertEquals("${entry.asset}: 규칙", expectedRules, evaluation.rulesCode)
+            assertTrue("${entry.asset}: 승률이 0~1 밖이다", evaluation.snapshots.all { it.whiteWinRate!! in 0.0..1.0 })
+            val last = evaluation.estimateAt(evaluation.positions - 1)!!
+            assertEquals("${entry.asset}: 영역 칸 수", evaluation.boardSize * evaluation.boardSize, last.ownership!!.points.size)
+        }
+    }
+
+    /** 형식 읽기 — 영역은 첫 국면 그대로, 다음부터 앞 국면과의 차이(256으로 돈다)다. 심은 9줄 두 국면으로 되돌린 값과 센 결과를 본다. */
+    @Test
+    fun theEvaluationFormatDecodesDeltasBackToValues() {
+        val cells = 81
+        val first = IntArray(cells) { if (it == 0) -127 else if (it == 1) 127 else 0 }
+        val second = first.copyOf().also { it[0] = 127; it[2] = -100 }
+        val buffer = java.nio.ByteBuffer.allocate(16 + 2 * 8 + 2 * cells).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buffer.put("GREV".toByteArray()).put(1).put(9).put(0).put(0).putFloat(6.5f).putInt(2)
+        buffer.putFloat(-3.5f).putFloat(0.2f).putFloat(1.5f).putFloat(0.6f)
+        first.forEach { buffer.put(it.toByte()) }
+        second.indices.forEach { buffer.put(((second[it] - first[it]) and 0xFF).toByte()) }
+        val evaluation = com.worksoc.goaicoach.ui.gamerecord.readGameRecordEvaluation(buffer.array())!!
+        assertEquals(2, evaluation.positions)
+        assertEquals(-3.5, evaluation.snapshots[0].whiteScoreLead!!, 0.0001)
+        val after = evaluation.estimateAt(1)!!
+        assertEquals(1.5, after.whiteScoreLead!!, 0.0001)
+        assertEquals("127 → 백의 자리", 1.0, after.ownership!!.points[0].value, 0.0001)
+        assertEquals("−100/127 → 흑의 자리", -100 / 127.0, after.ownership!!.points[2].value, 0.0001)
+        assertEquals(2, after.ownership!!.whiteLikelyPoints)
+        assertEquals(1, after.ownership!!.blackLikelyPoints)
+        assertNull("머리가 틀리면 읽지 않는다", com.worksoc.goaicoach.ui.gamerecord.readGameRecordEvaluation(ByteArray(40)))
+    }
+
+    /** 분석 장치는 미리 잰 형세가 있으면 엔진보다 먼저 쓴다 — 게이트(1회권·따라가기)는 같은 파일이 그대로 정한다. 보기 화면이 그것을 넘긴다. */
+    @Test
+    fun theReplayAnalysisUsesThePrecomputedEstimateBeforeAskingTheEngine() {
+        val analysis = RepoPaths.uiFile("ReplayAnalysis.kt").readContractSource()
+        val precomputed = analysis.indexOf("currentPrecomputed?.invoke(moveNumber)")
+        val engine = analysis.indexOf("engine.estimate(position)")
+        assertTrue("미리 잰 형세를 엔진보다 먼저 보지 않는다", precomputed in 0 until engine)
+        val viewer = RepoPaths.uiFile("GameRecordViewer.kt").readContractSource()
+        assertTrue("보기 화면이 미리 잰 형세를 넘기지 않는다", viewer.contains("precomputedEstimate = evaluation?.let { it::estimateAt }"))
+    }
+
     @Test
     fun everyShippedPlayerHasANameInEveryLanguageAndEveryGroupIsUsed() {
         val names = BundledGameRecords.flatMap { entry ->

@@ -45,7 +45,7 @@ shasum -a 256 ~/worksoc/katago/models/b18c384nbt-humanv0.bin.gz
 | `experiments/` | 실험마다 한 폴더(`README.md` = 질문·방법·결론, `run.py`, `runs/` = 결과) |
 | `positions/` | 실험에 쓰는 국면 세트(JSON, 커밋) — `tools/make_positions.py`가 만든다 |
 | `cache/` | 기준 평가 결과(국면·수·방문 → 점수). 실험끼리 공유하고 커밋한다 — 같은 수를 두 번 재지 않는다 |
-| `tools/` | 국면 세트 만들기 등 |
+| `tools/` | 국면 세트 만들기 등 · 앱에 실은 기보의 매 국면 형세(`game_record_evals.py` — 「기보 보기」 #269, 기보를 더하거나 바꾸면 다시 잰다) |
 | `benchmarks/` | 옛 벤치마크 러너(레벨 매치·기기 벤치마크·탐색 모드·후보 확장). `make engine-*-benchmark`가 부른다 |
 | `remote/` | 원격 분석 서버(앱 디버그 빌드의 `REMOTE_ENGINE_URL`)와 그 테스트, MQ 프로토타입 |
 | `tests/` | KataGo 없이 도는 단위 테스트 + 앱 대응표 검사 |

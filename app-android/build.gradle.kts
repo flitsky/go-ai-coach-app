@@ -557,6 +557,8 @@ tasks.withType<Test>().configureEach {
     // 신경망 돌 판정의 학습 데이터 내보내기(StonePatchExportTest, 백로그 #263) — 판 174벌을 다시 읽어 수십 MB를 쓰므로 `make test`에서는 돌지 않고,
     // `-PexportStonePatches`를 줄 때만 돈다(engine-lab/vision/README.md 「신경망 돌 판정」).
     systemProperty("exportStonePatches", project.hasProperty("exportStonePatches"))
+    // 「기보 보기」 형세를 미리 계산할 국면 대본 내보내기(GameRecordPositionExportTest, 백로그 #269) — `-PexportGameRecordPositions`를 줄 때만.
+    systemProperty("exportGameRecordPositions", project.hasProperty("exportGameRecordPositions"))
     inputs.files(architectureContractScannedTrees.map { dir -> fileTree(dir) })
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)

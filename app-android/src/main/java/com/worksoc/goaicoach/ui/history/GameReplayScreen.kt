@@ -516,7 +516,7 @@ internal fun ReplayControls(
  * 0.0은 "호각"이라는 뜻이라 **재지 않은 판을 호각이었다고 말하게 된다**(#156 착수 전 경고).
  */
 @Composable
-private fun ReplayScoreSection(
+internal fun ReplayScoreSection(
     replay: GameReplayData,
     moveNumber: Int,
     lastMoveNumber: Int,
@@ -589,7 +589,7 @@ private fun ReplayScoreSection(
  * "없음"으로 갔는데, #200부터 변곡점은 연속한 신경망 평가끼리만 재므로 로컬 계산만 쌓인 판이 거기 섞였다.
  */
 @Composable
-private fun ReplayScoreSwingSection(
+internal fun ReplayScoreSwingSection(
     canMeasureSwings: Boolean,
     swings: List<ScoreSwingHighlight>,
     isRemeasuringScores: Boolean,

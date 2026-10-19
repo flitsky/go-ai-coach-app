@@ -14,6 +14,9 @@ internal const val GameRecordAssetFolder = "game-records"
 /** 앱에 싣는 기보 한 판. [gameNumber]는 여러 판짜리 묶음(결승 5번기 등)에서만 있다. */
 internal data class BundledGameRecord(val asset: String, val group: GameRecordGroup, val gameNumber: Int? = null) {
     val assetPath: String get() = "$GameRecordAssetFolder/$asset"
+
+    /** 미리 잰 형세(#269) — 같은 이름의 `.eval`(`engine-lab/tools/game_record_evals.py`가 만든다). */
+    val evaluationPath: String get() = "$GameRecordAssetFolder/${asset.removeSuffix(".sgf")}.eval"
 }
 
 /**
