@@ -19,10 +19,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -72,6 +74,8 @@ internal fun GameRecordsScreen(
     val scope = rememberCoroutineScope()
     var opened by remember { mutableStateOf<OpenedGameRecord?>(null) }
     var failure by remember { mutableStateOf<GameRecordOpenFailure?>(null) }
+    // 자동 진행의 간격 — 여기 두어 다른 판을 열어도 고른 간격이 남는다(이 화면을 떠나면 기본 1초로 — 스레드가 정한 범위).
+    var autoPlaySeconds by rememberSaveable { mutableIntStateOf(DefaultGameRecordAutoPlaySeconds) }
     val rows by produceState(initialValue = emptyList<BundledRow>(), context) {
         value = withContext(Dispatchers.IO) { BundledGameRecords.map { entry -> BundledRow(entry, loadBundled(context, entry)) } }
     }
@@ -89,7 +93,14 @@ internal fun GameRecordsScreen(
     }
 
     opened?.let { current ->
-        GameRecordViewer(opened = current, analysisEngine = analysisEngine, onBackClick = { opened = null }, modifier = modifier)
+        GameRecordViewer(
+            opened = current,
+            analysisEngine = analysisEngine,
+            onBackClick = { opened = null },
+            autoPlaySeconds = autoPlaySeconds,
+            onAutoPlaySecondsChange = { autoPlaySeconds = it },
+            modifier = modifier,
+        )
         return
     }
 

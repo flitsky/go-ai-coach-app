@@ -225,7 +225,33 @@ private val WhiteLabels: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "白",
 )
 
+/** 「자동 진행」 — 정한 간격마다 한 수씩 넘긴다(#269, 사용자 2026-10-19). 진행 중에는 같은 버튼이 「멈춤」이 된다. */
+private val AutoPlayLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "▶ 자동 진행",
+    UiLanguage.English to "▶ Auto play",
+    UiLanguage.Japanese to "▶ 自動再生",
+    UiLanguage.ChineseSimplified to "▶ 自动播放",
+)
+
+private val PauseLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "❚❚ 멈춤",
+    UiLanguage.English to "❚❚ Pause",
+    UiLanguage.Japanese to "❚❚ 一時停止",
+    UiLanguage.ChineseSimplified to "❚❚ 暂停",
+)
+
 internal fun gameRecordsTitleFor(language: UiLanguage): String = Titles.getValue(language)
+
+internal fun gameRecordAutoPlayFor(language: UiLanguage): String = AutoPlayLabels.getValue(language)
+
+internal fun gameRecordPauseFor(language: UiLanguage): String = PauseLabels.getValue(language)
+
+/** 착수 간격 — 「1초」 · 「1s」 · 「1秒」. */
+internal fun gameRecordSecondsFor(language: UiLanguage, seconds: Int): String = when (language) {
+    UiLanguage.Korean -> "${seconds}초"
+    UiLanguage.English -> "${seconds}s"
+    UiLanguage.Japanese, UiLanguage.ChineseSimplified -> "${seconds}秒"
+}
 
 internal fun gameRecordsIntroFor(language: UiLanguage): String = Intros.getValue(language)
 

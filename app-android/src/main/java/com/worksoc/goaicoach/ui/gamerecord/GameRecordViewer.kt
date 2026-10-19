@@ -5,13 +5,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +27,7 @@ import com.worksoc.goaicoach.application.gamehistory.buildGameReplayTimeline
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.gamerecord.GameRecord
 import com.worksoc.goaicoach.ui.board.GoBoard
+import com.worksoc.goaicoach.ui.designsystem.ActionButton
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.history.ReplayAnalysisEngine
 import com.worksoc.goaicoach.ui.history.ReplayControls
@@ -30,9 +35,14 @@ import com.worksoc.goaicoach.ui.history.ReplayHeader
 import com.worksoc.goaicoach.ui.history.ReplaySectionGap
 import com.worksoc.goaicoach.ui.history.rememberReplayAnalysis
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.gameRecordAutoPlayFor
+import com.worksoc.goaicoach.ui.l10n.gameRecordPauseFor
 import com.worksoc.goaicoach.ui.l10n.gameRecordPlayersFor
 import com.worksoc.goaicoach.ui.l10n.gameRecordResultFor
+import com.worksoc.goaicoach.ui.l10n.gameRecordSecondsFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayTruncatedFor
+import com.worksoc.goaicoach.ui.play.KeepScreenOnWhile
+import kotlinx.coroutines.delay
 
 /** 보기 화면에 여는 기보 한 판 — [key]는 이 판의 분석 기록(1회권 장부)을 가르는 열쇠다. */
 internal data class OpenedGameRecord(val key: String, val title: String, val record: GameRecord)
@@ -50,6 +60,9 @@ internal fun GameRecordViewer(
     opened: OpenedGameRecord,
     analysisEngine: ReplayAnalysisEngine,
     onBackClick: () -> Unit,
+    /** 자동 진행의 착수 간격(초) — 목록 화면이 들고 있어 다른 판을 열어도 고른 간격이 남는다. */
+    autoPlaySeconds: Int,
+    onAutoPlaySecondsChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -60,6 +73,17 @@ internal fun GameRecordViewer(
     val timeline = remember(opened.key) { buildGameReplayTimeline(setup = record.setup, moves = record.moves) }
     var moveNumber by remember(opened.key) { mutableIntStateOf(0) }
     var showMoveNumbers by remember { mutableStateOf(false) }
+    // 「자동 진행」(사용자 2026-10-19) — 정한 간격마다 한 수씩. 마지막 수에 닿으면 멈추고, 이동 버튼을 누르면 멈춘다(스레드가 정한 규칙).
+    // 간격을 바꾸면 효과가 새로 돌아 진행 중에도 새 간격으로 이어 간다. 진행 중에는 화면을 켜 둔다(관전과 같은 도구).
+    var isAutoPlaying by remember(opened.key) { mutableStateOf(false) }
+    LaunchedEffect(opened.key, isAutoPlaying, autoPlaySeconds) {
+        while (isAutoPlaying && moveNumber < timeline.lastMoveNumber) {
+            delay(autoPlaySeconds * 1_000L)
+            moveNumber = (moveNumber + 1).coerceAtMost(timeline.lastMoveNumber)
+        }
+        isAutoPlaying = false
+    }
+    KeepScreenOnWhile(active = isAutoPlaying)
     val state = timeline.stateAt(moveNumber)
     val analysis = rememberReplayAnalysis(
         engine = analysisEngine,
@@ -129,8 +153,71 @@ internal fun GameRecordViewer(
             strings = strings,
             showMoveNumbers = showMoveNumbers,
             analysis = analysis,
-            onMoveNumberChange = { next -> moveNumber = next.coerceIn(0, timeline.lastMoveNumber) },
+            onMoveNumberChange = { next ->
+                isAutoPlaying = false
+                moveNumber = next.coerceIn(0, timeline.lastMoveNumber)
+            },
             onToggleMoveNumbers = { showMoveNumbers = !showMoveNumbers },
+            fastStep = GameRecordFastStep,
+            extraRow = {
+                GameRecordAutoPlayRow(
+                    isPlaying = isAutoPlaying,
+                    canPlay = moveNumber < timeline.lastMoveNumber,
+                    seconds = autoPlaySeconds,
+                    onToggle = { isAutoPlaying = !isAutoPlaying },
+                    onSecondsChange = onAutoPlaySecondsChange,
+                )
+            },
         )
+    }
+}
+
+/** 빨리 감기(◀◀ ▶▶) 한 번에 옮기는 수 — 사용자 2026-10-19. */
+internal const val GameRecordFastStep = 10
+
+/** 자동 진행의 착수 간격으로 고를 수 있는 초 — 기본 1초(사용자 2026-10-19). */
+internal val GameRecordAutoPlaySeconds: IntRange = 1..5
+internal const val DefaultGameRecordAutoPlaySeconds = 1
+
+/** 「▶ 자동 진행」/「❚❚ 멈춤」 + 착수 간격(누르면 1~5초 드롭다운). */
+@Composable
+private fun GameRecordAutoPlayRow(
+    isPlaying: Boolean,
+    canPlay: Boolean,
+    seconds: Int,
+    onToggle: () -> Unit,
+    onSecondsChange: (Int) -> Unit,
+) {
+    val language = LocalUiStrings.current.language
+    var isMenuOpen by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
+    ) {
+        ActionButton(
+            label = if (isPlaying) gameRecordPauseFor(language) else gameRecordAutoPlayFor(language),
+            enabled = isPlaying || canPlay,
+            onClick = onToggle,
+            modifier = Modifier.weight(2f),
+        )
+        Box(modifier = Modifier.weight(1f)) {
+            ActionButton(
+                label = "${gameRecordSecondsFor(language, seconds)} ▾",
+                enabled = true,
+                onClick = { isMenuOpen = true },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
+                GameRecordAutoPlaySeconds.forEach { choice ->
+                    DropdownMenuItem(
+                        text = { Text(gameRecordSecondsFor(language, choice)) },
+                        onClick = {
+                            onSecondsChange(choice)
+                            isMenuOpen = false
+                        },
+                    )
+                }
+            }
+        }
     }
 }

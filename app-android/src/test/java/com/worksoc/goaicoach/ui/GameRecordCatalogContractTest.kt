@@ -99,6 +99,30 @@ class GameRecordCatalogContractTest {
         assertNull(gameRecordResultFor(UiLanguage.Korean, null))
     }
 
+    /**
+     * 사용자가 정한 숫자(2026-10-19): 빨리 감기 10수 · 자동 진행 간격 1~5초, 기본 1초. 이동 버튼 여섯과 자동 진행 줄은 **기보 보기에만** 있다 —
+     * 다시보기(내 대국)는 넷 그대로다(사용자가 그쪽도 원하면 `GameReplayScreen`이 `fastStep`을 넘기면 된다).
+     */
+    @Test
+    fun fastStepAndAutoPlayAreTheUsersNumbersAndOnlyInTheRecordViewer() {
+        assertEquals(10, com.worksoc.goaicoach.ui.gamerecord.GameRecordFastStep)
+        assertEquals(1..5, com.worksoc.goaicoach.ui.gamerecord.GameRecordAutoPlaySeconds)
+        assertEquals(1, com.worksoc.goaicoach.ui.gamerecord.DefaultGameRecordAutoPlaySeconds)
+        val viewer = RepoPaths.uiFile("GameRecordViewer.kt").readContractSource()
+        assertTrue("기보 보기가 빨리 감기를 넘기지 않는다", viewer.contains("fastStep = GameRecordFastStep"))
+        assertTrue("자동 진행 중 화면이 꺼진다", viewer.contains("KeepScreenOnWhile(active = isAutoPlaying)"))
+        val replay = RepoPaths.uiFile("GameReplayScreen.kt").readContractSource()
+        assertFalse("다시보기에 빨리 감기가 들어갔다 — 사용자가 정한 것은 기보 보기뿐이다", replay.contains("fastStep = "))
+        UiLanguage.entries.forEach { language ->
+            listOf(
+                com.worksoc.goaicoach.ui.l10n.gameRecordAutoPlayFor(language),
+                com.worksoc.goaicoach.ui.l10n.gameRecordPauseFor(language),
+                com.worksoc.goaicoach.ui.l10n.gameRecordSecondsFor(language, 1),
+            ).forEach { assertTrue("$language 자동 진행 문구가 비었다", it.isNotBlank()) }
+        }
+        assertEquals("3초", com.worksoc.goaicoach.ui.l10n.gameRecordSecondsFor(UiLanguage.Korean, 3))
+    }
+
     /** 보기 화면은 다시보기와 같은 규칙을 따른다 — 뒤로 가기를 스스로 잡고, 프리미엄 판정은 `ReplayAnalysis.kt`에만 있고, 광고 자리는 늘리지 않는다. */
     @Test
     fun theViewerCatchesBackLeavesTheGateToReplayAnalysisAndShowsNoBanner() {

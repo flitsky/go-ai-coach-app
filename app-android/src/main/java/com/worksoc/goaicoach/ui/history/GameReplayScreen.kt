@@ -394,6 +394,13 @@ internal fun ReplayControls(
     analysis: ReplayAnalysisUi,
     onMoveNumberChange: (Int) -> Unit,
     onToggleMoveNumbers: () -> Unit,
+    /**
+     * 빨리 감기 한 번에 옮길 수 — 있으면 이동 버튼이 여섯이 된다(⏮ ◀◀ ◀ ▶ ▶▶ ⏭). 기보 보기만 10을 준다(#269, 사용자 2026-10-19);
+     * 다시보기는 넷 그대로다(변곡점 칩과 그래프가 위치를 옮긴다).
+     */
+    fastStep: Int? = null,
+    /** 이동 버튼과 분석 버튼 사이에 끼우는 줄 — 기보 보기의 「자동 진행」(#269). */
+    extraRow: (@Composable () -> Unit)? = null,
 ) {
     val language = strings.language
     Column(
@@ -458,6 +465,15 @@ internal fun ReplayControls(
                 onClick = { onMoveNumberChange(0) },
                 modifier = Modifier.weight(1f),
             )
+            // ⚠️ 빨리 감기는 ⏪⏩가 아니라 ◀◀ ▶▶다 — ⏪⏩는 안드로이드에서 컬러 이모지로 그려져 옆의 ◀ ▶와 생김새가 어긋난다.
+            fastStep?.let { step ->
+                ActionButton(
+                    label = "◀◀",
+                    enabled = moveNumber > 0,
+                    onClick = { onMoveNumberChange((moveNumber - step).coerceAtLeast(0)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
             ActionButton(
                 label = "◀",
                 enabled = moveNumber > 0,
@@ -470,6 +486,14 @@ internal fun ReplayControls(
                 onClick = { onMoveNumberChange(moveNumber + 1) },
                 modifier = Modifier.weight(1f),
             )
+            fastStep?.let { step ->
+                ActionButton(
+                    label = "▶▶",
+                    enabled = moveNumber < lastMoveNumber,
+                    onClick = { onMoveNumberChange((moveNumber + step).coerceAtMost(lastMoveNumber)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
             ActionButton(
                 label = "⏭",
                 enabled = moveNumber < lastMoveNumber,
@@ -480,6 +504,8 @@ internal fun ReplayControls(
 
         // 「형세 보기」·「추천 수」(백로그 #218) — **지금 보고 있는 수순의 국면**을 엔진에 물어 판 위에 보인다.
         // 2026-09-19에 예비 버튼으로 자리만 잡아 둔 것을 살렸다(사용자: "나중에 엔진도 개입시켜서 적극적으로 리플레이 분석").
+        extraRow?.invoke()
+
         // ⚠️ 게이트·원장·엔진 호출은 전부 `ReplayAnalysis.kt`에 있다 — 여기서 프리미엄 판정을 다시 하지 말 것.
         // ⚠️ 버튼은 대국 화면과 **같은 컴포넌트·같은 이름표**(`UiStrings.featureShortName`)다 — 같은 기능은 같은 얼굴이어야 한다.
         ReplayAnalysisButtons(analysis)
