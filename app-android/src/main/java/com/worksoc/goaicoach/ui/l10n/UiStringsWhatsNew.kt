@@ -19,6 +19,36 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.6.0 — #269 기보 보기(명국 33판 · 형세 그래프와 변곡점 · 자동 진행 · 10수씩 · SGF 열기) · #244 앱 배경음악 · 다시보기의 10수 버튼(사용자 2026-10-19 — 1.6.0으로 낸다).
+        // ⚠️ 매 수 형세(형세 보기를 켠 채 따라가기)는 프리미엄이다 — 여기서는 누구에게나 보이는 그래프·변곡점만 말한다(함정 51).
+        WhatsNewRelease(versionCode = 10600, versionName = "1.6.0") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "홈에 「기보 보기」가 생겼어요. 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 보고, 판 전체 형세 그래프와 변곡점도 볼 수 있어요.",
+                    "기보는 자동 진행(1~5초)과 10수씩 넘기기로 볼 수 있고, 가지고 있는 SGF 파일도 열 수 있어요.",
+                    "설정 › 소리에서 「앱 배경음악」을 켜고 끌 수 있어요. 대국 중에도 은은하게 이어져요.",
+                    "대국 다시보기에도 10수씩 넘기는 버튼(◀◀ ▶▶)이 생겼어요.",
+                )
+                UiLanguage.English -> listOf(
+                    "New on home: Game records. Step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the whole-game score graph and turning points.",
+                    "Watch a record with auto play (1–5 s per move) or jump 10 moves at a time, and open your own SGF files too.",
+                    "App background music: turn it on or off in Settings › Sound. It keeps playing softly during your games.",
+                    "Game replay now has 10-move buttons (◀◀ ▶▶) as well.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "ホームに「棋譜並べ」ができました。道策・秀策の古典から李昌鎬・李世乭、AlphaGoの対局まで名局33局を一手ずつ並べ、全体の形勢グラフと変局点も見られます。",
+                    "棋譜は自動再生（1〜5秒）と10手送りで見られ、お持ちのSGFファイルも開けます。",
+                    "設定 › サウンドで「アプリのBGM」をオン・オフできます。対局中も静かに流れ続けます。",
+                    "対局リプレイにも10手送りのボタン（◀◀ ▶▶）が付きました。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "主页新增「打谱」：从道策、秀策的古典名局到李昌镐、李世石以及AlphaGo的对局，33局名局可一手一手地打谱，还能看全局形势曲线和转折点。",
+                    "棋谱可以自动播放（每手1~5秒）或每次前进10手，也能打开你自己的SGF文件。",
+                    "在 设置 › 声音 中可开关「应用背景音乐」，对局中也会轻柔地继续播放。",
+                    "对局回放也新增了每次10手的按钮（◀◀ ▶▶）。",
+                )
+            }
+        },
         // 1.5.1 — #268 승급은 고른다(15집마다 · 한 판에 최대 3급) · 강급은 3연패. ⚠️ 출시 버전이 바뀌면(사용자 2026-10-15: 1.5.1로 바로, 또는 기능을 더한 뒤) 번호를 고친다.
         WhatsNewRelease(versionCode = 10501, versionName = "1.5.1") { language ->
             when (language) {

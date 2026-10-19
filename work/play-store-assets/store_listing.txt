@@ -5,6 +5,9 @@
 AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, 인터넷 없이도 그대로
 
 [자세한 설명] (4000자 이내)
+⚠️ 2026-10-19 확인: 스토어의 자세한 설명은 **한·영 모두 1.2.0 이전 글**이었다(승급 대국 · AI 기권 제안 · 매 판 무료 3회 · 사진 분석이 없었다).
+   이 파일의 본문은 출시마다 고쳐 왔지만 콘솔에 붙지 않았다 — 영어는 그사이 4,706자로 한도(4,000자)를 넘어 있었다. 1.6.0부터 **출시 때 두 언어를 함께 붙여넣는다.**
+   ⚠️ 콘솔 본문 끝의 「개발자 연락처」 줄은 콘솔에만 있다 — 붙여넣을 때 지우지 말고 그대로 둔다(주소를 이 저장소에 적지 않는다).
 [핵심 가치]
 포켓 바둑 코치는 로컬 기기에서 직접 구동되는 오픈소스 바둑 엔진 KataGo를 탑재한 바둑 학습 앱입니다. 인터넷 서버 없이도 강력한 AI와 대국하고, 내 수의 손실집수를 색으로 바로 확인하며 실력을 키울 수 있습니다.
 
@@ -20,6 +23,8 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 - 대국 기록: 지금까지 둔 대국을 다시 확인하고, 승률(최근 10판 · 최근 한 달 · 누적)을 봅니다
 - 대국 다시보기: 끝난 판을 수순대로 되짚어 보고, 형세가 크게 움직인 수로 바로 건너뛰고, 형세 그래프를 크게 펼쳐 좌우로 넘기며 판이 어디서 기울었는지 확인. 지나간 국면에서도 형세 보기·추천 수를 쓸 수 있습니다
 - 복기 후 다시 두기: 아쉬웠던 그 수로 돌아가 거기서부터 다시 둘 수 있습니다
+- 바둑판 사진 분석: 바둑판을 카메라로 비추거나 사진첩·다른 앱에서 공유한 사진에서 국면을 읽어, 보정한 뒤 그 자리부터 AI와 대국하거나 AI 추천 수·형세를 보고(프리미엄) SGF 파일로 보냅니다
+- 기보 보기: 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 보고, 형세 그래프와 변곡점으로 흐름을 짚습니다. 자동 진행과 10수씩 넘기기, 가지고 있는 SGF 파일 열기도 됩니다
 - 학습 하기 — 바둑 규칙: 바둑판과 첫 수 / 활로 / 단수와 따냄 / 둘 수 없는 자리 / 패 / 집과 계가 여섯 단원
 - 학습 하기 — 기초 행마: 이음과 끊음 / 뻗어서 달아나기 / 호구 / 한 칸 뜀 / 날일자 다섯 단원. 판 위에 한 수씩 놓아 가며 배웁니다
 - 유튜브 기초 강좌 모음: 입문 강좌를 앱 안에서 골라 바로 시청
@@ -27,6 +32,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 - 무르기(Undo): 착수를 되돌려 다른 수를 다시 검토
 - 착수 방식: 누르면 바로 두는 '바로 착수'와, 자리를 잡은 뒤 '착수' 버튼으로 한 번 더 확인하고 두는 '착수 확인' 중에서 대국 화면에서 바로 전환
 - 착수 진동: 돌을 놓는 순간 짧게 울리는 피드백(설정에서 끌 수 있습니다)
+- 앱 배경음악: 동양풍·피아노 배경음악 네 곡이 은은하게 흐릅니다(설정에서 켜고 끌 수 있습니다)
 - 바둑판 크기: 화면 여백을 두고 보거나, 가로 폭을 꽉 채워 크게 보거나
 - 보드 크기 선택: 9x9 / 13x13 / 19x19 지원
 - 계가 방식 선택: 면적 계가(중국식) / 집 계가(한국·일본식)
@@ -55,7 +61,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 
 
 ────────────────────────────────────────────────────────────────
-[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,991자)
+[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,942자)
 
 ⚠️ **2026-09-24에 영어 등재정보를 열었다.** 그전까지 등재정보는 한국어 하나뿐이었고,
    이 파일 곳곳의 *"한국어 하나뿐이니 다른 언어 탭을 만들지 말 것"* 은 **그때 기준이다.**
@@ -73,55 +79,48 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 
 ────────────────────────────────────────────────────────────────
 [CORE IDEA]
-Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the open-source engine — running on your device, not on a server. Play a genuinely strong AI with no connection at all, and see exactly how many points each move gave away, in colour, as you play it.
+Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the open-source engine, running on your device instead of a server. Play a genuinely strong AI with no connection, and see how many points each move gave away, in colour, as you play it.
 
 [WHAT'S INSIDE]
-- Play the AI: five opponent characters from 15 kyu to 7 dan, each playing like a person of that strength — choosing your opponent is how you choose the difficulty (ranks follow the AI model, not a certified rating)
-- Rank Match: play an AI at your own rank; win to move up, lose three in a row to move down, and find where you stand (20 kyu to 9 dan)
-- The AI offers to resign: when the game has swung far against it, the AI offers to resign — accept and end it, or keep playing
-- Collect opponents: two unlock with shards from short ads (5 and 10), two by checking in daily (day 7 and day 28). Every opponent, up to the strongest, is reachable without paying
-- Move review: every move is scored by the points it lost against the engine's best, shaded from deep green (best) to red (a real mistake)
-- Top moves: the engine's five best candidate moves, drawn straight onto the board
-- Evaluation: live score difference and win rate, counting captures and territory, plus a shaded overlay of whose area each part of the board is
-- Daily check-in: single-use AI coaching passes and opponent shards, every day you open the app
-- Game records: every game you have played, kept on your device, with your win rate (last 10 games, last month, all time)
-- Game replay: step through a finished game move by move, jump straight to the biggest swings, and open the score graph large to scroll through the game and see where it turned. Evaluation and top moves work on past positions too
-- Play on from the review: go back to the move you regret and continue from there — the review becomes your next game
-- Learn — the rules: six lessons — the board and the first move, liberties, atari and capture, forbidden points, ko, territory and scoring
-- Learn — basic shape: five lessons — connecting and cutting, extending to escape, the tiger's mouth, the one-point jump, the knight's move. Each is played out on the board one move at a time
-- Beginner video lessons: a curated list, opened from inside the app
-- Score and win-rate graph: the shape of the whole game at a glance
-- Undo: take a move back and try a different one
-- Two ways to place a stone: play on tap, or pick a point and confirm with the Play button — switch right on the game screen
-- Haptic feedback on each stone (can be turned off in settings)
-- Board size on screen: leave a margin, or fill the width edge to edge
-- Board sizes: 9x9, 13x13 and 19x19
-- Scoring: area scoring (Chinese) or territory scoring (Japanese / Korean)
-- Komi and handicap, configurable
-- Resume: a saved game waits for you and picks up where you left it
+- Play the AI: five characters from 15 kyu to 7 dan, each playing like a person of that strength; choosing your opponent is choosing the difficulty (ranks follow the AI model, not a certified rating)
+- Rank Match: play an AI at your own rank; win to move up, lose three in a row to move down (20 kyu to 9 dan)
+- The AI offers to resign when the game has swung far against it; accept and end it, or keep playing
+- Collect opponents: two with shards from short ads, two by daily check-in (day 7 and day 28). Every opponent is reachable without paying
+- Move review: each move is scored by the points it lost against the engine's best, shaded from deep green (best) to red (a real mistake)
+- Top moves: the engine's five best candidate moves, drawn on the board
+- Evaluation: score difference, win rate and a score graph, with a shaded overlay of whose area each part of the board is
+- Board Photo Analysis: point the camera at a real board, or use a gallery or shared photo; fix the position, then play the AI from there, see AI moves and the score (Premium), or send it as SGF
+- Game records: step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the score graph and turning points; auto play, 10-move jumps, and your own SGF files
+- Game history and replay: your games stay on your device with your win rate (last 10, last month, all time); replay any of them, jump to the biggest swings, and use evaluation and top moves on past positions
+- Play on from the review: go back to the move you regret and continue from there
+- Learn: the rules in six lessons and basic shape in five, each played out on the board, plus a curated list of beginner video lessons
+- Daily check-in: single-use coaching passes and opponent shards
+- Undo, and two ways to place a stone: play on tap, or pick a point and confirm
+- Haptic feedback and app background music, both can be turned off in settings
+- Board sizes 9x9, 13x13 and 19x19, shown with a margin or edge to edge; area or territory scoring; komi and handicap
+- Resume a saved game where you left it
 - Four languages: Korean, English, Japanese and Simplified Chinese
-- Device backup: with Google account backup on, most records come back when you reinstall or change phones (as of the last backup)
+- Device backup: with Google account backup on, most records come back when you reinstall or change phones
 
 [WHAT IT COSTS]
-Installing the app and playing — stones, scoring, handicap and all — is free.
+Installing the app and playing (stones, scoring, handicap and all) is free.
 
-The AI coaching features (evaluation and top moves) are free to try three times each in every game against a character — no ad, for everyone. Beyond that they work two ways. One short ad unlocks them for a full hour, across as many new games as you start in it. Or spend a single-use pass from your daily check-in and use one with no ad at all.
+Evaluation and top moves are free three times each in every game against a character, no ad needed. Beyond that, one short ad unlocks them for a full hour, or a single-use pass from your daily check-in covers one use. Undo: 3 free per game, the same ad hour, or permanent as the day-3 check-in reward.
 
-Undo: 3 free per game, the same ad hour, or permanent as the day-3 check-in reward.
-
-If you would rather not watch ads, there is a Premium subscription (billed monthly; the price for your country is shown on this page). While it is active the AI coaching features work without ads and without limit, and every opponent is available to choose. It renews until you cancel, from subscription management in the Play Store.
+If you would rather not watch ads, there is a Premium subscription (billed monthly; the price for your country is shown on this page). While it is active the coaching features work without ads and without limit, and every opponent is available. It renews until you cancel it in the Play Store.
 
 [WHO IT'S FOR]
-- Complete beginners, and anyone who wants a coach that can say precisely which move was the mistake
+- Beginners, and anyone who wants a coach that can say exactly which move was the mistake
 - Players who want engine analysis on the device itself, not on a server
-- Anyone who wants to start from the rules — the board and the very first move are in the app
+- Anyone who wants to start from the rules: the board and the very first move are in the app
 
 [WHAT MAKES IT DIFFERENT]
-- A real KataGo engine running locally, not an API call — play and analysis both work offline
-- Feedback measured as points lost against the best move, not a verdict of good or bad — so you see why a move was disappointing
-- Not one opponent or feature is paid-only — the subscription is a more comfortable route to the same things
+- A real KataGo engine running locally, not an API call: play and analysis both work offline
+- Feedback measured as points lost against the best move, not a verdict of good or bad
+- Not one opponent or feature is paid-only; the subscription is a more comfortable route to the same things
 
 Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach, offline Go, komi, handicap, KataGo
+
 ────────────────────────────────────────────────────────────────
 
 
@@ -131,7 +130,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.5.1): 한국어 349자 · 영어 488자.
+⚠️ **언어당 500자 이내.** 지금(1.6.0): 한국어 296자 · 영어 472자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -142,34 +141,32 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.5.1 (versionCode 10501, 2026-10-15) ────────
+──────── 지금 붙여넣을 것 — 1.6.0 (versionCode 10600, 2026-10-19) ────────
 
-✅ **기준선은 여전히 1.4.0**(프로덕션 10400 — 2026-10-13). 1.5.0(10500)은 인터널 트랙에만 올라갔고 프로덕션에 나가지 않았다 —
-   1.4.0 사용자는 1.5.1로 곧바로 온다. 그래서 1.5.0의 네 줄을 그대로 두고 승급 대국 줄만 #268로 바꿨다.
-   #263 「바둑판 사진 분석」(1.5.0에서 실험실을 졸업해 본 기능) · #209 구독 확인 72시간 강등을 두던 판이 끝날 때까지 미룬다 ·
-   #267 급수 초기화 · **#268 승급은 15집마다 고른다(한 판에 최대 3급 · 단도 15집 이상이면 승단을 고른다) · 강급은 3연패**(사용자 2026-10-15).
-   적지 않은 것: 개발자 화면의 「72시간 지난 구독」 버튼(디버그 전용) · 인식 엔진 안쪽(OpenCV · 신경망)은 사용자 말로 「판을 찾아」·「읽어요」로만.
-   앱 안 「새로워진 점」은 1.5.0 · 1.5.1 두 묶음이다(`UiStringsWhatsNew.kt`) — 1.4.0 사용자는 둘 다 본다.
-⚠️ 언어당 500자 이내 — 지금: 한국어 349자 · 영어 488자. 본문은 스레드가 쓴 초안이다(2026-10-15) — 콘솔에 붙이기 전에 사용자가 본다.
-   영어는 500자에 맞추려 사진 줄을 줄였다(「Board Photo Analysis on the home screen:」 → 첫 줄이 이름을 말한다 · 「an SGF file」 → 「SGF」).
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.5.1이 나간 뒤의 기준선은 1.5.1이다.
-   지난 본문: 1.5.0 초안(나가지 않음) `git show 03c6b83b:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
+✅ **기준선은 1.5.1**(프로덕션 10501 — 버전을 올린 날 2026-10-15, 사용자 2026-10-18 확인).
+   #269 「기보 보기」(명국 33판 · 미리 잰 형세 그래프와 변곡점 · 자동 진행 · 10수씩 · SGF 열기) · #244 앱 배경음악 · 다시보기의 10수 버튼.
+   매 수 형세(형세 보기를 켠 채 따라가기)는 프리미엄이라 「(프리미엄)」을 붙였다 — 1회권은 한 국면이다(다시보기와 같은 게이트).
+   적지 않은 것: 홈 타일 자리 바꿈(기보 보기 ↔ 학습 하기) · 형세를 미리 잰 방법(모델·형식) · 크레딧 화면의 새 구획.
+   앱 안 「새로워진 점」은 1.6.0 묶음(`UiStringsWhatsNew.kt`, 4개 언어).
+⚠️ 언어당 500자 이내 — 지금: 한국어 296자 · 영어 472자. 본문은 스레드가 쓴 초안이다(2026-10-19) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.6.0이 나간 뒤의 기준선은 1.6.0이다.
+   지난 본문: 1.5.1 `git show f41e3dab:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
-바둑판 사진으로 국면을 옮겨 오는 「바둑판 사진 분석」이 생겼습니다.
+홈에 「기보 보기」가 생기고, 앱 배경음악을 켤 수 있게 됐습니다.
 
-· 홈의 「바둑판 사진 분석」: 바둑판을 비추면 판을 찾아 자동으로 찍어요. 사진첩의 사진이나 다른 앱에서 「공유」한 사진도 읽어요
-· 읽은 국면을 보정한 뒤 그 자리부터 AI와 대국하거나, AI 추천 수와 형세를 볼 수 있어요(프리미엄). SGF 파일로 보낼 수도 있어요
-· 인터넷이 오래 끊겨 구독을 확인하지 못해도, 두고 있던 판은 끝날 때까지 프리미엄 기능을 그대로 쓸 수 있어요
-· 승급 대국: 15집 이상 차로 이기면 몇 급 오를지 직접 골라요(한 판에 최대 3급). 강급은 3연패부터예요. 「급수 초기화하기」로 처음부터 다시 잴 수도 있어요
+· 기보 보기: 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 봐요. 판 전체 형세 그래프와 변곡점, 자동 진행(1~5초)과 10수씩 넘기기를 쓸 수 있고, 가지고 있는 SGF 파일도 열 수 있어요
+· 기보에서 형세 보기를 켜면 수마다 형세가 바로 그려져요(프리미엄)
+· 앱 배경음악: 설정 › 소리에서 켜고 끌 수 있어요. 대국 중에도 은은하게 이어져요
+· 대국 다시보기에도 10수씩 넘기는 버튼(◀◀ ▶▶)이 생겼어요
 </ko-KR>
 <en-US>
-New: Board Photo Analysis brings a real board into the app.
+New: Game records, and background music for the app.
 
-· Point the camera at a board and it captures it; gallery and shared photos work too
-· Fix the position, then play the AI from there or see AI moves and the score (Premium), or send it as SGF
-· If your subscription can't be checked for a while, your current game keeps Premium until it ends
-· Rank games: win by 15+ to choose how far to move up (max 3). You drop a step only after 3 losses in a row, and you can reset your rank
+· Game records: step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the score graph and turning points. Auto play (1–5 s) and 10-move jumps; open your own SGF files too
+· Turn on Evaluation in a record and the score is drawn on every move (Premium)
+· Background music: on or off in Settings › Sound; it keeps playing during games
+· Game replay gets 10-move buttons (◀◀ ▶▶)
 </en-US>
 
 ──────────────────────────────────────────────
