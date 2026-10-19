@@ -284,7 +284,7 @@ internal fun GameReplayScreen(
             onToggleMoveNumbers = { showMoveNumbers = !showMoveNumbers },
         )
 
-        // ⚠️ **맨 아래다 — 이동 도구와 섞지 않는다.** 위의 네 버튼은 이 화면 안에서 위치를
+        // ⚠️ **맨 아래다 — 이동 도구와 섞지 않는다.** 위의 이동 버튼은 이 화면 안에서 위치를
         // 옮기는 것이고, 이것은 **화면을 떠나 새 대국을 시작하는** 버튼이다. 같은 줄에 두면
         // 「다음 수」 옆에서 잘못 눌린다.
         onBranchFromHere?.takeIf { !isScoreExpanded }?.let { startBranch ->
@@ -385,6 +385,12 @@ internal fun ReplayHeader(
     }
 }
 
+/**
+ * 빨리 감기(◀◀ ▶▶) 한 번에 옮기는 수 — 이동 버튼은 여섯이다(⏮ ◀◀ ◀ ▶ ▶▶ ⏭). 기보 보기(#269)에 먼저 넣고, 같은 날 다시보기에도 같게 했다
+ * (사용자 2026-10-19). 두 화면이 이 부품 하나를 쓰므로 수도 여기 한 곳에 둔다.
+ */
+internal const val ReplayFastStep = 10
+
 @Composable
 internal fun ReplayControls(
     moveNumber: Int,
@@ -394,11 +400,6 @@ internal fun ReplayControls(
     analysis: ReplayAnalysisUi,
     onMoveNumberChange: (Int) -> Unit,
     onToggleMoveNumbers: () -> Unit,
-    /**
-     * 빨리 감기 한 번에 옮길 수 — 있으면 이동 버튼이 여섯이 된다(⏮ ◀◀ ◀ ▶ ▶▶ ⏭). 기보 보기만 10을 준다(#269, 사용자 2026-10-19);
-     * 다시보기는 넷 그대로다(변곡점 칩과 그래프가 위치를 옮긴다).
-     */
-    fastStep: Int? = null,
     /** 이동 버튼과 분석 버튼 사이에 끼우는 줄 — 기보 보기의 「자동 진행」(#269). */
     extraRow: (@Composable () -> Unit)? = null,
 ) {
@@ -454,7 +455,7 @@ internal fun ReplayControls(
         // 제거한다"). 자리를 옮긴 것도 아니고 되살릴 계획도 없다 — 위치를 훑는 역할은
         // **위에서 항상 펼쳐져 있는 형세 그래프**가 대신한다(같은 요청의 둘째 문장: 그
         // 그래프를 처음부터 확장 상태로 보여 슬라이더가 빠진 자리를 커버한다). 이동은
-        // 아래 4버튼과 실착 칩(그 수로 점프)만 남는다.
+        // 아래 이동 버튼과 실착 칩(그 수로 점프)만 남는다.
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
@@ -466,14 +467,12 @@ internal fun ReplayControls(
                 modifier = Modifier.weight(1f),
             )
             // ⚠️ 빨리 감기는 ⏪⏩가 아니라 ◀◀ ▶▶다 — ⏪⏩는 안드로이드에서 컬러 이모지로 그려져 옆의 ◀ ▶와 생김새가 어긋난다.
-            fastStep?.let { step ->
-                ActionButton(
-                    label = "◀◀",
-                    enabled = moveNumber > 0,
-                    onClick = { onMoveNumberChange((moveNumber - step).coerceAtLeast(0)) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            ActionButton(
+                label = "◀◀",
+                enabled = moveNumber > 0,
+                onClick = { onMoveNumberChange((moveNumber - ReplayFastStep).coerceAtLeast(0)) },
+                modifier = Modifier.weight(1f),
+            )
             ActionButton(
                 label = "◀",
                 enabled = moveNumber > 0,
@@ -486,14 +485,12 @@ internal fun ReplayControls(
                 onClick = { onMoveNumberChange(moveNumber + 1) },
                 modifier = Modifier.weight(1f),
             )
-            fastStep?.let { step ->
-                ActionButton(
-                    label = "▶▶",
-                    enabled = moveNumber < lastMoveNumber,
-                    onClick = { onMoveNumberChange((moveNumber + step).coerceAtMost(lastMoveNumber)) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            ActionButton(
+                label = "▶▶",
+                enabled = moveNumber < lastMoveNumber,
+                onClick = { onMoveNumberChange((moveNumber + ReplayFastStep).coerceAtMost(lastMoveNumber)) },
+                modifier = Modifier.weight(1f),
+            )
             ActionButton(
                 label = "⏭",
                 enabled = moveNumber < lastMoveNumber,

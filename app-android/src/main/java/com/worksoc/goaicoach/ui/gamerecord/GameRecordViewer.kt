@@ -158,7 +158,6 @@ internal fun GameRecordViewer(
                 moveNumber = next.coerceIn(0, timeline.lastMoveNumber)
             },
             onToggleMoveNumbers = { showMoveNumbers = !showMoveNumbers },
-            fastStep = GameRecordFastStep,
             extraRow = {
                 GameRecordAutoPlayRow(
                     isPlaying = isAutoPlaying,
@@ -171,9 +170,6 @@ internal fun GameRecordViewer(
         )
     }
 }
-
-/** 빨리 감기(◀◀ ▶▶) 한 번에 옮기는 수 — 사용자 2026-10-19. */
-internal const val GameRecordFastStep = 10
 
 /** 자동 진행의 착수 간격으로 고를 수 있는 초 — 기본 1초(사용자 2026-10-19). */
 internal val GameRecordAutoPlaySeconds: IntRange = 1..5
