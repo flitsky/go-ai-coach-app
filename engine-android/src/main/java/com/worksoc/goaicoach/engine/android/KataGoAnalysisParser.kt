@@ -6,13 +6,13 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
+import com.worksoc.goaicoach.shared.enginecontract.DefaultOwnershipThreshold
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
-import com.worksoc.goaicoach.shared.enginecontract.OwnershipPoint
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
-import kotlin.math.abs
+import com.worksoc.goaicoach.shared.enginecontract.ownershipEstimateOf
 
 internal object KataGoAnalysisParser {
     private val whitespace = Regex("\\s+")
@@ -204,7 +204,7 @@ internal object KataGoAnalysisParser {
     fun parseScoreEstimate(
         response: String,
         boardSize: BoardSize,
-        ownershipThreshold: Double = 0.15,
+        ownershipThreshold: Double = DefaultOwnershipThreshold,
     ): ScoreEstimate {
         val fields = response
             .lineSequence()
@@ -319,33 +319,8 @@ internal object KataGoAnalysisParser {
         if (rows.size != boardSize.value || rows.any { it.size != boardSize.value }) {
             return null
         }
-
-        var blackLikely = 0
-        var whiteLikely = 0
-        var unclear = 0
-        val points = mutableListOf<OwnershipPoint>()
-        val absoluteThreshold = abs(threshold)
-        rows.forEachIndexed { row, values ->
-            values.forEachIndexed { column, value ->
-                when {
-                    value <= -absoluteThreshold -> blackLikely += 1
-                    value >= absoluteThreshold -> whiteLikely += 1
-                    else -> unclear += 1
-                }
-                points += OwnershipPoint(
-                    coordinate = BoardCoordinate(row, column),
-                    value = value,
-                )
-            }
-        }
-
-        return OwnershipEstimate(
-            blackLikelyPoints = blackLikely,
-            whiteLikelyPoints = whiteLikely,
-            neutralOrUnclearPoints = unclear,
-            threshold = absoluteThreshold,
-            points = points,
-        )
+        // 세는 규칙은 한 곳이다 — 미리 계산해 실은 기보의 형세(#269)도 같은 함수로 센다.
+        return ownershipEstimateOf(rows, threshold)
     }
 
     private fun Double.normalizeWinRate(): Double =

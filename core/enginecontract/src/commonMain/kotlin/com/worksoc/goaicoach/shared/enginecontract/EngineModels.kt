@@ -410,6 +410,38 @@ data class OwnershipPoint(
     val value: Double,
 )
 
+/** 영역을 셀 때의 기본 문턱 — 이 값 이상이면 백의 자리, 음수 쪽으로 이 값 이하면 흑의 자리, 그 사이는 미정. */
+const val DefaultOwnershipThreshold: Double = 0.15
+
+/**
+ * 신경망의 영역 격자(백 기준 −1~1, 맨 윗줄이 판의 맨 위) → [OwnershipEstimate]. 엔진 응답을 읽는 파서와 미리 계산해 실은 기보의 형세
+ * (백로그 #269)가 **이 한 곳**으로 센다 — 문턱이나 세는 법이 두 벌이 되면 같은 국면이 화면마다 다른 숫자를 말한다.
+ */
+fun ownershipEstimateOf(rows: List<List<Double>>, threshold: Double = DefaultOwnershipThreshold): OwnershipEstimate {
+    val absoluteThreshold = kotlin.math.abs(threshold)
+    var blackLikely = 0
+    var whiteLikely = 0
+    var unclear = 0
+    val points = ArrayList<OwnershipPoint>(rows.sumOf { it.size })
+    rows.forEachIndexed { row, values ->
+        values.forEachIndexed { column, value ->
+            when {
+                value <= -absoluteThreshold -> blackLikely += 1
+                value >= absoluteThreshold -> whiteLikely += 1
+                else -> unclear += 1
+            }
+            points += OwnershipPoint(coordinate = BoardCoordinate(row, column), value = value)
+        }
+    }
+    return OwnershipEstimate(
+        blackLikelyPoints = blackLikely,
+        whiteLikelyPoints = whiteLikely,
+        neutralOrUnclearPoints = unclear,
+        threshold = absoluteThreshold,
+        points = points,
+    )
+}
+
 data class ScoreEstimate(
     val status: EngineStatus,
     val whiteWinRate: Double? = null,
