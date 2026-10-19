@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -57,6 +58,7 @@ import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.rankedOpponentLineFor
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuButton
 
 @Composable
@@ -303,11 +305,15 @@ internal fun GoCoachContent(
                     turnTimeState = turnTimeState,
                     onEvent = onEvent,
                     onBoardSlotPositioned = { slot -> boardSlotInRoot = slot },
+                    // 넓은 배치도 ☰ 왼쪽에 빠른 버튼 묶음(#270) — 폰 배치의 윗줄과 같은 짝이다.
                     wideMenuButton = {
-                        KaTrainUxMenuButton(
-                            menuExpanded = isDisplayMenuExpanded,
-                            onMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AppQuickActions()
+                            KaTrainUxMenuButton(
+                                menuExpanded = isDisplayMenuExpanded,
+                                onMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
+                            )
+                        }
                     },
                 )
             }

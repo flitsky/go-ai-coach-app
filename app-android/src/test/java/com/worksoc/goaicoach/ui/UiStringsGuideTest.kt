@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.guideBodyFor
 import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
+import com.worksoc.goaicoach.ui.l10n.quotesToolLabel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -76,7 +77,7 @@ class UiStringsGuideTest {
     @Test
     fun theCopyRefusesToGuessWhatItWasNotGiven() {
         UiLanguage.entries.forEach { language ->
-            GuideStep.entries.filter { it.target != null }.forEach { step ->
+            GuideStep.entries.filter { it.quotesToolLabel }.forEach { step ->
                 assertThrows(IllegalArgumentException::class.java) {
                     guideBodyFor(language, step)
                 }

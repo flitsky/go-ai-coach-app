@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.GuideTarget
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.l10n.quotesToolLabel
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -188,7 +189,8 @@ class FirstDolGuideContractTest {
      * 빠지면 거짓 문구가 **컴파일도 테스트도 통과**했다. 폴백은 없앴고(`requireNotNull`), 이 계약은 그
      * 크래시를 **개발 중에** 만나게 한다 — 사용자 기기에서 만나기 전에.
      *
-     * 요구하는 인자를 **enum에서 파생**한다: 동그라미 대상이 있는 단계가 그 표면에 있으면 `toolLabels`.
+     * 요구하는 인자를 **문구 쪽 정의에서 파생**한다: 라벨을 인용하는 단계([quotesToolLabel])가 그 표면에 있으면 `toolLabels`.
+     * (2026-10-19까지는 「동그라미 대상이 있는 단계」로 갈랐다 — #270의 배경음악 버튼은 대상이 있지만 인용할 글자가 없어 그 등식이 깨졌다.)
      * (④의 `facts`는 #140이 ④를 인자 없는 한 문구로 바꾸며 없어졌다.)
      */
     @Test
@@ -203,7 +205,7 @@ class FirstDolGuideContractTest {
             val surface = Regex("""GuideSurface\.(\w+)""").find(call)?.groupValues?.get(1)
             assertTrue("$name: `GuideAnchor` 호출이 표면을 적지 않는다.", surface != null)
             val steps = GuideStep.entries.filter { it.surface.name == surface }
-            if (steps.any { it.target != null }) {
+            if (steps.any { it.quotesToolLabel }) {
                 assertTrue(
                     "$name($surface): 라벨을 인용하는 단계가 이 표면에 있는데 `toolLabels =`를 " +
                         "넘기지 않는다 — ⑤가 빈 인용부호로 뜬다(백로그 #128).",

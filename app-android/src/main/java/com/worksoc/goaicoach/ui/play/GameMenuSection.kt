@@ -41,6 +41,7 @@ import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.exitGameActionFor
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.ui.setup.CompactScoringAndBoardSettingsPanel
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuButton
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuPanel
@@ -53,7 +54,7 @@ import com.worksoc.goaicoach.ui.setup.SearchTimeSettingsPanel
  * 대국 화면 최상단. **두 줄로 나뉜다**(#35, 2026-08-30 사용자 지시).
  *
  * ```
- * [빌드시각]        수순 12수                 [☰]
+ * [빌드시각]        수순 12수            [♪][☰]
  * 흑: 유저 / 백: KataGo 초고수
  * ```
  *
@@ -116,11 +117,11 @@ internal fun GameHeaderSection(
                 )
             }
 
-            // [3] 우측 끝: [메뉴 버튼]
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
+            // [3] 우측 끝: [빠른 버튼 묶음][메뉴 버튼] — 묶음(#270)은 모든 화면의 윗줄 오른쪽 끝에 서는 그것이다.
+            // ⚠️ **이 칸만 가중치 없이 제 폭을 가진다**(2026-10-19). 1:2:1의 넷째 칸은 폭 360dp 폰에서 82dp라 버튼 둘(48 + ☰ 60여)이
+            //   들어가지 않는다. 남는 폭을 [1]·[2]가 1:2로 나누므로 수순은 화면 한가운데에서 20dp쯤 왼쪽에 선다 — 판을 깎지 않는 쪽을 골랐다.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AppQuickActions()
                 KaTrainUxMenuButton(
                     menuExpanded = isDisplayMenuExpanded,
                     onMenuExpandedChange = onDisplayMenuExpandedChange,

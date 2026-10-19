@@ -75,6 +75,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardScanStringsFor
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.vision.BoardPhotoDecoder
 import com.worksoc.goaicoach.vision.BoardSteadiness
 import java.util.concurrent.Executors
@@ -378,6 +379,8 @@ internal fun CameraCaptureView(
                     .background(VisionPalette.Backdrop.copy(alpha = 0.55f), RoundedCornerShape(AppRadius.Corner8))
                     .padding(horizontal = AppSpacing.Space10, vertical = AppSpacing.Space6),
             )
+            // 빠른 버튼 묶음(#270) — 어두운 카메라 바탕이라 이 화면의 글자색으로 그린다. 핀 맞춤·고치기 단계는 판을 가득 쓰는 편집 화면이라 두지 않았다.
+            AppQuickActions(tint = VisionPalette.OnBackdrop)
         }
 
         failure?.let { message ->

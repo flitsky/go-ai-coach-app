@@ -60,6 +60,7 @@ import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoardFolded
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscriptionCard
 import com.worksoc.goaicoach.ui.monetization.consumableGlyphRes
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 
 /**
  * 3 Depth: **내 정보**(화면 이름은 #256에서 「마이 페이지」 → 「내 정보」, 사용자 2026-10-13 — 코드 이름 `MyPage…`는 그대로 둔다).
@@ -129,7 +130,10 @@ internal fun MyPageScreen(
                 fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
             )
+            // 빠른 버튼 묶음(#270) — 모든 화면의 윗줄 오른쪽 끝.
+            AppQuickActions()
         }
         HorizontalDivider()
 

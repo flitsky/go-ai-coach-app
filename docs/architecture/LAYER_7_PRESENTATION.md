@@ -11,7 +11,7 @@ go-ai-coach에서 이 계층이 **지금 어디에 있고, 무엇이 지키며, 
 <!-- ui-layers: UI_LAYERS -->
 ```text
 L0 l10n designsystem foundation
-L1 guide
+L1 guide quickactions
 L2 monetization
 L3 board splash
 L4 setup study vision home
@@ -23,20 +23,20 @@ L8 shell
 
 ## 지금 위치
 
-**위치**: `app-android/src/main/java/com/worksoc/goaicoach/ui/` — **하위 패키지 16개·9층**(아래), `app-android/src/main/java/com/worksoc/goaicoach/presentation/`(`GameUiEvent.kt`, `GameScreenState.kt`, `GoCoachScreenStateAssembler.kt`, `GameMenuEventPolicy.kt`, `KaTrainUxOptions*.kt`, `PlayerSetupUiState.kt`)
+**위치**: `app-android/src/main/java/com/worksoc/goaicoach/ui/` — **하위 패키지 18개·9층**(아래 — 2026-09-28에 16개, 2026-10-19에 `gamerecord`(#269)·`quickactions`(#270)가 더해졌다), `app-android/src/main/java/com/worksoc/goaicoach/presentation/`(`GameUiEvent.kt`, `GameScreenState.kt`, `GoCoachScreenStateAssembler.kt`, `GameMenuEventPolicy.kt`, `KaTrainUxOptions*.kt`, `PlayerSetupUiState.kt`)
 
 **`ui` 하위 패키지(2026-09-28, refactor backlog #27 — `490e17ca`…`4ec33a4e`)**: 한 패키지에 몰려 있던 107파일을 16개 패키지로 나눴다. 같은 패키지라 import가 없어 **파일 사이 의존을 읽을 수조차 없던** 것이, 이제 전부 import로 보인다. 간선은 **더 낮은 층으로만** 간다.
 
 | 층 | 패키지(파일 수) |
 | --- | --- |
 | L8 | `shell`(11) — `GoCoachApp`(조립 루트)·`GoCoachSessionFactory`·`InitialDestination`·셸 다이얼로그 |
-| L7 | `settings`(10) |
+| L7 | `settings`(10) · `gamerecord` — 기보 보기(#269) |
 | L6 | `history`(2) · `account`(10) |
 | L5 | `play`(16) — 대국 화면(`GoCoachContent`·`GamePlaySection`·`GameMenuSection`·`ScoreGraphPanel` 등) |
 | L4 | `setup`(4) · `study`(3) · `vision`(4) · `home`(1) |
 | L3 | `board`(4) — `GoBoard` · `splash`(3) |
 | L2 | `monetization`(9) — 프리미엄·광고·출석·봇 캐릭터 UI(`#84`의 6계층 클러스터와 같은 묶음) |
-| L1 | `guide`(3) — 첫돌이 가이드 |
+| L1 | `guide`(3) — 첫돌이 가이드 · `quickactions`(1) — 화면마다 윗줄에 놓는 빠른 버튼 묶음(#270, 배경음악 켬/끔) |
 | L0 | `l10n`(23) — `UiStrings*`·위성 Map · `designsystem`(6) · `foundation`(2) — `FeatureFlags`·`TestTags` |
 
 - **실측(C17 커밋 본문)**: 패키지 16 · 간선 70 · 참조 311 · SCC 0 · 상호 참조 쌍 0 · 같은 층·위층 간선 0 · L0에서 나가는 간선 0. 가장 많이 참조되는 곳은 `l10n`(13개 패키지에서 153건)·`designsystem`(11/40)·`monetization`(9/36)·`guide`(8/24). 최장 사슬은 7간선(`shell → settings → play → setup → board → monetization → guide → l10n`).

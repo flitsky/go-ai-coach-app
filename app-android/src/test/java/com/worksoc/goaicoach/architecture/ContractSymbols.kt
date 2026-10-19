@@ -163,7 +163,7 @@ internal object ContractSymbols {
      */
     val UI_LAYERS: List<List<String>> = listOf(
         listOf("l10n", "designsystem", "foundation"), // L0
-        listOf("guide"), // L1
+        listOf("guide", "quickactions"), // L1 — quickactions(#270)는 모든 화면의 윗줄이 놓는 빠른 버튼 묶음이라 화면들(L4~L7)보다 아래다
         listOf("monetization"), // L2
         listOf("board", "splash"), // L3
         listOf("setup", "study", "vision", "home"), // L4

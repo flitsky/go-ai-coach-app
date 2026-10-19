@@ -116,6 +116,17 @@ private fun inGameTopMovesBody(language: UiLanguage, label: String): String {
 }
 
 /**
+ * 홈 윗줄의 배경음악 버튼(백로그 #270 — 1.6.x 업데이트 안내). 1.6.0이 음악을 기본으로 켜고 나가므로 *"어디서 끄나"* 를
+ * 먼저 말하고, 같은 버튼이 다른 화면에도 같은 자리에 있다는 것을 덧붙인다(그것이 빠른 버튼 묶음의 약속이다).
+ */
+private val HomeMusicToggleBody: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "배경음악은 이 버튼으로 바로 켜고 끌 수 있어요. 대국·기보 보기 같은 다른 화면에서도 맨 윗줄 오른쪽에 있어요.",
+    UiLanguage.English to "Turn the background music on or off right here. The same button sits at the top right of other screens too, including games and game records.",
+    UiLanguage.Japanese to "背景音楽はこのボタンですぐにオン・オフできます。対局や棋譜並べなど、ほかの画面でもいちばん上の右側にあります。",
+    UiLanguage.ChineseSimplified to "点这个按钮就能随时开关背景音乐。对局、打谱等其他画面的顶部右侧也有它。",
+)
+
+/**
  * 단계별 본문. ⑤는 화면의 라벨이 필요하므로 [toolLabels]를 받는다.
  *
  * ⚠️ **`when`을 exhaustive로 유지할 것** — 단계를 더하면서 여기 분기를 빠뜨리면 그 단계가 조용히
@@ -134,7 +145,19 @@ internal fun guideBodyFor(
     // (2026-09-09 감사: 한때 `?: ""`로 조용히 넘어갔다).
     GuideStep.InGameEval -> inGameEvalBody(language, requireLabels(toolLabels).eval)
     GuideStep.InGameTopMoves -> inGameTopMovesBody(language, requireLabels(toolLabels).topMoves)
+    GuideStep.HomeMusicToggle -> HomeMusicToggleBody.getValue(language)
 }
+
+/**
+ * 이 단계의 문구가 **화면에 적힌 라벨을 인용하는가** — 그렇다면 앵커가 `toolLabels`를 넘겨야 한다(`FirstDolGuideContractTest`).
+ * ⚠️ 「동그라미 대상이 있다」와 같은 말이 아니다 — 홈 윗줄 배경음악 버튼(#270)은 대상이 있지만 아이콘이라 인용할 글자가 없다.
+ * `when`을 exhaustive로 둔다 — 단계를 더하면 여기서 답을 정해야 컴파일된다.
+ */
+internal val GuideStep.quotesToolLabel: Boolean
+    get() = when (this) {
+        GuideStep.InGameEval, GuideStep.InGameTopMoves -> true
+        GuideStep.AttendanceClaim, GuideStep.HomeStartMatch, GuideStep.MatchSetup, GuideStep.HomeMusicToggle -> false
+    }
 
 private fun requireLabels(toolLabels: GuideToolLabels?): GuideToolLabels =
     requireNotNull(toolLabels) { "⑤ 문구는 화면에 적힌 라벨 없이는 참일 수 없다(백로그 #128)" }

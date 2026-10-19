@@ -304,7 +304,8 @@ private fun ReplayControlSample(step: GuideStep) {
             role = GameActionButtonRole.TopMoves,
             label = strings.topMovesAction,
         )
-        null -> Unit
+        // 홈 윗줄 배경음악 버튼(#270)은 1.6.x의 **업데이트 안내**라 다시보기에 싣지 않는다 — 이 함수는 대국 화면 단계만 받는다.
+        GuideTarget.MusicToggle, null -> Unit
     }
 }
 

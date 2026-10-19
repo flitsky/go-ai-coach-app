@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -76,6 +75,7 @@ import com.worksoc.goaicoach.ui.l10n.winRateSummaryFor
 import com.worksoc.goaicoach.ui.l10n.winRateWhatCountsFor
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.note
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -310,25 +310,32 @@ internal fun GameHistoryScreen(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = AppSpacing.Space8),
             )
-            Spacer(modifier = Modifier.weight(1f))
             // ⚠️ 줄 전체가 관문이다 — 체크박스만으로는 손가락에 좁다. `onCheckedChange`는 `null`로
             // 비워 이중 리스너를 막는다(다시보기 「수순 표시」와 같은 방식).
+            // 오른쪽 끝은 빠른 버튼 묶음(#270)이 먼저 제 폭을 잡고, 체크 줄은 남는 폭 안에서 오른쪽에 붙는다(전에는 `Spacer`가 밀었다).
+            // 360dp 폰에서는 문구가 두 줄로 접힌다 — 한 줄 상한이면 잘려 「10수 이하 기…」가 된다.
             Row(
-                modifier = Modifier
-                    .clickable { hideShortGames = !hideShortGames }
-                    .padding(end = AppSpacing.Space8),
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.End,
             ) {
-                Checkbox(checked = hideShortGames, onCheckedChange = null)
-                Text(
-                    text = gameHistoryHideShortGamesLabelFor(strings.language, ShortGameMaxMoveCount),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = AppSpacing.Space4),
-                )
+                Row(
+                    modifier = Modifier
+                        .clickable { hideShortGames = !hideShortGames }
+                        .padding(end = AppSpacing.Space8),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(checked = hideShortGames, onCheckedChange = null)
+                    Text(
+                        text = gameHistoryHideShortGamesLabelFor(strings.language, ShortGameMaxMoveCount),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = AppSpacing.Space4),
+                    )
+                }
             }
+            AppQuickActions()
         }
 
         // 승률(백로그 #227) — 목록 위에 붙박인다. 「10수 이하 기록 제외하기」의 체크와 무관하게 늘 같은 잣대로 센다

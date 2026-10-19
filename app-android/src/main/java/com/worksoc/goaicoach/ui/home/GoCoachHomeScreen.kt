@@ -65,6 +65,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.guide.GuideSurface
+import com.worksoc.goaicoach.application.guide.GuideTarget
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
@@ -94,6 +95,7 @@ import com.worksoc.goaicoach.ui.designsystem.RankTierBadge
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
+import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
@@ -102,6 +104,7 @@ import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 
 /**
@@ -161,8 +164,10 @@ internal fun GoCoachHomeScreen(
         if (SharedBoardPhotoInbox.hasPhoto(context)) onBoardScanClick()
     }
 
+    // 업데이트 안내(#270)의 코치마크가 화면 전체를 덮어야 해서 한 겹 감싼다 — 들여쓰기는 그대로 둔다(셸의 `Box` + `when`과 같은 모양).
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .systemBarsPadding(),
@@ -186,11 +191,15 @@ internal fun GoCoachHomeScreen(
             // 들어가면서 우측이 비었고, 그 자리를 설정이 받고 좌측을 마이 페이지가 가져갔다.
             // 마이 페이지는 #24에서 하단 카드로 났는데, 카드 넉 장이 세로를 빠듯하게 만든
             // 장본인이기도 했다(#28).
+            // 빠른 버튼 묶음(#270)은 설정 칩 **왼쪽** — 다른 화면에서도 맨 윗줄 오른쪽 끝에 서는 그 묶음이다. 배경음악 버튼은 업데이트 안내의
+            // 동그라미 대상으로 자리를 알린다(그 보고는 **홈의 것만** 한다 — `guideTarget`의 KDoc).
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 HomeTopChip(emoji = "🧑", label = strings.myPageTitle, onClick = onMyPageClick)
+                Spacer(modifier = Modifier.weight(1f))
+                AppQuickActions(musicToggleModifier = Modifier.guideTarget(GuideTarget.MusicToggle))
                 HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
             }
 
@@ -361,6 +370,10 @@ internal fun GoCoachHomeScreen(
             // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는
             // 그대로이고 진입점만 옮겼다.
         }
+    }
+    // 윗줄 배경음악 버튼의 업데이트 안내(#270 — 1.6.x에서 한 번). 「새로워진 점」·출석 팝업이 닫힌 뒤에 뜬다(둘 다 `TrackWhileShown`).
+    // ⚠️ `Column` **뒤**에 둔다 — 코치마크의 흡수 층이 홈의 카드·칩보다 위에 있어야 어디를 눌러도 안내만 넘어간다(대국 화면 앵커와 같은 이유).
+    GuideAnchor(surface = GuideSurface.HomeQuickActions, blocked = GuideBlockingOverlays.isShowing)
     }
 
     // 이전 대국 존재 상태에서 새 캐릭터 대국 선택 시 확인 경고 팝업

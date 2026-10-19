@@ -15,25 +15,28 @@ class FirstRunGuidePolicyTest {
 
     private val armed = GuideProgress(armed = true)
 
+    /** 첫 실행 사슬 — 업데이트 안내(#270)를 뺀 단계들. 사슬의 성질을 보는 단언은 이것만 센다. */
+    private val firstRunChain = GuideStep.entries.filter { it.shownInVersions == null }
+
     @Test
     fun nothingPlaysBeforeTheFirstRunArmsTheChain() {
         // 기존 사용자가 여기 해당한다 — 첫 실행을 이미 지났으므로 armed가 켜질 기회가 없었다.
-        assertNull(autoPlayStep(GuideSurface.Home, GuideProgress(), blocked = false))
+        assertNull(autoPlayStep(GuideSurface.Home, GuideProgress(), blocked = false, versionCode = V160))
     }
 
     @Test
     fun armingPlaysTheFirstUnseenStepOfThatSurface() {
-        assertEquals(GuideStep.HomeStartMatch, autoPlayStep(GuideSurface.Home, armed, blocked = false))
-        assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, armed, blocked = false))
-        assertEquals(GuideStep.InGameEval, autoPlayStep(GuideSurface.InGame, armed, blocked = false))
+        assertEquals(GuideStep.HomeStartMatch, autoPlayStep(GuideSurface.Home, armed, blocked = false, versionCode = V160))
+        assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, armed, blocked = false, versionCode = V160))
+        assertEquals(GuideStep.InGameEval, autoPlayStep(GuideSurface.InGame, armed, blocked = false, versionCode = V160))
     }
 
     @Test
     fun aSeenStepDoesNotPlayAgain() {
         val seen = armed.copy(seenSteps = setOf(GuideStep.HomeStartMatch.id))
-        assertNull(autoPlayStep(GuideSurface.Home, seen, blocked = false))
+        assertNull(autoPlayStep(GuideSurface.Home, seen, blocked = false, versionCode = V160))
         // 다른 표면은 영향받지 않는다.
-        assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, seen, blocked = false))
+        assertEquals(GuideStep.MatchSetup, autoPlayStep(GuideSurface.MatchSetup, seen, blocked = false, versionCode = V160))
     }
 
     /**
@@ -42,8 +45,8 @@ class FirstRunGuidePolicyTest {
      */
     @Test
     fun nothingPlaysWhileAnotherDialogCoversTheSurface() {
-        assertNull(autoPlayStep(GuideSurface.Home, armed, blocked = true))
-        assertNull(autoPlayStep(GuideSurface.InGame, armed, blocked = true))
+        assertNull(autoPlayStep(GuideSurface.Home, armed, blocked = true, versionCode = V160))
+        assertNull(autoPlayStep(GuideSurface.InGame, armed, blocked = true, versionCode = V160))
     }
 
     /**
@@ -53,19 +56,19 @@ class FirstRunGuidePolicyTest {
      */
     @Test
     fun declarationOrderDrainsTheChainInOrder() {
-        val chain = GuideStep.entries
+        val chain = firstRunChain
         var progress = armed
         chain.forEach { expected ->
             assertEquals(
                 expected,
-                autoPlayStep(expected.surface, progress, blocked = false),
+                autoPlayStep(expected.surface, progress, blocked = false, versionCode = V160),
                 "선언 순서상 먼저인 미시청 단계가 나와야 한다",
             )
             progress = progress.copy(seenSteps = progress.seenSteps + expected.id)
         }
-        // 다 보고 나면 어느 표면에서도 아무것도 뜨지 않는다.
+        // 다 보고 나면 어느 표면에서도 사슬의 단계는 뜨지 않는다 — 1.6.x 밖이면 업데이트 안내도 없으니 아무것도 뜨지 않는다.
         GuideSurface.entries.forEach { surface ->
-            assertNull(autoPlayStep(surface, progress, blocked = false), "$surface 가 다 본 뒤에도 뜬다")
+            assertNull(autoPlayStep(surface, progress, blocked = false, versionCode = V170), "$surface 가 다 본 뒤에도 뜬다")
         }
     }
 
@@ -85,13 +88,13 @@ class FirstRunGuidePolicyTest {
         expected.forEach { step ->
             assertEquals(
                 step,
-                autoPlayStep(GuideSurface.InGame, progress, blocked = false),
+                autoPlayStep(GuideSurface.InGame, progress, blocked = false, versionCode = V160),
                 "확인할 때마다 다음 버튼 안내가 떠야 한다",
             )
             progress = progress.copy(seenSteps = progress.seenSteps + step.id)
         }
         assertNull(
-            autoPlayStep(GuideSurface.InGame, progress, blocked = false),
+            autoPlayStep(GuideSurface.InGame, progress, blocked = false, versionCode = V160),
             "넷을 다 본 뒤에는 대국 화면에서 아무것도 뜨지 않아야 한다",
         )
     }
@@ -115,16 +118,58 @@ class FirstRunGuidePolicyTest {
         val onMatchSetup = GuideStep.entries.filter { it.surface == GuideSurface.MatchSetup }
         assertTrue(onMatchSetup.isNotEmpty(), "대국 설정 표면에 단계가 하나도 없다 — 전제가 무너졌다")
         // 표면이 같은 두 단계를 순서대로 늘어놓고, 앞선 것이 먼저 나오는지 확인한다.
-        val ordered = GuideStep.entries
-        val bySurface = ordered.groupBy { it.surface }
+        val bySurface = firstRunChain.groupBy { it.surface }
         bySurface.forEach { (surface, steps) ->
             val first = steps.first()
             assertEquals(
                 first,
-                autoPlayStep(surface, armed, blocked = false),
+                autoPlayStep(surface, armed, blocked = false, versionCode = V160),
                 "$surface 에서 선언 순서상 첫 단계가 나와야 한다",
             )
         }
+    }
+
+    /**
+     * 업데이트 안내(백로그 #270 — 홈 윗줄의 배경음악 버튼): **기존 사용자**에게 뜬다. 그들은 첫 실행 처리를 지나 무장되지 않았거나,
+     * 무장됐어도 사슬을 다 봤다 — 둘 다 1.6.x에서 한 번.
+     */
+    @Test
+    fun theMusicToggleNoticeReachesExistingUsersInTheOneSixLine() {
+        val oldInstall = GuideProgress()
+        val chainSeen = armed.copy(seenSteps = firstRunChain.map { it.id }.toSet())
+        listOf(oldInstall, chainSeen).forEach { progress ->
+            assertEquals(GuideStep.HomeMusicToggle, autoPlayStep(GuideSurface.HomeQuickActions, progress, blocked = false, versionCode = V160))
+            assertEquals(GuideStep.HomeMusicToggle, autoPlayStep(GuideSurface.HomeQuickActions, progress, blocked = false, versionCode = 10601))
+        }
+    }
+
+    /** 사용자 2026-10-19: *"이번 신규 업데이트 버전에서만"* — 1.5.1 이전에도, 1.7.0 이후에도 뜨지 않는다. */
+    @Test
+    fun theMusicToggleNoticeStaysInsideItsVersions() {
+        val oldInstall = GuideProgress()
+        assertNull(autoPlayStep(GuideSurface.HomeQuickActions, oldInstall, blocked = false, versionCode = 10501))
+        assertNull(autoPlayStep(GuideSurface.HomeQuickActions, oldInstall, blocked = false, versionCode = V170))
+    }
+
+    /** 새로 깐 사람의 첫 홈에는 ③ 말풍선이 있다 — 사슬이 남은 동안은 미루고, 사슬을 다 보면 뜬다. */
+    @Test
+    fun theMusicToggleNoticeWaitsForTheFirstRunChain() {
+        assertNull(autoPlayStep(GuideSurface.HomeQuickActions, armed, blocked = false, versionCode = V160))
+        val allButLast = armed.copy(seenSteps = firstRunChain.dropLast(1).map { it.id }.toSet())
+        assertNull(autoPlayStep(GuideSurface.HomeQuickActions, allButLast, blocked = false, versionCode = V160))
+        val chainSeen = armed.copy(seenSteps = firstRunChain.map { it.id }.toSet())
+        assertEquals(GuideStep.HomeMusicToggle, autoPlayStep(GuideSurface.HomeQuickActions, chainSeen, blocked = false, versionCode = V160))
+    }
+
+    /** 한 번 보면 끝이고, 팝업(「새로워진 점」 등)이 덮은 동안은 뜨지 않는다. */
+    @Test
+    fun theMusicToggleNoticeShowsOnceAndNeverUnderADialog() {
+        val oldInstall = GuideProgress()
+        assertNull(autoPlayStep(GuideSurface.HomeQuickActions, oldInstall, blocked = true, versionCode = V160))
+        val seen = oldInstall.copy(seenSteps = setOf(GuideStep.HomeMusicToggle.id))
+        assertNull(autoPlayStep(GuideSurface.HomeQuickActions, seen, blocked = false, versionCode = V160))
+        // 기존 사용자에게 첫 실행 사슬이 뜨지 않는 것은 그대로다.
+        assertNull(autoPlayStep(GuideSurface.Home, oldInstall, blocked = false, versionCode = V160))
     }
 
     /**
@@ -140,8 +185,12 @@ class FirstRunGuidePolicyTest {
             listOf(
                 "attendance_claim", "home_start_match", "match_setup",
                 "in_game_eval", "in_game_top_moves",
+                "home_music_toggle",
             ),
             GuideStep.entries.map { it.id },
         )
     }
 }
+
+private const val V160 = 10600
+private const val V170 = 10700

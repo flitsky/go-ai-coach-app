@@ -34,6 +34,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.studyLessonTrackFor
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 
 /**
  * 2 Depth: 학습 하기 **허브**(백로그 #163) — 하위 분류를 세우고, 고른 분류의 화면을 연다.
@@ -137,8 +138,12 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
             fontSize = AppTextSize.Text20,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = AppSpacing.Space8),
+            // 남는 폭은 제목이 갖고, 오른쪽 끝은 빠른 버튼 묶음(#270)이 먼저 제 폭을 잡는다.
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = AppSpacing.Space8),
         )
+        AppQuickActions()
     }
 }
 

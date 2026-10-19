@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import kotlinx.coroutines.delay
 
 /**
@@ -135,8 +136,12 @@ internal fun GameSetupLobby(
                 fontSize = AppTextSize.Text20,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = AppSpacing.Space8)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = AppSpacing.Space8)
             )
+            // 빠른 버튼 묶음(#270) — 모든 화면의 윗줄 오른쪽 끝.
+            AppQuickActions()
         }
 
         Column(

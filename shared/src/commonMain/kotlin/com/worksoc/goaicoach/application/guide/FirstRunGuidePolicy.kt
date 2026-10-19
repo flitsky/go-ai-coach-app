@@ -22,6 +22,9 @@ enum class GuideSurface {
     Home,
     MatchSetup,
     InGame,
+
+    /** 홈 맨 윗줄의 「빠른 버튼」 묶음(백로그 #270) — 화면 전체를 덮는 코치마크라 ③ 말풍선(카드 모서리)과 앵커가 따로 선다. */
+    HomeQuickActions,
 }
 
 /**
@@ -37,6 +40,11 @@ enum class GuideStep(
     val id: String,
     val surface: GuideSurface,
     val target: GuideTarget? = null,
+    /**
+     * `null`이면 **첫 실행 사슬**의 단계다(무장된 설치에서만 뜬다). 값이 있으면 **업데이트 안내**다 — 이 versionCode
+     * 범위의 앱에서만, 무장과 상관없이 뜬다. 기존 사용자에게 새 버튼을 한 번 짚어 주는 자리라 첫 실행 처리를 지났는지를 묻지 않는다.
+     */
+    val shownInVersions: IntRange? = null,
 ) {
     /** ② 출석 보상 팝업 안 한 줄. */
     AttendanceClaim("attendance_claim", GuideSurface.AttendanceClaim),
@@ -61,6 +69,13 @@ enum class GuideStep(
     //   가리킬 것이 없는 코치마크는 조용히 안 뜨는 것이 아니라 **아예 두지 않는다**(저장된 id는 무시된다).
     InGameEval("in_game_eval", GuideSurface.InGame, GuideTarget.Eval),
     InGameTopMoves("in_game_top_moves", GuideSurface.InGame, GuideTarget.TopMoves),
+
+    /**
+     * 홈 윗줄의 배경음악 켬/끔 버튼(백로그 #270 — 사용자 2026-10-19: *"음악 켜기/끄기 버튼만 따로 떼어서 설명하는 거 만들고
+     * 이번 신규 업데이트 버전에서만 띄워줍시다"*). 1.6.0이 배경음악을 기본으로 켜고 나가므로, 업데이트하자마자 들린 음악을
+     * 어디서 끄는지 짚어 준다. 1.6.x(10600~10699)에서만 뜬다 — 1.6.1로 다시 나가도 같은 안내다(그 범위는 스레드가 정한 것).
+     */
+    HomeMusicToggle("home_music_toggle", GuideSurface.HomeQuickActions, GuideTarget.MusicToggle, shownInVersions = 10600..10699),
 }
 
 /**
@@ -70,7 +85,7 @@ enum class GuideStep(
  * ③ 말풍선에서는 그래서 좌표 없이 푸는 쪽을 택했는데, *"버튼을 가리지 않게 그 옆에서, 버튼에
  * 동그라미"* 라는 요구는 **대상의 자리를 알아야만** 성립한다 — 그 대가를 여기서 치른다.
  */
-enum class GuideTarget { Eval, TopMoves }
+enum class GuideTarget { Eval, TopMoves, MusicToggle }
 
 /**
  * 저장된 진행도. [GuideProgressStore]가 이 값을 싣고 내린다.
@@ -78,6 +93,7 @@ enum class GuideTarget { Eval, TopMoves }
  * @param armed **첫 실행 처리**(`FirstRunGate`)를 이 설치에서 거쳤는가. 이 한 값이 **기존 사용자에게
  *   자동 재생이 시작되지 않는 것**을 공짜로 만든다: 이미 첫 실행을 지난 사용자는 그 처리가 다시 돌지
  *   않으므로 `armed`가 꺼진 채이고, 자동 재생이 아예 무장되지 않는다(#140 전에는 랜딩을 끝낼 때 켜졌다).
+ *   ⚠️ 예외는 **업데이트 안내**([GuideStep.shownInVersions])뿐이다 — 그것은 바로 그 기존 사용자를 위해 있다(#270).
  *
  * ⚠️ **`dismissed`("그만 보기") 플래그는 두었다가 없앴다**(2026-09-09 사용자 판정). 사슬이 짧아서
  * (대국 화면 둘 + 앞의 셋) *"알겠어요"* 를 연타하면 곧 끝나는데, **사정거리가 다른 버튼 둘**을
@@ -99,6 +115,7 @@ data class GuideProgress(
  * @param blocked 이 표면 위에 **다른 다이얼로그가 떠 있는가.** ⚠️ 이 인자가 이 판정의 핵심이다 —
  *   가려진 채 그려지면 사용자는 못 봤는데 `seen`으로 기록돼 **가이드가 조용히 소진된다.**
  *   그래서 카드 표현형의 앵커에서는 이 인자를 **기본값 없이** 받아 컴파일러가 게이트를 강제한다.
+ * @param versionCode 지금 앱의 versionCode — 업데이트 안내([GuideStep.shownInVersions])가 제 버전대인지 본다.
  *
  * ⚠️ **호출부는 이 결과를 `remember`로 기억하지 말 것.** [blocked]와 진행도는 둘 다 변하는 값이라
  * 초기화식에 넣으면 **첫 프레임의 답이 영구히 굳는다** — 실제로 그 형태로 짜면 첫 실행 홈에서
@@ -109,9 +126,21 @@ fun autoPlayStep(
     surface: GuideSurface,
     progress: GuideProgress,
     blocked: Boolean,
+    versionCode: Int,
 ): GuideStep? {
-    if (!progress.armed || blocked) return null
+    if (blocked) return null
     return GuideStep.entries
         .filter { step -> step.surface == surface }
-        .firstOrNull { step -> !progress.hasSeen(step) }
+        .firstOrNull { step -> !progress.hasSeen(step) && step.isDue(progress, versionCode) }
+}
+
+/**
+ * 첫 실행 사슬의 단계는 무장된 설치에서만. 업데이트 안내는 제 버전대에서만 — 다만 **이 설치의 첫 실행 사슬이 아직 남았으면
+ * 그 뒤로 미룬다**(새로 깐 사람의 첫 홈에 ③ 말풍선과 함께 겹쳐 뜨지 않게 — 사슬을 다 보면 다음 홈에서 뜬다).
+ */
+private fun GuideStep.isDue(progress: GuideProgress, versionCode: Int): Boolean {
+    val versions = shownInVersions ?: return progress.armed
+    val firstRunChainPending = progress.armed &&
+        GuideStep.entries.any { step -> step.shownInVersions == null && !progress.hasSeen(step) }
+    return versionCode in versions && !firstRunChainPending
 }

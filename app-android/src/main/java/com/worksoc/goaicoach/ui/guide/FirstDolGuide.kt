@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.autoPlayStep
@@ -121,7 +122,7 @@ internal fun GuideAnchor(
     var latched by remember(context) { mutableStateOf<GuideStep?>(null) }
 
     // ⚠️ `remember`로 감싸지 말 것(위 파일 머리말) — `blocked`와 `progress`가 둘 다 변한다.
-    val candidate = autoPlayStep(surface, progress, blocked)
+    val candidate = autoPlayStep(surface, progress, blocked, BuildConfig.VERSION_CODE)
     if (candidate != null && latched == null) latched = candidate
     val step = if (blocked) null else latched
     if (step == null) return
@@ -153,7 +154,8 @@ internal fun GuideAnchor(
         // ⑤ 둘은 **자기 버튼 옆에서** 말하고 그 버튼에 동그라미를 친다(2026-09-09 사용자 지시).
         // `ack()`가 기록하면 판정이 곧바로 **다음 버튼**을 고른다 — 누를 때마다 다음이 뜨는 것이
         // 요구였고, 그것이 `GuideStep` 선언 순서로 이미 표현돼 있다(정책 테스트가 못박는다).
-        GuideStep.InGameEval, GuideStep.InGameTopMoves,
+        // 홈 윗줄의 배경음악 버튼(#270 — 1.6.x 업데이트 안내)도 같은 코치마크다: 버튼에 동그라미, 어디를 눌러도 넘어간다.
+        GuideStep.InGameEval, GuideStep.InGameTopMoves, GuideStep.HomeMusicToggle,
         -> step.target?.let { target ->
             GuideCoachMark(target = target, text = body, onNext = ::ack)
         }
@@ -168,7 +170,7 @@ private fun GuideStep.isCard(): Boolean = when (this) {
     // ⑤ 코치마크도 **누를 때만** 기록한다 — 사용자가 확인해야 다음으로 넘어가는 구조이므로
     // 시간으로 기록하면 둘이 순식간에 소진된다.
     GuideStep.MatchSetup,
-    GuideStep.InGameEval, GuideStep.InGameTopMoves,
+    GuideStep.InGameEval, GuideStep.InGameTopMoves, GuideStep.HomeMusicToggle,
     -> true
     GuideStep.AttendanceClaim, GuideStep.HomeStartMatch -> false
 }

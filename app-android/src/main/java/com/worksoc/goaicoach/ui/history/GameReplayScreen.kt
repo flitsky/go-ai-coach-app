@@ -75,6 +75,7 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayTruncatedFor
 import com.worksoc.goaicoach.ui.monetization.SubscriptionAwareBannerAd
 import com.worksoc.goaicoach.ui.play.ScoreTimelineGraph
+import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 
 /**
  * 4 Depth: 한 판을 수순대로 되짚는 화면(백로그 #156).
@@ -369,7 +370,11 @@ internal fun ReplayHeader(
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
-        Column(modifier = Modifier.padding(start = AppSpacing.Space8)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = AppSpacing.Space8),
+        ) {
             Text(
                 text = title,
                 fontSize = AppTextSize.Text20,
@@ -382,6 +387,8 @@ internal fun ReplayHeader(
                 color = MaterialTheme.colorScheme.secondary,
             )
         }
+        // 빠른 버튼 묶음(#270) — 다시보기와 기보 보기의 판이 이 머리말을 함께 쓴다.
+        AppQuickActions()
     }
 }
 
