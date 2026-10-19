@@ -17,7 +17,7 @@ L3 board splash
 L4 setup study vision home
 L5 play
 L6 history account
-L7 settings
+L7 settings gamerecord
 L8 shell
 ```
 

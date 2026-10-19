@@ -345,10 +345,10 @@ private fun ReplayBranchSection(
  * 섹션 사이 세로 간격의 유일한 정본(2026-09-19 사용자: "일관성 있게 줄여주기").
  * 바꾸려면 여기 한 줄만 고치면 화면 전체가 같이 움직인다.
  */
-private val ReplaySectionGap = 8.dp
+internal val ReplaySectionGap = 8.dp
 
 @Composable
-private fun ReplayHeader(
+internal fun ReplayHeader(
     title: String,
     subtitle: String,
     closeLabel: String,
@@ -386,7 +386,7 @@ private fun ReplayHeader(
 }
 
 @Composable
-private fun ReplayControls(
+internal fun ReplayControls(
     moveNumber: Int,
     lastMoveNumber: Int,
     strings: UiStrings,

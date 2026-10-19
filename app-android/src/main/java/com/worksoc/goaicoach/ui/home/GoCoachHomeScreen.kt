@@ -72,6 +72,7 @@ import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -94,6 +95,7 @@ import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOverwriteWarningFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
@@ -116,6 +118,8 @@ internal fun GoCoachHomeScreen(
     onGameHistoryClick: () -> Unit,
     onMyPageClick: () -> Unit,
     onBoardScanClick: () -> Unit,
+    /** 「기보 보기」(백로그 #269) — 넷째 반 폭 타일. */
+    onGameRecordsClick: () -> Unit,
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     /**
@@ -343,6 +347,8 @@ internal fun GoCoachHomeScreen(
                 add(HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() })
                 add(HomeMenuTile(strings.study, onStudyClick) { StudyPreviewIcon() })
                 add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
+                // 「기보 보기」가 넷째다(#269, 사용자 2026-10-18 — 입구는 홈 타일). 타일이 넷이라 두 줄이 꽉 찬다.
+                add(HomeMenuTile(gameRecordsTitleFor(strings.language), onGameRecordsClick) { GameRecordsPreviewIcon() })
             }
             tiles.chunked(2).forEach { row ->
                 Spacer(modifier = Modifier.height(AppSpacing.Space12))
@@ -956,6 +962,55 @@ internal fun StudyPreviewIcon() {
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxSize(0.7f),
+            )
+        }
+    }
+}
+
+/**
+ * "기보 보기" 카드의 정적 국면 — 수순 번호가 붙은 초반 네 수(백로그 #269). 기보는 「번호 붙은 돌」로 알아보므로 배지 없이 번호를 보인다.
+ * 실제 규칙(`play`)으로 두어 번호가 수순을 따른다.
+ */
+private val GameRecordsPreviewGameState: GameState = listOf(
+    Move.Play(StoneColor.Black, BoardCoordinate(row = 2, column = 6)),
+    Move.Play(StoneColor.White, BoardCoordinate(row = 6, column = 2)),
+    Move.Play(StoneColor.Black, BoardCoordinate(row = 6, column = 6)),
+    Move.Play(StoneColor.White, BoardCoordinate(row = 2, column = 2)),
+).fold(GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese)) { state, move -> state.play(move) }
+
+/**
+ * "기보 보기" 카드 아이콘 — 수순 번호가 붙은 9줄 판 위에 책 배지(다른 타일과 같은 자리·같은 모양).
+ * 번호만으로는 타일 크기에서 읽히지 않아(에뮬레이터 2026-10-19) 배지로 알아보게 한다.
+ */
+@Composable
+private fun GameRecordsPreviewIcon() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = GameRecordsPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(showMoveNumbers = true, showLastMoveRing = false),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "📖",
+                fontSize = AppTextSize.Text20,
+                textAlign = TextAlign.Center,
             )
         }
     }

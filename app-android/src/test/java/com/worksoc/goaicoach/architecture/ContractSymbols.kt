@@ -169,7 +169,7 @@ internal object ContractSymbols {
         listOf("setup", "study", "vision", "home"), // L4
         listOf("play"), // L5
         listOf("history", "account"), // L6
-        listOf("settings"), // L7
+        listOf("settings", "gamerecord"), // L7 — gamerecord(#269)는 다시보기(history, L6)의 부품을 쓰고 셸(L8)이 부른다
         listOf("shell"), // L8
     ).map { layer -> layer.map { name -> "$UI_ROOT_PACKAGE.$name" } }
 

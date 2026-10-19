@@ -120,6 +120,7 @@ import com.worksoc.goaicoach.ui.account.OnboardingScreen
 import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
+import com.worksoc.goaicoach.ui.gamerecord.GameRecordsScreen
 import com.worksoc.goaicoach.ui.history.GameHistoryScreen
 import com.worksoc.goaicoach.ui.home.GoCoachHomeScreen
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
@@ -965,6 +966,7 @@ private fun GoCoachScreen(
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
                 onMyPageClick = { currentDestination = ScreenDestination.MyPage },
                 onBoardScanClick = { currentDestination = ScreenDestination.BoardScan },
+                onGameRecordsClick = { currentDestination = ScreenDestination.GameRecords },
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
                 playerSetup = screenState.playerSetup,
@@ -1006,6 +1008,8 @@ private fun GoCoachScreen(
                 engineScoring = engineClient, engineAnalysis = engineClient, // 지나간 국면의 형세·추천 수(백로그 #218)
             )
         }
+        // 「기보 보기」(#269, 홈 타일 — 사용자 2026-10-18). 보기 화면은 그 화면의 상태다(목록 → 판), 셸의 뒤로 가기는 목록에서 홈으로.
+        ScreenDestination.GameRecords -> GameRecordsScreen(engineScoring = engineClient, engineAnalysis = engineClient, onBackClick = exitToHome)
         ScreenDestination.MyPage -> {
             MyPageScreen(onBackClick = { currentDestination = ScreenDestination.Home })
         }
@@ -1076,4 +1080,5 @@ internal enum class ScreenDestination {
     GameSetup,
     InGame,
     BoardScan,
+    GameRecords,
 }

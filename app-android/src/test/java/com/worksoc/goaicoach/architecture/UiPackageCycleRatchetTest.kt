@@ -94,7 +94,7 @@ class UiPackageCycleRatchetTest {
     }
 
     /**
-     * 층 배정표 자체가 설계 모양인가 — 아홉 층, 패키지 열여섯, 겹침 없음, 전부 루트 **바로 아래** 한 조각.
+     * 층 배정표 자체가 설계 모양인가 — 아홉 층, 패키지 열일곱(2026-10-19 #269 「기보 보기」의 `gamerecord`가 L7에 더해졌다), 겹침 없음, 전부 루트 **바로 아래** 한 조각.
      * 표가 망가지면(중복·오타로 두 층에 같은 이름) 판정기가 엉뚱한 층을 읽는다.
      */
     @Test
@@ -104,7 +104,7 @@ class UiPackageCycleRatchetTest {
 
         assertEquals("층 수가 설계(L0~L8)와 다르다.", 9, ContractSymbols.UI_LAYERS.size)
         assertTrue("빈 층이 있다.", ContractSymbols.UI_LAYERS.all { it.isNotEmpty() })
-        assertEquals("패키지 수가 설계(16)와 다르다.", 16, all.size)
+        assertEquals("패키지 수가 설계(17)와 다르다.", 17, all.size)
         assertEquals("두 층에 같은 패키지가 있다: ${all.groupBy { it }.filterValues { it.size > 1 }.keys}", all.size, all.toSet().size)
         assertEquals(
             "루트 바로 아래 한 조각이 아닌 이름이 있다.",
