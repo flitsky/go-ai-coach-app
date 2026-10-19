@@ -341,14 +341,14 @@ internal fun GoCoachHomeScreen(
             }
 
             // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
-            // 순서는 그대로다: 「대국 기록」이 먼저(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다), 그다음 「학습 하기」.
-            // 「사진 분석」이 셋째 타일이다 — 1.5.0부터 본 기능(사용자 2026-10-15, 그 전에는 실험실에서 켜야 붙었다). 홀로 남은 타일도 반 폭을 지킨다.
+            // 「대국 기록」이 먼저다(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다). 그 옆이 「기보 보기」(#269), 아랫줄이 「사진 분석」·「학습 하기」 —
+            // 처음엔 「학습 하기」가 둘째, 「기보 보기」가 넷째였는데 사용자가 둘의 자리를 바꿨다(2026-10-19). 「사진 분석」은 1.5.0부터 본 기능(사용자 2026-10-15).
+            // 홀로 남은 타일도 반 폭을 지킨다.
             val tiles = buildList {
                 add(HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() })
-                add(HomeMenuTile(strings.study, onStudyClick) { StudyPreviewIcon() })
-                add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
-                // 「기보 보기」가 넷째다(#269, 사용자 2026-10-18 — 입구는 홈 타일). 타일이 넷이라 두 줄이 꽉 찬다.
                 add(HomeMenuTile(gameRecordsTitleFor(strings.language), onGameRecordsClick) { GameRecordsPreviewIcon() })
+                add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
+                add(HomeMenuTile(strings.study, onStudyClick) { StudyPreviewIcon() })
             }
             tiles.chunked(2).forEach { row ->
                 Spacer(modifier = Modifier.height(AppSpacing.Space12))
