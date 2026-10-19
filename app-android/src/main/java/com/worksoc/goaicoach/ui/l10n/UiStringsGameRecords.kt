@@ -82,7 +82,7 @@ private val OpenFailureMessages: Map<GameRecordOpenFailure, Map<UiLanguage, Stri
 
 /**
  * 앱에 싣는 기보의 묶음 — **선언 순서가 목록의 순서다**(연도순 — 스레드가 정한 차례). 묶음 안의 판은 「N국」으로 센다.
- * ⚠️ 어느 판을 실을지는 사용자가 최종 판단한다(2026-10-19) — 빼는 판은 에셋 파일과 `BundledGameRecords`의 줄을 함께 지운다.
+ * 실을 판은 사용자가 정했다(2026-10-19 — 33판 모두). 빼는 판은 에셋 파일과 `BundledGameRecords`의 줄을 함께 지운다.
  */
 internal enum class GameRecordGroup {
     DosakuTengen,

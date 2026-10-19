@@ -20,7 +20,7 @@ internal data class BundledGameRecord(val asset: String, val group: GameRecordGr
  * 앱에 싣는 기보(백로그 #269) — 출처는 모두 CWI 「Database of Go Games」(`homepages.cwi.nl/~aeb/go/games/`, *"The games here are in the
  * public domain."*). 파일명은 연도로 시작해 이름순이 곧 시간순이다.
  *
- * ⚠️ **어느 판을 실을지는 사용자가 최종 판단한다**(2026-10-19 — *"최종 판단은 내가 할게"*). 권리의 결은 묶음마다 다르다(활성 백로그 #269 카드):
+ * ✅ **사용자 최종 판단(2026-10-19): 33판 모두 싣는다**(*"모두 다 넣읍시다"*). 권리의 결은 묶음마다 다르다(활성 백로그 #269 카드):
  * 에도 고전은 대국자가 모두 150년 넘게 전에 세상을 떠났다 · 20세기 명국은 대국자가 근래 세상을 떠났다 · LG배·삼성화재배는 한국에서 여는
  * 대회다(한국기원은 「기보는 저작물」이라 주장해 왔고, 2024 서울고법은 부정경쟁 판단에서 기보를 공공영역으로 봤다 — 저작권 판단은 아니다).
  * 빼는 판은 에셋 파일과 이 목록의 줄을 함께 지운다(`GameRecordCatalogContractTest`가 둘을 대조한다).
