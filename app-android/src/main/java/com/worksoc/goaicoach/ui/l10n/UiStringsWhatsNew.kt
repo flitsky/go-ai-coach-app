@@ -26,25 +26,25 @@ internal object WhatsNewCatalog {
                 UiLanguage.Korean -> listOf(
                     "홈에 「기보 보기」가 생겼어요. 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 보고, 판 전체 형세 그래프와 변곡점도 볼 수 있어요.",
                     "기보는 자동 진행(1~5초)과 10수씩 넘기기로 볼 수 있고, 가지고 있는 SGF 파일도 열 수 있어요.",
-                    "설정 › 소리에서 「앱 배경음악」을 켜고 끌 수 있어요. 대국 중에도 은은하게 이어져요.",
+                    "「앱 배경음악」이 생겼어요. 대국 중에도 은은하게 이어지고, 어느 화면에서든 맨 윗줄 오른쪽의 음표 버튼으로 바로 켜고 끌 수 있어요(설정 › 소리에도 있어요).",
                     "대국 다시보기에도 10수씩 넘기는 버튼(◀◀ ▶▶)이 생겼어요.",
                 )
                 UiLanguage.English -> listOf(
                     "New on home: Game records. Step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the whole-game score graph and turning points.",
                     "Watch a record with auto play (1–5 s per move) or jump 10 moves at a time, and open your own SGF files too.",
-                    "App background music: turn it on or off in Settings › Sound. It keeps playing softly during your games.",
+                    "App background music keeps playing softly during your games. Turn it on or off anytime with the note button at the top right of every screen (also in Settings › Sound).",
                     "Game replay now has 10-move buttons (◀◀ ▶▶) as well.",
                 )
                 UiLanguage.Japanese -> listOf(
                     "ホームに「棋譜並べ」ができました。道策・秀策の古典から李昌鎬・李世乭、AlphaGoの対局まで名局33局を一手ずつ並べ、全体の形勢グラフと変局点も見られます。",
                     "棋譜は自動再生（1〜5秒）と10手送りで見られ、お持ちのSGFファイルも開けます。",
-                    "設定 › サウンドで「アプリのBGM」をオン・オフできます。対局中も静かに流れ続けます。",
+                    "「アプリのBGM」が付きました。対局中も静かに流れ続け、どの画面でもいちばん上の右側にある音符ボタンですぐにオン・オフできます（設定 › サウンドにもあります）。",
                     "対局リプレイにも10手送りのボタン（◀◀ ▶▶）が付きました。",
                 )
                 UiLanguage.ChineseSimplified -> listOf(
                     "主页新增「打谱」：从道策、秀策的古典名局到李昌镐、李世石以及AlphaGo的对局，33局名局可一手一手地打谱，还能看全局形势曲线和转折点。",
                     "棋谱可以自动播放（每手1~5秒）或每次前进10手，也能打开你自己的SGF文件。",
-                    "在 设置 › 声音 中可开关「应用背景音乐」，对局中也会轻柔地继续播放。",
+                    "新增「应用背景音乐」，对局中也会轻柔地继续播放。任何画面顶部右侧的音符按钮都能随时开关（设置 › 声音 中也可以）。",
                     "对局回放也新增了每次10手的按钮（◀◀ ▶▶）。",
                 )
             }

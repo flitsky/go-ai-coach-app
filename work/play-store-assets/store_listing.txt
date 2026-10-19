@@ -32,7 +32,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 - 무르기(Undo): 착수를 되돌려 다른 수를 다시 검토
 - 착수 방식: 누르면 바로 두는 '바로 착수'와, 자리를 잡은 뒤 '착수' 버튼으로 한 번 더 확인하고 두는 '착수 확인' 중에서 대국 화면에서 바로 전환
 - 착수 진동: 돌을 놓는 순간 짧게 울리는 피드백(설정에서 끌 수 있습니다)
-- 앱 배경음악: 동양풍·피아노 배경음악 네 곡이 은은하게 흐릅니다(설정에서 켜고 끌 수 있습니다)
+- 앱 배경음악: 동양풍·피아노 배경음악 네 곡이 은은하게 흐릅니다(어느 화면에서든 맨 윗줄 오른쪽 음표 버튼으로 켜고 끌 수 있습니다)
 - 바둑판 크기: 화면 여백을 두고 보거나, 가로 폭을 꽉 채워 크게 보거나
 - 보드 크기 선택: 9x9 / 13x13 / 19x19 지원
 - 계가 방식 선택: 면적 계가(중국식) / 집 계가(한국·일본식)
@@ -61,7 +61,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 
 
 ────────────────────────────────────────────────────────────────
-[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,942자)
+[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,978자)
 
 ⚠️ **2026-09-24에 영어 등재정보를 열었다.** 그전까지 등재정보는 한국어 하나뿐이었고,
    이 파일 곳곳의 *"한국어 하나뿐이니 다른 언어 탭을 만들지 말 것"* 은 **그때 기준이다.**
@@ -96,7 +96,7 @@ Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the op
 - Learn: the rules in six lessons and basic shape in five, each played out on the board, plus a curated list of beginner video lessons
 - Daily check-in: single-use coaching passes and opponent shards
 - Undo, and two ways to place a stone: play on tap, or pick a point and confirm
-- Haptic feedback and app background music, both can be turned off in settings
+- Haptic feedback and app background music; turn the music off from the note button at the top right of any screen
 - Board sizes 9x9, 13x13 and 19x19, shown with a margin or edge to edge; area or territory scoring; komi and handicap
 - Resume a saved game where you left it
 - Four languages: Korean, English, Japanese and Simplified Chinese
@@ -130,7 +130,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.6.0): 한국어 296자 · 영어 472자.
+⚠️ **언어당 500자 이내.** 지금(1.6.0): 한국어 315자 · 영어 489자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -144,11 +144,11 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ──────── 지금 붙여넣을 것 — 1.6.0 (versionCode 10600, 2026-10-19) ────────
 
 ✅ **기준선은 1.5.1**(프로덕션 10501 — 버전을 올린 날 2026-10-15, 사용자 2026-10-18 확인).
-   #269 「기보 보기」(명국 33판 · 미리 잰 형세 그래프와 변곡점 · 자동 진행 · 10수씩 · SGF 열기) · #244 앱 배경음악 · 다시보기의 10수 버튼.
+   #269 「기보 보기」(명국 33판 · 미리 잰 형세 그래프와 변곡점 · 자동 진행 · 10수씩 · SGF 열기) · #244 앱 배경음악 · #270 화면마다 윗줄의 음표 버튼(켬/끔) · 다시보기의 10수 버튼.
    매 수 형세(형세 보기를 켠 채 따라가기)는 프리미엄이라 「(프리미엄)」을 붙였다 — 1회권은 한 국면이다(다시보기와 같은 게이트).
-   적지 않은 것: 홈 타일 자리 바꿈(기보 보기 ↔ 학습 하기) · 형세를 미리 잰 방법(모델·형식) · 크레딧 화면의 새 구획.
+   적지 않은 것: 홈 타일 자리 바꿈(기보 보기 ↔ 학습 하기) · 형세를 미리 잰 방법(모델·형식) · 크레딧 화면의 새 구획 · 음표 버튼을 짚는 첫돌이 안내(앱 안에서 한 번 뜬다).
    앱 안 「새로워진 점」은 1.6.0 묶음(`UiStringsWhatsNew.kt`, 4개 언어).
-⚠️ 언어당 500자 이내 — 지금: 한국어 296자 · 영어 472자. 본문은 스레드가 쓴 초안이다(2026-10-19) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ 언어당 500자 이내 — 지금: 한국어 315자 · 영어 489자. 본문은 스레드가 쓴 초안이다(2026-10-19) — 콘솔에 붙이기 전에 사용자가 본다.
 ⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.6.0이 나간 뒤의 기준선은 1.6.0이다.
    지난 본문: 1.5.1 `git show f41e3dab:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
 
@@ -157,15 +157,15 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 
 · 기보 보기: 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 봐요. 판 전체 형세 그래프와 변곡점, 자동 진행(1~5초)과 10수씩 넘기기를 쓸 수 있고, 가지고 있는 SGF 파일도 열 수 있어요
 · 기보에서 형세 보기를 켜면 수마다 형세가 바로 그려져요(프리미엄)
-· 앱 배경음악: 설정 › 소리에서 켜고 끌 수 있어요. 대국 중에도 은은하게 이어져요
+· 앱 배경음악: 대국 중에도 은은하게 이어져요. 어느 화면에서든 맨 윗줄 오른쪽 음표 버튼으로 바로 켜고 끌 수 있어요
 · 대국 다시보기에도 10수씩 넘기는 버튼(◀◀ ▶▶)이 생겼어요
 </ko-KR>
 <en-US>
-New: Game records, and background music for the app.
+New: Game records and app background music.
 
 · Game records: step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the score graph and turning points. Auto play (1–5 s) and 10-move jumps; open your own SGF files too
 · Turn on Evaluation in a record and the score is drawn on every move (Premium)
-· Background music: on or off in Settings › Sound; it keeps playing during games
+· Background music plays during games; the note button at the top right of every screen turns it on or off
 · Game replay gets 10-move buttons (◀◀ ▶▶)
 </en-US>
 
