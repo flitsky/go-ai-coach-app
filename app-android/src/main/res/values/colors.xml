@@ -3,6 +3,9 @@
     <!-- GoStoneLogoBadge(GoCoachHomeScreen.kt)의 배지 배경색과 동일 — 런처 아이콘을
          홈 화면 로고와 시각적으로 일치시킨다. -->
     <color name="ic_launcher_background">#F5F0E6</color>
+    <!-- 런처 아이콘 배경의 5줄 바둑판 격자(`drawable/ic_launcher_background_grid.xml`, 사용자 2026-10-20: "연하게").
+         판 선 갈색(#705C3E)을 28%로 곱한 값을 크림 바탕 위의 **불투명 색**으로 굳혔다 — 스토어 512 아이콘(`app_icon_512x512_grid.png`)과 같은 진하기다. -->
+    <color name="ic_launcher_grid">#CEC5B5</color>
     <!-- 앱 바탕색(`AppColorScheme.kt`의 `background`)과 **같은 값**이다. 테마의
          `android:windowBackground`가 이 색이어야 기동 순간 흰 화면이 한 번 번쩍이지 않는다
          (백로그 #125). ⚠️ API 31+의 시스템 스플래시 배경도 `windowSplashScreenBackground`를
