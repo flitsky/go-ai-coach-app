@@ -18,6 +18,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
  *
  * ⚠️ **국면을 묻는 자리는 여기 하나다.** 「판의 80%」 같은 비율을 다른 파일에 다시 적지 않는다 — 통과와 제안이 서로 다른 잣대를 쓰게 된다.
  * 놓인 돌 수가 아니라 **수순 길이**다(집은 빈 자리로 남아, 돌 수로는 끝난 판도 80%에 닿지 않는다).
+ * 착수 템포의 두 구간(10%·20% — `MoveTempo`, #212)은 이 「초반」 안을 잘게 나눈 따로의 잣대다 — 이 표에 섞지 않는다.
  */
 enum class GamePhase {
     Opening,

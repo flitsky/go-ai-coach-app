@@ -89,6 +89,11 @@ class AutoAiTurnController(
      */
     private val startEngineWaitWatch: () -> EngineWaitWatch,
     /**
+     * 캐릭터의 착수 템포만큼 기다린다(백로그 #212) — 같은 이유로 수명 컨트롤러에 둔다. 배선은
+     * `EngineOperationLifecycleController::awaitMoveTempo`.
+     */
+    private val awaitMoveTempo: suspend (Long) -> Unit,
+    /**
      * 기다리는 사이의 멈춤 때문에 끊긴 시간 초과를 팝업 없이 한 번 다시 요청한다 — 그 국면에서 그 한 번을 쓴다(backlog #204).
      * ⚠️ 기본값을 두지 않는다 — 이것이 빠지면 멈춘 차례가 국면마다 **끝없이** 조용히 다시 돈다.
      */
@@ -281,6 +286,7 @@ class AutoAiTurnController(
                         applyTurnTimedOut = applyAutoAiTurnTimedOut,
                         applyTurnFailed = recordAutoAiTurnFailure,
                         startEngineWaitWatch = startEngineWaitWatch,
+                        awaitMoveTempo = awaitMoveTempo,
                         applyTurnInterrupted = markAutoAiTurnInterruptedRetry,
                         appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
                         completeAutoAiTurnRun = completeAutoAiTurnRun,

@@ -97,6 +97,21 @@ internal fun runtimeAiTurnSuccessLog(
     )
 
 /**
+ * 캐릭터의 착수 템포(backlog #212) — 수를 고른 뒤 두기 전에 남긴다. 구간 · 두기까지의 목표 · 엔진이 쓴 시간 · 앱이 더 기다린 시간.
+ * 폰에서 캐릭터마다 착수 간격이 다른지는 이 줄로 본다(에뮬레이터로는 엔진 시간이 달라 못 잰다).
+ */
+internal fun runtimeAiTurnTempoLog(
+    context: RuntimeLogContext,
+    tempo: AutoAiTurnTempo,
+): String =
+    context.event(
+        name = "ai_turn_tempo",
+        phase = "ai_turn",
+        transition = if (tempo.waitMillis > 0L) "staged_wait_then_play" else "play_now",
+        detail = "band=${tempo.band.name} targetMs=${tempo.targetMillis} engineMs=${tempo.engineMillis} waitMs=${tempo.waitMillis}",
+    )
+
+/**
  * AI가 기권을 제안했다(backlog #221) — 왜 그때 물었는지 리포트만으로 알 수 있게 근거가 된 형세를 그대로 적는다:
  * `m<수순>:<AI 기준 점수차>/<그 국면의 문턱>`. 판은 그대로이고 사용자의 답을 기다린다([runtimeAiResignationAnswerLog]가 뒤를 잇는다).
  */

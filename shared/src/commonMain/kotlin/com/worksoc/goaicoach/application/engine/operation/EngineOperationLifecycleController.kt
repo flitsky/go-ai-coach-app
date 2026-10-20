@@ -17,6 +17,7 @@ import com.worksoc.goaicoach.shared.policy.EngineOperationResultGuard
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 
 /**
@@ -42,6 +43,11 @@ class EngineOperationLifecycleController(
      * 하나를 연다. 테스트는 시계를 쥔 것을 넣는다.
      */
     private val engineWaitPauseProbe: EngineWaitPauseProbe = HeartbeatEngineWaitPauseProbe(scope),
+    /**
+     * 캐릭터의 착수 템포를 기다린다(백로그 #212) — 수를 고른 뒤 두기 전의 연출이다. 앱은 실제로 기다린다. 시간을 흘리지 않는
+     * 테스트 하네스는 기록만 하고 곧바로 돌아오는 것을 넣는다(위의 박동과 같은 이유로 여기 둔다 — 재배선보다 오래 산다).
+     */
+    private val moveTempoWait: suspend (Long) -> Unit = { millis -> delay(millis) },
 ) {
     private var lifecycleState = EngineOperationLifecycleState()
     private val activeJobs = mutableMapOf<String, Job>()
@@ -86,6 +92,9 @@ class EngineOperationLifecycleController(
      * AI 차례가 엔진을 기다리기 시작한다(backlog #204) — 지금의 포그라운드 세대를 들고 멈춤 박동을 켠다. 러너가 엔진 호출
      * 바로 뒤에 [EngineWaitWatch.finish]로 끝낸다.
      */
+    /** 캐릭터의 착수 템포만큼 기다린다(백로그 #212) — 러너가 엔진이 답한 **뒤**, 모자란 만큼만 부른다. */
+    suspend fun awaitMoveTempo(millis: Long) = moveTempoWait(millis)
+
     fun startEngineWaitWatch(): EngineWaitWatch =
         EngineWaitWatch(
             foregroundGenerationAtStart = foregroundGeneration,

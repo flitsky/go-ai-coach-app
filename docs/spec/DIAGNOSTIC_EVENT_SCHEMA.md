@@ -235,6 +235,7 @@ event=ai_turn_begin phase=ai_turn app="바둑 AI" purpose="..." mode=AiVsHuman s
 | `ai_turn_schedule` | ai_turn | AI 턴 예약 |
 | `ai_turn_schedule_cancelled` | ai_turn | 예약된 AI 턴 취소 |
 | `ai_turn_begin` | ai_turn | AI 턴 분석/착수 시작 |
+| `ai_turn_tempo` | ai_turn | 캐릭터의 착수 템포 — 구간·목표·엔진 시간·더 기다린 시간(#212). 착수 성공 직전 |
 | `ai_turn_success` | ai_turn | AI 턴 착수 성공 |
 | `ai_turn_endgame_detected` | ai_turn | AI 턴 중 종국 조건 감지 |
 | `ai_turn_endgame_success` | ai_turn | 종국 처리 성공 |

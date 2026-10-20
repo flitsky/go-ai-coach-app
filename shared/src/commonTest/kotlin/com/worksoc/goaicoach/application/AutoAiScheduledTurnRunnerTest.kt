@@ -65,8 +65,11 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.EngineSearchMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.testsupport.RecordingRuntimeEventLog
 import kotlin.test.Test
@@ -743,6 +746,104 @@ class AutoAiScheduledTurnRunnerTest {
         assertEquals(false, autoAiState.isPending)
     }
 
+    // ── 캐릭터의 착수 템포(백로그 #212) ─────────────────────────────────────────────────────────
+
+    /** 엔진이 0.3초에 답했으면 1초 구간에서는 0.7초만 더 기다린 뒤 둔다 — 기다림은 수를 두기 **전**이다. */
+    @Test
+    fun characterTurnWaitsOnlyTheMissingTempoBeforePlaying() {
+        val run = runTempoTurn(aiLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 4))
+
+        assertEquals(listOf(700L), run.delays)
+        assertTrue(run.playedAfterDelay, "기다린 뒤에 둔다")
+        assertTrue(run.events.any { "event=ai_turn_tempo" in it && "band=Quick targetMs=1000 engineMs=300 waitMs=700" in it })
+    }
+
+    /** AI가 10집 이상 뒤지면 첫 수부터 제 템포(사범 꼬북 4초)로 둔다. */
+    @Test
+    fun characterTurnTakesItsOwnTempoWhenFarBehind() {
+        val run = runTempoTurn(
+            aiLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 4),
+            snapshots = listOf(ScoreSnapshot(moveNumber = 0, whiteScoreLead = 12.0, source = ScoreSnapshotSource.EngineEstimate)),
+        )
+
+        assertEquals(listOf(3_700L), run.delays)
+        assertTrue(run.events.any { "band=Own targetMs=4000" in it })
+    }
+
+    /** AI끼리 두는 판과 캐릭터가 아닌 상대(숨긴 그룹)는 지금처럼 곧바로 둔다. */
+    @Test
+    fun nonCharacterTurnsPlayAsSoonAsTheEngineAnswers() {
+        val autoPlay = runTempoTurn(aiLevel = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 4), whiteIsAi = true)
+        val hiddenGroup = runTempoTurn(aiLevel = PlayLevelSetting(PlayLevelGroup.entries.first { it != PlayLevelGroup.FastBeginner }, level = 1))
+
+        assertEquals(emptyList(), autoPlay.delays)
+        assertEquals(emptyList(), hiddenGroup.delays)
+        assertFalse(autoPlay.events.any { "event=ai_turn_tempo" in it })
+        assertFalse(hiddenGroup.events.any { "event=ai_turn_tempo" in it })
+    }
+
+    private class TempoRun(val delays: List<Long>, val playedAfterDelay: Boolean, val events: List<String>)
+
+    /** 흑(AI)이 빈 9줄 판에 첫 수를 둔다. 시계는 차례 시작 1000, 그 뒤로 1300 — 엔진이 0.3초 걸린 판이다. */
+    private fun runTempoTurn(
+        aiLevel: PlayLevelSetting,
+        snapshots: List<ScoreSnapshot> = emptyList(),
+        whiteIsAi: Boolean = false,
+    ): TempoRun {
+        val before = GameState.empty()
+        val after = before.play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)))
+        val setup = PlayerSetup(
+            black = SidePlayerSetup(controller = SeatController.Ai, playLevel = aiLevel),
+            white = SidePlayerSetup(controller = if (whiteIsAi) SeatController.Ai else SeatController.Human),
+        )
+        val runtimeState = GameSessionRuntimeState(
+            playLevel = aiLevel,
+            engineProfile = EngineProfile(name = "runner"),
+            analysisPreset = AnalysisPreset.Lite,
+            sessionGeneration = 4L,
+        )
+        var currentState = before
+        var autoAiState = AutoAiTurnUiState()
+        val delays = mutableListOf<Long>()
+        var playedAfterDelay = false
+        var clockReads = 0
+        val runtimeLog = RecordingRuntimeEventLog()
+
+        runScheduledAutoAiTurnApplication(
+            baseRequest(
+                schedule = AutoAiTurnRequestPlan.Schedule(delayMillis = 0L),
+                stateProvider = { currentState },
+                controllerStateProvider = {
+                    controllerState(state = currentState, setup = setup, runtimeState = runtimeState, autoAiTurnUiState = autoAiState)
+                },
+                client = ScheduledRunnerFakeEngineClient(
+                    result = AutoAiTurnResult(
+                        turnOutcome = TurnOutcome(after, "AI played E5", "candidate", "Black E5"),
+                        scoreEstimate = null,
+                        profile = runtimeState.engineProfile,
+                        playLevel = aiLevel,
+                    ),
+                ),
+                runtimeState = runtimeState,
+                runtimeLog = runtimeLog,
+                delayMillis = { millis -> error("사람과 두는 판에는 예약 지연이 없다 — 받은 $millis") },
+                applyScheduled = { schedule -> autoAiState = autoAiState.applyAutoAiTurnRequestPlan(schedule) },
+                applyTurnDisplay = { display ->
+                    playedAfterDelay = delays.isNotEmpty()
+                    currentState = display.gameState
+                    AutoAiTurnFollowUpPlan.None
+                },
+                completeRun = { autoAiState = autoAiState.completeAutoAiTurnRun() },
+                scoreSnapshotsProvider = { snapshots },
+                nowMillis = { if (clockReads++ == 0) 1_000L else 1_300L },
+                awaitMoveTempo = { millis -> delays += millis },
+            ),
+        )
+
+        assertEquals(after, currentState, "어느 경우든 고른 수는 그대로 둔다")
+        return TempoRun(delays, playedAfterDelay, runtimeLog.events)
+    }
+
     private fun baseRequest(
         schedule: AutoAiTurnRequestPlan.Schedule,
         stateProvider: () -> GameState,
@@ -778,6 +879,9 @@ class AutoAiScheduledTurnRunnerTest {
         requestFollowUp: (AutoAiTurnFollowUpRequest) -> Unit = {},
         startEngineWaitWatch: () -> EngineWaitWatch = { EngineWaitWatch.unobserved() },
         applyTurnInterrupted: (AutoAiTurnTimeout) -> Unit = { error("이 시나리오의 기다림은 멈추지 않는다") },
+        scoreSnapshotsProvider: () -> List<ScoreSnapshot> = { listOf(localScoreSnapshot(stateProvider())) },
+        nowMillis: () -> Long = { 1_000L },
+        awaitMoveTempo: suspend (Long) -> Unit = {},
     ): AutoAiScheduledTurnRunRequest =
         AutoAiScheduledTurnRunRequest(
             schedule = schedule,
@@ -785,7 +889,7 @@ class AutoAiScheduledTurnRunnerTest {
             engineClient = client,
             runtimeStateProvider = { runtimeState },
             searchTimeSettingsProvider = { SearchTimeSettings() },
-            scoreSnapshotsProvider = { listOf(localScoreSnapshot(stateProvider())) },
+            scoreSnapshotsProvider = scoreSnapshotsProvider,
             isEngineReady = isEngineReady,
             isEngineBusy = { false },
             isGameEnded = { false },
@@ -814,12 +918,13 @@ class AutoAiScheduledTurnRunnerTest {
             applyTurnFailed = applyTurnFailed,
             startEngineWaitWatch = startEngineWaitWatch,
             applyTurnInterrupted = applyTurnInterrupted,
+            awaitMoveTempo = awaitMoveTempo,
             appendEngineOperationDiscardLog = appendEngineOperationDiscardLog,
             completeAutoAiTurnRun = completeRun,
             requestFollowUpAnalysis = requestFollowUp,
             currentStateProvider = stateProvider,
             currentSessionGenerationProvider = { runtimeState.sessionGeneration },
-            nowMillis = { 1_000L },
+            nowMillis = nowMillis,
         )
 
     private fun controllerState(

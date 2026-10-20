@@ -266,7 +266,14 @@ internal class FakeGoCoachAppWiringContext(
      */
     val engineWaitPauses = ScriptedEngineWaitPauseProbe()
 
-    // 앱(GoCoachApp.kt)의 `remember { EngineOperationLifecycleController(...) }`와 같은 인자 — 멈춤 박동만 [engineWaitPauses]로 바꾼다.
+    /**
+     * 캐릭터의 착수 템포로 기다린 길이들(밀리초, 백로그 #212). `delay()`는 이 하네스에서 영원히 멈추므로([QueueOnlyDispatcher])
+     * 템포는 기록만 하고 곧바로 돌아온다 — 그래야 캐릭터와 두는 AI 차례가 끝난다.
+     */
+    val moveTempoWaitMillis = CopyOnWriteArrayList<Long>()
+
+    // 앱(GoCoachApp.kt)의 `remember { EngineOperationLifecycleController(...) }`와 같은 인자 — 멈춤 박동은 [engineWaitPauses]로,
+    // 착수 템포는 [moveTempoWaitMillis]로 바꾼다.
     override val lifecycleController: EngineOperationLifecycleController = EngineOperationLifecycleController(
         scope = scope,
         runtimeEventLog = runtimeLog,
@@ -280,6 +287,7 @@ internal class FakeGoCoachAppWiringContext(
             engineTurnWaitCompletionSeq = completionSeq
         },
         engineWaitPauseProbe = engineWaitPauses,
+        moveTempoWait = { millis -> moveTempoWaitMillis += millis },
     )
 
     // 앱의 `remember { GameSessionDisplayStateApplier(...) }`와 같은 인자.

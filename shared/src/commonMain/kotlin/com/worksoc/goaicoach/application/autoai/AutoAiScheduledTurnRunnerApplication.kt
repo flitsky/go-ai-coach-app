@@ -63,6 +63,11 @@ internal data class AutoAiScheduledTurnRunRequest(
      */
     val startEngineWaitWatch: () -> EngineWaitWatch,
     /**
+     * 캐릭터의 착수 템포만큼 기다린다(백로그 #212) — 엔진이 답한 뒤 모자란 만큼만([awaitAutoAiTurnTempo]). [delayMillis](AI끼리 두는
+     * 판의 예약 지연)와 따로 둔다 — 시간을 흘리지 않는 테스트 하네스가 이것만 곧바로 돌아오게 바꾼다.
+     */
+    val awaitMoveTempo: suspend (Long) -> Unit,
+    /**
      * 이번 차례의 시간 초과가 기다리는 사이의 멈춤 때문이라 팝업 대신 같은 국면을 조용히 한 번 다시 요청한다 — 그 국면에서
      * 그 한 번을 쓴다(backlog #204). 표시는 [applyTurnTimedOut]과 **둘 중 하나만** 붙는다.
      */
@@ -157,8 +162,8 @@ internal fun runScheduledAutoAiTurnApplication(
             // 기다리는 사이 앱이 멈췄는지 잰다(backlog #204) — 엔진 호출이 어떻게 끝나든(취소 포함) 박동을 끈다. 판정은
             // 엔진 호출이 돌아온 **바로 그때**로 굳힌다 — 그 뒤의 전환은 이 기다림의 일이 아니다.
             val waitWatch = request.startEngineWaitWatch()
-            val turnCompletion = try {
-                runAutoAiTurnEngineCompletion(
+            val turnResult = try {
+                runAutoAiTurnEngine(
                     request = request,
                     turnRunPlan = turnRunPlan,
                     operation = turnOperationToken.operation,
@@ -166,6 +171,16 @@ internal fun runScheduledAutoAiTurnApplication(
             } finally {
                 waitWatch.finish()
             }
+            if (turnResult is AutoAiTurnWorkflowResult.Success) {
+                awaitAutoAiTurnTempo(request, turnRunPlan, turnStartMillis)
+            }
+            // 판이 그사이 바뀌었는지는 템포를 기다린 **뒤에** 본다 — 기다리는 동안 바뀐 판에 옛 수를 두지 않는다.
+            val turnCompletion = buildAutoAiTurnCompletionPlan(
+                result = turnResult,
+                token = turnOperationToken,
+                currentState = request.currentStateProvider(),
+                currentSessionGeneration = request.currentSessionGenerationProvider(),
+            )
             applyAutoAiTurnCompletionApplication(
                 AutoAiTurnCompletionApplyRunRequest(
                     completion = turnCompletion,
@@ -214,29 +229,48 @@ internal fun runScheduledAutoAiTurnApplication(
     return job
 }
 
-private suspend fun runAutoAiTurnEngineCompletion(
+private suspend fun runAutoAiTurnEngine(
     request: AutoAiScheduledTurnRunRequest,
     turnRunPlan: AutoAiTurnRunPlan,
     operation: EngineOperationRequest,
-): AutoAiTurnCompletionPlan {
+): AutoAiTurnWorkflowResult {
     val runtimeState = request.runtimeStateProvider()
-    val turnResult =
-        runEngineIo {
-            request.engineClient.runAutoAiTurnWorkflowResult(
-                effect = GameSessionEffect.RunAutoAiTurn(turnRunPlan),
-                executionContext = AutoAiTurnRunExecutionContext(
-                    currentProfile = runtimeState.engineProfile,
-                    searchTimeSettings = request.searchTimeSettingsProvider(),
-                    previousSnapshots = request.scoreSnapshotsProvider(),
-                ),
-                operationRequest = operation,
-                diagnosticEventLog = request.diagnosticEventLog,
-            )
-        }
-    return buildAutoAiTurnCompletionPlan(
-        result = turnResult,
-        token = AutoAiTurnOperationToken(operation),
-        currentState = request.currentStateProvider(),
-        currentSessionGeneration = request.currentSessionGenerationProvider(),
-    )
+    return runEngineIo {
+        request.engineClient.runAutoAiTurnWorkflowResult(
+            effect = GameSessionEffect.RunAutoAiTurn(turnRunPlan),
+            executionContext = AutoAiTurnRunExecutionContext(
+                currentProfile = runtimeState.engineProfile,
+                searchTimeSettings = request.searchTimeSettingsProvider(),
+                previousSnapshots = request.scoreSnapshotsProvider(),
+            ),
+            operationRequest = operation,
+            diagnosticEventLog = request.diagnosticEventLog,
+        )
+    }
+}
+
+/**
+ * 캐릭터의 착수 템포(백로그 #212) — 수는 이미 골랐다. **두는 순간만** 맞춘다([autoAiTurnTempo]).
+ *
+ * - 엔진 대기의 관찰(#204) **밖**이다 — 이 기다림은 엔진을 기다리는 것이 아니다.
+ * - 모자란 만큼만 기다리고 목표는 사용자의 최대 탐색 시간을 넘지 않는다 — 그래서 차례 전체가 그 상한으로 재는 와치독
+ *   (`EngineTurnWatchdog`)의 한도에 닿지 않는다(「엔진 응답 지연」으로 읽히지 않는다).
+ * - 무르기·나가기 등이 차례를 취소하면 이 기다림도 끊긴다.
+ */
+private suspend fun awaitAutoAiTurnTempo(
+    request: AutoAiScheduledTurnRunRequest,
+    turnRunPlan: AutoAiTurnRunPlan,
+    turnStartMillis: Long,
+) {
+    val tempo = autoAiTurnTempo(
+        context = turnRunPlan.context,
+        playerSetup = request.controllerStateProvider().playerSetup,
+        snapshots = request.scoreSnapshotsProvider(),
+        searchTimeSettings = request.searchTimeSettingsProvider(),
+        engineMillis = request.nowMillis() - turnStartMillis,
+    ) ?: return
+    request.runtimeEventLog.append(runtimeAiTurnTempoLog(request.runtimeContextProvider(), tempo))
+    if (tempo.waitMillis > 0L) {
+        request.awaitMoveTempo(tempo.waitMillis)
+    }
 }

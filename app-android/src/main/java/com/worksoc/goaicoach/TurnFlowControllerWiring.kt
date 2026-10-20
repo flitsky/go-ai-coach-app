@@ -146,6 +146,8 @@ internal fun wireAutoAiTurnController(
         markAppInForeground = context.lifecycleController::markAppInForeground,
         // 기다리는 사이 앱이 멈췄는지 재는 것도 포그라운드 세대가 사는 수명 컨트롤러가 한다(#204).
         startEngineWaitWatch = context.lifecycleController::startEngineWaitWatch,
+        // 캐릭터의 착수 템포(백로그 #212)도 수명 컨트롤러가 기다린다 — 테스트 하네스가 그 기다림을 바꿔 끼운다.
+        awaitMoveTempo = context.lifecycleController::awaitMoveTempo,
         markAutoAiTurnInterruptedRetry = { position: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().markInterruptedRetry(position)) },
         // AI의 기권 제안(백로그 #221): 판단은 컨트롤러가 형세 기록을 보고 하고, 여기서는 표시만 세우고 지운다. 「한 판에 한 번」은 대국 세대로 센다(무르기는 그 판이다).
         offerResignation = { position: AutoAiTurnTimeout -> context.setAutoAiTurnUiState(context.autoAiTurnUiState().offerResignation(position)) },
