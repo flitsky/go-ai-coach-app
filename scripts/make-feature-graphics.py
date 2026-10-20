@@ -34,8 +34,12 @@ def text_w(d, s, f):
 
 def brand(path):
     im = Image.new("RGB", (W, H), CREAM)
-    icon = Image.open(f"{REPO}/work/play-store-assets/app_icon/app_icon_512x512_grid.png").convert("RGB").resize((470, 470), Image.LANCZOS)
-    im.paste(icon, (40, 15))
+    # 나무 바둑판 아이콘을 모서리 둥근 판처럼 — 크림 바탕 위에 살짝 그림자를 깔고 놓는다.
+    icon = Image.open(f"{REPO}/work/play-store-assets/app_icon/app_icon_512x512_board.png").convert("RGB").resize((400, 400), Image.LANCZOS)
+    mask = Image.new("L", icon.size, 0); ImageDraw.Draw(mask).rounded_rectangle([0, 0, 399, 399], radius=44, fill=255)
+    shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(shadow).rounded_rectangle([82, 62, 482, 462], radius=44, fill=(90, 60, 20, 70))
+    im = Image.alpha_composite(im.convert("RGBA"), shadow.filter(ImageFilter.GaussianBlur(12))).convert("RGB")
+    im.paste(icon, (74, 50), mask)
     d = ImageDraw.Draw(im)
     x = 520
     f1, f2, f3 = font("Black", 74), font("Medium", 33), font("Bold", 25)

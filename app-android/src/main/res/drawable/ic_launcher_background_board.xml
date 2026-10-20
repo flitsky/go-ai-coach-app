@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  런처 아이콘의 배경 층 — **연한 나무 바둑판**(사용자 2026-10-20: "5*5 격자를 연하게" → "배경 색상도 약간 나무 목재 바둑판 느낌").
+  적응형 아이콘의 108dp 층 기준이다. 보이는 곳은 가운데 72dp(18~90)이고 런처가 원·둥근 사각으로 자른다.
+  - 바탕: 왼쪽 위 밝은 비자나무색 → 오른쪽 아래 조금 짙게, 대각 그라데이션.
+  - 나뭇결: 거의 가로로 흐르는 곧은결 여덟 줄(3차 곡선) — 아주 옅게.
+  - 격자: 54를 중심으로 12.5 간격 다섯 줄(29 · 41.5 · 54 · 66.5 · 79). 바깥 네모의 모서리가 중심에서 35.4라
+    원형 마스크(반지름 36)에서도 판 테두리까지 다 보인다. 간격을 넓히면 바깥 줄이 잘려 「5줄 판」으로 읽히지 않는다.
+  ⚠️ 스토어 512 아이콘(`work/play-store-assets/app_icon/app_icon_512x512_board.png`)이 **같은 숫자**(색 · 곡선 · 간격 비율)로 그려져 있다 — 여기를 바꾸면 그쪽도.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endColor="@color/ic_launcher_wood_dark"
+                android:endX="108"
+                android:endY="108"
+                android:startColor="@color/ic_launcher_wood_light"
+                android:startX="0"
+                android:startY="0"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+    <path
+        android:pathData="M0,9C30,6 70,13 108,8"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="0.9" />
+    <path
+        android:pathData="M0,19C36,22 74,15 108,20"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="0.7" />
+    <path
+        android:pathData="M0,31C28,28 76,35 108,30"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="1.1" />
+    <path
+        android:pathData="M0,44C40,47 66,41 108,45"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M0,57C32,54 72,61 108,56"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="0.9" />
+    <path
+        android:pathData="M0,70C38,73 70,66 108,71"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="0.7" />
+    <path
+        android:pathData="M0,83C26,80 78,87 108,82"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="1" />
+    <path
+        android:pathData="M0,96C34,99 68,93 108,97"
+        android:strokeColor="@color/ic_launcher_wood_grain"
+        android:strokeLineCap="round"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M29,29H79M29,41.5H79M29,54H79M29,66.5H79M29,79H79M29,29V79M41.5,29V79M54,29V79M66.5,29V79M79,29V79"
+        android:strokeColor="@color/ic_launcher_grid"
+        android:strokeLineCap="square"
+        android:strokeWidth="1" />
+</vector>
