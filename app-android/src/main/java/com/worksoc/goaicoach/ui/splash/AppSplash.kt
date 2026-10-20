@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,10 +26,8 @@ import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 /**
  * 4계층(External Integration) — 앱 기동 직후의 브랜드 모먼트(백로그 #125·#126).
  *
- * 무엇을 그리는지는 [SplashVariant]가 정하고, 지금 쓰는 것은 [SplashVariant.Current]다.
- * ⚠️ **후보 9종을 눈으로 고르는 중이다**(#126) — 개발자 모드 1차 섹션의 `1`~`9` 버튼이 각각을
- * 전체 화면으로 재생한다. 고르고 나면 [SplashVariant.Current]를 그것으로 박고 미리보기를
- * 남길지 지울지 판단한다.
+ * 무엇을 그리는지는 [SplashVariant]가 정하고, 기동에서는 [SplashVariant.LaunchPool] 가운데 하나를 **무작위로** 고른다
+ * (2026-10-20부터 그림 두 장 ⑩ · ⑪ — 애니메이션 ①~⑨는 잠시 내렸다). 개발자 모드 1차 섹션의 번호 버튼이 후보마다 전체 화면으로 재생한다.
  *
  * ## ⚠️ 이것은 #123의 대책이 아니다
  * 크래시가 나던 자리는 *무엇을 그리는가* 가 아니라 `installDecor`→`generateLayout`,
@@ -98,10 +97,13 @@ internal object SplashVisibility {
 }
 
 @Composable
-internal fun AppSplash(variant: SplashVariant = SplashVariant.Current) {
+internal fun AppSplash(variant: SplashVariant? = null) {
     if (SplashVisibility.hasPlayedInProcess) return
     var finished by rememberSaveable { mutableStateOf(false) }
     if (finished) return
+    // 기동 한 번에 한 장 — 고른 **번호**를 저장해 둔다. ⚠️ 기본 인자 자리에서 고르면 다시 그릴 때마다 다른 그림이 된다.
+    val chosenNumber by rememberSaveable { mutableIntStateOf((variant ?: SplashVariant.pickForLaunch()).number) }
+    val chosen = SplashVariant.ofNumber(chosenNumber) ?: SplashVariant.LaunchPool.first()
     // 홈 위의 팝업을 미루게 한다(위 KDoc).
     SplashVisibility.TrackWhileShown()
     // ⚠️ 가이드도 이 1초를 **안 본 것**으로 쳐야 한다 — ③ 말풍선은 *"1.2초 떠 있었으면 봤다"* 로
@@ -114,7 +116,7 @@ internal fun AppSplash(variant: SplashVariant = SplashVariant.Current) {
         }
     }
     SplashPlayer(
-        variant = variant,
+        variant = chosen,
         onFinished = {
             finished = true
             SplashVisibility.hasPlayedInProcess = true

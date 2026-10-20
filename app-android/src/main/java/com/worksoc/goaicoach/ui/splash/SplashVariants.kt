@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui.splash
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -17,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.ui.designsystem.AllBotAvatarRes
 import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import kotlin.math.PI
@@ -24,6 +27,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * 스플래시 후보 9종(백로그 #126). **말로 조율하는 대신 다 그려 놓고 눈으로 고르기 위한 것**이다 —
@@ -140,14 +144,30 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
 
     /** **⑨파도 스케일** — 가로 일렬 5장이 파도처럼 순차로 부풀었다 가라앉는다. */
     Wave(9, 1600),
+
+    /**
+     * **⑩그림 — 스포트라이트(밤)**(2026-10-20 사용자: *"두 이미지가 앱 시작 스플래시 이미지로 랜덤하게 보여지게"*).
+     * 어두운 바탕에 위에서 떨어지는 조명 아래 사범 꼬북과 관장 천원이 대국하고 판다 · 반상 · 돌뫼가 지켜본다.
+     * 그림은 사용자가 만들었다(`work/splash/` — 오른쪽 아래의 생성 도구 표시는 걷어 내고 넣었다). 움직임 없이 한 장을 보이다
+     * 끝의 [IllustrationFadeOutMillis] 동안 옅어진다.
+     */
+    IllustrationSpotlightNight(10, 1800),
+
+    /** **⑪그림 — 한옥 도장(낮)** — 같은 장면을 낮의 한옥 도장에서(⑩과 같은 출처 · 같은 재생). */
+    IllustrationHanokDojo(11, 1800),
     ;
 
     companion object {
         /**
-         * 지금 앱이 실제로 쓰는 후보(2026-09-06 사용자 선택). ⚠️ **최종 선택이 아니다** —
-         * 고르고 나면 **1초대로 줄이는 조정이 예정돼 있다**(백로그 #126).
+         * **기동에서 고르는 후보들** — 기동마다 이 중 하나를 **무작위로** 띄운다(2026-10-20 사용자: *"두 이미지가 앱 시작 스플래시
+         * 이미지로 랜덤하게 보여지게 반영해봐주세요. 현재 코드로 그려주는 스플래시는 잠시 내리기"*).
+         * ⚠️ ①~⑨ 애니메이션은 **지우지 않았다** — 개발자 모드 미리보기에 그대로 있고, 되돌리려면 이 목록을 바꾸면 된다
+         * (2026-09-06부터 기동에서 쓰던 것은 ⑦ [QuickBloomCascade]).
          */
-        val Current: SplashVariant = QuickBloomCascade
+        val LaunchPool: List<SplashVariant> = listOf(IllustrationSpotlightNight, IllustrationHanokDojo)
+
+        /** 기동 한 번에 한 장. ⚠️ 부르는 쪽([AppSplash])이 고른 것을 기억해야 한다 — 다시 그릴 때마다 부르면 그림이 바뀐다. */
+        fun pickForLaunch(random: Random = Random.Default): SplashVariant = LaunchPool.random(random)
 
         fun ofNumber(number: Int): SplashVariant? = entries.firstOrNull { it.number == number }
     }
@@ -165,6 +185,10 @@ internal fun SplashScene(
     avatars: List<Int> = AllBotAvatarRes,
     modifier: Modifier = Modifier,
 ) {
+    variant.illustration?.let { art ->
+        IllustrationScene(art = art, durationMillis = variant.durationMillis, elapsedMillis = elapsedMillis, modifier = modifier)
+        return
+    }
     val t = (elapsedMillis.toFloat() / variant.durationMillis).coerceIn(0f, 1f)
     BoxWithConstraints(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val w = constraints.maxWidth.toFloat()
@@ -193,6 +217,38 @@ internal fun SplashScene(
             }
         }
     }
+}
+
+/**
+ * 그림 한 장으로 된 후보(⑩ · ⑪)의 그림과, 화면 비율이 달라 위아래가 잘릴 때 **남길 쪽**(세로 치우침 −1 위 ~ 1 아래).
+ * 폰은 그림보다 길쭉해 좌우가 조금 잘리고(세로를 꽉 채운다), 펼친 폴더블 · 태블릿은 위아래가 잘린다 — 그때 캐릭터와 판이 있는 아래쪽을 남긴다.
+ * 그림의 원본은 1536x2752(9:16에 가깝다)라 폰 화면에서 줄여서 그린다.
+ */
+private class Illustration(@DrawableRes val res: Int, val verticalBias: Float)
+
+private val SplashVariant.illustration: Illustration?
+    get() = when (this) {
+        SplashVariant.IllustrationSpotlightNight -> Illustration(R.drawable.splash_spotlight_night, verticalBias = 0.3f)
+        SplashVariant.IllustrationHanokDojo -> Illustration(R.drawable.splash_hanok_dojo_day, verticalBias = 0.6f)
+        else -> null
+    }
+
+/** 그림 후보가 끝에서 옅어지는 시간 — 그 뒤로 스플래시의 크림 바탕이 드러나고, 같은 색의 홈으로 이어진다. */
+private const val IllustrationFadeOutMillis = 300
+
+@Composable
+private fun IllustrationScene(art: Illustration, durationMillis: Int, elapsedMillis: Int, modifier: Modifier) {
+    val fadeStart = durationMillis - IllustrationFadeOutMillis
+    val alpha = 1f - ((elapsedMillis - fadeStart).toFloat() / IllustrationFadeOutMillis).coerceIn(0f, 1f)
+    Image(
+        painter = painterResource(art.res),
+        contentDescription = null,
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer { this.alpha = alpha },
+        contentScale = ContentScale.Crop,
+        alignment = BiasAlignment(0f, art.verticalBias),
+    )
 }
 
 /** 카드처럼 원판에 얹을 것인가, 그림만 쓸 것인가. 연출의 성격이 갈리는 자리다. */
@@ -285,6 +341,8 @@ private fun transformFor(
         )
         SplashVariant.CardFlip -> cardFlip(fromCenter, index, t, width, count)
         SplashVariant.Wave -> wave(fromCenter, index, t, width, count)
+        // 그림 후보는 [SplashScene]이 먼저 가로채 캐릭터 다섯 장을 그리지 않는다 — 여기 오지 않는다.
+        SplashVariant.IllustrationSpotlightNight, SplashVariant.IllustrationHanokDojo -> CoinFrame(size = CoinSize, alpha = 0f)
     }
 }
 
