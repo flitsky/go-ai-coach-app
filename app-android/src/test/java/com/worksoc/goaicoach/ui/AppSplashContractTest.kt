@@ -235,16 +235,6 @@ class AppSplashContractTest {
         }
     }
 
-    /** 경계 — 밤은 21:00에 시작하고 05:00 정각부터 낮이다. */
-    @Test
-    fun nightRunsFromNineInTheEveningUntilFiveInTheMorning() {
-        assertTrue("20시는 낮이다.", !SplashVariant.isNight(20))
-        assertTrue("21시는 밤이다.", SplashVariant.isNight(21))
-        assertTrue("0시는 밤이다.", SplashVariant.isNight(0))
-        assertTrue("4시는 밤이다.", SplashVariant.isNight(4))
-        assertTrue("5시는 낮이다.", !SplashVariant.isNight(5))
-    }
-
     /** 그림 후보의 그림 파일이 리소스에 있어야 한다 — 없으면 컴파일이 먼저 멈추지만, 이름을 바꿀 때 어디를 고칠지 여기서 보인다. */
     @Test
     fun everyLaunchIllustrationShipsAsAWebp() {

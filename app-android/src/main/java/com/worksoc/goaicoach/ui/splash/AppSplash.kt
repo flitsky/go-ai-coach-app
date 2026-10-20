@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -20,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
-import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import java.time.LocalTime
 
@@ -149,7 +149,7 @@ internal fun SplashPlayer(
         modifier = modifier
             .fillMaxSize()
             .zIndex(1f)
-            .background(AppLightColorScheme.background)
+            .background(MaterialTheme.colorScheme.background)
             .pointerInput(variant) { detectTapGestures { onFinished() } },
         contentAlignment = Alignment.Center,
     ) {

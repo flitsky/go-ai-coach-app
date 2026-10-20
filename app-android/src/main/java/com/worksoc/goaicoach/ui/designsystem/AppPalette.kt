@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui.designsystem
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 /*
@@ -92,22 +94,65 @@ internal object AvatarPalette {
 
 /** 대국 화면 좌석 카드·착수 버튼. */
 internal object GameStatusPalette {
-    val SeatLabel = Color(0xFF1F1F1F)
+    /** 좌석 카드의 「흑 (AI)」 — 카드 바탕(테마의 `surfaceVariant` · `primary` 12%)을 따라 야간 모드에서는 밝은 글자다(#272). */
+    val SeatLabel: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Color(0xFFECE5D8) else Color(0xFF1F1F1F)
+
+    /** 착수 버튼의 글자 — 버튼이 **돌 모양(밝은 면)** 이라 테마와 무관하게 짙은 글자다. */
+    val StoneFaceLabel = Color(0xFF1F1F1F)
     val PlayButtonDisabledContainer = Color(0xFFECEFF1)
     val PlayButtonDisabledContent = Color(0xFFB0BEC5)
-    val InactiveStateBorder = Color(0xFFCFD8DC)
+
+    /** 차례가 아닌 좌석 카드의 테두리 — 야간 모드에서는 바탕보다 조금 밝은 갈색 선(#272). */
+    val InactiveStateBorder: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Color(0xFF4A443C) else Color(0xFFCFD8DC)
 }
 
-/** 형세 그래프 패널(슬레이트 계열 — 이 차트만의 색이다). */
+/** 형세 그래프 패널의 색 한 벌. */
+internal class ScoreGraphColors(
+    val background: Color,
+    val border: Color,
+    val gridLine: Color,
+    val title: Color,
+    val label: Color,
+    val scoreLine: Color,
+    val activeDot: Color,
+    val jigoLine: Color,
+)
+
+/**
+ * 형세 그래프 패널(슬레이트 계열 — 이 차트만의 색이다). 밝은 쪽과 야간 모드(#272)의 두 벌 — 그리는 쪽은 [current]를 컴포지션에서 한 번 집어
+ * 그리기 블록에 넘긴다(그리기 블록 안에서는 컴포지션 값을 읽을 수 없다).
+ */
 internal object ScoreGraphPalette {
-    val Background = Color(0xFFF8FAFC)
-    val Border = Color(0xFFE2E8F0)
-    val GridLine = Color(0xFFE2E8F0)
-    val Title = Color(0xFF475569)
-    val Label = Color(0xFF64748B)
-    val ScoreLine = Color(0xFF3B82F6)
-    val ActiveDot = Color(0xFFEF4444)
-    val JigoLine = Color(0xFF94A3B8)
+    val Light = ScoreGraphColors(
+        background = Color(0xFFF8FAFC),
+        border = Color(0xFFE2E8F0),
+        gridLine = Color(0xFFE2E8F0),
+        title = Color(0xFF475569),
+        label = Color(0xFF64748B),
+        scoreLine = Color(0xFF3B82F6),
+        activeDot = Color(0xFFEF4444),
+        jigoLine = Color(0xFF94A3B8),
+    )
+
+    /** 같은 슬레이트 계열을 어둡게 — 판은 짙은 남회색, 선 · 점은 어두운 바탕에서 보이게 한 단 밝게. */
+    val Dark = ScoreGraphColors(
+        background = Color(0xFF1E232B),
+        border = Color(0xFF334155),
+        gridLine = Color(0xFF2B3440),
+        title = Color(0xFFCBD5E1),
+        label = Color(0xFF94A3B8),
+        scoreLine = Color(0xFF60A5FA),
+        activeDot = Color(0xFFF87171),
+        jigoLine = Color(0xFF64748B),
+    )
+
+    val current: ScoreGraphColors
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Dark else Light
 }
 
 /**

@@ -88,6 +88,7 @@ internal fun ReplayScoreGraphPanel(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val graph = ScoreGraphPalette.current
     val readings = remember(snapshots) { replayScoreReadings(snapshots) }
     val current = remember(snapshots, moveNumber) {
         snapshots.filter { it.hasScoreData && it.moveNumber <= moveNumber }.maxByOrNull { it.moveNumber }
@@ -99,9 +100,9 @@ internal fun ReplayScoreGraphPanel(
             .fillMaxWidth()
             .height(windowHeight * ReplayScoreGraphScreenShare)
             .testTag(ReplayScoreGraphPanelTag),
-        color = ScoreGraphPalette.Background,
+        color = graph.background,
         shape = RoundedCornerShape(AppRadius.Corner8),
-        border = BorderStroke(AppBorderWidth.Hairline, ScoreGraphPalette.Border),
+        border = BorderStroke(AppBorderWidth.Hairline, graph.border),
         tonalElevation = AppElevation.Level0,
         shadowElevation = AppElevation.Level0,
     ) {
@@ -120,7 +121,7 @@ internal fun ReplayScoreGraphPanel(
                     Text(
                         // 이 수까지 잰 형세가 없으면(앞부분 기록이 없는 옛 판 · 이어 둔 판) 점수를 지어내지 않는다 — 수순만 적는다.
                         text = listOfNotNull("$moveNumber / $lastMoveNumber", current?.whiteScoreLead?.let { blackLeadLabel(-it) }).joinToString(" · "),
-                        color = ScoreGraphPalette.Title,
+                        color = graph.title,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -132,13 +133,13 @@ internal fun ReplayScoreGraphPanel(
                             "${strings.colorLabel(StoneColor.Black)} ${strings.capturesPrefix} $capturedByBlack",
                             "${strings.colorLabel(StoneColor.White)} ${strings.capturesPrefix} $capturedByWhite",
                         ).joinToString(" · "),
-                        color = ScoreGraphPalette.Label,
+                        color = graph.label,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text(text = "✕", color = ScoreGraphPalette.Label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(text = "✕", color = graph.label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             }
             ScrubbableScoreGraph(
                 readings = readings,
@@ -163,6 +164,7 @@ internal fun ReplayScoreOverviewGraph(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val graph = ScoreGraphPalette.current
     val readings = remember(snapshots) { replayScoreReadings(snapshots) }
     val maxScale = remember(readings) { replayGraphScale(readings) }
     Surface(
@@ -171,9 +173,9 @@ internal fun ReplayScoreOverviewGraph(
             .height(ReplayScoreOverviewHeight)
             .clickable(onClick = onOpen)
             .testTag(ReplayScoreOverviewTag),
-        color = ScoreGraphPalette.Background,
+        color = graph.background,
         shape = RoundedCornerShape(AppRadius.Corner8),
-        border = BorderStroke(AppBorderWidth.Hairline, ScoreGraphPalette.Border),
+        border = BorderStroke(AppBorderWidth.Hairline, graph.border),
         tonalElevation = AppElevation.Level0,
         shadowElevation = AppElevation.Level0,
     ) {
@@ -192,7 +194,7 @@ internal fun ReplayScoreOverviewGraph(
             val dash = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
             floatArrayOf(chartTop, centerY, chartBottom).forEachIndexed { index, y ->
                 drawLine(
-                    color = if (index == 1) ScoreGraphPalette.JigoLine else ScoreGraphPalette.GridLine,
+                    color = if (index == 1) graph.jigoLine else graph.gridLine,
                     start = Offset(chartLeft, y),
                     end = Offset(chartRight, y),
                     strokeWidth = 1.dp.toPx(),
@@ -202,18 +204,18 @@ internal fun ReplayScoreOverviewGraph(
             var previous: Offset? = null
             readings.forEach { reading ->
                 val point = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead))
-                previous?.let { drawLine(ScoreGraphPalette.ScoreLine, it, point, strokeWidth = 2.dp.toPx()) }
+                previous?.let { drawLine(graph.scoreLine, it, point, strokeWidth = 2.dp.toPx()) }
                 previous = point
             }
             // 지금 수순의 자리 — 세로 표시선과, 그 수까지 잰 마지막 형세 위의 점.
             val cursorX = xForMove(moveNumber)
-            drawLine(ScoreGraphPalette.ActiveDot, Offset(cursorX, chartTop), Offset(cursorX, chartBottom), strokeWidth = 1.5.dp.toPx())
+            drawLine(graph.activeDot, Offset(cursorX, chartTop), Offset(cursorX, chartBottom), strokeWidth = 1.5.dp.toPx())
             readings.lastOrNull { it.moveNumber <= moveNumber }?.let { reading ->
-                drawCircle(ScoreGraphPalette.ActiveDot, radius = 3.5.dp.toPx(), center = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead)))
+                drawCircle(graph.activeDot, radius = 3.5.dp.toPx(), center = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead)))
             }
             val scale = maxScale.toInt().toString()
-            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), ScoreGraphPalette.Label, Paint.Align.RIGHT)
-            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), ScoreGraphPalette.Label, Paint.Align.RIGHT)
+            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
+            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
         }
     }
 }
@@ -227,6 +229,7 @@ private fun ScrubbableScoreGraph(
     onSeek: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val graph = ScoreGraphPalette.current
     val pxPerMove = with(LocalDensity.current) { ReplayScoreGraphMoveWidth.toPx() }
     val scrollState = rememberScrollState(initial = replayGraphScrollForMove(moveNumber, pxPerMove))
     val latestMove by rememberUpdatedState(moveNumber)
@@ -302,7 +305,7 @@ private fun ScrubbableScoreGraph(
                 val dash = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
                 floatArrayOf(chartTop, chartTop + chartHeight * 0.25f, centerY, chartTop + chartHeight * 0.75f, chartBottom).forEachIndexed { index, y ->
                     drawLine(
-                        color = if (index == 2) ScoreGraphPalette.JigoLine else ScoreGraphPalette.GridLine,
+                        color = if (index == 2) graph.jigoLine else graph.gridLine,
                         start = Offset(xForMove(0), y),
                         end = Offset(xForMove(lastMoveNumber), y),
                         strokeWidth = 1.dp.toPx(),
@@ -311,19 +314,19 @@ private fun ScrubbableScoreGraph(
                 }
                 // 열 수마다 눈금과 수순 번호 — 넘기면서 어디쯤인지 알 수 있게.
                 (0..lastMoveNumber step ReplayScoreGraphTickEvery).forEach { move ->
-                    drawLine(ScoreGraphPalette.GridLine, Offset(xForMove(move), chartTop), Offset(xForMove(move), chartBottom), strokeWidth = 1.dp.toPx())
-                    drawGraphText(move.toString(), Offset(xForMove(move) + 3.dp.toPx(), chartBottom + 6.dp.toPx()), ScoreGraphPalette.Label)
+                    drawLine(graph.gridLine, Offset(xForMove(move), chartTop), Offset(xForMove(move), chartBottom), strokeWidth = 1.dp.toPx())
+                    drawGraphText(move.toString(), Offset(xForMove(move) + 3.dp.toPx(), chartBottom + 6.dp.toPx()), graph.label)
                 }
                 var previous: Offset? = null
                 readings.forEach { reading ->
                     val point = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead))
-                    previous?.let { drawLine(ScoreGraphPalette.ScoreLine, it, point, strokeWidth = 2.dp.toPx()) }
+                    previous?.let { drawLine(graph.scoreLine, it, point, strokeWidth = 2.dp.toPx()) }
                     previous = point
                 }
                 readings.forEach { reading ->
                     val isCurrent = reading.moveNumber == moveNumber
                     drawCircle(
-                        color = if (isCurrent) ScoreGraphPalette.ActiveDot else ScoreGraphPalette.ScoreLine,
+                        color = if (isCurrent) graph.activeDot else graph.scoreLine,
                         radius = (if (isCurrent) 4.5f else 2f).dp.toPx(),
                         center = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead)),
                     )
@@ -334,10 +337,10 @@ private fun ScrubbableScoreGraph(
         Canvas(modifier = Modifier.fillMaxSize()) {
             val chartTop = 10.dp.toPx()
             val chartBottom = size.height - 12.dp.toPx()
-            drawLine(ScoreGraphPalette.ActiveDot, Offset(size.width / 2f, chartTop), Offset(size.width / 2f, chartBottom), strokeWidth = 1.5.dp.toPx())
+            drawLine(graph.activeDot, Offset(size.width / 2f, chartTop), Offset(size.width / 2f, chartBottom), strokeWidth = 1.5.dp.toPx())
             val scale = maxScale.toInt().toString()
-            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), ScoreGraphPalette.Label, Paint.Align.RIGHT)
-            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), ScoreGraphPalette.Label, Paint.Align.RIGHT)
+            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
+            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
         }
     }
 }

@@ -84,15 +84,16 @@ internal fun WideScoreSummary(
     onGraphExpandedChange: (Boolean) -> Unit,
     modifier: Modifier,
 ) {
+    val graph = ScoreGraphPalette.current
     val strings = LocalUiStrings.current
     val lead = androidx.compose.runtime.remember(snapshots) { latestLeadLabel(blackLeadPoints(snapshots)) }
     Surface(
         modifier = modifier
             .heightIn(min = 48.dp)
             .clickable { onGraphExpandedChange(!isGraphExpanded) },
-        color = ScoreGraphPalette.Background,
+        color = graph.background,
         shape = RoundedCornerShape(AppRadius.Corner8),
-        border = BorderStroke(AppBorderWidth.Hairline, ScoreGraphPalette.Border),
+        border = BorderStroke(AppBorderWidth.Hairline, graph.border),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space5),
@@ -103,7 +104,7 @@ internal fun WideScoreSummary(
                 text = "$moveCountText · $lead ${if (isGraphExpanded) "\u25B4" else "\u25BE"}",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = ScoreGraphPalette.Title,
+                color = graph.title,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -112,7 +113,7 @@ internal fun WideScoreSummary(
                 Text(
                     text = winRateLabelFor(rate, strings),
                     style = MaterialTheme.typography.labelSmall,
-                    color = ScoreGraphPalette.Label,
+                    color = graph.label,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
@@ -135,6 +136,7 @@ internal fun ScoreTimelineGraph(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val graph = ScoreGraphPalette.current
     val strings = LocalUiStrings.current
     val configuration = LocalConfiguration.current
     val targetHeight = if (isExpanded) (configuration.screenWidthDp.dp / 4) else 44.dp
@@ -147,13 +149,13 @@ internal fun ScoreTimelineGraph(
     )
     
     // 밝고 연한 프리미엄 슬레이트/스카이 블루 톤 구성
-    val backgroundLight = ScoreGraphPalette.Background // 연한 그레이빛 화이트
-    val borderLightColor = ScoreGraphPalette.Border // 연한 보더
-    val gridLineColor = ScoreGraphPalette.GridLine // 연한 가이드선 그레이
-    val textBlueColor = ScoreGraphPalette.Label // 차분한 슬레이트 블루그레이 텍스트
-    val scoreLineColor = ScoreGraphPalette.ScoreLine // 선명하고 시원한 꺾은선 블루
-    val activeDotColor = ScoreGraphPalette.ActiveDot // 화사한 붉은색 끝 점
-    val jigoLineColor = ScoreGraphPalette.JigoLine // 명확한 비김 기준선 그레이
+    val backgroundLight = graph.background // 판 바탕(밝은 쪽 · 야간 모드 두 벌 — `ScoreGraphPalette`)
+    val borderLightColor = graph.border // 테두리
+    val gridLineColor = graph.gridLine // 가이드선
+    val textBlueColor = graph.label // 축 글자
+    val scoreLineColor = graph.scoreLine // 꺾은선
+    val activeDotColor = graph.activeDot // 끝 점
+    val jigoLineColor = graph.jigoLine // 비김 기준선
 
     // 데이터 가공 및 캐싱: Composable 레벨에서 계산하여 Canvas 프레임 오버헤드 방지
     val points = androidx.compose.runtime.remember(snapshots) { blackLeadPoints(snapshots) }

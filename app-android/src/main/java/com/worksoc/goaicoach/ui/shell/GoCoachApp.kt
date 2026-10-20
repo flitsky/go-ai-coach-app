@@ -117,7 +117,6 @@ import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.ui.account.MyPageScreen
 import com.worksoc.goaicoach.ui.account.OnboardingScreen
-import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
 import com.worksoc.goaicoach.ui.gamerecord.GameRecordsScreen
@@ -177,9 +176,8 @@ internal fun GoCoachApp(
      */
     sessionGenerationRelay: SessionGenerationRelay,
 ) {
-    MaterialTheme(
-        colorScheme = AppLightColorScheme,
-    ) {
+    // 색은 바깥(`MainActivity`의 `AppTheme`, #272)이 고른다 — 여기서 정하면 야간 모드를 덮는다.
+    MaterialTheme {
         ProvideUiLanguage { selectedLanguage, onLanguageChange ->
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 // 첫 실행 처리(#140, 예전 #51 랜딩)는 아래 화면보다 **바깥**이라야 한다 — 안쪽에 두면

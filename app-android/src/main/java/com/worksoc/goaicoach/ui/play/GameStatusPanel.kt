@@ -347,9 +347,7 @@ internal val InactiveStateContainerColor: Color
     @Composable get() = MaterialTheme.colorScheme.surfaceVariant
 
 internal val InactiveStateBorder: BorderStroke
-    @Composable get() = BorderStroke(AppBorderWidth.Hairline, InactiveStateBorderColor)
-
-private val InactiveStateBorderColor = GameStatusPalette.InactiveStateBorder
+    @Composable get() = BorderStroke(AppBorderWidth.Hairline, GameStatusPalette.InactiveStateBorder)
 
 /** 결과 배지를 그릴 때인가(#191) — 끝났고, 수가 하나 이상이고, **결과를 알 때**만([isFinalResultKnown] — 계가 판정을 기다리는 동안은 아니다). */
 internal fun shouldShowFinalResultBadge(isGameEnded: Boolean, moveCount: Int, isResultKnown: Boolean): Boolean =

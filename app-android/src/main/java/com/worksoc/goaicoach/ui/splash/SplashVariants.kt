@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
@@ -20,8 +21,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.R
+import com.worksoc.goaicoach.shared.policy.isNightHour
 import com.worksoc.goaicoach.ui.designsystem.AllBotAvatarRes
-import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -177,18 +178,10 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
         /** 기동에 쓰일 수 있는 것 전부(낮 둘 + 밤 하나). */
         val LaunchPool: List<SplashVariant> get() = DayPool + NightPick
 
-        /**
-         * 밤인가 — **21:00부터 다음 날 04:59까지**(05:00 정각부터 낮). 시각은 폰의 지역 시각이다(부르는 쪽이 넘긴다).
-         * 5시 정각을 낮으로 둔 것은 스레드가 정한 것이다(사용자 문장은 *"새벽 5시까지"*).
-         */
-        fun isNight(hour: Int): Boolean = hour >= NightStartHour || hour < NightEndHour
-
-        /** 기동 한 번에 한 장. ⚠️ 부르는 쪽([AppSplash])이 고른 것을 기억해야 한다 — 다시 그릴 때마다 부르면 그림이 바뀐다. */
+        /** 기동 한 번에 한 장 — 밤 시간([isNightHour], 야간 모드의 「밤 시간 자동」과 같은 정의)이면 밤 그림, 낮이면 둘 중 무작위.
+         * ⚠️ 부르는 쪽([AppSplash])이 고른 것을 기억해야 한다 — 다시 그릴 때마다 부르면 그림이 바뀐다. */
         fun pickForLaunch(hour: Int, random: Random = Random.Default): SplashVariant =
-            if (isNight(hour)) NightPick else DayPool.random(random)
-
-        private const val NightStartHour = 21
-        private const val NightEndHour = 5
+            if (isNightHour(hour)) NightPick else DayPool.random(random)
 
         fun ofNumber(number: Int): SplashVariant? = entries.firstOrNull { it.number == number }
     }
@@ -261,7 +254,7 @@ private val SplashVariant.illustration: Illustration?
  */
 private const val IllustrationMillis = 1500
 
-/** 그림 후보가 끝에서 옅어지는 시간 — 그 뒤로 스플래시의 크림 바탕이 드러나고, 같은 색의 홈으로 이어진다. */
+/** 그림 후보가 끝에서 옅어지는 시간 — 그 뒤로 스플래시의 바탕(테마의 `background` — 밝으면 크림, 야간 모드면 짙은 색)이 드러나고, 같은 색의 홈으로 이어진다. */
 private const val IllustrationFadeOutMillis = 300
 
 @Composable
@@ -296,7 +289,7 @@ private fun SplashCoin(res: Int, size: Dp, coin: Boolean, modifier: Modifier) {
             modifier = base
                 .shadow(6.dp, CircleShape)
                 .clip(CircleShape)
-                .background(AppLightColorScheme.surface),
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center,
         ) {
             Image(painterResource(res), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)

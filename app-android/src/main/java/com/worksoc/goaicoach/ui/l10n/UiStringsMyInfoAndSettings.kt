@@ -7,10 +7,10 @@ package com.worksoc.goaicoach.ui.l10n
  */
 /** 첫 절(#261 — 사용자 2026-10-13: 「화면」은 *"무슨 화면?"* 이라 「언어 및 글자 크기」로). */
 private val SettingsDisplaySection: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "언어 및 글자 크기",
-    UiLanguage.English to "Language and text size",
-    UiLanguage.Japanese to "言語と文字サイズ",
-    UiLanguage.ChineseSimplified to "语言和字号",
+    UiLanguage.Korean to "언어 · 글자 크기 · 화면 모드",
+    UiLanguage.English to "Language, text size and theme",
+    UiLanguage.Japanese to "言語・文字サイズ・画面モード",
+    UiLanguage.ChineseSimplified to "语言、字号和显示模式",
 )
 
 /**

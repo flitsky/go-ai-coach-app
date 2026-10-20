@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 폰이 다크 모드일 때의 기동 바탕(백로그 #272) — 앱 바탕색(`AppColorScheme.kt`의 `AppDarkColorScheme.background`)과 **같은 값**이다.
+         기본 화면 모드가 「시스템 따라가기」라, 다크 모드 폰에서 기동 순간 크림색이 번쩍이지 않게 한다.
+         ⚠️ 앱 안에서 「밝게」·「어둡게」를 고정했으면 이 값이 폰 설정과 어긋날 수 있다 — 그 어긋남은 첫 화면이 그려지기 전의 한순간뿐이다
+         (그 뒤로는 `AppTheme`이 창 바탕을 맞춘다). ⚠️ `AppDarkColorScheme`의 값을 바꾸면 여기도 같이 바꿀 것. -->
+    <color name="app_window_background">#1A1815</color>
+</resources>

@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.ui.play.allowsRotation
 import com.worksoc.goaicoach.ui.settings.AppFontScaleState
+import com.worksoc.goaicoach.ui.settings.AppTheme
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
 import com.worksoc.goaicoach.ui.splash.AppSplash
 import kotlinx.coroutines.launch
@@ -77,15 +78,18 @@ class MainActivity : ComponentActivity() {
                 // 도는 1초 동안 홈은 이미 조립되고 엔진 부트스트랩도 돌고 있어야, 그 1초가
                 // **버려지는 시간이 아니라 벌어 두는 시간**이 된다. `AppSplash`는 위에 얹혀
                 // 터치를 먹고 스스로 사라진다.
-                Box {
-                    GoCoachApp(
-                        engineClient = processRuntime.engineClient,
-                        // ⚠️ 값이 아니라 공급자로 넘긴다 — 준비 전에는 `Unresolved`다(#101, `engineIdentity`의 KDoc).
-                        engineIdentity = { processRuntime.engineIdentity() },
-                        diagnosticEventLog = processRuntime.diagnosticEventLog,
-                        sessionGenerationRelay = processRuntime.sessionGenerationRelay,
-                    )
-                    AppSplash()
+                // 화면 모드(#272) — 밝은 · 어두운 색을 여기서 한 번 고른다. 홈과 스플래시가 같은 색을 본다.
+                AppTheme {
+                    Box {
+                        GoCoachApp(
+                            engineClient = processRuntime.engineClient,
+                            // ⚠️ 값이 아니라 공급자로 넘긴다 — 준비 전에는 `Unresolved`다(#101, `engineIdentity`의 KDoc).
+                            engineIdentity = { processRuntime.engineIdentity() },
+                            diagnosticEventLog = processRuntime.diagnosticEventLog,
+                            sessionGenerationRelay = processRuntime.sessionGenerationRelay,
+                        )
+                        AppSplash()
+                    }
                 }
             }
         }

@@ -101,8 +101,8 @@ internal fun PlayStoneButton(
             fontWeight = FontWeight.Bold,
             color = when (face) {
                 PlayStoneFace.CommitMove -> ringColor
-                PlayStoneFace.ConfirmOn -> GameStatusPalette.SeatLabel
-                PlayStoneFace.ConfirmOff -> GameStatusPalette.SeatLabel.copy(alpha = PlayStoneOffLabelAlpha)
+                PlayStoneFace.ConfirmOn -> GameStatusPalette.StoneFaceLabel
+                PlayStoneFace.ConfirmOff -> GameStatusPalette.StoneFaceLabel.copy(alpha = PlayStoneOffLabelAlpha)
             },
             textAlign = TextAlign.Center,
             maxLines = 2,
