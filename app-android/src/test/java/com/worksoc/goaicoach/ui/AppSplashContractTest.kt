@@ -217,18 +217,32 @@ class AppSplashContractTest {
     }
 
     /**
-     * 기동 스플래시는 그림 세 장 중 **무작위로 한 장**(2026-10-20 사용자 — 처음 둘, 같은 날 셋으로). 목록 밖의 후보가 뽑히거나 한 장이
-     * 영영 안 뽑히면 화면은 멀쩡해 보여도 요구가 틀어진다 — 씨앗 200개로 셋 다 나오는지, 목록 밖이 없는지 본다.
+     * 기동 스플래시는 **폰의 시각으로** 고른다(2026-10-20 사용자): 밤 9시부터 새벽 5시 전까지는 밤 그림, 그 밖에는 한옥 두 장 중 무작위.
+     * 목록 밖의 후보가 뽑히거나 낮의 한 장이 영영 안 뽑히면 화면은 멀쩡해 보여도 요구가 틀어진다 — 시각마다 씨앗 200개로 본다.
      */
     @Test
-    fun theLaunchPicksOnlyFromThePoolAndReachesEveryOne() {
+    fun theLaunchPicksByTheHourOfTheDay() {
         assertEquals(
-            "기동 후보는 그림 셋이다(⑩ 스포트라이트 · ⑪ 한옥 비스듬히 · ⑫ 한옥 정면).",
-            listOf(SplashVariant.IllustrationSpotlightNight, SplashVariant.IllustrationHanokAngled, SplashVariant.IllustrationHanokFront),
-            SplashVariant.LaunchPool,
+            "낮 후보는 한옥 둘이다(⑪ 비스듬히 · ⑫ 정면).",
+            listOf(SplashVariant.IllustrationHanokAngled, SplashVariant.IllustrationHanokFront),
+            SplashVariant.DayPool,
         )
-        val picked = (0 until 200).map { seed -> SplashVariant.pickForLaunch(Random(seed)) }.toSet()
-        assertEquals("뽑힌 것이 기동 후보와 다르다: $picked", SplashVariant.LaunchPool.toSet(), picked)
+        assertEquals("밤 후보는 ⑩ 스포트라이트다.", SplashVariant.IllustrationSpotlightNight, SplashVariant.NightPick)
+        (0 until 24).forEach { hour ->
+            val picked = (0 until 200).map { seed -> SplashVariant.pickForLaunch(hour, Random(seed)) }.toSet()
+            val expected = if (hour >= 21 || hour < 5) setOf(SplashVariant.NightPick) else SplashVariant.DayPool.toSet()
+            assertEquals("${hour}시에 뽑힌 것이 다르다: $picked", expected, picked)
+        }
+    }
+
+    /** 경계 — 밤은 21:00에 시작하고 05:00 정각부터 낮이다. */
+    @Test
+    fun nightRunsFromNineInTheEveningUntilFiveInTheMorning() {
+        assertTrue("20시는 낮이다.", !SplashVariant.isNight(20))
+        assertTrue("21시는 밤이다.", SplashVariant.isNight(21))
+        assertTrue("0시는 밤이다.", SplashVariant.isNight(0))
+        assertTrue("4시는 밤이다.", SplashVariant.isNight(4))
+        assertTrue("5시는 낮이다.", !SplashVariant.isNight(5))
     }
 
     /** 그림 후보의 그림 파일이 리소스에 있어야 한다 — 없으면 컴파일이 먼저 멈추지만, 이름을 바꿀 때 어디를 고칠지 여기서 보인다. */

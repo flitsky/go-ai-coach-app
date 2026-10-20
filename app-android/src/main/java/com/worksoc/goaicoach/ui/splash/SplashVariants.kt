@@ -165,15 +165,30 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
 
     companion object {
         /**
-         * **기동에서 고르는 후보들** — 기동마다 이 중 하나를 **무작위로** 띄운다(2026-10-20 사용자: *"두 이미지가 앱 시작 스플래시
-         * 이미지로 랜덤하게 보여지게 반영해봐주세요. 현재 코드로 그려주는 스플래시는 잠시 내리기"*).
-         * ⚠️ ①~⑨ 애니메이션은 **지우지 않았다** — 개발자 모드 미리보기에 그대로 있고, 되돌리려면 이 목록을 바꾸면 된다
+         * **기동에서 고르는 후보들** — 폰의 시각으로 고른다(2026-10-20 사용자: *"낮 시간엔 2개 이미지 돌려가며 보여주고, 밤에는 밤이미지를
+         * 적용해주기. 밤 9시부터 다음날 새벽 5시까지만"*). 그 전에는 셋 중 무작위였다(같은 날 *"두 이미지가 앱 시작 스플래시 이미지로 랜덤하게"*
+         * → *"후보를 3개로 늘렸어"*).
+         * ⚠️ ①~⑨ 애니메이션은 **지우지 않았다** — 개발자 모드 미리보기에 그대로 있고, 되돌리려면 이 두 값을 바꾸면 된다
          * (2026-09-06부터 기동에서 쓰던 것은 ⑦ [QuickBloomCascade]).
          */
-        val LaunchPool: List<SplashVariant> = listOf(IllustrationSpotlightNight, IllustrationHanokAngled, IllustrationHanokFront)
+        val DayPool: List<SplashVariant> = listOf(IllustrationHanokAngled, IllustrationHanokFront)
+        val NightPick: SplashVariant = IllustrationSpotlightNight
+
+        /** 기동에 쓰일 수 있는 것 전부(낮 둘 + 밤 하나). */
+        val LaunchPool: List<SplashVariant> get() = DayPool + NightPick
+
+        /**
+         * 밤인가 — **21:00부터 다음 날 04:59까지**(05:00 정각부터 낮). 시각은 폰의 지역 시각이다(부르는 쪽이 넘긴다).
+         * 5시 정각을 낮으로 둔 것은 스레드가 정한 것이다(사용자 문장은 *"새벽 5시까지"*).
+         */
+        fun isNight(hour: Int): Boolean = hour >= NightStartHour || hour < NightEndHour
 
         /** 기동 한 번에 한 장. ⚠️ 부르는 쪽([AppSplash])이 고른 것을 기억해야 한다 — 다시 그릴 때마다 부르면 그림이 바뀐다. */
-        fun pickForLaunch(random: Random = Random.Default): SplashVariant = LaunchPool.random(random)
+        fun pickForLaunch(hour: Int, random: Random = Random.Default): SplashVariant =
+            if (isNight(hour)) NightPick else DayPool.random(random)
+
+        private const val NightStartHour = 21
+        private const val NightEndHour = 5
 
         fun ofNumber(number: Int): SplashVariant? = entries.firstOrNull { it.number == number }
     }

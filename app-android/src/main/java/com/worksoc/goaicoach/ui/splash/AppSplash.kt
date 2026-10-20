@@ -22,11 +22,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
 import com.worksoc.goaicoach.ui.designsystem.AppLightColorScheme
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
+import java.time.LocalTime
 
 /**
  * 4계층(External Integration) — 앱 기동 직후의 브랜드 모먼트(백로그 #125·#126).
  *
- * 무엇을 그리는지는 [SplashVariant]가 정하고, 기동에서는 [SplashVariant.LaunchPool] 가운데 하나를 **무작위로** 고른다
+ * 무엇을 그리는지는 [SplashVariant]가 정하고, 기동에서는 폰의 시각으로 고른다 — 밤(21시~새벽 5시 전)은 밤 그림, 낮은 한옥 둘 중 무작위([SplashVariant.pickForLaunch])
  * (2026-10-20부터 그림 세 장 ⑩ · ⑪ · ⑫ — 애니메이션 ①~⑨는 잠시 내렸다). 개발자 모드 1차 섹션의 번호 버튼이 후보마다 전체 화면으로 재생한다.
  *
  * ## ⚠️ 이것은 #123의 대책이 아니다
@@ -102,7 +103,7 @@ internal fun AppSplash(variant: SplashVariant? = null) {
     var finished by rememberSaveable { mutableStateOf(false) }
     if (finished) return
     // 기동 한 번에 한 장 — 고른 **번호**를 저장해 둔다. ⚠️ 기본 인자 자리에서 고르면 다시 그릴 때마다 다른 그림이 된다.
-    val chosenNumber by rememberSaveable { mutableIntStateOf((variant ?: SplashVariant.pickForLaunch()).number) }
+    val chosenNumber by rememberSaveable { mutableIntStateOf((variant ?: SplashVariant.pickForLaunch(LocalTime.now().hour)).number) }
     val chosen = SplashVariant.ofNumber(chosenNumber) ?: SplashVariant.LaunchPool.first()
     // 홈 위의 팝업을 미루게 한다(위 KDoc).
     SplashVisibility.TrackWhileShown()
