@@ -151,16 +151,16 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
      * 그림은 사용자가 만들었다(`work/splash/` — 오른쪽 아래의 생성 도구 표시는 걷어 내고 넣었다). 움직임 없이 한 장을 보이다
      * 끝의 [IllustrationFadeOutMillis] 동안 옅어진다.
      */
-    IllustrationSpotlightNight(10, 1800),
+    IllustrationSpotlightNight(10, IllustrationMillis),
 
     /**
      * **⑪그림 — 한옥 도장, 비스듬히(낮)** — 같은 장면을 낮의 한옥 도장에서(⑩과 같은 출처 · 같은 재생). 족자의 뭉개진 글씨는
      * 사용자가 알아볼 수 없는 붓 자국으로 고쳤다(2026-10-20 — 스플래시에는 글자를 넣지 않는다, [AppSplash]).
      */
-    IllustrationHanokAngled(11, 1800),
+    IllustrationHanokAngled(11, IllustrationMillis),
 
     /** **⑫그림 — 한옥 도장, 정면(낮)** — 다다미 위 대국을 정면에서. 족자가 없다(2026-10-20 사용자가 셋째 후보로 더했다). */
-    IllustrationHanokFront(12, 1800),
+    IllustrationHanokFront(12, IllustrationMillis),
     ;
 
     companion object {
@@ -254,6 +254,12 @@ private val SplashVariant.illustration: Illustration?
         SplashVariant.IllustrationHanokFront -> Illustration(R.drawable.splash_hanok_dojo_day1, verticalBias = 0.6f)
         else -> null
     }
+
+/**
+ * 그림 후보(⑩ · ⑪ · ⑫)를 보이는 시간 — **1.5초**(사용자 2026-10-20: *"1.5초로"*). 처음 넣을 때는 1.8초였다.
+ * 끝의 [IllustrationFadeOutMillis]를 포함한다 — 또렷하게 보이는 것은 1.2초다. 화면을 누르면 바로 넘어간다([SplashPlayer]).
+ */
+private const val IllustrationMillis = 1500
 
 /** 그림 후보가 끝에서 옅어지는 시간 — 그 뒤로 스플래시의 크림 바탕이 드러나고, 같은 색의 홈으로 이어진다. */
 private const val IllustrationFadeOutMillis = 300
