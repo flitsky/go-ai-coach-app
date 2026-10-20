@@ -27,7 +27,7 @@ import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
  * 4계층(External Integration) — 앱 기동 직후의 브랜드 모먼트(백로그 #125·#126).
  *
  * 무엇을 그리는지는 [SplashVariant]가 정하고, 기동에서는 [SplashVariant.LaunchPool] 가운데 하나를 **무작위로** 고른다
- * (2026-10-20부터 그림 두 장 ⑩ · ⑪ — 애니메이션 ①~⑨는 잠시 내렸다). 개발자 모드 1차 섹션의 번호 버튼이 후보마다 전체 화면으로 재생한다.
+ * (2026-10-20부터 그림 세 장 ⑩ · ⑪ · ⑫ — 애니메이션 ①~⑨는 잠시 내렸다). 개발자 모드 1차 섹션의 번호 버튼이 후보마다 전체 화면으로 재생한다.
  *
  * ## ⚠️ 이것은 #123의 대책이 아니다
  * 크래시가 나던 자리는 *무엇을 그리는가* 가 아니라 `installDecor`→`generateLayout`,

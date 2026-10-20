@@ -153,8 +153,14 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
      */
     IllustrationSpotlightNight(10, 1800),
 
-    /** **⑪그림 — 한옥 도장(낮)** — 같은 장면을 낮의 한옥 도장에서(⑩과 같은 출처 · 같은 재생). */
-    IllustrationHanokDojo(11, 1800),
+    /**
+     * **⑪그림 — 한옥 도장, 비스듬히(낮)** — 같은 장면을 낮의 한옥 도장에서(⑩과 같은 출처 · 같은 재생). 족자의 뭉개진 글씨는
+     * 사용자가 알아볼 수 없는 붓 자국으로 고쳤다(2026-10-20 — 스플래시에는 글자를 넣지 않는다, [AppSplash]).
+     */
+    IllustrationHanokAngled(11, 1800),
+
+    /** **⑫그림 — 한옥 도장, 정면(낮)** — 다다미 위 대국을 정면에서. 족자가 없다(2026-10-20 사용자가 셋째 후보로 더했다). */
+    IllustrationHanokFront(12, 1800),
     ;
 
     companion object {
@@ -164,7 +170,7 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
          * ⚠️ ①~⑨ 애니메이션은 **지우지 않았다** — 개발자 모드 미리보기에 그대로 있고, 되돌리려면 이 목록을 바꾸면 된다
          * (2026-09-06부터 기동에서 쓰던 것은 ⑦ [QuickBloomCascade]).
          */
-        val LaunchPool: List<SplashVariant> = listOf(IllustrationSpotlightNight, IllustrationHanokDojo)
+        val LaunchPool: List<SplashVariant> = listOf(IllustrationSpotlightNight, IllustrationHanokAngled, IllustrationHanokFront)
 
         /** 기동 한 번에 한 장. ⚠️ 부르는 쪽([AppSplash])이 고른 것을 기억해야 한다 — 다시 그릴 때마다 부르면 그림이 바뀐다. */
         fun pickForLaunch(random: Random = Random.Default): SplashVariant = LaunchPool.random(random)
@@ -220,7 +226,7 @@ internal fun SplashScene(
 }
 
 /**
- * 그림 한 장으로 된 후보(⑩ · ⑪)의 그림과, 화면 비율이 달라 위아래가 잘릴 때 **남길 쪽**(세로 치우침 −1 위 ~ 1 아래).
+ * 그림 한 장으로 된 후보(⑩ · ⑪ · ⑫)의 그림과, 화면 비율이 달라 위아래가 잘릴 때 **남길 쪽**(세로 치우침 −1 위 ~ 1 아래).
  * 폰은 그림보다 길쭉해 좌우가 조금 잘리고(세로를 꽉 채운다), 펼친 폴더블 · 태블릿은 위아래가 잘린다 — 그때 캐릭터와 판이 있는 아래쪽을 남긴다.
  * 그림의 원본은 1536x2752(9:16에 가깝다)라 폰 화면에서 줄여서 그린다.
  */
@@ -229,7 +235,8 @@ private class Illustration(@DrawableRes val res: Int, val verticalBias: Float)
 private val SplashVariant.illustration: Illustration?
     get() = when (this) {
         SplashVariant.IllustrationSpotlightNight -> Illustration(R.drawable.splash_spotlight_night, verticalBias = 0.3f)
-        SplashVariant.IllustrationHanokDojo -> Illustration(R.drawable.splash_hanok_dojo_day, verticalBias = 0.6f)
+        SplashVariant.IllustrationHanokAngled -> Illustration(R.drawable.splash_hanok_dojo_day2, verticalBias = 0.6f)
+        SplashVariant.IllustrationHanokFront -> Illustration(R.drawable.splash_hanok_dojo_day1, verticalBias = 0.6f)
         else -> null
     }
 
@@ -342,7 +349,8 @@ private fun transformFor(
         SplashVariant.CardFlip -> cardFlip(fromCenter, index, t, width, count)
         SplashVariant.Wave -> wave(fromCenter, index, t, width, count)
         // 그림 후보는 [SplashScene]이 먼저 가로채 캐릭터 다섯 장을 그리지 않는다 — 여기 오지 않는다.
-        SplashVariant.IllustrationSpotlightNight, SplashVariant.IllustrationHanokDojo -> CoinFrame(size = CoinSize, alpha = 0f)
+        SplashVariant.IllustrationSpotlightNight, SplashVariant.IllustrationHanokAngled, SplashVariant.IllustrationHanokFront,
+        -> CoinFrame(size = CoinSize, alpha = 0f)
     }
 }
 

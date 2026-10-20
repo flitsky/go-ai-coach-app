@@ -217,14 +217,14 @@ class AppSplashContractTest {
     }
 
     /**
-     * 기동 스플래시는 그림 두 장 중 **무작위로 한 장**(2026-10-20 사용자). 목록 밖의 후보가 뽑히거나 한 장이 영영 안 뽑히면
-     * 화면은 멀쩡해 보여도 요구가 틀어진다 — 씨앗 200개로 둘 다 나오는지, 목록 밖이 없는지 본다.
+     * 기동 스플래시는 그림 세 장 중 **무작위로 한 장**(2026-10-20 사용자 — 처음 둘, 같은 날 셋으로). 목록 밖의 후보가 뽑히거나 한 장이
+     * 영영 안 뽑히면 화면은 멀쩡해 보여도 요구가 틀어진다 — 씨앗 200개로 셋 다 나오는지, 목록 밖이 없는지 본다.
      */
     @Test
     fun theLaunchPicksOnlyFromThePoolAndReachesEveryOne() {
         assertEquals(
-            "기동 후보는 그림 둘이다(⑩ 스포트라이트 · ⑪ 한옥 도장).",
-            listOf(SplashVariant.IllustrationSpotlightNight, SplashVariant.IllustrationHanokDojo),
+            "기동 후보는 그림 셋이다(⑩ 스포트라이트 · ⑪ 한옥 비스듬히 · ⑫ 한옥 정면).",
+            listOf(SplashVariant.IllustrationSpotlightNight, SplashVariant.IllustrationHanokAngled, SplashVariant.IllustrationHanokFront),
             SplashVariant.LaunchPool,
         )
         val picked = (0 until 200).map { seed -> SplashVariant.pickForLaunch(Random(seed)) }.toSet()
@@ -234,7 +234,7 @@ class AppSplashContractTest {
     /** 그림 후보의 그림 파일이 리소스에 있어야 한다 — 없으면 컴파일이 먼저 멈추지만, 이름을 바꿀 때 어디를 고칠지 여기서 보인다. */
     @Test
     fun everyLaunchIllustrationShipsAsAWebp() {
-        listOf("splash_spotlight_night", "splash_hanok_dojo_day").forEach { name ->
+        listOf("splash_spotlight_night", "splash_hanok_dojo_day1", "splash_hanok_dojo_day2").forEach { name ->
             assertTrue("스플래시 그림이 없다: $name.webp", RepoPaths.appAndroidMain("res/drawable-nodpi/$name.webp").isFile)
             assertTrue("`SplashVariants.kt`가 $name 을 쓰지 않는다.", variants.contains("R.drawable.$name"))
         }
