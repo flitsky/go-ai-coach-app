@@ -1,0 +1,180 @@
+{"book": "xxqj", "id": "2", "goal": null, "top": "E17", "pv": ["E17", "F18", "E16", "C14", "G17", "G18", "H17", "H18"]}
+{"book": "xxqj", "id": "209", "goal": null, "top": "D18", "pv": ["D18", "C13", "B15", "D4", "Q16", "Q4", "C10", "C6"]}
+{"book": "xxqj", "id": "248", "goal": null, "top": "C17", "pv": ["C17", "E15", "D4", "Q16", "C14", "B14"]}
+{"book": "xxqj", "id": "11", "goal": null, "top": "D19", "pv": ["D19", "Q4", "D4", "Q16", "O17", "D15"]}
+{"book": "xxqj", "id": "121", "goal": null, "top": "C19", "pv": ["C19", "Q17", "D4", "Q4", "D9", "B19", "C18", "D19"]}
+{"book": "xxqj", "id": "14", "goal": null, "top": "A18", "pv": ["A18", "B18", "D4", "Q16", "Q4", "N17", "A16", "A19"]}
+{"book": "xxqj", "id": "164", "goal": "Live", "target": "A17", "targetSize": 1, "blackFirst": 0.307, "whiteFirst": -0.525, "flip": 0.832, "top": "C17", "pv": ["C17", "D4", "D17", "E17", "E18", "F18", "E19"]}
+{"book": "xxqj", "id": "111", "goal": null, "top": "B19", "pv": ["B19", "Q17", "D4", "Q4", "D9", "C19"]}
+{"book": "xxqj", "id": "43", "goal": null, "top": "A18", "pv": ["A18", "Q17", "Q4", "A19", "C18"]}
+{"book": "xxqj", "id": "120", "goal": "Live", "target": "A18", "targetSize": 2, "blackFirst": 0.454, "whiteFirst": -0.806, "flip": 1.26, "top": "D16", "pv": ["D16", "C17", "E19", "A15", "A14", "A16", "D19", "B14"]}
+{"book": "xxqj", "id": "122", "goal": null, "top": "C18", "pv": ["C18", "B18", "E19", "E14", "E15", "D19", "D17", "F19"]}
+{"book": "xxqj", "id": "129", "goal": null, "top": "D18", "pv": ["D18", "Q17", "Q4", "A18", "C4", "C7"]}
+{"book": "xxqj", "id": "165", "goal": null, "top": "C17", "pv": ["C17", "Q17", "C4", "Q4", "D8", "E4"]}
+{"book": "xxqj", "id": "301", "goal": null, "top": "B16", "pv": ["B16", "B17", "D4", "Q16", "A18", "A17", "C19"]}
+{"book": "xxqj", "id": "324", "goal": null, "top": "B19", "pv": ["B19", "D4", "Q16", "Q4"]}
+{"book": "xxqj", "id": "341", "goal": null, "top": "D19", "pv": ["D19", "Q16", "F18", "G18", "F19", "D4", "Q4", "D9"]}
+{"book": "xxqj", "id": "4", "goal": null, "top": "A18", "pv": ["A18", "G16", "H16", "A17", "F19", "D18"]}
+{"book": "xxqj", "id": "64", "goal": null, "top": "A17", "pv": ["A17", "Q16", "D4", "Q4", "D11", "A18", "O17"]}
+{"book": "xxqj", "id": "91", "goal": null, "top": "A18", "pv": ["A18", "Q16", "D18", "D4", "D9"]}
+{"book": "xxqj", "id": "130", "goal": "Kill", "target": "C17", "targetSize": 3, "blackFirst": 0.308, "whiteFirst": -0.711, "flip": 1.019, "top": "D19", "pv": ["D19", "E18", "Q16", "Q4", "F19", "E19"]}
+{"book": "xxqj", "id": "18", "goal": null, "top": "A18", "pv": ["A18", "Q16", "D4", "Q4", "O17", "O16"]}
+{"book": "xxqj", "id": "51", "goal": null, "top": "G15", "pv": ["G15", "Q17", "A18", "B18", "A17", "E19"]}
+{"book": "xxqj", "id": "75", "goal": null, "top": "B19", "pv": ["B19", "Q17", "D4", "B17", "A16", "D17"]}
+{"book": "xxqj", "id": "184", "goal": "Live", "target": "B19", "targetSize": 2, "blackFirst": 0.599, "whiteFirst": -0.322, "flip": 0.921, "top": "E18", "pv": ["E18", "F17", "F18", "K17", "H17", "H18"]}
+{"book": "xxqj", "id": "237", "goal": null, "top": "E18", "pv": ["E18", "Q17", "H16", "D19", "C18", "E16", "C19", "E17"]}
+{"book": "xxqj", "id": "277", "goal": "Live", "target": "E18", "targetSize": 2, "blackFirst": 0.304, "whiteFirst": -0.719, "flip": 1.023, "top": "C17", "pv": ["C17", "C18", "B18", "B17", "C16", "B19", "A18", "A17"]}
+{"book": "xxqj", "id": "334", "goal": "Kill", "target": "F19", "targetSize": 3, "blackFirst": 0.616, "whiteFirst": -0.683, "flip": 1.299, "top": "C17", "pv": ["C17", "Q17", "D4", "H16", "G16", "C18", "D19", "E16"]}
+{"book": "xxqj", "id": "335", "goal": null, "top": "D16", "pv": ["D16", "C17", "B16", "B17", "D18", "D17"]}
+{"book": "xxqj", "id": "342", "goal": null, "top": "C18", "pv": ["C18", "B17", "D18", "C17", "D19", "E17", "F19", "E19"]}
+{"book": "xxqj", "id": "15", "goal": null, "top": "F14", "pv": ["F14", "Q17", "D4", "Q4", "O3", "B13"]}
+{"book": "xxqj", "id": "23", "goal": null, "top": "A18", "pv": ["A18", "Q16", "D4", "Q4", "O17"]}
+{"book": "xxqj", "id": "70", "goal": null, "top": "C19", "pv": ["C19", "D4", "Q16", "Q4", "C6"]}
+{"book": "xxqj", "id": "118", "goal": null, "top": "D19", "pv": ["D19", "B19", "C19", "C17", "A19", "B19", "Q17", "C4"]}
+{"book": "xxqj", "id": "134", "goal": null, "top": "B17", "pv": ["B17", "B16", "A18", "A16", "B18", "C18", "C16"]}
+{"book": "xxqj", "id": "146", "goal": "Kill", "target": "A15", "targetSize": 1, "blackFirst": 0.33, "whiteFirst": -0.475, "flip": 0.805, "top": "D19", "pv": ["D19", "D18", "B19", "A16", "C16", "F15", "C11"]}
+{"book": "xxqj", "id": "314", "goal": null, "top": "A18", "pv": ["A18", "C4", "Q17", "B17", "A16"]}
+{"book": "xxqj", "id": "336", "goal": null, "top": "B15", "pv": ["B15", "Q17", "C4", "B16", "C18", "C17"]}
+{"book": "xxqj", "id": "20", "goal": null, "top": "G18", "pv": ["G18", "F18", "F19", "E18", "J18", "H19", "J19", "K18"]}
+{"book": "xxqj", "id": "69", "goal": null, "top": "C19", "pv": ["C19", "Q16", "D4", "A18", "F19", "E19", "E17"]}
+{"book": "xxqj", "id": "264", "goal": "Kill", "target": "A18", "targetSize": 2, "blackFirst": 0.539, "whiteFirst": -0.777, "flip": 1.316, "top": "D19", "pv": ["D19", "Q16", "D4", "E18", "F19", "E19", "E17"]}
+{"book": "xxqj", "id": "12", "goal": "Kill", "target": "B18", "targetSize": 4, "blackFirst": 0.908, "whiteFirst": -0.928, "flip": 1.836, "top": "D19", "pv": ["D19", "E18", "G18", "G19", "A15", "R16", "D3", "H18"]}
+{"book": "xxqj", "id": "59", "goal": "Kill", "target": "D17", "targetSize": 5, "blackFirst": 0.333, "whiteFirst": -0.951, "flip": 1.284, "top": "B17", "pv": ["B17", "A16", "D19", "B18", "B19", "Q16", "D4", "Q4"]}
+{"book": "xxqj", "id": "204", "goal": "Live", "target": "C16", "targetSize": 2, "blackFirst": 0.519, "whiteFirst": -0.593, "flip": 1.112, "top": "B18", "pv": ["B18", "E18", "D18", "D17", "C17", "Q17", "Q15"]}
+{"book": "xxqj", "id": "239", "goal": null, "top": "A18", "pv": ["A18", "A19", "Q17", "D4", "F18", "E19"]}
+{"book": "xxqj", "id": "247", "goal": null, "top": "C18", "pv": ["C18", "Q16", "C4", "B18", "C17", "C16"]}
+{"book": "xxqj", "id": "197", "goal": "Kill", "target": "F18", "targetSize": 3, "blackFirst": 0.813, "whiteFirst": -0.877, "flip": 1.69, "top": "E19", "pv": ["E19", "R16", "D4", "Q3", "C13", "C18", "E18", "C3"]}
+{"book": "xxqj", "id": "308", "goal": null, "top": "C18", "pv": ["C18", "E18", "D14", "B14", "R16", "C12", "Q4", "H15"]}
+{"book": "xxqj", "id": "338", "goal": "Kill", "target": "C19", "targetSize": 2, "blackFirst": 0.567, "whiteFirst": -0.692, "flip": 1.259, "top": "E19", "pv": ["E19", "R16", "Q16", "E18", "C17", "F19", "D19"]}
+{"book": "xxqj", "id": "3", "goal": null, "top": "B18", "pv": ["B18", "B16", "Q17", "Q4", "C4", "C7"]}
+{"book": "xxqj", "id": "8", "goal": null, "top": "A18", "pv": ["A18", "Q17", "D4", "Q4", "C7", "O16"]}
+{"book": "xxqj", "id": "28", "goal": "Live", "target": "E17", "targetSize": 6, "blackFirst": 0.711, "whiteFirst": -0.694, "flip": 1.406, "top": "A18", "pv": ["A18", "B18", "A17", "Q17", "Q4", "B19", "D17", "D4"]}
+{"book": "xxqj", "id": "31", "goal": null, "top": "A18", "pv": ["A18", "Q17", "C4", "B15", "A15", "A17"]}
+{"book": "xxqj", "id": "86", "goal": null, "top": "E18", "pv": ["E18", "D18", "Q17", "D4", "C6"]}
+{"book": "xxqj", "id": "94", "goal": null, "top": "D18", "pv": ["D18", "Q17", "C4", "D17", "D19", "C19"]}
+{"book": "xxqj", "id": "105", "goal": null, "top": "C18", "pv": ["C18", "Q17", "C4", "D19", "A18", "A17", "B18", "B19"]}
+{"book": "xxqj", "id": "128", "goal": null, "top": "E18", "pv": ["E18", "F17", "A18", "C18", "E17", "D16", "F19"]}
+{"book": "xxqj", "id": "161", "goal": "Live", "target": "B17", "targetSize": 5, "blackFirst": 0.794, "whiteFirst": -0.848, "flip": 1.643, "top": "A16", "pv": ["A16", "C4", "Q3", "R16", "R6", "D7", "D3", "C3"]}
+{"book": "xxqj", "id": "188", "goal": null, "top": "C18", "pv": ["C18", "Q17", "C4", "E16", "E19", "D19", "F19", "C19"]}
+{"book": "xxqj", "id": "272", "goal": null, "top": "D18", "pv": ["D18", "Q16", "D4", "C18", "Q4"]}
+{"book": "xxqj", "id": "279", "goal": "Kill", "target": "C16", "targetSize": 3, "blackFirst": 0.411, "whiteFirst": -0.623, "flip": 1.034, "top": "B19", "pv": ["B19", "F19", "D18", "D17", "D19", "C19", "E17", "E19"]}
+{"book": "hatsuyoron", "id": "80", "goal": null, "top": "B18", "pv": ["B18", "C18", "A17", "A16", "D18", "A18"]}
+{"book": "hatsuyoron", "id": "106", "goal": null, "top": "D16", "pv": ["D16", "B14", "B13", "D17", "B18", "A18", "C18", "D18"]}
+{"book": "hatsuyoron", "id": "127", "goal": null, "top": "C16", "pv": ["C16", "C15", "Q17", "Q4", "D18", "E17", "B17", "B15"]}
+{"book": "hatsuyoron", "id": "29", "goal": null, "top": "F15", "pv": ["F15", "F16", "Q16", "D4", "H15"]}
+{"book": "hatsuyoron", "id": "83", "goal": "Kill", "target": "D17", "targetSize": 4, "blackFirst": 0.43, "whiteFirst": -0.774, "flip": 1.204, "top": "C17", "pv": ["C17", "C18", "B18", "Q16", "D18", "D4", "Q4", "C7"]}
+{"book": "hatsuyoron", "id": "32", "goal": null, "top": "D17", "pv": ["D17", "C17", "D16", "D18", "Q16", "D4", "B18"]}
+{"book": "hatsuyoron", "id": "38", "goal": null, "top": "E19", "pv": ["E19", "Q16", "D4", "D16", "C15"]}
+{"book": "hatsuyoron", "id": "58", "goal": "Kill", "target": "G17", "targetSize": 1, "blackFirst": 0.682, "whiteFirst": -0.427, "flip": 1.109, "top": "E17", "pv": ["E17", "D17", "G18", "B15", "A15", "B17", "B16", "C16"]}
+{"book": "hatsuyoron", "id": "64", "goal": null, "top": "C18", "pv": ["C18", "D18", "A16", "A17", "Q16", "J18"]}
+{"book": "hatsuyoron", "id": "65", "goal": null, "top": "A18", "pv": ["A18", "C12", "Q17", "B19", "D19", "B13"]}
+{"book": "hatsuyoron", "id": "66", "goal": "Live", "target": "E18", "targetSize": 1, "blackFirst": 0.816, "whiteFirst": -0.726, "flip": 1.543, "top": "E17", "pv": ["E17", "D18", "D19", "F19", "C15", "Q16", "Q4", "C4"]}
+{"book": "hatsuyoron", "id": "49", "goal": null, "top": "A18", "pv": ["A18", "B15", "C18", "C19", "D18", "E19", "Q16", "B14"]}
+{"book": "hatsuyoron", "id": "81", "goal": "Live", "target": "E17", "targetSize": 1, "blackFirst": 0.833, "whiteFirst": -0.436, "flip": 1.269, "top": "E16", "pv": ["E16", "B18", "B19", "C19", "B17", "B15", "C17", "D16"]}
+{"book": "hatsuyoron", "id": "113", "goal": null, "top": "B17", "pv": ["B17", "C4", "Q16", "B15", "B14", "D15", "E15", "C14"]}
+{"book": "hatsuyoron", "id": "47", "goal": "Kill", "target": "J18", "targetSize": 2, "blackFirst": 0.399, "whiteFirst": -0.751, "flip": 1.15, "top": "E18", "pv": ["E18", "D18", "H17", "F18", "E19", "H18", "J19", "G19"]}
+{"book": "hatsuyoron", "id": "51", "goal": null, "top": "D16", "pv": ["D16", "D17", "B18", "C17", "F18", "E18", "Q16", "A15"]}
+{"book": "hatsuyoron", "id": "67", "goal": "Live", "target": "A19", "targetSize": 6, "blackFirst": 0.739, "whiteFirst": -0.752, "flip": 1.49, "top": "F18", "pv": ["F18", "G19", "A15", "Q16", "C4", "C18", "A16", "D18"]}
+{"book": "hatsuyoron", "id": "100", "goal": "Live", "target": "B18", "targetSize": 1, "blackFirst": 0.525, "whiteFirst": -0.307, "flip": 0.832, "top": "C17", "pv": ["C17", "B19", "D19", "B17", "A18", "G18", "C19"]}
+{"book": "hatsuyoron", "id": "112", "goal": "Live", "target": "D17", "targetSize": 3, "blackFirst": 0.446, "whiteFirst": -0.72, "flip": 1.166, "top": "D18", "pv": ["D18", "G18", "G19", "G17", "F18", "F17", "E19", "F19"]}
+{"book": "hatsuyoron", "id": "1", "goal": null, "top": "G18", "pv": ["G18", "B18", "Q16", "D4", "H18"]}
+{"book": "hatsuyoron", "id": "10", "goal": null, "top": "G14", "pv": ["G14", "H14", "F13", "F14", "Q17", "C13"]}
+{"book": "hatsuyoron", "id": "44", "goal": null, "top": "C15", "pv": ["C15", "E19", "C18", "A16", "D18", "E17", "D15", "C4"]}
+{"book": "hatsuyoron", "id": "54", "goal": "Kill", "target": "B14", "targetSize": 2, "blackFirst": 0.566, "whiteFirst": -0.371, "flip": 0.937, "top": "C18", "pv": ["C18", "B16", "D18", "E18", "F18", "E19", "D16", "C17"]}
+{"book": "hatsuyoron", "id": "62", "goal": null, "top": "E18", "pv": ["E18", "B14", "Q17", "D4", "Q4", "D13", "D12"]}
+{"book": "hatsuyoron", "id": "63", "goal": "Kill", "target": "C19", "targetSize": 5, "blackFirst": 0.701, "whiteFirst": -0.903, "flip": 1.604, "top": "B17", "pv": ["B17", "C16", "A16", "Q16", "D4", "Q4", "O17", "J17"]}
+{"book": "hatsuyoron", "id": "89", "goal": "Kill", "target": "D15", "targetSize": 1, "blackFirst": 0.368, "whiteFirst": -0.699, "flip": 1.067, "top": "B18", "pv": ["B18", "Q16", "C4", "Q4", "O17", "C16"]}
+{"book": "hatsuyoron", "id": "90", "goal": null, "top": "D18", "pv": ["D18", "A14", "B18", "B19", "A18", "A17", "C17"]}
+{"book": "hatsuyoron", "id": "143", "goal": null, "top": "E14", "pv": ["E14", "Q16", "C4", "Q4", "K17", "E15", "D15"]}
+{"book": "hatsuyoron", "id": "45", "goal": "Kill", "target": "E17", "targetSize": 4, "blackFirst": 0.363, "whiteFirst": -0.483, "flip": 0.845, "top": "B16", "pv": ["B16", "B17", "B18", "C18", "A17", "K16", "D17", "K17"]}
+{"book": "hatsuyoron", "id": "79", "goal": null, "top": "G16", "pv": ["G16", "E17", "Q16", "C4", "D18", "E18", "B17", "B18"]}
+{"book": "hatsuyoron", "id": "77", "goal": null, "top": "F18", "pv": ["F18", "E18", "G18", "E16", "H18", "J18"]}
+{"book": "hatsuyoron", "id": "84", "goal": null, "top": "A18", "pv": ["A18", "B19", "R16", "Q4", "J17", "D4", "D18"]}
+{"book": "hatsuyoron", "id": "2", "goal": null, "top": "C18", "pv": ["C18", "B18", "Q16", "D4", "D16"]}
+{"book": "hatsuyoron", "id": "41", "goal": null, "top": "D18", "pv": ["D18", "D17", "B16", "B17", "E19", "F19", "F18", "E18"]}
+{"book": "hatsuyoron", "id": "60", "goal": null, "top": "B16", "pv": ["B16", "C17", "E17", "E16", "B18", "B17", "A17", "A18"]}
+{"book": "hatsuyoron", "id": "94", "goal": "Kill", "target": "E17", "targetSize": 3, "blackFirst": 0.389, "whiteFirst": -0.706, "flip": 1.095, "top": "D18", "pv": ["D18", "D17", "F19", "E19", "E18", "F18", "D19", "B18"]}
+{"book": "hatsuyoron", "id": "110", "goal": "Live", "target": "E16", "targetSize": 2, "blackFirst": 0.477, "whiteFirst": -0.882, "flip": 1.359, "top": "E17", "pv": ["E17", "D16", "F18", "H17", "K17", "K18", "L18", "G18"]}
+{"book": "hatsuyoron", "id": "128", "goal": null, "top": "B16", "pv": ["B16", "B14", "B15", "A15", "C14", "C13", "D13", "E14"]}
+{"book": "hatsuyoron", "id": "157", "goal": "Live", "target": "F18", "targetSize": 2, "blackFirst": 0.868, "whiteFirst": -0.779, "flip": 1.647, "top": "E18", "pv": ["E18", "C15", "B16", "B15", "D17", "D12", "Q16", "D4"]}
+{"book": "hatsuyoron", "id": "162", "goal": "Live", "target": "C18", "targetSize": 4, "blackFirst": 0.755, "whiteFirst": -0.796, "flip": 1.551, "top": "E17", "pv": ["E17", "E18", "D16", "F15", "F18", "G18", "F16", "F19"]}
+{"book": "hatsuyoron", "id": "11", "goal": "Live", "target": "C18", "targetSize": 7, "blackFirst": 0.552, "whiteFirst": -0.749, "flip": 1.301, "top": "C16", "pv": ["C16", "C4", "Q16", "B16", "B15", "A15", "A16", "A17"]}
+{"book": "hatsuyoron", "id": "101", "goal": null, "top": "G18", "pv": ["G18", "H18", "D13", "D15", "D12", "D11"]}
+{"book": "hatsuyoron", "id": "108", "goal": "Live", "target": "B15", "targetSize": 2, "blackFirst": 0.438, "whiteFirst": -0.692, "flip": 1.13, "top": "C16", "pv": ["C16", "B17", "Q17", "C4", "B18", "C18", "C17", "A18"]}
+{"book": "hatsuyoron", "id": "14", "goal": null, "top": "E19", "pv": ["E19", "G17", "H17", "G18", "H18", "E18", "G19", "F19"]}
+{"book": "hatsuyoron", "id": "39", "goal": null, "top": "E18", "pv": ["E18", "F15", "D17", "J14", "G14", "H16", "J15"]}
+{"book": "hatsuyoron", "id": "70", "goal": "Kill", "target": "C18", "targetSize": 6, "blackFirst": 0.758, "whiteFirst": -0.62, "flip": 1.378, "top": "B17", "pv": ["B17", "R16", "D4", "K18", "J14", "K14", "H14"]}
+{"book": "hatsuyoron", "id": "78", "goal": null, "top": "B18", "pv": ["B18", "C18", "D16", "B17", "A17", "E18"]}
+{"book": "hatsuyoron", "id": "85", "goal": null, "top": "F18", "pv": ["F18", "E18", "G18", "H17", "F17", "F16", "H19", "G19"]}
+{"book": "hatsuyoron", "id": "88", "goal": null, "top": "G18", "pv": ["G18", "H18", "F18", "F17", "C18", "K15", "K16"]}
+{"book": "hatsuyoron", "id": "123", "goal": "Live", "target": "G18", "targetSize": 6, "blackFirst": 0.892, "whiteFirst": -0.858, "flip": 1.75, "top": "F19", "pv": ["F19", "E15", "E16", "F17", "E19", "R16", "L15", "K13"]}
+{"book": "hatsuyoron", "id": "130", "goal": null, "top": "H14", "pv": ["H14", "H15", "R16", "D4", "J15", "J13", "E18"]}
+{"book": "hatsuyoron", "id": "169", "goal": null, "top": "F16", "pv": ["F16", "E15", "F14", "F15", "G16", "E14", "E13", "F13"]}
+{"book": "hatsuyoron", "id": "12", "goal": null, "top": "B18", "pv": ["B18", "Q17", "D4", "Q4", "O17"]}
+{"book": "hatsuyoron", "id": "34", "goal": "Live", "target": "H17", "targetSize": 1, "blackFirst": 0.885, "whiteFirst": -0.524, "flip": 1.409, "top": "H16", "pv": ["H16", "B15", "B17", "C15", "C18", "D17", "A18", "B19"]}
+{"book": "hatsuyoron", "id": "96", "goal": null, "top": "F17", "pv": ["F17", "F16", "F18", "H19", "K19", "E17", "E18", "D18"]}
+{"book": "hatsuyoron", "id": "103", "goal": null, "top": "B17", "pv": ["B17", "B16", "C17", "C16", "D18", "E18", "C19", "E19"]}
+{"book": "hatsuyoron", "id": "111", "goal": "Live", "target": "E18", "targetSize": 2, "blackFirst": 0.301, "whiteFirst": -0.689, "flip": 0.991, "top": "E16", "pv": ["E16", "F15", "E15", "D15", "G18", "H18", "H17", "J18"]}
+{"book": "hatsuyoron", "id": "121", "goal": null, "top": "D16", "pv": ["D16", "E16", "D17", "D18", "C16", "E17", "F15", "H15"]}
+{"book": "hatsuyoron", "id": "167", "goal": "Live", "target": "E17", "targetSize": 4, "blackFirst": 0.743, "whiteFirst": -0.656, "flip": 1.4, "top": "D17", "pv": ["D17", "C16", "B18", "H13", "J13", "J12", "L14", "L16"]}
+{"book": "hatsuyoron", "id": "31", "goal": null, "top": "D19", "pv": ["D19", "D4", "Q16", "Q4", "H18"]}
+{"book": "gokyoshumyo", "id": "1-47", "goal": null, "top": "E19", "pv": ["E19", "D4", "Q16", "Q4", "N17", "C19", "B19"]}
+{"book": "gokyoshumyo", "id": "2-2", "goal": "Kill", "target": "C17", "targetSize": 2, "blackFirst": 0.348, "whiteFirst": -0.538, "flip": 0.886, "top": "A18", "pv": ["A18", "D4", "Q16", "Q4", "R6", "O17"]}
+{"book": "gokyoshumyo", "id": "2-16", "goal": null, "top": "A18", "pv": ["A18", "Q16", "D4", "Q4", "O17", "M17"]}
+{"book": "gokyoshumyo", "id": "3-6", "goal": null, "top": "A18", "pv": ["A18", "D4", "Q16", "Q4", "O17", "B18"]}
+{"book": "gokyoshumyo", "id": "3-10", "goal": null, "top": "A16", "pv": ["A16", "D4", "B15", "C14", "Q16", "Q4"]}
+{"book": "gokyoshumyo", "id": "3-72", "goal": null, "top": "B17", "pv": ["B17", "D4", "Q16", "Q4", "N17", "B19"]}
+{"book": "gokyoshumyo", "id": "3-81", "goal": null, "top": "E15", "pv": ["E15", "Q16", "D3", "Q4", "C7"]}
+{"book": "gokyoshumyo", "id": "1-4", "goal": null, "top": "D16", "pv": ["D16", "C14", "Q16", "D4", "Q4", "O17", "B18"]}
+{"book": "gokyoshumyo", "id": "1-46", "goal": null, "top": "E17", "pv": ["E17", "E16", "Q16", "D4", "Q4", "D9", "O17", "O3"]}
+{"book": "gokyoshumyo", "id": "2-3", "goal": null, "top": "A19", "pv": ["A19", "E15", "E16", "D19", "Q16", "H18"]}
+{"book": "gokyoshumyo", "id": "2-7", "goal": "Kill", "target": "B18", "targetSize": 3, "blackFirst": 0.606, "whiteFirst": -0.882, "flip": 1.488, "top": "E18", "pv": ["E18", "D4", "Q16", "Q4", "C9", "O17", "C6"]}
+{"book": "gokyoshumyo", "id": "2-22", "goal": null, "top": "B19", "pv": ["B19", "Q16", "D4", "Q4", "O17", "J16", "L16"]}
+{"book": "gokyoshumyo", "id": "3-2", "goal": null, "top": "F19", "pv": ["F19", "G19", "Q16", "D4", "Q4", "D9", "O17"]}
+{"book": "gokyoshumyo", "id": "3-7", "goal": null, "top": "F19", "pv": ["F19", "G19", "Q16", "D4", "Q4", "D9", "O17"]}
+{"book": "gokyoshumyo", "id": "4-84", "goal": "Kill", "target": "F19", "targetSize": 2, "blackFirst": 0.728, "whiteFirst": -0.76, "flip": 1.488, "top": "G18", "pv": ["G18", "Q16", "D4", "Q4", "C14", "E15", "D13", "H15"]}
+{"book": "gokyoshumyo", "id": "1-1", "goal": null, "top": "C16", "pv": ["C16", "D15", "D16", "E16", "E15", "F15", "E14", "C12"]}
+{"book": "gokyoshumyo", "id": "1-2", "goal": null, "top": "D15", "pv": ["D15", "C13", "D4", "Q16", "Q4", "R6"]}
+{"book": "gokyoshumyo", "id": "1-9", "goal": "Live", "target": "B17", "targetSize": 3, "blackFirst": 0.362, "whiteFirst": -0.568, "flip": 0.929, "top": "C19", "pv": ["C19", "Q16", "D4", "Q4", "O17", "M16", "O15"]}
+{"book": "gokyoshumyo", "id": "1-10", "goal": null, "top": "E15", "pv": ["E15", "F15", "E14", "F14", "E13", "D16", "D4"]}
+{"book": "gokyoshumyo", "id": "1-35", "goal": null, "top": "E16", "pv": ["E16", "D15", "Q16", "D4", "Q4", "D18"]}
+{"book": "gokyoshumyo", "id": "2-14", "goal": null, "top": "D19", "pv": ["D19", "E15", "E14", "F14", "G15", "D4"]}
+{"book": "gokyoshumyo", "id": "2-70", "goal": null, "top": "B18", "pv": ["B18", "Q17", "D4", "Q4", "C8", "C18"]}
+{"book": "gokyoshumyo", "id": "3-59", "goal": null, "top": "D18", "pv": ["D18", "C18", "D17", "C17", "D4", "E15", "E14", "F15"]}
+{"book": "gokyoshumyo", "id": "3-78", "goal": null, "top": "A18", "pv": ["A18", "A15", "C18", "D18", "B19", "F16"]}
+{"book": "gokyoshumyo", "id": "4-3", "goal": "Kill", "target": "C18", "targetSize": 3, "blackFirst": 0.816, "whiteFirst": -0.87, "flip": 1.686, "top": "B18", "pv": ["B18", "D19", "B19", "C11", "D4", "R4", "R16", "F17"]}
+{"book": "gokyoshumyo", "id": "1-6", "goal": null, "top": "F18", "pv": ["F18", "F17", "B14", "A15", "D4", "Q16"]}
+{"book": "gokyoshumyo", "id": "1-8", "goal": null, "top": "E18", "pv": ["E18", "F18", "Q17", "D4", "Q4", "D9"]}
+{"book": "gokyoshumyo", "id": "1-11", "goal": null, "top": "G16", "pv": ["G16", "F16", "Q16", "D4", "Q4", "B18"]}
+{"book": "gokyoshumyo", "id": "1-12", "goal": "Live", "target": "C17", "targetSize": 2, "blackFirst": 0.351, "whiteFirst": -0.453, "flip": 0.804, "top": "C19", "pv": ["C19", "Q17", "D4", "Q4", "C7", "O16"]}
+{"book": "gokyoshumyo", "id": "1-17", "goal": null, "top": "D15", "pv": ["D15", "B14", "D4", "Q16", "Q4"]}
+{"book": "gokyoshumyo", "id": "1-19", "goal": "Live", "target": "E18", "targetSize": 3, "blackFirst": 0.503, "whiteFirst": -0.752, "flip": 1.255, "top": "D19", "pv": ["D19", "Q17", "D4", "Q4", "D9", "Q15"]}
+{"book": "gokyoshumyo", "id": "2-4", "goal": "Kill", "target": "B16", "targetSize": 2, "blackFirst": 0.344, "whiteFirst": -0.855, "flip": 1.199, "top": "B18", "pv": ["B18", "D4", "Q16", "Q4", "R6", "H17", "H16", "J17"]}
+{"book": "gokyoshumyo", "id": "2-5", "goal": null, "top": "B18", "pv": ["B18", "B17", "Q16", "E18", "F18", "D4"]}
+{"book": "gokyoshumyo", "id": "2-8", "goal": null, "top": "B17", "pv": ["B17", "Q4", "Q16", "D4", "R6", "B18", "B16", "J18"]}
+{"book": "gokyoshumyo", "id": "2-20", "goal": null, "top": "A16", "pv": ["A16", "Q17", "D4", "Q4", "C7", "B17"]}
+{"book": "gokyoshumyo", "id": "2-23", "goal": null, "top": "B19", "pv": ["B19", "F16", "F17", "Q16", "D4", "Q4"]}
+{"book": "gokyoshumyo", "id": "3-3", "goal": null, "top": "G16", "pv": ["G16", "Q16", "H17", "H16", "G18"]}
+{"book": "gokyoshumyo", "id": "3-13", "goal": null, "top": "C18", "pv": ["C18", "Q16", "C16", "E19", "B15", "Q4", "D4"]}
+{"book": "gokyoshumyo", "id": "3-15", "goal": null, "top": "A17", "pv": ["A17", "A16", "B19", "F19", "E19", "D18", "Q16"]}
+{"book": "gokyoshumyo", "id": "3-37", "goal": null, "top": "A17", "pv": ["A17", "Q17", "D4", "Q4", "D9", "A18"]}
+{"book": "gokyoshumyo", "id": "3-39", "goal": null, "top": "C18", "pv": ["C18", "B18", "D3", "Q16", "Q4", "D4", "C4", "C5"]}
+{"book": "gokyoshumyo", "id": "3-45", "goal": null, "top": "E18", "pv": ["E18", "Q17", "D4", "D18", "C17", "Q4"]}
+{"book": "gokyoshumyo", "id": "4-5", "goal": null, "top": "A18", "pv": ["A18", "D4", "Q16", "R4", "C12", "D12", "C11", "C13"]}
+{"book": "gokyoshumyo", "id": "4-23", "goal": "Kill", "target": "C17", "targetSize": 4, "blackFirst": 0.57, "whiteFirst": -0.873, "flip": 1.443, "top": "B18", "pv": ["B18", "Q16", "Q4", "D3", "C5", "E14", "C12", "E4"]}
+{"book": "gokyoshumyo", "id": "1-13", "goal": null, "top": "E18", "pv": ["E18", "E19", "E16", "E15", "F15", "G15", "F14", "E14"]}
+{"book": "gokyoshumyo", "id": "1-18", "goal": null, "top": "E16", "pv": ["E16", "E15", "D17", "Q4", "Q16"]}
+{"book": "gokyoshumyo", "id": "2-6", "goal": null, "top": "F14", "pv": ["F14", "Q17", "D3", "Q4", "C6"]}
+{"book": "gokyoshumyo", "id": "2-43", "goal": null, "top": "C19", "pv": ["C19", "D15", "E15", "B19", "B15", "E18", "E19"]}
+{"book": "gokyoshumyo", "id": "3-1", "goal": null, "top": "B18", "pv": ["B18", "D4", "E15", "A16", "Q16"]}
+{"book": "gokyoshumyo", "id": "3-4", "goal": null, "top": "D15", "pv": ["D15", "E15", "Q4", "D3"]}
+{"book": "gokyoshumyo", "id": "3-9", "goal": null, "top": "C16", "pv": ["C16", "C15", "D4", "Q16", "Q4", "C6", "C8"]}
+{"book": "gokyoshumyo", "id": "3-14", "goal": null, "top": "E14", "pv": ["E14", "Q16", "E15", "C12", "F18", "G18"]}
+{"book": "gokyoshumyo", "id": "3-50", "goal": null, "top": "D17", "pv": ["D17", "D4", "Q16", "Q4", "C6", "O17"]}
+{"book": "gokyoshumyo", "id": "4-17", "goal": "Live", "target": "D18", "targetSize": 2, "blackFirst": 0.409, "whiteFirst": -0.758, "flip": 1.167, "top": "D19", "pv": ["D19", "Q16", "Q4", "A16", "C19", "C15", "B15", "B14"]}
+{"book": "gokyoshumyo", "id": "4-45", "goal": "Live", "target": "B17", "targetSize": 5, "blackFirst": 0.682, "whiteFirst": -0.745, "flip": 1.427, "top": "B19", "pv": ["B19", "G14", "D4", "Q4", "Q16", "C6", "C8", "C19"]}
+{"book": "gokyoshumyo", "id": "5-1", "goal": null, "top": "A18", "pv": ["A18", "A19", "Q16", "B13", "D4", "Q4"]}
+{"book": "gokyoshumyo", "id": "4-9", "goal": "Kill", "target": "G18", "targetSize": 3, "blackFirst": 0.72, "whiteFirst": -0.798, "flip": 1.518, "top": "H19", "pv": ["H19", "Q16", "D4", "Q3", "R5", "O4", "C13"]}
+{"book": "gokyoshumyo", "id": "1-16", "goal": null, "top": "G17", "pv": ["G17", "G18", "Q16", "D4", "Q4", "O3"]}
+{"book": "gokyoshumyo", "id": "1-20", "goal": null, "top": "A18", "pv": ["A18", "Q16", "D4", "Q4", "O17", "C6"]}
+{"book": "gokyoshumyo", "id": "1-96", "goal": null, "top": "G19", "pv": ["G19", "H19", "Q16", "D4", "C18", "A18"]}

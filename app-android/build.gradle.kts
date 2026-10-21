@@ -563,6 +563,11 @@ tasks.withType<Test>().configureEach {
     systemProperty("exportLifeAndDeathCandidates", project.hasProperty("exportLifeAndDeathCandidates"))
     // 폰에서 읽기에 큰 사활 문제의 판정 표를 맥에서 다시 쓴다(LifeAndDeathAnswerTableExportTest, 백로그 #277) — `-PexportLifeAndDeathAnswerTables`를 줄 때만.
     systemProperty("exportLifeAndDeathAnswerTables", project.hasProperty("exportLifeAndDeathAnswerTables"))
+    // 고전 사활 후보를 풀이기로 증명해 내보낸다(LifeAndDeathClassicExportTest, 백로그 #277) — 실험실 E12의 결과를 읽는다. `-PexportLifeAndDeathClassics`를 줄 때만.
+    systemProperty("exportLifeAndDeathClassics", project.hasProperty("exportLifeAndDeathClassics"))
+    // 19줄 판 고전은 풀이기의 기억(국면 열쇠)이 커서 기본 힙(512MB)으로는 상한 몇십만 국면에서 GC에 묶인다 — 그때만 넓힌다.
+    if (project.hasProperty("exportLifeAndDeathClassics")) maxHeapSize = "6g"
+    systemProperty("lifeAndDeathClassicNodeLimit", project.findProperty("lifeAndDeathClassicNodeLimit")?.toString() ?: "")
     inputs.files(architectureContractScannedTrees.map { dir -> fileTree(dir) })
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)
