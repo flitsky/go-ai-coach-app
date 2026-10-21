@@ -559,6 +559,10 @@ tasks.withType<Test>().configureEach {
     systemProperty("exportStonePatches", project.hasProperty("exportStonePatches"))
     // 「기보 보기」 형세를 미리 계산할 국면 대본 내보내기(GameRecordPositionExportTest, 백로그 #269) — `-PexportGameRecordPositions`를 줄 때만.
     systemProperty("exportGameRecordPositions", project.hasProperty("exportGameRecordPositions"))
+    // 「중·고급 사활」 문제 후보 만들기(LifeAndDeathCandidateExportTest, 백로그 #277) — 풀이기로 수만 개를 걸러 몇 분이 걸리므로 `-PexportLifeAndDeathCandidates`를 줄 때만.
+    systemProperty("exportLifeAndDeathCandidates", project.hasProperty("exportLifeAndDeathCandidates"))
+    // 폰에서 읽기에 큰 사활 문제의 판정 표를 맥에서 다시 쓴다(LifeAndDeathAnswerTableExportTest, 백로그 #277) — `-PexportLifeAndDeathAnswerTables`를 줄 때만.
+    systemProperty("exportLifeAndDeathAnswerTables", project.hasProperty("exportLifeAndDeathAnswerTables"))
     inputs.files(architectureContractScannedTrees.map { dir -> fileTree(dir) })
         .withPropertyName("architectureContractScannedSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)
