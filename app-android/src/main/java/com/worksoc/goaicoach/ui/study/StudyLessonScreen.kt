@@ -104,11 +104,11 @@ internal fun StudyLessonTrackScreen(
         ) {
             lessons.forEach { lesson ->
                 // ⚠️ 허브와 **같은 줄 컴포넌트**를 쓴다 — 한 칸 들어왔을 뿐인데 행의 생김새가
-                // 바뀌면 다른 곳에 온 것처럼 읽힌다. 「준비 중」이 없는 것만 다르다.
+                // 바뀌면 다른 곳에 온 것처럼 읽힌다. 배지가 없는 것만 다르다.
                 StudyEntryRow(
                     title = studyLessonTitleFor(strings.language, lesson.id),
                     subtitle = studyLessonSummaryFor(strings.language, lesson.id),
-                    comingSoonLabel = null,
+                    badge = null,
                     onClick = { openedLesson = lesson.id },
                 )
             }

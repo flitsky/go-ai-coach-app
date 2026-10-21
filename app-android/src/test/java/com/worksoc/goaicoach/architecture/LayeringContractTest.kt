@@ -2202,6 +2202,8 @@ class LayeringContractTest {
             "GuideProgressStore",
             // 오늘의 명언 진행도(#273)도 취향이다 — 지우면 이미 본 명언이 처음부터 다시 나온다.
             "DailyQuoteStore",
+            // 「기본 사활」에서 푼 기록(#184)은 학습의 진행도다 — 테스트 기간에 푼 문제를 출시에서 다시 풀게 할 이유가 없다.
+            "LifeAndDeathProgressStore",
         ).forEach { store ->
             assertFalse(
                 "ReleaseResetCoordinator must NOT touch $store — user content, settings and the " +

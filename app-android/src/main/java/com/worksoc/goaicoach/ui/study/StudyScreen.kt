@@ -79,9 +79,12 @@ internal fun StudyScreen(
                 return
             }
         }
-        // 「기본 사활」은 `available = false`라 열리지 않는다 — 행이 눌리지 않으므로 여기 올 수
-        // 없다. 그 화면을 들고 오는 일감이 이 자리에 가지를 더한다.
-        else -> Unit
+        // 「기본 사활」은 형식이 달라(판에 직접 두는 문제 풀이 — U-51) 화면이 따로다(백로그 #184).
+        StudyCategory.LifeAndDeath -> {
+            LifeAndDeathTrackScreen(onBackClick = { opened = null }, modifier = modifier)
+            return
+        }
+        null -> Unit
     }
 
     Column(
@@ -103,7 +106,7 @@ internal fun StudyScreen(
                 StudyEntryRow(
                     title = strings.studyCategoryTitle(category),
                     subtitle = strings.studyCategorySubtitle(category),
-                    comingSoonLabel = strings.studyComingSoon.takeIf { !category.available },
+                    badge = strings.studyComingSoon.takeIf { !category.available },
                     onClick = { opened = category }.takeIf { category.available },
                 )
             }
@@ -148,8 +151,8 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
 }
 
 /**
- * 목록의 한 줄 — 허브와 「바둑 규칙 배우기」 단원 목록이 **같은 것을 쓴다**(백로그 #164).
- * [onClick]이 `null`이면 **아직 없는 분류**다 — 회색으로 내리고 배지를 붙인다.
+ * 목록의 한 줄 — 허브와 「바둑 규칙 배우기」 단원 목록 · 「기본 사활」 단원 목록이 **같은 것을 쓴다**(백로그 #164·#184).
+ * [onClick]이 `null`이면 **아직 없는 분류**다 — 회색으로 내리고 배지(「준비 중」)를 붙인다. 열린 줄의 [badge]는 진행도(「기본 사활」의 `3 / 5`)다.
  *
  * ⚠️ **`clickable`을 달고 `enabled = false`로 끄지 않는다** — 아예 달지 않는다. 그래야 리플
  * 잔상도 남지 않고, 접근성 서비스가 "누를 수 있는 것"으로 읽어 주지도 않는다.
@@ -160,7 +163,7 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
 internal fun StudyEntryRow(
     title: String,
     subtitle: String,
-    comingSoonLabel: String?,
+    badge: String?,
     onClick: (() -> Unit)?,
 ) {
     val enabled = onClick != null
@@ -202,9 +205,9 @@ internal fun StudyEntryRow(
             )
         }
 
-        if (comingSoonLabel != null) {
+        if (badge != null) {
             Text(
-                text = comingSoonLabel,
+                text = badge,
                 fontSize = AppTextSize.Text12,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary,

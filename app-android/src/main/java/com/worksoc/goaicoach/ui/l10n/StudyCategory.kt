@@ -16,5 +16,6 @@ internal enum class StudyCategory(val available: Boolean) {
     YoutubeLessons(available = true),
     Rules(available = true),
     Fundamentals(available = true),
-    LifeAndDeath(available = false),
+    /** 푸는 학습(백로그 #184, U-51) — 다른 분류와 달리 판에 직접 둔다. */
+    LifeAndDeath(available = true),
 }

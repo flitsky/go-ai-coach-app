@@ -76,6 +76,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.GoBoardColors
 import com.worksoc.goaicoach.ui.designsystem.GoBoardPalette
 import com.worksoc.goaicoach.ui.designsystem.MoveReviewPalette
+import com.worksoc.goaicoach.ui.designsystem.StudyBoardPalette
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -101,6 +102,8 @@ internal fun GoBoard(
     tentativeMove: BoardCoordinate? = null,
     /** 「확인 필요」 교점(백로그 #263 — 사진 인식이 확신하지 못한 자리). 주황 네모 테두리로 표시한다. 대국 화면은 쓰지 않는다. */
     attentionPoints: Set<BoardCoordinate> = emptySet(),
+    /** 틀린 수의 자리(백로그 #184 — 「기본 사활」). 그 돌 가운데에 붉은 점을 찍는다(사용자 2026-10-02, U-51). 대국 화면은 쓰지 않는다. */
+    mistakePoints: Set<BoardCoordinate> = emptySet(),
     /**
      * **지연 착수**(백로그 #144)로 확정을 기다리는 자리. 없으면 `null`.
      *
@@ -512,6 +515,13 @@ internal fun GoBoard(
                 }
                 if (uxOptions.showMoveNumbers) {
                     drawMoveNumbers(geometry, gameState)
+                }
+                mistakePoints.forEach { point ->
+                    drawCircle(
+                        color = StudyBoardPalette.Mistake,
+                        radius = geometry.spacing * 0.17f,
+                        center = geometry.pointFor(point),
+                    )
                 }
                 attentionPoints.forEach { point ->
                     val half = geometry.spacing * 0.5f

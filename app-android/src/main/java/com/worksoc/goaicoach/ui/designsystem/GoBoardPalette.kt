@@ -68,6 +68,11 @@ internal object GoBoardPalette {
     val MoveNumberOutlineOnWhiteArgb: Int = android.graphics.Color.WHITE
 }
 
+/** 사활 문제의 틀린 수 표시(백로그 #184) — 착수한 돌 가운데의 붉은 점. 흑돌 위에서도 묻히지 않게 밝은 빨강이다. */
+internal object StudyBoardPalette {
+    val Mistake = Color(0xFFFF3B30)
+}
+
 /** 착수 평가(최선~악수) 표식 색. */
 internal object MoveReviewPalette {
     val Excellent = Color(0xFF2E7D32)

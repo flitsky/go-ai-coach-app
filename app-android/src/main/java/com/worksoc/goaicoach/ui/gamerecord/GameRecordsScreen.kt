@@ -141,7 +141,7 @@ internal fun GameRecordsScreen(
                 StudyEntryRow(
                     title = bundledTitle(language, row.entry),
                     subtitle = record?.let { playersAndResult(language, it) } ?: "",
-                    comingSoonLabel = null,
+                    badge = null,
                     onClick = record?.let { loaded ->
                         {
                             scope.launch {
