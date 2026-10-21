@@ -81,7 +81,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 
 ---
 
-## 지금의 앱 — 예정 일감이 딛는 사실 (2026-10-21 — 프로덕션 1.6.0 + 아직 안 낸 #271 · #272 · #212 · #275 · #273 · #184, 묶음은 #274)
+## 지금의 앱 — 예정 일감이 딛는 사실 (2026-10-22 — 프로덕션 1.6.0 + 아직 안 낸 #271 · #272 · #212 · #275 · #273 · #184 · #277, 묶음은 #274 — 1.7.0 번들)
 
 > **아직 남은 일감이 딛는 것만** 적는다(줄 끝의 ← 가 그 일감). 끝난 일의 사연은 코드 KDoc과 `git log --grep "backlog #NNN"`에 있다 — 여기에 다시 쌓지 않는다.
 
@@ -99,11 +99,11 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - **화면 모드 · 스플래시**: 설정 › 「화면 모드」와 빠른 버튼이 같은 값(`ThemeModeStore`)이고, 색은 `ui.designsystem`의 밝은 · 어두운 구성 둘이다. 밤 시간(21:00~04:59)은
   `shared/policy/DisplayTheme.kt` 한 곳 — 「밤 시간 자동」과 기동 그림(밤 스포트라이트 · 낮 한옥 둘 중 무작위, `ui/splash/` · `work/splash/README.md`)이 함께 쓴다. (← #262)
 - **릴리스**: `make bundle-aab VERSION=x.y.z` → 인터널 → 프로덕션 → 태그(버전을 올린 커밋, 메시지에 sha256). 절차와 콘솔의 함정은 `GOOGLE_PLAY_LAUNCH_PLAN.md` §0,
-  스토어 글 · 그림은 `work/play-store-assets/`, 「새로워진 점」은 버전마다 `UiStringsWhatsNew.kt`에 묶음을 더한다(1.6.0까지 있다).
+  스토어 글 · 그림은 `work/play-store-assets/`, 「새로워진 점」은 버전마다 `UiStringsWhatsNew.kt`에 묶음을 더한다(1.7.0까지 있다).
   넘어온 메모(일감이 아니다): 태그 구멍 `v1.3.6` · `v1.4.0` · 콘솔의 받는 크기를 §0에 적은 적이 없다.
-- **학습 하기**: 분류 넷 — 유튜브 강좌 · 규칙(읽기) · 기초 행마(읽기) · **기본 사활**(#184 — 푸는 학습, 단원 다섯 26문제). 사활의 정답은 풀이기
-  `shared/content/LifeAndDeathSolver.kt`가 문제 구역을 끝까지 읽어 정하고(패는 오답 · 손을 빼도 되면 다 푼 것), 문제는 그림 + 목표 무리 + 지은이의 첫 수만 적는다.
-  벽은 판에 보이는 그대로 한 덩어리여야 한다(`LifeAndDeathProblemsTest`). (← #277)
+- **학습 하기**: 분류 넷 — 유튜브 강좌 · 규칙(읽기) · 기초 행마(읽기) · **사활 공부하기**(#184 · #277 — 푸는 학습 58문제: 기본 26 · 중급 · 고급 20 · 고전 『기경중묘』 5 · 『발양론』 7).
+  판정은 `LifeAndDeathJudge` 하나(어느 판정을 쓰는지는 `lifeAndDeathJudgeFor` 한 곳) — 만든 문제는 풀이기(`LifeAndDeathSolver.kt`, 패는 오답 · 손을 빼도 되면 다 푼 것)가 읽고, 폰에서 읽기에 큰 문제와 고전은
+  맥에서 미리 쓴 표(`LifeAndDeathAnswerTables.kt` — 고전은 원전의 수만 정답)를 읽는다. 고전의 국면 · 해답은 실험실 E13이 맞춘다. 19줄 문제는 왼쪽 위 귀만 보인다. (← #278 · #279)
 - **실험실** `engine-lab/`: AI의 세기 · 기권 · 모델을 바꾸기 전에 맥에서 잰다(E1~E10).
 ---
 
@@ -119,6 +119,8 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 · 할 일: 「새로워진 점」 묶음(`UiStringsWhatsNew.kt`, 4개 언어 — 1.6.0까지 있다) · 스토어 「새로운 기능」 글 · rezen.dev 릴리스 노트(`web/site/src/content/releases/baduk-ai/<버전>.yaml`) ·
   절차는 `GOOGLE_PLAY_LAUNCH_PLAN.md` §0(인터널은 시간을 두고 · 승격 전 업데이트와 엔진 확인 · 태그는 번들 소스에).
   · #277(중·고급 · 고전 사활)도 싣는다(2026-10-22 승인).
+· 🔨 **1.7.0 번들(2026-10-22)** — 「새로워진 점」 · 스토어 글(`80409e09`) · rezen.dev `1.7.0.yaml`(soon, 그 저장소에 커밋만 — 푸시 전) · `dist/go-ai-coach-release.aab`(§0의 1.7.0 절).
+  ⏳ 사용자: 인터널에 올리기 → 기다려 폰에서 업데이트 · 엔진 확인 → 프로덕션 승격 → 태그 `v1.7.0`(버전을 올린 커밋) · rezen.dev는 `status: live`로.
 
 ---
 
