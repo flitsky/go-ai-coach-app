@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui.quickactions
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
@@ -29,6 +30,10 @@ import com.worksoc.goaicoach.ui.l10n.themeModeTitleFor
  *
  * 누르면 짧은 안내(토스트)로 새 모드의 이름을 알린다 — 폰 · 시계 아이콘만으로는 무엇인지 처음에 알기 어렵다. 밝은지 어두운지는 화면 색이
  * 이미 보이므로 아이콘에 따로 얹지 않는다.
+ *
+ * ⚠️ **빠르게 여러 번 눌러도 마지막 모드 하나만 알린다**(폰 확인 2026-10-21 — 토스트가 줄을 서서 하나씩 차례로 떴다). 앞의 안내를 내리고
+ * 새로 띄운다([LatestToast]). 다음 모드도 화면에 보이는 값이 아니라 **저장소의 지금 값**에서 고른다 — 흐름이 다시 그리기 전에 또 누르면
+ * 화면의 값은 아직 앞의 것이라 같은 모드를 두 번 고른다(저장은 메모리에 곧바로 반영된다).
  */
 @Composable
 internal fun ThemeModeQuickToggle(tint: Color, modifier: Modifier = Modifier) {
@@ -36,11 +41,12 @@ internal fun ThemeModeQuickToggle(tint: Color, modifier: Modifier = Modifier) {
     val language = LocalUiStrings.current.language
     val store = remember(context) { ThemeModeStore(context) }
     val mode by remember(store) { store.modeChanges() }.collectAsState(initial = remember(store) { store.load() })
+    val notice = remember { LatestToast() }
     IconButton(
         onClick = {
-            val next = mode.nextOnQuickToggle
+            val next = store.load().nextOnQuickToggle
             store.save(next)
-            Toast.makeText(context, themeModeQuickToggleNoticeFor(language, next), Toast.LENGTH_SHORT).show()
+            notice.show(context, themeModeQuickToggleNoticeFor(language, next))
         },
         modifier = modifier,
     ) {
@@ -49,6 +55,16 @@ internal fun ThemeModeQuickToggle(tint: Color, modifier: Modifier = Modifier) {
             contentDescription = "${themeModeTitleFor(language)}: ${themeModeLabelFor(language, mode)}",
             tint = tint,
         )
+    }
+}
+
+/** 마지막 안내 하나만 남기는 토스트 — 새로 띄우기 전에 앞의 것을 내린다(시스템은 앱의 토스트를 차례로 줄 세운다). */
+private class LatestToast {
+    private var shown: Toast? = null
+
+    fun show(context: Context, text: String) {
+        shown?.cancel()
+        shown = Toast.makeText(context, text, Toast.LENGTH_SHORT).also(Toast::show)
     }
 }
 
