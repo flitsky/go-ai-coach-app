@@ -22,12 +22,13 @@ internal data class BoardGeometry(
         )
 
     companion object {
-        fun from(size: Size, boardSize: BoardSize, showCoordinates: Boolean): BoardGeometry {
+        fun from(size: Size, boardSize: BoardSize, showCoordinates: Boolean, visibleLines: Int = boardSize.value): BoardGeometry {
             val tapGeometry = boardTapGeometry(
                 canvasWidth = size.width,
                 canvasHeight = size.height,
                 boardSize = boardSize,
                 showCoordinates = showCoordinates,
+                visibleLines = visibleLines,
             ) ?: BoardTapGeometry(originX = 0f, originY = 0f, spacing = 0f, boardPadding = 0f)
             return BoardGeometry(
                 origin = Offset(tapGeometry.originX, tapGeometry.originY),
@@ -45,20 +46,26 @@ internal data class BoardTapGeometry(
     val boardPadding: Float,
 )
 
+/**
+ * @param visibleLines 왼쪽 위 귀에서부터 보이는 줄 수 — 판 전체면 판 크기와 같다. 작으면 **귀만 잘라** 크게 보인다(백로그 #277 — 19줄 판
+ *   고전 사활은 문제가 늘 왼쪽 위 귀에 있다). 위 · 왼쪽은 판의 진짜 가장자리이고, 아래 · 오른쪽은 잘린 자리라 선이 캔버스 끝까지 이어진다.
+ *   ⚠️ 좌표 표시와 함께 쓰지 않는다 — 잘린 쪽에 붙일 자리가 없다(호출부가 좌표를 끈 학습 판에서만 쓴다).
+ */
 internal fun boardTapGeometry(
     canvasWidth: Float,
     canvasHeight: Float,
     boardSize: BoardSize,
     showCoordinates: Boolean,
+    visibleLines: Int = boardSize.value,
 ): BoardTapGeometry? {
     if (canvasWidth == 0f || canvasHeight == 0f) {
         return null
     }
     val side = min(canvasWidth, canvasHeight)
     val spacing = if (showCoordinates) {
-        side / (boardSize.value + 1f)
+        side / (visibleLines + 1f)
     } else {
-        side / boardSize.value
+        side / visibleLines
     }
     val boardPadding = if (showCoordinates) {
         spacing * 1.0f
@@ -80,12 +87,14 @@ internal fun boardCoordinateFromTap(
     canvasHeight: Float,
     boardSize: BoardSize,
     showCoordinates: Boolean,
+    visibleLines: Int = boardSize.value,
 ): BoardCoordinate? {
     val geometry = boardTapGeometry(
         canvasWidth = canvasWidth,
         canvasHeight = canvasHeight,
         boardSize = boardSize,
         showCoordinates = showCoordinates,
+        visibleLines = visibleLines,
     ) ?: return null
     val column = ((tapX - geometry.originX) / geometry.spacing).roundToInt()
     val row = ((tapY - geometry.originY) / geometry.spacing).roundToInt()
@@ -93,7 +102,8 @@ internal fun boardCoordinateFromTap(
         row = row.coerceAtLeast(0),
         column = column.coerceAtLeast(0),
     )
-    if (!coordinate.isInside(boardSize)) {
+    // 잘린 판(귀만 보기)이면 보이는 칸 밖은 누를 수 없다 — 그 자리는 화면에 없다.
+    if (!coordinate.isInside(boardSize) || coordinate.row >= visibleLines || coordinate.column >= visibleLines) {
         return null
     }
     val snappedX = geometry.originX + coordinate.column * geometry.spacing
@@ -137,6 +147,7 @@ internal fun coordinateFromTap(
     canvasSize: IntSize,
     boardSize: BoardSize,
     showCoordinates: Boolean,
+    visibleLines: Int = boardSize.value,
 ): BoardCoordinate? {
     return boardCoordinateFromTap(
         tapX = offset.x,
@@ -145,6 +156,7 @@ internal fun coordinateFromTap(
         canvasHeight = canvasSize.height.toFloat(),
         boardSize = boardSize,
         showCoordinates = showCoordinates,
+        visibleLines = visibleLines,
     )
 }
 

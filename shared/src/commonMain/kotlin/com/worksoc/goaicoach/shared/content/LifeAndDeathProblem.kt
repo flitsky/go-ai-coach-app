@@ -134,6 +134,18 @@ data class LifeAndDeathProblem(
     val targetPoint: BoardCoordinate = BoardCoordinate.fromLabel(target, boardSize)
     val answerPoint: BoardCoordinate = BoardCoordinate.fromLabel(answer, boardSize)
 
+    /**
+     * 판에 보일 줄 수 — 왼쪽 위 귀에서부터(백로그 #277 · #279). 19줄 판 문제(고전 사활 — #279)는 문제가 왼쪽 위 귀에 있어, 돌과 문제 구역을 다 담고
+     * 한 줄을 더 띄운 정사각형만 크게 보인다(폰 폭에서 19줄 판 전체는 칸이 작아 잘못 누르기 쉽다). 9줄 · 13줄 판은 `null` — 판 전체.
+     * ⚠️ 지금 실은 문제는 모두 9줄 판이라 늘 `null`이다 — 19줄 판 문제가 처음 실리는 날 화면에서 확인할 것.
+     */
+    val visibleLines: Int? = if (boardSize != BoardSize.Nineteen) {
+        null
+    } else {
+        val used = stones.keys + playable.filter { it !in stones }
+        (used.maxOf { maxOf(it.row, it.column) } + 2).coerceAtMost(boardSize.value)
+    }
+
     /** 목표가 걸린 무리의 색 — [LifeAndDeathGoal.Kill]이면 상대, [LifeAndDeathGoal.Live]이면 나. */
     val targetColor: StoneColor = requireNotNull(stones[targetPoint]) { "Problem $id: no stone at target $target" }
 

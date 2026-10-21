@@ -259,6 +259,8 @@ private fun LifeAndDeathProblemScreen(
                 engineActivityIndicator = null,
                 modifier = Modifier.fillMaxSize(),
                 mistakePoints = if (showingAnswer) emptySet() else setOfNotNull(state.mistake),
+                // 19줄 판 고전(#277)은 왼쪽 위 귀만 크게 — 9줄 판 문제는 `null`(판 전체).
+                visibleLines = problem.visibleLines,
                 onCoordinateTap = { point ->
                     if (busy || showingAnswer || state.phase !is LifeAndDeathPhase.Solving) return@GoBoard
                     busy = true

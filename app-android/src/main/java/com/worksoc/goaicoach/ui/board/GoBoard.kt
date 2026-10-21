@@ -105,6 +105,11 @@ internal fun GoBoard(
     /** 틀린 수의 자리(백로그 #184 — 「기본 사활」). 그 돌 가운데에 붉은 점을 찍는다(사용자 2026-10-02, U-51). 대국 화면은 쓰지 않는다. */
     mistakePoints: Set<BoardCoordinate> = emptySet(),
     /**
+     * 왼쪽 위 귀에서부터 보일 줄 수 — `null`이면 판 전체(백로그 #277). 19줄 판 고전 사활은 문제가 늘 왼쪽 위 귀에 있어, 귀만 잘라
+     * 크게 보인다. 보이는 칸 밖은 누를 수 없다. ⚠️ 좌표 표시와 함께 쓰지 않는다(`boardTapGeometry`). 대국 화면은 쓰지 않는다.
+     */
+    visibleLines: Int? = null,
+    /**
      * **지연 착수**(백로그 #144)로 확정을 기다리는 자리. 없으면 `null`.
      *
      * ⚠️ 진행도를 **값이 아니라 람다로** 받는다 — 컴포지션 본문에서 애니메이션 값을 읽으면 0.5초 내내
@@ -134,6 +139,7 @@ internal fun GoBoard(
 ) {
     val premium = LocalPremiumUiState.current
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    val shownLines = visibleLines?.coerceIn(1, gameState.boardSize.value) ?: gameState.boardSize.value
     // 착수 드래그(#39). `null`이면 평소 상태다. ⚠️ 이 값은 **그리기 람다 안에서만** 읽는다 —
     // 컴포지션 본문에서 읽으면 손가락이 움직일 때마다 화면 전체가 리컴포즈된다.
     var playDrag by remember { mutableStateOf<PlayDrag?>(null) }
@@ -241,6 +247,7 @@ internal fun GoBoard(
                     .onSizeChanged { canvasSize = it }
                     .pointerInput(
                         gameState.boardSize,
+                        shownLines,
                         inputEnabled,
                         uxOptions.showCoordinates,
                         uxOptions.isDirectPlayEnabled,
@@ -249,7 +256,7 @@ internal fun GoBoard(
                         val holdThresholdMillis = viewConfiguration.longPressTimeoutMillis
                         val touchSlop = viewConfiguration.touchSlop
                         fun coordinateAt(offset: Offset) =
-                            coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates)
+                            coordinateFromTap(offset, canvasSize, gameState.boardSize, uxOptions.showCoordinates, shownLines)
 
                         // ⚠️ **`detectTapGestures`와 `detectDragGesturesAfterLongPress`를 나란히
                         // 두는 방식은 쓸 수 없다.** 앞의 것이 꾹 누름 뒤에 `consumeUntilUp()`으로
@@ -310,6 +317,7 @@ internal fun GoBoard(
                                     canvasHeight = canvasSize.height.toFloat(),
                                     boardSize = gameState.boardSize,
                                     showCoordinates = uxOptions.showCoordinates,
+                                    visibleLines = shownLines,
                                 )?.let { it.spacing * PlayDragLiftCells } ?: 0f
 
                                 var follow = DragFollow(target = down.position, following = false)
@@ -422,8 +430,8 @@ internal fun GoBoard(
                         }
                     },
             ) {
-                val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates)
-                drawBoardGrid(geometry, gameState.boardSize, colors.gridLine)
+                val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates, shownLines)
+                drawBoardGrid(geometry, gameState.boardSize, colors.gridLine, shownLines)
                 if (uxOptions.showCoordinates) {
                     drawBoardCoordinates(geometry, gameState.boardSize)
                 }
@@ -437,6 +445,8 @@ internal fun GoBoard(
                 drawCandidateMoves(geometry, gameState, candidateMoves)
 
                 for ((coordinate, stone) in gameState.stones) {
+                    // 귀만 보이면 그 밖의 돌은 그리지 않는다 — 캔버스는 스스로 자르지 않아 판 밖 화면에 돌이 그려진다.
+                    if (coordinate.row >= shownLines || coordinate.column >= shownLines) continue
                     // 착수 이펙트(#145)는 **방금 놓인 돌**에만 붙는다 — 나머지는 배율 1이라 그대로다.
                     val effectScale = if (coordinate == playEffectAt) playEffectScale.value else 1f
                     drawStone(
@@ -543,6 +553,7 @@ internal fun GoBoard(
                         canvasSize,
                         gameState.boardSize,
                         uxOptions.showCoordinates,
+                        shownLines,
                     )
                     // ③(길게 눌러 임계를 넘김)이면 칸 간격 0.7배까지 커진다(#196·#197) — 떼면 가늠돌이 사라지고 놓이는 돌은 일반 크기다.
                     val stoneRadius = geometry.spacing * heldGhostStoneRadiusRatio(heldGhostGrowth.value)
@@ -966,10 +977,15 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
     geometry: BoardGeometry,
     boardSize: BoardSize,
     lineColor: Color,
+    visibleLines: Int = boardSize.value,
 ) {
 
     // 굵기는 칸 간격에 비례한다(backlog #222) — 예전의 픽셀 고정값은 고해상도 폰에서 실처럼 가늘었다.
     val gridLineWidth = BoardLineStyle.gridLineWidthPx(geometry.spacing, density)
+    if (visibleLines < boardSize.value) {
+        drawCornerGrid(geometry, boardSize, lineColor, visibleLines, gridLineWidth)
+        return
+    }
 
     // 1. 내부 격자선 그리기
     for (index in 0 until boardSize.value) {
@@ -1000,6 +1016,36 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardGrid(
             radius = starPointRadius,
             center = geometry.pointFor(starPoint),
         )
+    }
+}
+
+/**
+ * 귀만 잘라 보인 판의 격자(백로그 #277) — 위 · 왼쪽은 판의 가장자리라 굵은 테두리, 아래 · 오른쪽은 잘린 자리라 선이 **반 칸 더** 캔버스 끝까지
+ * 이어진다(판이 그쪽으로 계속된다는 표시). 화점은 보이는 칸 안의 것만.
+ */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCornerGrid(
+    geometry: BoardGeometry,
+    boardSize: BoardSize,
+    lineColor: Color,
+    visibleLines: Int,
+    gridLineWidth: Float,
+) {
+    val origin = geometry.pointFor(BoardCoordinate(0, 0))
+    val far = geometry.pointFor(BoardCoordinate(visibleLines - 1, visibleLines - 1))
+    val reach = geometry.spacing * 0.5f
+    for (index in 0 until visibleLines) {
+        val y = geometry.pointFor(BoardCoordinate(index, 0)).y
+        drawLine(lineColor, Offset(origin.x, y), Offset(far.x + reach, y), strokeWidth = gridLineWidth)
+        val x = geometry.pointFor(BoardCoordinate(0, index)).x
+        drawLine(lineColor, Offset(x, origin.y), Offset(x, far.y + reach), strokeWidth = gridLineWidth)
+    }
+    val borderWidth = BoardLineStyle.borderWidthPx(geometry.spacing, density)
+    drawLine(lineColor, origin, Offset(far.x + reach, origin.y), strokeWidth = borderWidth)
+    drawLine(lineColor, origin, Offset(origin.x, far.y + reach), strokeWidth = borderWidth)
+    val starPointRadius = BoardLineStyle.starPointRadiusPx(geometry.spacing, density)
+    for (starPoint in starPoints(boardSize)) {
+        if (starPoint.row >= visibleLines || starPoint.column >= visibleLines) continue
+        drawCircle(color = lineColor, radius = starPointRadius, center = geometry.pointFor(starPoint))
     }
 }
 

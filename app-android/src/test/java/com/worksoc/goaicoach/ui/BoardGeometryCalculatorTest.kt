@@ -54,6 +54,27 @@ class BoardGeometryCalculatorTest {
         assertEquals("ABCDEFGHJKLMNOPQRST".toList(), boardColumnLabels(BoardSize(19)))
     }
 
+    /**
+     * 귀만 잘라 보인 판(백로그 #277 — 19줄 판 고전 사활): 보이는 줄 수로 칸을 나눠 크게 그리고, 보이는 칸 밖은 누를 수 없다.
+     * 위 · 왼쪽 가장자리의 여백은 판 전체와 같은 반 칸이다.
+     */
+    @Test
+    fun aCornerWindowSpacesTheVisibleLinesAndRefusesTheRest() {
+        val geometry = boardTapGeometry(canvasWidth = 1000f, canvasHeight = 1000f, boardSize = BoardSize(19), showCoordinates = false, visibleLines = 10)
+        assertNotNull(geometry)
+        assertEquals(100f, geometry!!.spacing, 0.001f)
+        assertEquals(50f, geometry.originX, 0.001f)
+        val tap = { x: Float, y: Float ->
+            boardCoordinateFromTap(x, y, 1000f, 1000f, BoardSize(19), showCoordinates = false, visibleLines = 10)
+        }
+        assertEquals(BoardCoordinate(0, 0), tap(50f, 50f))
+        assertEquals(BoardCoordinate(9, 9), tap(950f, 950f))
+        // 열한째 줄(보이지 않는 칸)은 캔버스 밖이라 누를 수 없다 — 잘린 쪽 반 칸 띠는 마지막 줄로 붙는다.
+        assertEquals(BoardCoordinate(9, 9), tap(999f, 999f))
+        // 가로가 긴 캔버스에서 열한째 줄 자리(가장 가까운 교점이 10열)를 누르면 받지 않는다.
+        assertNull(boardCoordinateFromTap(1095f, 50f, 1100f, 1000f, BoardSize(19), showCoordinates = false, visibleLines = 10))
+    }
+
     @Test
     fun testBoardTapGeometryCalculations() {
         val geometryWithCoords = boardTapGeometry(
