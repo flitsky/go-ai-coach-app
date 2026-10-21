@@ -1,6 +1,8 @@
 package com.worksoc.goaicoach.shared.content
 
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardRules
+import com.worksoc.goaicoach.shared.domain.Move
 
 /**
  * 맥에서 미리 읽어 둔 판정 표를 읽는다(백로그 #277) — 폰에서 그 자리에서 읽기에 큰 문제(고전 · 고급)를 위해. 표는 **같은 풀이기**가
@@ -105,6 +107,45 @@ class AnswerTableJudge private constructor(
                         }
                 }
                 lines += "$path|${if (settled) "S" else "-"}|$correctText|$wrongText"
+            }
+            return lines.joinToString("\n")
+        }
+
+        /**
+         * **원전의 정답 수순**으로 표를 만든다(백로그 #277 — 고전 사활, 사용자 2026-10-21 「고전 정답 활용 싣기」). 풀이기가 아니라 원전이 정답을 정한다:
+         * 흑 차례마다 [line]의 수 하나만 맞고 상대는 [line]의 다음 수로 받는다. 그 밖의 수는 모두 오답이고, 상대의 반박은 [refutation]이 준다
+         * (맥에서 엔진이 고른 수 — 없거나 판이 받지 않으면 붉은 표시만). 틀린 수 뒤로는 차례가 이어지지 않으므로 표는 원전 수순만큼만 자란다.
+         *
+         * @param line 처음부터 흑 · 백이 번갈아 둔 원전의 수순. 흑의 수로 끝나야 한다(흑이 둔 뒤 상대가 받을 것이 없으면 다 푼 것).
+         * @param refutation 흑 차례 번호(0부터)와 흑이 둔 틀린 수(`null`이면 손 뺌) → 상대의 반박.
+         */
+        fun fromSourceLine(
+            problem: LifeAndDeathProblem,
+            line: List<BoardCoordinate>,
+            refutation: (turn: Int, move: BoardCoordinate?) -> BoardCoordinate?,
+        ): String {
+            require(line.size % 2 == 1) { "${problem.id}: the source line ends with the solver's move" }
+            val label = { point: BoardCoordinate -> point.label(problem.boardSize) }
+            val lines = mutableListOf("fingerprint ${fingerprintOf(problem)}")
+            var board = problem.startState()
+            for (turn in 0..line.size / 2) {
+                val move = line[turn * 2]
+                val reply = line.getOrNull(turn * 2 + 1)
+                val played = line.subList(0, turn * 2)
+                val legal = problem.playable.filter { point ->
+                    point != move && BoardRules.validate(board, Move.Play(board.nextPlayer, point)) == null
+                }
+                val legalReply = { after: BoardCoordinate?, candidate: BoardCoordinate? ->
+                    val next = if (after == null) BoardRules.play(board, Move.Pass(board.nextPlayer)) else BoardRules.play(board, Move.Play(board.nextPlayer, after))
+                    candidate?.takeIf { BoardRules.validate(next, Move.Play(next.nextPlayer, it)) == null }
+                }
+                val wrong = (legal.map { it as BoardCoordinate? } + null).joinToString(";") { wrongMove ->
+                    val answer = legalReply(wrongMove, refutation(turn, wrongMove))
+                    "${wrongMove?.let(label) ?: Tenuki}>${answer?.let(label) ?: "."}"
+                }
+                lines += "${pathOf(played)}|-|${label(move)}>${reply?.let(label) ?: "."}|$wrong"
+                board = BoardRules.play(board, Move.Play(board.nextPlayer, move))
+                if (reply != null) board = BoardRules.play(board, Move.Play(board.nextPlayer, reply))
             }
             return lines.joinToString("\n")
         }
