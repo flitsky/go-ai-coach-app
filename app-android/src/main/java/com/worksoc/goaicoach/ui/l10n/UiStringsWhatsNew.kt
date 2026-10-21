@@ -19,6 +19,40 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.7.0 — #184 · #277 사활 공부하기(기본 26 · 중급 10 · 고급 10 · 고전 12 — 모두 무료) · #272 야간 모드 · #275 윗줄의 화면 모드 버튼 · #273 오늘의 한 줄 명언 ·
+        // #212 캐릭터 착수 템포 · #271 시각별 기동 그림 · 나무 바둑판 아이콘(사용자 2026-10-22 — 1.7.0으로 낸다).
+        WhatsNewRelease(versionCode = 10700, versionName = "1.7.0") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "「학습 하기」에 「사활 공부하기」가 생겼어요. 판에 직접 두어 푸는 사활 문제 — 기본 26문제, 중급 · 고급 20문제, 고전 『기경중묘』 · 『발양론』 12문제(원전의 정답)를 담았어요. 틀리면 붉은 점과 상대의 응수로 알려 주고, 「정답 보기」도 있어요.",
+                    "야간 모드가 생겼어요. 설정 › 「화면 모드」에서 시스템 따라가기 · 밝게 · 어둡게 · 밤 시간 자동을 고를 수 있고, 맨 윗줄의 버튼으로 바로 바꿀 수도 있어요.",
+                    "홈에 「오늘의 한 줄 명언」이 하루에 하나씩 떠요(✕를 누르면 그날은 닫혀요).",
+                    "캐릭터가 사람처럼 생각할 시간을 두고 둬요. 초반에는 빠르게, 그 뒤에는 캐릭터마다 제 속도로.",
+                    "앱 아이콘이 나무 바둑판으로 바뀌고, 시작 화면 그림이 새로워졌어요(밤에는 밤 그림).",
+                )
+                UiLanguage.English -> listOf(
+                    "New in Study Mode: Life and Death. Solve problems by playing on the board — 26 basic, 20 intermediate and advanced, and 12 classics from Gokyo Shumyo and Igo Hatsuyoron with their original answers. A wrong move gets a red mark and your opponent's reply, and you can always show the answer.",
+                    "Night mode is here. In Settings › Theme, choose Follow system, Light, Dark or Night hours — or switch right away with the button at the top of the screen.",
+                    "A quote of the day now appears on home, one each day (tap ✕ to hide it for the day).",
+                    "Characters now take time to think like people: quick in the opening, then each at their own pace.",
+                    "A new wooden Go board app icon and new launch pictures (a night picture after dark).",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "「学習する」に「詰碁で死活を学ぶ」ができました。盤に直接打って解く死活問題 — 基本26問、中級・上級20問、古典『碁経衆妙』・『囲碁発陽論』12問（原典の正解）を収めました。間違えると赤い印と相手の応手で知らせ、「正解を見る」もあります。",
+                    "ナイトモードができました。設定 › 「画面モード」で端末に合わせる・ライト・ダーク・夜だけダークを選べ、いちばん上のボタンですぐに切り替えることもできます。",
+                    "ホームに「今日の一言」が一日ひとつ表示されます（✕を押すとその日は閉じます）。",
+                    "キャラクターが人のように考える時間をとって打ちます。序盤は速く、その後はキャラクターごとのペースで。",
+                    "アプリのアイコンが木の碁盤になり、起動画面の絵が新しくなりました（夜は夜の絵）。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "「进行学习」新增「死活练习」：在棋盘上直接落子解死活题——基础26题、中级·高级20题、古典《碁经众妙》·《围棋发阳论》12题（原书正解）。下错时会用红点和对手的应手提示，也可以「查看答案」。",
+                    "新增夜间模式。在设置 › 「显示模式」中可选跟随系统、浅色、深色、夜间自动，也可以用顶部的按钮随时切换。",
+                    "主页每天显示一条「今日一言」（点 ✕ 当天不再显示）。",
+                    "角色会像人一样留出思考时间再落子：开局较快，之后按各自的节奏。",
+                    "应用图标换成了木质棋盘，启动画面的插画也焕然一新（夜晚显示夜景插画）。",
+                )
+            }
+        },
         // 1.6.0 — #269 기보 보기(명국 33판 · 형세 그래프와 변곡점 · 자동 진행 · 10수씩 · SGF 열기) · #244 앱 배경음악 · 다시보기의 10수 버튼(사용자 2026-10-19 — 1.6.0으로 낸다).
         // ⚠️ 매 수 형세(형세 보기를 켠 채 따라가기)는 프리미엄이다 — 여기서는 누구에게나 보이는 그래프·변곡점만 말한다(함정 51).
         WhatsNewRelease(versionCode = 10600, versionName = "1.6.0") { language ->
