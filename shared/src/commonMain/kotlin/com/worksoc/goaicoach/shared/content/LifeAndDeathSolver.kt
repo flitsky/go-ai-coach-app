@@ -32,7 +32,15 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
  * ⚠️ 판의 크기와 상관없이 **문제 구역의 빈 점 수**가 비용을 정한다. 구역을 넓게 잡으면 국면 수가 곱으로 는다 —
  * 테스트(`LifeAndDeathProblemsTest`)가 문제마다 본 국면 수를 [NodeBudget] 아래로 묶는다.
  */
-class LifeAndDeathSolver(private val problem: LifeAndDeathProblem) {
+class LifeAndDeathSolver(
+    private val problem: LifeAndDeathProblem,
+    /**
+     * 이만큼 넘게 읽으면 [NodeLimitExceeded]를 던진다 — 맥에서 문제를 **만들 때만** 쓴다(백로그 #277: 후보를 수만 개 걸러 보다가
+     * 한 후보에 몇 분씩 묶이지 않게). 폰은 상한 없이 연다 — 실은 문제는 테스트가 [NodeBudget] 아래로 묶는다.
+     * ⚠️ 던진 뒤의 풀이기는 버린다 — 읽던 수순의 흔적이 남아 있다.
+     */
+    private val nodeLimit: Int = Int.MAX_VALUE,
+) {
     private val solver: StoneColor = problem.toPlay
     private val opponent: StoneColor = solver.opponent
 
@@ -144,6 +152,29 @@ class LifeAndDeathSolver(private val problem: LifeAndDeathProblem) {
             )
     }
 
+    /**
+     * 정답만 두어(상대는 [replyAfterCorrect]로 받는다) 닿을 수 있는 푸는 쪽 차례 가운데, 아직 결판나지 않았는데 **판에 둘 정답이 없는**
+     * 국면 — 통과해야만 이기는 자리다(백로그 #277, 맥에서 만든 후보에서 처음 나왔다). 화면에는 통과 단추가 없어 거기서는 무엇을 두어도
+     * 틀리므로 그런 문제는 싣지 않는다 — 비어 있어야 한다.
+     */
+    fun turnsWithoutAPlayableAnswer(): List<Node> {
+        val stuck = mutableListOf<Node>()
+        val pending = ArrayDeque(listOf(root()))
+        val visited = HashSet<NodeKey>()
+        while (pending.isNotEmpty()) {
+            val node = pending.removeFirst()
+            if (!visited.add(node.key()) || isSettled(node)) continue
+            val correct = correctMoves(node)
+            if (correct.isEmpty()) stuck += node
+            for (move in correct) {
+                val afterMove = play(node, move)
+                val reply = replyAfterCorrect(afterMove) ?: continue
+                pending += play(afterMove, reply)
+            }
+        }
+        return stuck
+    }
+
     /** 결판까지 푸는 쪽이 더 두어야 하는 수(정답을 둔 직후, 상대 차례에서 잰다). */
     fun settleDepthAfterSolverMove(node: Node): Int = settleDepth(node, forSolver = true)
 
@@ -160,9 +191,12 @@ class LifeAndDeathSolver(private val problem: LifeAndDeathProblem) {
         if (node.passes >= 2) return problem.goal == LifeAndDeathGoal.Live
         val key = node.key()
         winMemo[key]?.let { return it }
+        // 목표 무리가 무조건 살면(눈 둘) 더 읽을 것이 없다 — 판정은 같고 읽는 국면만 준다(#277: 고전 · 고급 문제의 크기).
+        if (targetUnconditionallyAlive(node)) return (problem.goal == LifeAndDeathGoal.Live).also { winMemo[key] = it }
         if (key in onPath) return false
 
         visitedNodes += 1
+        if (visitedNodes > nodeLimit) throw NodeLimitExceeded(visitedNodes)
         onPath += key
         val solverToMove = node.state.nextPlayer == solver
         val value = if (solverToMove) children(node).any { winOf(it) } else children(node).all { winOf(it) }
@@ -212,6 +246,9 @@ class LifeAndDeathSolver(private val problem: LifeAndDeathProblem) {
 
     private fun targetCaptured(node: Node): Boolean = node.state.stones[problem.targetPoint] != problem.targetColor
 
+    private fun targetUnconditionallyAlive(node: Node): Boolean =
+        isUnconditionallyAlive(node.state.stones, node.state.boardSize.value, problem.targetColor, problem.targetPoint)
+
     /** 상대 차례의 패 금지를 푼다 — 상대에게는 팻감이 끝없다(클래스 KDoc). 푸는 쪽의 금지는 그대로 둔다. */
     private fun GameState.unbanKoForOpponent(): GameState =
         if (koForbiddenFor == opponent) copy(koPoint = null, koForbiddenFor = null) else this
@@ -247,6 +284,9 @@ class LifeAndDeathSolver(private val problem: LifeAndDeathProblem) {
         val koBanned: StoneColor?,
         val passes: Int,
     )
+
+    /** [nodeLimit]를 넘었다 — 그 후보는 폰에서 열기에 너무 크다. */
+    class NodeLimitExceeded(val visited: Int) : RuntimeException("read more than the node limit ($visited)")
 
     companion object {
         /** 문제 하나를 풀며 볼 수 있는 국면 수의 상한 — 폰에서 문제를 열 때 한 번 푼다(테스트가 묶는다). */
