@@ -53,3 +53,27 @@ internal fun themeModeNightHoursHintFor(language: UiLanguage): String = when (la
     UiLanguage.Japanese -> "夜${NightStartHour}時から朝${NightEndHour}時までダークになります。"
     UiLanguage.ChineseSimplified -> "晚上${NightStartHour}点到早上${NightEndHour}点使用深色。"
 }
+
+/**
+ * 맨 윗줄 빠른 버튼(백로그 #275)을 눌렀을 때의 짧은 안내 — 첫 줄은 새 모드의 이름, 자동으로 바뀌는 두 갈래에는 둘째 줄로 무엇을 따르는지.
+ * ⚠️ 토스트는 두 줄에서 잘린다 — 둘째 줄을 짧게 둔다. 밤 시각은 [NightStartHour] · [NightEndHour]에서 읽는다.
+ */
+internal fun themeModeQuickToggleNoticeFor(language: UiLanguage, mode: ThemeMode): String {
+    val name = "${themeModeTitleFor(language)}: ${themeModeLabelFor(language, mode)}"
+    val follows = when (mode) {
+        ThemeMode.Light, ThemeMode.Dark -> null
+        ThemeMode.System -> when (language) {
+            UiLanguage.Korean -> "폰의 설정을 따라요"
+            UiLanguage.English -> "Matches your phone's setting"
+            UiLanguage.Japanese -> "端末の設定に合わせます"
+            UiLanguage.ChineseSimplified -> "跟随手机设置"
+        }
+        ThemeMode.NightHours -> when (language) {
+            UiLanguage.Korean -> "밤 ${NightStartHour - 12}시~새벽 ${NightEndHour}시에 어둡게"
+            UiLanguage.English -> "Dark from ${NightStartHour - 12} pm to $NightEndHour am"
+            UiLanguage.Japanese -> "夜${NightStartHour}時〜朝${NightEndHour}時はダーク"
+            UiLanguage.ChineseSimplified -> "晚上${NightStartHour}点到早上${NightEndHour}点为深色"
+        }
+    }
+    return follows?.let { "$name\n$it" } ?: name
+}

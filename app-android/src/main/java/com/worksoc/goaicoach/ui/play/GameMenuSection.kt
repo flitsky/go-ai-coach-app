@@ -91,11 +91,15 @@ internal fun GameHeaderSection(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart,
             ) {
+                // ⚠️ 잘리지 않고 칸 밖으로 그린다(#275) — 빠른 버튼이 둘이 되자 폭 360dp 폰에서 이 칸이 55dp쯤으로 줄어 끝자리가
+                //   잘렸다(`v261021.090`). 옆 칸의 수순은 가운데 맞춤이고 짧아(`수순 999수`) 이 몇 dp와 겹치지 않는다.
                 Text(
                     text = formatBuildTime(BuildConfig.BUILD_TIME),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
                     maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Visible,
                 )
             }
 

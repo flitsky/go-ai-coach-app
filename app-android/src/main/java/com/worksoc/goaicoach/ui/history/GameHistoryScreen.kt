@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -310,37 +311,40 @@ internal fun GameHistoryScreen(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = AppSpacing.Space8),
             )
-            // ⚠️ 줄 전체가 관문이다 — 체크박스만으로는 손가락에 좁다. `onCheckedChange`는 `null`로
-            // 비워 이중 리스너를 막는다(다시보기 「수순 표시」와 같은 방식).
-            // 오른쪽 끝은 빠른 버튼 묶음(#270)이 먼저 제 폭을 잡고, 체크 줄은 남는 폭 안에서 오른쪽에 붙는다(전에는 `Spacer`가 밀었다).
-            // 360dp 폰에서는 문구가 두 줄로 접힌다 — 한 줄 상한이면 잘려 「10수 이하 기…」가 된다.
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .clickable { hideShortGames = !hideShortGames }
-                        .padding(end = AppSpacing.Space8),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = hideShortGames, onCheckedChange = null)
-                    Text(
-                        text = gameHistoryHideShortGamesLabelFor(strings.language, ShortGameMaxMoveCount),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = AppSpacing.Space4),
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.weight(1f))
             AppQuickActions()
         }
 
         // 승률(백로그 #227) — 목록 위에 붙박인다. 「10수 이하 기록 제외하기」의 체크와 무관하게 늘 같은 잣대로 센다
         // (목록에 무엇을 보일지와 승률에 무엇을 셀지는 다른 물음이다).
         GameHistoryWinRatePanel(entries = entries, language = strings.language)
+
+        // 「10수 이하 기록 제외하기」 — **목록 바로 위**, 오른쪽 끝(#275). 예전에는 제목 줄의 남는 폭에 있었는데, 빠른 버튼이 둘이 되자
+        // 폭 360dp 폰에서 그 폭이 50dp쯤으로 줄어 제목에 붙고 영어(「Game History」)에서는 문구가 거의 다 잘렸다.
+        // 이 체크는 목록에 무엇을 보일지를 정한다 — 그래서 승률 아래 · 목록 위가 제자리다(승률은 체크와 무관하다).
+        // ⚠️ 줄 전체가 관문이다 — 체크박스만으로는 손가락에 좁다. `onCheckedChange`는 `null`로
+        // 비워 이중 리스너를 막는다(다시보기 「수순 표시」와 같은 방식).
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = AppSpacing.Space8),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Row(
+                modifier = Modifier
+                    .clickable { hideShortGames = !hideShortGames }
+                    .padding(end = AppSpacing.Space8),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = hideShortGames, onCheckedChange = null)
+                Text(
+                    text = gameHistoryHideShortGamesLabelFor(strings.language, ShortGameMaxMoveCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = AppSpacing.Space4),
+                )
+            }
+        }
 
         if (visibleEntries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

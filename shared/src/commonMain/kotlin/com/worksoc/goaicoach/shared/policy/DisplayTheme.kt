@@ -39,8 +39,18 @@ enum class ThemeMode(val id: String) {
         NightHours -> isNightHour(hour)
     }
 
+    /**
+     * 맨 윗줄 빠른 버튼(백로그 #275)을 누르면 다음 갈래 — 밝게 → 어둡게 → 시스템 따라가기 → 밤 시간 자동 → 밝게.
+     * 차례는 사용자가 정했다(2026-10-21: *"해 > 달 > 컴퓨터모양? > 시계"*). 설정의 선택지 차례([entries])와는 따로다.
+     */
+    val nextOnQuickToggle: ThemeMode
+        get() = QuickToggleOrder[(QuickToggleOrder.indexOf(this) + 1) % QuickToggleOrder.size]
+
     companion object {
         val Default: ThemeMode = System
+
+        /** 빠른 버튼의 차례 — 갈래를 더하면 여기에도 넣는다(빠지면 `DisplayThemeTest`가 빨갛다). */
+        private val QuickToggleOrder: List<ThemeMode> = listOf(Light, Dark, System, NightHours)
 
         /** 저장된 문자열 → 갈래. 모르는 값(지운 갈래 · 깨진 값)은 기본으로. */
         fun fromId(id: String?): ThemeMode = entries.firstOrNull { it.id == id } ?: Default

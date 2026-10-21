@@ -29,10 +29,11 @@ import com.worksoc.goaicoach.ui.l10n.backgroundMusicLabelFor
  * 화면마다 이미 주인(대국 ☰ · 홈 ⚙)이 있다. 그래서 화면마다 **이미 있는 윗줄**에 붙인다(사용자 확정 2026-10-19).
  *
  * ## 화면은 이것을 놓기만 한다
- * 묶음에 버튼을 더하면 모든 화면에 함께 생긴다. 지금은 배경음악 켬/끔 하나다 — 「어디서든 켜고 끌」 전역 기능이 그것뿐이고,
- * 빈 자리는 두지 않는다(빈 버튼은 고장처럼 보인다).
+ * 묶음에 버튼을 더하면 모든 화면에 함께 생긴다. 지금은 둘이다 — 화면 모드(#275, [ThemeModeQuickToggle])와 배경음악 켬/끔.
+ * 「어디서든 바꿀」 전역 기능만 둔다. 빈 자리는 두지 않는다(빈 버튼은 고장처럼 보인다).
+ * 배경음악이 오른쪽 끝(화면의 ☰ · ⚙ 바로 옆)이다 — 1.6.0이 안내한 그 자리를 옮기지 않으려고 화면 모드를 그 **왼쪽**에 더했다.
  * 놓인 곳: 홈 · 대국 준비 · 대국(폰·넓은 배치) · 대국 기록 · 다시보기 · 기보 보기(목록·판) · 학습(허브·영상·단원) · 사진 분석(촬영) · 내 정보.
- * 설정 화면에는 놓지 않는다 — 같은 값의 스위치(「소리」 절)가 있다.
+ * 설정 화면에는 놓지 않는다 — 같은 값의 스위치(「소리」 절 · 「화면 모드」)가 있다.
  *
  * @param tint 화면의 머리말 색. 사진 분석의 촬영 화면처럼 어두운 바탕이면 그 화면의 글자색을 넘긴다.
  * @param musicToggleModifier 배경음악 버튼에만 거는 것 — 홈이 업데이트 안내(코치마크)의 대상 자리를 알리는 데 쓴다.
@@ -44,6 +45,7 @@ internal fun AppQuickActions(
     musicToggleModifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        ThemeModeQuickToggle(tint = tint)
         BackgroundMusicQuickToggle(tint = tint, modifier = musicToggleModifier)
     }
 }

@@ -38,4 +38,16 @@ class DisplayThemeTest {
         assertEquals(ThemeMode.System, ThemeMode.fromId(null))
         assertEquals(ThemeMode.System, ThemeMode.fromId("sepia"))
     }
+
+    /** 빠른 버튼(#275)은 사용자가 정한 차례로 돈다 — 해 → 달 → 시스템 → 시계 → 해. 네 갈래를 모두 한 번씩 지난다. */
+    @Test
+    fun theQuickButtonCyclesLightDarkSystemNightHours() {
+        val visited = generateSequence(ThemeMode.Light) { it.nextOnQuickToggle }.take(5).toList()
+
+        assertEquals(
+            listOf(ThemeMode.Light, ThemeMode.Dark, ThemeMode.System, ThemeMode.NightHours, ThemeMode.Light),
+            visited,
+        )
+        assertEquals(ThemeMode.entries.toSet(), visited.toSet())
+    }
 }

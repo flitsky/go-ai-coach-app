@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -33,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -375,11 +378,17 @@ internal fun ReplayHeader(
                 .weight(1f)
                 .padding(start = AppSpacing.Space8),
         ) {
-            Text(
+            // 제목은 **한 줄** — 넘치면 글자를 줄인다(20 → 14sp, #275). 이 화면의 판은 높이에 맞춰 그려지므로 머리말이 한 줄 늘면
+            // 판이 그만큼 작아진다. 빠른 버튼이 둘이 되자 폭 360dp 폰에서 「도사쿠, 천원 첫 수 (1670)」 같은 기보 제목이 두 줄로 접혔다.
+            BasicText(
                 text = title,
-                fontSize = AppTextSize.Text20,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
+                style = TextStyle(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = AppTextSize.Text14,
+                    maxFontSize = AppTextSize.Text20,
+                ),
             )
             Text(
                 text = subtitle,
