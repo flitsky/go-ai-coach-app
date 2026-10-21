@@ -52,6 +52,8 @@ import com.worksoc.goaicoach.ui.l10n.DailyQuoteCatalog
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
+import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
+import com.worksoc.goaicoach.ui.l10n.unbreakable
 import com.worksoc.goaicoach.ui.monetization.AttendanceClaimReplaySignal
 import java.io.File
 import kotlin.random.Random
@@ -108,16 +110,6 @@ private val QuoteLineBreak = LineBreak(
     wordBreak = LineBreak.WordBreak.Phrase,
 )
 
-/**
- * 한국어 명언은 **어절 안에서 줄을 바꾸지 않는다** — 안드로이드는 한글을 글자 사이에서도 끊어(「없으 / 면」) 명언이 읽기 거북했다(에뮬레이터 2026-10-21).
- * 구절 단위 줄바꿈(`WordBreak.Phrase`)은 일본어에만 듣는다. 그래서 어절 안의 글자 사이에 단어 결합자(U+2060, 보이지 않는다)를 넣어 띄어쓰기에서만 끊게 한다.
- */
-internal fun keepWordsWhole(text: String, language: UiLanguage): String =
-    if (language != UiLanguage.Korean) text else text.split(' ').joinToString(" ") { word -> word.toList().joinToString(WordJoiner) }
-
-/** 말한 이는 한 덩어리로 줄을 넘긴다 — 「Lee / Changho 9p」 · 「주니 / 어」 · 「九 / 段」처럼 이름이 갈라졌다(에뮬레이터 2026-10-21). */
-internal fun unbreakable(name: String): String = name.toList().joinToString(WordJoiner) { if (it == ' ') "\u00A0" else it.toString() }
-
 private val UiLanguage.quoteLocaleTag: String
     get() = when (this) {
         UiLanguage.Korean -> "ko"
@@ -126,7 +118,6 @@ private val UiLanguage.quoteLocaleTag: String
         UiLanguage.ChineseSimplified -> "zh-CN"
     }
 
-private const val WordJoiner = "\u2060"
 
 /**
  * 명언 한 줄 — 「명언 — 말한 이」를 두 줄 안에(사용자 2026-10-21), 오른쪽에 ✕. 자르지 않는다: 글꼴을 크게(1.3배) 하면 세 줄이 될 수 있고,
