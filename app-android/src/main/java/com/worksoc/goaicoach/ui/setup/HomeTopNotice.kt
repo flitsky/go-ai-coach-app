@@ -51,8 +51,8 @@ import com.worksoc.goaicoach.ui.l10n.whatsNewHomeLineFor
 import com.worksoc.goaicoach.ui.l10n.whatsNewOpenFor
 import java.io.File
 
-/** 홈 칩 줄 아래 한 줄 슬롯에 무엇을 그릴지(#248 → #255 → #257). */
-internal enum class HomeTopNoticeKind { None, EngineDownload, WhatsNew, AppUpdate }
+/** 홈 칩 줄 아래 한 줄 슬롯에 무엇을 그릴지(#248 → #255 → #257 → #273). */
+internal enum class HomeTopNoticeKind { None, EngineDownload, WhatsNew, AppUpdate, DailyQuote }
 
 /**
  * 홈의 한 줄 슬롯 — 엔진 받기 안내와 앱 업데이트 알림이 한 자리를 나눠 쓴다. **둘의 순서는 여기서만 정한다**(#255).
@@ -64,16 +64,19 @@ internal enum class HomeTopNoticeKind { None, EngineDownload, WhatsNew, AppUpdat
  *
  * **「새로워진 점」(#257)은 받기 다음, 업데이트 알림 앞이다** — 스레드가 정한 차례(2026-10-13): 한 번 보면 끝나는 것이 먼저 서고,
  * 콜드 스타트마다 다시 뜨는 업데이트 알림은 그 뒤에 자기 차례를 얻는다.
+ * **「오늘의 한 줄 명언」(#273)은 맨 끝이다**(사용자 2026-10-20: *"업데이트 알림 위치에 업데이트 팝업이 사라진 뒤에"*) — 알릴 것이 다 지나간 자리를 채운다.
  */
 internal fun homeTopNoticeOf(
     engine: EngineDownloadStatus,
     update: AppUpdateStatus,
     updateDismissed: Boolean,
     whatsNewPending: Boolean = false,
+    dailyQuoteWanted: Boolean = false,
 ): HomeTopNoticeKind = when {
     engine != EngineDownloadStatus.Idle && engine != EngineDownloadStatus.Completed -> HomeTopNoticeKind.EngineDownload
     whatsNewPending -> HomeTopNoticeKind.WhatsNew
     update == AppUpdateStatus.Available && !updateDismissed -> HomeTopNoticeKind.AppUpdate
+    dailyQuoteWanted -> HomeTopNoticeKind.DailyQuote
     else -> HomeTopNoticeKind.None
 }
 
@@ -101,7 +104,7 @@ internal fun initialWhatsNewPending(store: WhatsNewStore, filesDir: File): List<
 private const val DebugWhatsNewPreviewFile = "debug-whats-new-preview"
 
 /**
- * 홈 화면의 한 줄 안내(#248 엔진 받기 · #255 앱 업데이트). 셸이 홈의 `topNotice` 슬롯으로 넘긴다.
+ * 홈 화면의 한 줄 안내(#248 엔진 받기 · #257 새로워진 점 · #255 앱 업데이트 · #273 오늘의 한 줄 명언). 셸이 홈의 `topNotice` 슬롯으로 넘긴다.
  * 엔진 받기는 앱을 켜는 순간 시작되므로(`createEngineBootstrap`) 첫 화면에서 알리고, 받기가 없거나 끝나면 업데이트 알림 자리다.
  * 그릴 것이 없으면 아무것도 그리지 않는다 — 엔진이 있고 최신인 기기에는 노출 0초.
  */
@@ -123,8 +126,9 @@ internal fun HomeTopNotice(modifier: Modifier = Modifier) {
         whatsNew = emptyList()
     }
     if (showWhatsNew.isNotEmpty()) WhatsNewDialog(releases = showWhatsNew, onClose = { showWhatsNew = emptyList() })
+    val dailyQuote = rememberDailyQuoteLineState()
     val language = LocalUiStrings.current.language
-    when (homeTopNoticeOf(engine, update, dismissed, whatsNewPending = whatsNew.isNotEmpty())) {
+    when (homeTopNoticeOf(engine, update, dismissed, whatsNewPending = whatsNew.isNotEmpty(), dailyQuoteWanted = dailyQuote.wantsSlot)) {
         HomeTopNoticeKind.EngineDownload -> EngineDownloadStatusBanner(status = engine, modifier = modifier)
         HomeTopNoticeKind.WhatsNew -> HomeLineBanner(
             message = whatsNewHomeLineFor(language, whatsNew.first().versionName),
@@ -143,6 +147,7 @@ internal fun HomeTopNotice(modifier: Modifier = Modifier) {
             onDismiss = updateCheck::dismissNotice,
             modifier = modifier,
         )
+        HomeTopNoticeKind.DailyQuote -> DailyQuoteLine(state = dailyQuote, modifier = modifier)
         HomeTopNoticeKind.None -> Unit
     }
 }

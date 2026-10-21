@@ -112,6 +112,10 @@ internal object AttendanceClaimReplaySignal {
      * 증가는 아래 [AttendanceRewardClaimDialog]의 effect가 하므로, 누른 직후에 읽으면 **증가
      * 전 값**이 잡힌다(2026-09-04 실기에서 부제가 "지금 3일차"에 멈춰 있는 것으로 드러났다).
      * 그래서 **증가를 아는 쪽이 알려 준다** — effect 순서에 기대지 않는 유일한 방법이다.
+     *
+     * 홈의 「오늘의 한 줄 명언」(백로그 #273)도 이 값을 읽는다 — `null`이 아니면 **이번 실행의 출석 체크인이 돌았다**는 뜻이라, 그 뒤 팝업이 하나도
+     * 떠 있지 않으면(`GuideBlockingOverlays`) 출석 팝업이 지나간 것이다. 명언 때문에 전역 상태를 새로 만들지 않으려고 이 값을 같이 쓴다
+     * (`ShellStateLedgerContractTest` — 새 프로세스 전역 상태는 사용자 결정이 필요하다).
      */
     var lastCheckedInDay by mutableStateOf<Int?>(null)
         private set

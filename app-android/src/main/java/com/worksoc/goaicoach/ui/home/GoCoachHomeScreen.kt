@@ -203,7 +203,7 @@ internal fun GoCoachHomeScreen(
                 HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
             }
 
-            // 한 줄 안내 — 엔진 팩을 받는 동안(#248)과 새 버전이 있을 때(#255). 둘의 순서는 `homeTopNoticeOf` 한 곳이 정한다.
+            // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255) · 오늘의 한 줄 명언(#273). 차례는 `homeTopNoticeOf` 한 곳이 정한다.
             // 칩 바로 아래에 두는 이유: 아래 가중치 여백이 이 높이를 흡수해 **메뉴 카드는 움직이지 않는다**(#128 ③의 표적 원칙).
             topNotice(Modifier.padding(top = AppSpacing.Space12))
 

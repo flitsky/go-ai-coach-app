@@ -2200,6 +2200,8 @@ class LayeringContractTest {
             // *"안 하기로 했다"* 로 승격시킨다: 코디네이터에 이름만 넣어도 이 단언과 위의
             // `clear()` 개수 단언(넷 고정)이 **함께** 빨개진다.
             "GuideProgressStore",
+            // 오늘의 명언 진행도(#273)도 취향이다 — 지우면 이미 본 명언이 처음부터 다시 나온다.
+            "DailyQuoteStore",
         ).forEach { store ->
             assertFalse(
                 "ReleaseResetCoordinator must NOT touch $store — user content, settings and the " +
