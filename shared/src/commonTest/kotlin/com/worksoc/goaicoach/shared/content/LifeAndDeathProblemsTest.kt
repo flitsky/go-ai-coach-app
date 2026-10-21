@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.shared.content
 
+import com.worksoc.goaicoach.shared.domain.BoardRules
+import com.worksoc.goaicoach.shared.domain.Move
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -12,9 +14,16 @@ import kotlin.test.assertTrue
  * 의도한 수가 정말 정답인지는 여기서만 확인된다. 그림을 한 칸 잘못 그리면 여기가 빨개진다.
  */
 class LifeAndDeathProblemsTest {
+    /**
+     * 풀이기가 정답을 정하는 문제 — 기본 · 중급 · 고급. 고전(#277)은 원전의 수순이 정답이라 풀이기에게 되묻지 않는다(19줄 판의 넓은 구역은 끝까지
+     * 읽을 수도 없다 — E12). 고전은 아래 `classic…` 검사가 본다.
+     */
+    private val solverProblems = lifeAndDeathProblems.filter { it.unit.section != LifeAndDeathSection.Classics }
+    private val classicProblems = lifeAndDeathProblems.filter { it.unit.section == LifeAndDeathSection.Classics }
+
     @Test
     fun everyProblemNeedsAMoveAndTheIntendedMoveSolvesIt() {
-        lifeAndDeathProblems.forEach { problem ->
+        solverProblems.forEach { problem ->
             val solver = LifeAndDeathSolver(problem)
             val root = solver.root()
             assertTrue(solver.solverWins(root), "${problem.id}: the side to play cannot reach the goal")
@@ -48,8 +57,8 @@ class LifeAndDeathProblemsTest {
             "ld.adv.5" to setOf("D8"), "ld.adv.6" to setOf("D9"), "ld.adv.7" to setOf("B8"), "ld.adv.8" to setOf("E9"),
             "ld.adv.9" to setOf("B9"), "ld.adv.10" to setOf("B9"),
         )
-        assertEquals(expected.keys, lifeAndDeathProblems.map { it.id }.toSet(), "the table must cover every problem")
-        lifeAndDeathProblems.forEach { problem ->
+        assertEquals(expected.keys, solverProblems.map { it.id }.toSet(), "the table must cover every problem")
+        solverProblems.forEach { problem ->
             val solver = LifeAndDeathSolver(problem)
             val correct = solver.correctMoves(solver.root()).map { it.label(problem.boardSize) }.toSet()
             assertEquals(expected.getValue(problem.id), correct, problem.id)
@@ -59,7 +68,7 @@ class LifeAndDeathProblemsTest {
     /** 화면에 통과 단추가 없다 — 정답을 두어 가는 길에 「통과해야만 이기는」 차례가 있으면 그 문제는 풀 수 없다(#277). */
     @Test
     fun everyTurnOnTheWayHasAMoveToPlay() {
-        lifeAndDeathProblems.forEach { problem ->
+        solverProblems.forEach { problem ->
             val stuck = LifeAndDeathSolver(problem).turnsWithoutAPlayableAnswer()
             assertTrue(stuck.isEmpty(), "${problem.id}: ${stuck.size} turn(s) where only a pass wins")
         }
@@ -67,7 +76,7 @@ class LifeAndDeathProblemsTest {
 
     @Test
     fun everyWrongFirstMoveIsAnsweredOnTheBoard() {
-        lifeAndDeathProblems.forEach { problem ->
+        solverProblems.forEach { problem ->
             val solver = LifeAndDeathSolver(problem)
             val root = solver.root()
             val correct = solver.correctMoves(root).toSet()
@@ -85,7 +94,7 @@ class LifeAndDeathProblemsTest {
      */
     @Test
     fun solvingStaysInsideTheNodeBudget() {
-        lifeAndDeathProblems.filter { it.id !in lifeAndDeathAnswerTables }.forEach { problem ->
+        solverProblems.filter { it.id !in lifeAndDeathAnswerTables }.forEach { problem ->
             assertTrue(problem.fitsTheNodeBudget(), "${problem.id}: reads more than ${LifeAndDeathSolver.NodeBudget} nodes — ship an answer table")
         }
     }
@@ -93,7 +102,7 @@ class LifeAndDeathProblemsTest {
     /** 목표 무리의 공배가 문제 밖(`,`)에 있으면 아무도 메우지 못해 잡을 수 없는 무리가 된다(살리기 문제는 거저 산다). */
     @Test
     fun theTargetGroupBreathesOnlyInsideTheProblem() {
-        lifeAndDeathProblems.forEach { problem ->
+        solverProblems.forEach { problem ->
             val outside = problem.targetLibertiesOutside()
             assertTrue(outside.isEmpty(), "${problem.id}: target liberties outside the problem ${outside.map { it.label(problem.boardSize) }}")
         }
@@ -102,7 +111,7 @@ class LifeAndDeathProblemsTest {
     /** **판에 보이는 그대로도 맞는 문제여야 한다**(사용자 2026-10-21) — 잣대는 [weakWalls] 한 곳이다(맥의 문제 만들기 도구와 같은 함수). */
     @Test
     fun everyWallIsOneSolidPieceOnTheBoard() {
-        val weak = lifeAndDeathProblems.flatMap { it.weakWalls() }
+        val weak = solverProblems.flatMap { it.weakWalls() }
         assertTrue(weak.isEmpty(), "weak walls on the board:\n" + weak.joinToString("\n"))
     }
 
@@ -129,6 +138,39 @@ class LifeAndDeathProblemsTest {
             assertEquals(first, second, "${problem.id}: the shown answer must not depend on the run")
             assertEquals(problem.answerPoint, first.first(), "${problem.id}: the shown answer starts with the intended move")
             assertEquals(1, first.size % 2, "${problem.id}: the line ends with the solver's move")
+        }
+    }
+
+    /** 고전은 모두 원전의 수순으로 만든 판정 표를 싣는다 — 낡지 않았고, 원전의 첫 수가 그 표의 정답이며, 수순을 끝까지 두면 다 풀린다. */
+    @Test
+    fun everyClassicProblemCarriesAFreshSourceTable() {
+        classicProblems.forEach { problem ->
+            val text = lifeAndDeathAnswerTables[problem.id]
+            assertTrue(text != null, "${problem.id}: a classic problem needs its answer table")
+            val table = AnswerTableJudge.read(problem, text!!)
+            assertTrue(table != null, "${problem.id}: the answer table is stale — regenerate it")
+            assertEquals(listOf(problem.answerPoint), table!!.correctMoves(table.root()), "${problem.id}: the source's first move is the answer")
+        }
+    }
+
+    /** 표는 차례마다 판이 받는 문제 안의 수 **전부**를 판정해야 한다 — 빠진 수를 누르면 판이 아무 일도 하지 않는다. */
+    @Test
+    fun everyClassicTurnJudgesEveryMoveTheBoardAccepts() {
+        classicProblems.forEach { problem ->
+            val session = LifeAndDeathSession(problem)
+            val judge = lifeAndDeathJudgeFor(problem)
+            var state = session.start()
+            val line = session.answerLine()
+            line.forEachIndexed { index, point ->
+                if (index % 2 == 0) {
+                    problem.playable.filter { it != point && BoardRules.validate(state.board, Move.Play(state.board.nextPlayer, it)) == null }
+                        .forEach { assertTrue(judge.accepts(state.turn, it), "${problem.id}: turn ${index / 2} has no verdict for ${it.label(problem.boardSize)}") }
+                    state = requireNotNull(session.play(state, point)) { "${problem.id}: the source move ${point.label(problem.boardSize)} is refused" }
+                } else {
+                    state = session.applyReply(state)
+                }
+            }
+            assertEquals(LifeAndDeathPhase.Solved, state.phase, "${problem.id}: the source line ends solved")
         }
     }
 }

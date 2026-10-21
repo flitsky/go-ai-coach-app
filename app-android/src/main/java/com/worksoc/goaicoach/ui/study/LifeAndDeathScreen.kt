@@ -220,7 +220,7 @@ private fun LifeAndDeathProblemScreen(
         phase == LifeAndDeathPhase.Solved ->
             lifeAndDeathCorrectFor(language) + "\n" + lifeAndDeathExplanationFor(language, problem.id)
         phase == LifeAndDeathPhase.Failed ||
-            (phase is LifeAndDeathPhase.AwaitingReply && phase.wrong) -> lifeAndDeathWrongFor(language, problem.goal)
+            (phase is LifeAndDeathPhase.AwaitingReply && phase.wrong) -> lifeAndDeathWrongFor(language, problem)
         phase == LifeAndDeathPhase.Solving(afterCorrect = true) -> lifeAndDeathKeepGoingFor(language)
         else -> null
     }

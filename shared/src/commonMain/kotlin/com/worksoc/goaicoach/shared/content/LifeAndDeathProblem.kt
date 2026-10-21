@@ -38,6 +38,16 @@ enum class LifeAndDeathUnit {
 
     /** 고급(#277) — 첫 수가 첫눈에 안 보이고(사람 모델의 확률이 가장 낮은 쪽) 수순이 길다. */
     Advanced,
+
+    /**
+     * 고전 — 『기경중묘』(碁経衆妙, 1812 일본 · 하야시 겐비). 고전은 사활집마다 따로 단원이다(사용자 2026-10-21). **정답은 원전의 수순이다**
+     * (사용자 2026-10-21 「고전 정답 활용 싣기」) — 1898년판 부록의 해답(국립국회도서관 디지털, 공유 저작물)을 옮겨, 국면(tsumego.tasuki.org 전사본)에
+     * 맞추고 엔진으로 확인했다(실험실 E13). 원전의 수 하나만 정답이고, 판정은 맥에서 만든 표를 읽는다([AnswerTableJudge.fromSourceLine]).
+     */
+    GokyoShumyo,
+
+    /** 고전 — 『발양론』(囲碁発陽論, 1713 일본 · 이노우에 인세키). 해답은 1914년판 『囲碁珍瓏発陽論』(국립국회도서관 디지털, 공유 저작물). */
+    Hatsuyoron,
 }
 
 /** 단원의 묶음 — 단원 목록이 이 차례로 칸을 나눠 보인다(#277). */
@@ -47,6 +57,9 @@ enum class LifeAndDeathSection {
 
     /** 중급 · 고급 — 맥에서 만든 문제. */
     Practice,
+
+    /** 고전 사활집 — 19줄 판, 왼쪽 위 귀만 크게 보인다([LifeAndDeathProblem.visibleLines]). 정답은 원전의 수순이다. */
+    Classics,
 }
 
 /** 이 단원이 속한 묶음. */
@@ -56,6 +69,7 @@ val LifeAndDeathUnit.section: LifeAndDeathSection
         LifeAndDeathUnit.EyeSpace, LifeAndDeathUnit.Corner,
         -> LifeAndDeathSection.Basics
         LifeAndDeathUnit.Intermediate, LifeAndDeathUnit.Advanced -> LifeAndDeathSection.Practice
+        LifeAndDeathUnit.GokyoShumyo, LifeAndDeathUnit.Hatsuyoron -> LifeAndDeathSection.Classics
     }
 
 /** 문제의 목표 — **문제를 푸는 쪽([LifeAndDeathProblem.toPlay])이 무엇을 해내야 하는가.** */
@@ -137,7 +151,6 @@ data class LifeAndDeathProblem(
     /**
      * 판에 보일 줄 수 — 왼쪽 위 귀에서부터(백로그 #277 · #279). 19줄 판 문제(고전 사활 — #279)는 문제가 왼쪽 위 귀에 있어, 돌과 문제 구역을 다 담고
      * 한 줄을 더 띄운 정사각형만 크게 보인다(폰 폭에서 19줄 판 전체는 칸이 작아 잘못 누르기 쉽다). 9줄 · 13줄 판은 `null` — 판 전체.
-     * ⚠️ 지금 실은 문제는 모두 9줄 판이라 늘 `null`이다 — 19줄 판 문제가 처음 실리는 날 화면에서 확인할 것.
      */
     val visibleLines: Int? = if (boardSize != BoardSize.Nineteen) {
         null

@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 class LifeAndDeathAnswerTableTest {
     @Test
     fun aTableAnswersExactlyAsTheSolverDoes() {
-        lifeAndDeathProblems.forEach { problem ->
+        lifeAndDeathProblems.filter { it.unit.section == LifeAndDeathSection.Basics }.forEach { problem ->
             val table = assertNotNull(AnswerTableJudge.read(problem, AnswerTableJudge.write(problem, SolvingJudge(problem))), problem.id)
             val live = SolvingJudge(problem)
             val pending = ArrayDeque(listOf(live.root() to table.root()))

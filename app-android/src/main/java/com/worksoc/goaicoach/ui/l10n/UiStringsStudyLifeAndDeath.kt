@@ -1,8 +1,11 @@
 package com.worksoc.goaicoach.ui.l10n
 
 import com.worksoc.goaicoach.shared.content.LifeAndDeathGoal
+import com.worksoc.goaicoach.shared.content.LifeAndDeathProblem
 import com.worksoc.goaicoach.shared.content.LifeAndDeathSection
 import com.worksoc.goaicoach.shared.content.LifeAndDeathUnit
+import com.worksoc.goaicoach.shared.content.lifeAndDeathProblems
+import com.worksoc.goaicoach.shared.content.section
 
 /**
  * 「기본 사활」의 네 언어 문구(백로그 #184) — 단원 이름·소개, 문제 화면의 안내·되먹임, 문제마다 풀고 나서 보이는 한 줄.
@@ -55,6 +58,18 @@ private val LifeAndDeathUnitTitles: Map<LifeAndDeathUnit, Map<UiLanguage, String
         UiLanguage.Japanese to "上級の死活",
         UiLanguage.ChineseSimplified to "高级死活",
     ),
+    LifeAndDeathUnit.GokyoShumyo to mapOf(
+        UiLanguage.Korean to "기경중묘",
+        UiLanguage.English to "Gokyo Shumyo",
+        UiLanguage.Japanese to "碁経衆妙",
+        UiLanguage.ChineseSimplified to "碁经众妙",
+    ),
+    LifeAndDeathUnit.Hatsuyoron to mapOf(
+        UiLanguage.Korean to "발양론",
+        UiLanguage.English to "Igo Hatsuyoron",
+        UiLanguage.Japanese to "囲碁発陽論",
+        UiLanguage.ChineseSimplified to "围棋发阳论",
+    ),
 )
 
 private val LifeAndDeathUnitSummaries: Map<LifeAndDeathUnit, Map<UiLanguage, String>> = mapOf(
@@ -100,6 +115,18 @@ private val LifeAndDeathUnitSummaries: Map<LifeAndDeathUnit, Map<UiLanguage, Str
         UiLanguage.Japanese to "一目では見えない急所と長い手順。",
         UiLanguage.ChineseSimplified to "一眼看不出的要点，较长的手顺。",
     ),
+    LifeAndDeathUnit.GokyoShumyo to mapOf(
+        UiLanguage.Korean to "1812년 일본의 사활집. 정답은 원전 그대로. 그림: tsumego.tasuki.org",
+        UiLanguage.English to "A Japanese collection from 1812, with its original answers. Diagrams: tsumego.tasuki.org",
+        UiLanguage.Japanese to "1812年、日本の詰碁集。正解は原典のまま。図：tsumego.tasuki.org",
+        UiLanguage.ChineseSimplified to "1812年日本的死活题集，正解依原书。图：tsumego.tasuki.org",
+    ),
+    LifeAndDeathUnit.Hatsuyoron to mapOf(
+        UiLanguage.Korean to "1713년 일본, 가장 어렵기로 이름난 문제집. 정답은 원전 그대로. 그림: tsumego.tasuki.org",
+        UiLanguage.English to "Japan, 1713 — famous as the hardest collection, with its original answers. Diagrams: tsumego.tasuki.org",
+        UiLanguage.Japanese to "1713年、日本。最も難しいことで名高い問題集。正解は原典のまま。図：tsumego.tasuki.org",
+        UiLanguage.ChineseSimplified to "1713年日本，以最难著称的题集，正解依原书。图：tsumego.tasuki.org",
+    ),
 )
 
 /** 단원 목록의 칸 이름(#277) — 기본 다섯 단원과 맥에서 만든 중급 · 고급을 가른다. */
@@ -115,6 +142,12 @@ private val LifeAndDeathSectionTitles: Map<LifeAndDeathSection, Map<UiLanguage, 
         UiLanguage.English to "Intermediate & advanced",
         UiLanguage.Japanese to "中級・上級",
         UiLanguage.ChineseSimplified to "中高级",
+    ),
+    LifeAndDeathSection.Classics to mapOf(
+        UiLanguage.Korean to "고전",
+        UiLanguage.English to "Classics",
+        UiLanguage.Japanese to "古典",
+        UiLanguage.ChineseSimplified to "古典",
     ),
 )
 
@@ -146,6 +179,49 @@ private val LifeAndDeathWrong: Map<LifeAndDeathGoal, Map<UiLanguage, String>> = 
         UiLanguage.English to "Not quite — after this move, Black dies.",
         UiLanguage.Japanese to "残念。この手では黒が取られます。",
         UiLanguage.ChineseSimplified to "可惜，这样黑棋会被杀。",
+    ),
+)
+
+/**
+ * 고전(#277)의 틀린 수 뒤 — 고전은 **원전의 수만** 정답이다(사용자 2026-10-21). 다른 수가 정말 실패인지는 증명하지 않았으므로 「이 수로는 백이 삽니다」라고
+ * 단정하지 않고 원전과 다르다고만 말한다(판에는 엔진이 고른 반박이 놓인다).
+ */
+private val LifeAndDeathClassicWrong: Map<UiLanguage, String> = mapOf(
+        UiLanguage.Korean to "원전의 수와 다릅니다. 다시 풀어 보세요.",
+        UiLanguage.English to "Not the original answer — try again.",
+        UiLanguage.Japanese to "原典の手と違います。もう一度どうぞ。",
+        UiLanguage.ChineseSimplified to "与原书的着法不同，请再试一次。",
+    )
+
+/** 고전의 풀고 나서 보이는 한 줄 — 원전의 이름과 그 책의 부 · 번호. `%s`에 부(살기 · 잡기), `%d`에 번호가 들어간다. */
+private val LifeAndDeathClassicExplanation: Map<LifeAndDeathUnit, Map<UiLanguage, String>> = mapOf(
+    LifeAndDeathUnit.GokyoShumyo to mapOf(
+        UiLanguage.Korean to "『기경중묘』(1812) %s %d번 — 원전의 정답 수순입니다.",
+        UiLanguage.English to "Gokyo Shumyo (1812), %s #%d — the original solution.",
+        UiLanguage.Japanese to "『碁経衆妙』（1812）%s 第%d — 原典の正解手順です。",
+        UiLanguage.ChineseSimplified to "《碁经众妙》（1812）%s 第%d题 — 原书的正解手顺。",
+    ),
+    LifeAndDeathUnit.Hatsuyoron to mapOf(
+        UiLanguage.Korean to "『발양론』(1713) %s %d번 — 원전의 정답 수순입니다.",
+        UiLanguage.English to "Igo Hatsuyoron (1713), %s #%d — the original solution.",
+        UiLanguage.Japanese to "『囲碁発陽論』（1713）%s 第%d — 原典の正解手順です。",
+        UiLanguage.ChineseSimplified to "《围棋发阳论》（1713）%s 第%d题 — 原书的正解手顺。",
+    ),
+)
+
+/** 원전의 부 이름 — 기경중묘는 「生之部」(살기) · 「死之部」(잡기), 발양론 1914년판은 「死」(잡기). */
+private val LifeAndDeathClassicChapter: Map<LifeAndDeathGoal, Map<UiLanguage, String>> = mapOf(
+    LifeAndDeathGoal.Live to mapOf(
+        UiLanguage.Korean to "「살기」",
+        UiLanguage.English to "Life",
+        UiLanguage.Japanese to "生之部",
+        UiLanguage.ChineseSimplified to "生之部",
+    ),
+    LifeAndDeathGoal.Kill to mapOf(
+        UiLanguage.Korean to "「잡기」",
+        UiLanguage.English to "Death",
+        UiLanguage.Japanese to "死之部",
+        UiLanguage.ChineseSimplified to "死之部",
     ),
 )
 
@@ -499,7 +575,24 @@ internal fun lifeAndDeathWrongFor(language: UiLanguage, goal: LifeAndDeathGoal):
     LifeAndDeathWrong[goal]?.get(language) ?: goal.name
 
 internal fun lifeAndDeathExplanationFor(language: UiLanguage, problemId: String): String =
-    LifeAndDeathExplanations[problemId]?.get(language) ?: problemId
+    LifeAndDeathExplanations[problemId]?.get(language) ?: classicExplanation(language, problemId) ?: problemId
+
+/** 고전의 해설 — 문제 id(`ld.gokyo.1-13` · `ld.hatsu.d39`)에서 책 · 부 · 번호를 읽어 만든다. 고전이 아니면 `null`. */
+private fun classicExplanation(language: UiLanguage, problemId: String): String? {
+    val problem = lifeAndDeathProblems.firstOrNull { it.id == problemId && it.unit.section == LifeAndDeathSection.Classics } ?: return null
+    val template = LifeAndDeathClassicExplanation[problem.unit]?.get(language) ?: return null
+    val chapter = LifeAndDeathClassicChapter[problem.goal]?.get(language) ?: return null
+    val number = problemId.substringAfterLast('.').substringAfterLast('-').filter { it.isDigit() }.toIntOrNull() ?: return null
+    return template.replace("%s", chapter).replace("%d", number.toString())
+}
+
+/** 틀린 수 뒤의 한 줄 — 고전은 원전과 다르다고만 말한다([LifeAndDeathClassicWrong]). */
+internal fun lifeAndDeathWrongFor(language: UiLanguage, problem: LifeAndDeathProblem): String =
+    if (problem.unit.section == LifeAndDeathSection.Classics) {
+        LifeAndDeathClassicWrong[language] ?: problem.goal.name
+    } else {
+        lifeAndDeathWrongFor(language, problem.goal)
+    }
 
 internal fun lifeAndDeathKeepGoingFor(language: UiLanguage): String =
     LifeAndDeathKeepGoing[language] ?: LifeAndDeathKeepGoing.getValue(UiLanguage.Korean)
@@ -534,6 +627,9 @@ internal fun lifeAndDeathCopyLanguages(): Map<String, Set<UiLanguage>> = buildMa
         put("prompt.${it.name}", LifeAndDeathPrompts[it])
         put("wrong.${it.name}", LifeAndDeathWrong[it])
     }
+    put("classicWrong", LifeAndDeathClassicWrong)
+    LifeAndDeathClassicExplanation.forEach { (unit, table) -> put("classicExplanation.${unit.name}", table) }
+    LifeAndDeathClassicChapter.forEach { (goal, table) -> put("classicChapter.${goal.name}", table) }
     put("keepGoing", LifeAndDeathKeepGoing)
     put("correct", LifeAndDeathCorrect)
     put("showingAnswer", LifeAndDeathShowingAnswer)
@@ -545,4 +641,7 @@ internal fun lifeAndDeathCopyLanguages(): Map<String, Set<UiLanguage>> = buildMa
 
 /** 해설 표의 열쇠와 언어 — 문제를 지웠는데 해설만 남거나, 문제를 더했는데 해설이 없는 것을 그물이 본다. */
 internal fun lifeAndDeathExplanationLanguages(): Map<String, Set<UiLanguage>> =
-    LifeAndDeathExplanations.mapValues { (_, table) -> table.filterValues { it.isNotBlank() }.keys }
+    LifeAndDeathExplanations.mapValues { (_, table) -> table.filterValues { it.isNotBlank() }.keys } +
+        lifeAndDeathProblems.filter { it.unit.section == LifeAndDeathSection.Classics }.associate { problem ->
+            problem.id to UiLanguage.entries.filter { classicExplanation(it, problem.id) != null }.toSet()
+        }

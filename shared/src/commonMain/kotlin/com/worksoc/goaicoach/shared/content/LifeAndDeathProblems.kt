@@ -20,7 +20,10 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
  * 공배가 문제 밖에 남으면 아무도 메우지 못해 잡을 수 없는 무리가 되므로, 목표 무리의 공배는 전부 문제 안에 둔다(이것도 테스트가 센다).
  * ⚠️ id는 저장값이다(푼 기록) — 바꾸지 말 것. 순서가 곧 화면의 순서다.
  */
-val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
+val lifeAndDeathProblems: List<LifeAndDeathProblem> by lazy { madeProblems + lifeAndDeathClassicProblems }
+
+/** 직접 · 맥에서 만든 문제(기본 · 중급 · 고급). 고전은 원전에서 옮긴 [lifeAndDeathClassicProblems]가 뒤에 붙는다(#277). */
+private val madeProblems: List<LifeAndDeathProblem> = listOf(
     // ── ① 두 눈 ────────────────────────────────────────────────────────
     // 셋이 한 줄(직삼): 가운데에 두면 양쪽이 눈 둘이 된다 — 살리는 쪽도, 잡는 쪽도 같은 자리다.
     problem(
