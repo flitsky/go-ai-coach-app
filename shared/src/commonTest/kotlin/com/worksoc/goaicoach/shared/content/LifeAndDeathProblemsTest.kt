@@ -92,6 +92,39 @@ class LifeAndDeathProblemsTest {
         }
     }
 
+    /**
+     * **판에 보이는 그대로도 맞는 문제여야 한다**(사용자 2026-10-21, 급소 1·2번 → 급소 여섯 전부). 풀이기는 문제 밖(`,`)에 아무도
+     * 두지 않는다고 보므로, 판에서는 약한 벽도 풀이기에게는 영원히 살아 있다 — 문제 밖 활로가 하나뿐이면 단수이고(상대가 그 점을 두면
+     * 따내고 산다), 벽이 대각선으로만 닿아 있으면 끊기는 자리가 남는다.
+     * 그래서 목표 무리가 아닌 무리는 ① 활로가 전부 문제 안이라 풀이기가 다 읽거나 ② **그 색의 바깥 벽 하나**에 속해야 한다 —
+     * 한 색에 문제 밖으로 숨 쉬는 무리는 하나뿐이고, 그 무리의 문제 밖 활로는 [SafeOutsideLiberties]개 이상이다.
+     */
+    @Test
+    fun everyWallIsOneSolidPieceOnTheBoard() {
+        val weak = lifeAndDeathProblems.flatMap { problem ->
+            val playable = problem.playable.toSet()
+            val seen = groupOf(problem, problem.targetPoint).toMutableSet()
+            val walls = mutableListOf<Pair<Set<BoardCoordinate>, Set<BoardCoordinate>>>()
+            problem.stones.keys.sortedWith(compareBy({ it.row }, { it.column })).forEach { stone ->
+                if (stone in seen) return@forEach
+                val group = groupOf(problem, stone)
+                seen += group
+                val outside = group.flatMap { it.neighbors(problem.boardSize) }
+                    .filter { problem.stones[it] == null && it !in playable }.toSet()
+                if (outside.isNotEmpty()) walls += group to outside
+            }
+            val labels = { points: Collection<BoardCoordinate> -> points.map { it.label(problem.boardSize) }.sorted() }
+            walls.groupBy { (group, _) -> problem.stones.getValue(group.first()) }.flatMap { (color, pieces) ->
+                buildList {
+                    if (pieces.size > 1) add("${problem.id}: the $color wall is cut into ${pieces.size} pieces ${pieces.map { labels(it.first) }}")
+                    pieces.filter { it.second.size < SafeOutsideLiberties }
+                        .forEach { add("${problem.id}: $color stones ${labels(it.first)} breathe outside only through ${labels(it.second)}") }
+                }
+            }
+        }
+        assertTrue(weak.isEmpty(), "weak walls on the board:\n" + weak.joinToString("\n"))
+    }
+
     @Test
     fun idsAreUniqueStableKeysAndEveryUnitHasProblems() {
         val ids = lifeAndDeathProblems.map { it.id }
@@ -116,6 +149,11 @@ class LifeAndDeathProblemsTest {
             assertEquals(problem.answerPoint, first.first(), "${problem.id}: the shown answer starts with the intended move")
             assertEquals(1, first.size % 2, "${problem.id}: the line ends with the solver's move")
         }
+    }
+
+    private companion object {
+        /** 문제 밖 활로가 이만큼 있으면 상대가 문제 밖에 한두 수를 두어도 잡히지 않는다 — 판에서 「안정」으로 보이는 하한. */
+        const val SafeOutsideLiberties = 3
     }
 
     private fun groupOf(problem: LifeAndDeathProblem, start: BoardCoordinate): Set<BoardCoordinate> {

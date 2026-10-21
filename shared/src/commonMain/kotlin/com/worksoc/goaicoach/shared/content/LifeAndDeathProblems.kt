@@ -12,8 +12,10 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
  * ⚠️ **정답은 여기 없다** — [LifeAndDeathProblem.answer]는 지은이의 의도일 뿐이고 판정은 [LifeAndDeathSolver]가 한다.
  * 문제를 고치면 `LifeAndDeathProblemsTest`가 풀이기에게 그 의도가 정말 정답인지, 아직 결판나지 않은 국면인지,
  * 국면 수가 [LifeAndDeathSolver.NodeBudget] 아래인지 되묻는다.
- * ⚠️ **둘레는 단단하게 둔다** — 바깥 벽의 돌은 문제 밖(`,`)에 공배가 있어 잡히지 않는다. 목표 무리의 공배가 문제 밖에 남으면
- * 아무도 메우지 못해 잡을 수 없는 무리가 되므로, 목표 무리의 공배는 전부 문제 안에 둔다(테스트가 센다).
+ * ⚠️ **둘레는 판에 보이는 그대로 단단해야 한다** — 풀이기는 문제 밖(`,`)에 아무도 두지 않는다고 보지만, 판을 보는 사람은 그렇게 보지
+ * 않는다. 처음 판은 벽이 대각선으로만 닿아 끊기는 자리가 있었고 급소 단원은 왼쪽 벽이 아예 단수였다(사용자 2026-10-21) — 풀이기에게는
+ * 멀쩡한 문제였다. 그래서 **한 색의 바깥 벽은 끊긴 데 없는 한 덩어리**이고 문제 밖 활로가 넉넉하다(테스트가 센다). 반대로 목표 무리의
+ * 공배가 문제 밖에 남으면 아무도 메우지 못해 잡을 수 없는 무리가 되므로, 목표 무리의 공배는 전부 문제 안에 둔다(이것도 테스트가 센다).
  * ⚠️ id는 저장값이다(푼 기록) — 바꾸지 말 것. 순서가 곧 화면의 순서다.
  */
 val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
@@ -23,13 +25,13 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "ld.eyes.1", LifeAndDeathUnit.TwoEyes, LifeAndDeathGoal.Live, target = "A8", answer = "B9",
         ". . . X O , , , ,",
         "X X X X O , , , ,",
-        "O O O O , , , , ,",
+        "O O O O O , , , ,",
     ),
     problem(
         "ld.eyes.2", LifeAndDeathUnit.TwoEyes, LifeAndDeathGoal.Kill, target = "A8", answer = "B9",
         ". . . O X , , , ,",
         "O O O O X , , , ,",
-        "X X X X , , , , ,",
+        "X X X X X , , , ,",
     ),
     // 셋이 꺾인 모양(곡삼): 꺾인 모서리가 둘 모두와 닿는 자리다.
     problem(
@@ -37,14 +39,14 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         ". . X O , , , , ,",
         ". X X O , , , , ,",
         "X X X O , , , , ,",
-        "O O O , , , , , ,",
+        "O O O O , , , , ,",
     ),
     problem(
         "ld.eyes.4", LifeAndDeathUnit.TwoEyes, LifeAndDeathGoal.Kill, target = "B8", answer = "A9",
         ". . O X , , , , ,",
         ". O O X , , , , ,",
         "O O O X , , , , ,",
-        "X X X , , , , , ,",
+        "X X X X , , , , ,",
     ),
     // 눈 자리 빼앗기: 귀의 눈 하나는 이미 있다 — 둘째 눈이 날 자리를 먼저 차지한다.
     problem(
@@ -67,13 +69,13 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "ld.false.2", LifeAndDeathUnit.FalseEye, LifeAndDeathGoal.Kill, target = "A8", answer = "C8",
         ". O . O X , , , ,",
         "O O . O X , , , ,",
-        "X X X X , , , , ,",
+        "X X X X X , , , ,",
     ),
     problem(
         "ld.false.3", LifeAndDeathUnit.FalseEye, LifeAndDeathGoal.Live, target = "A8", answer = "C8",
         ". X . X O , , , ,",
         "X X . X O , , , ,",
-        "O O O O , , , , ,",
+        "O O O O O , , , ,",
     ),
     // 옥집 함정: 눈 모양을 먼저 갖추면 대각선을 끊겨 옥집이 된다 — 끊길 자리를 먼저 잇는다.
     problem(
@@ -81,13 +83,13 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         ". X . X O , , , ,",
         "X X . . O , , , ,",
         "X X X X O , , , ,",
-        "O O O O , , , , ,",
+        "O O O O O , , , ,",
     ),
     problem(
         "ld.false.5", LifeAndDeathUnit.FalseEye, LifeAndDeathGoal.Kill, target = "A8", answer = "C8",
         ". O . . O X , , ,",
         "O O . O O X , , ,",
-        "X X X X X , , , ,",
+        "X X X X X X , , ,",
     ),
 
     // ── ③ 급소 ────────────────────────────────────────────────────────
@@ -97,14 +99,14 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "X O . . . O X , ,",
         "X O O . O O X , ,",
         "X O O O O O X , ,",
-        ", X X X X X , , ,",
+        "X X X X X X X , ,",
     ),
     problem(
         "ld.vital.2", LifeAndDeathUnit.VitalPoint, LifeAndDeathGoal.Live, target = "B9", answer = "D9",
         "O X . . . X O , ,",
         "O X X . X X O , ,",
         "O X X X X X O , ,",
-        ", O O O O O , , ,",
+        "O O O O O O O , ,",
     ),
     // 다섯이 십자(매화오): 한가운데.
     problem(
@@ -113,7 +115,7 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "X O . . . O X , ,",
         "X O O . O O X , ,",
         "X O O O O O X , ,",
-        ", X X X X X , , ,",
+        "X X X X X X X , ,",
     ),
     // 다섯이 뭉친 모양(화오 — 네모에 하나): 튀어나온 점과 닿는 네모의 점.
     problem(
@@ -121,7 +123,7 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "X O . . . O X , ,",
         "X O . . O O X , ,",
         "X O O O O O X , ,",
-        ", X X X X X , , ,",
+        "X X X X X X X , ,",
     ),
     // 같은 모양을 살리는 쪽에서 — 급소가 가장 깔끔하지만, 다른 두 자리로도 산다(풀이기가 셋 다 정답으로 본다).
     problem(
@@ -129,7 +131,7 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "O X . . . X O , ,",
         "O X . . X X O , ,",
         "O X X X X X O , ,",
-        ", O O O O O , , ,",
+        "O O O O O O O , ,",
     ),
     // 여섯(매화육궁): 한가운데 — 백이 버티면 한 수 더 받는다.
     problem(
@@ -138,7 +140,7 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "X O . . . O X , ,",
         "X O O . . O X , ,",
         "X O O O O O X , ,",
-        ", X X X X X , , ,",
+        "X X X X X X X , ,",
     ),
 
     // ── ④ 넓히기·좁히기 ────────────────────────────────────────────────
@@ -147,33 +149,33 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         "ld.space.1", LifeAndDeathUnit.EyeSpace, LifeAndDeathGoal.Live, target = "A8", answer = "D8",
         ". . . . . X O , ,",
         "X X X . X X O , ,",
-        "O O O O O O , , ,",
+        "O O O O O O O , ,",
     ),
     problem(
         "ld.space.2", LifeAndDeathUnit.EyeSpace, LifeAndDeathGoal.Kill, target = "A8", answer = "D8",
         ". . . . . O X , ,",
         "O O O . O O X , ,",
-        "X X X X X X , , ,",
+        "X X X X X X X , ,",
     ),
     // 귀 쪽의 틈: 1선으로 내려서 궁도를 넓힌다 / 밖에서 1선으로 좁힌다.
     problem(
         "ld.space.3", LifeAndDeathUnit.EyeSpace, LifeAndDeathGoal.Live, target = "B8", answer = "A8",
         ". . . . X O , , ,",
         ". X X X X O , , ,",
-        "O O O O O , , , ,",
+        "O O O O O O , , ,",
     ),
     problem(
         "ld.space.4", LifeAndDeathUnit.EyeSpace, LifeAndDeathGoal.Kill, target = "B8", answer = "A8",
         ". . . . . O X , ,",
         ". O O O O O X , ,",
-        "X X X X X X , , ,",
+        "X X X X X X X , ,",
     ),
     // 끝이 열린 궁도: 열린 쪽을 막아 넷을 지킨다 — 안쪽에 먼저 모양을 갖춰도 산다(풀이기가 둘 다 정답으로 본다).
     problem(
         "ld.space.5", LifeAndDeathUnit.EyeSpace, LifeAndDeathGoal.Live, target = "B8", answer = "B9",
         ". . . . . . X O ,",
         "O X X X X X X O ,",
-        ", O O O O O O O ,",
+        "O O O O O O O O ,",
     ),
 
     // ── ⑤ 귀의 사활 ────────────────────────────────────────────────────
@@ -183,14 +185,14 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         ". . . O X , , , ,",
         ". . O O X , , , ,",
         "O O O O X , , , ,",
-        "X X X X , , , , ,",
+        "X X X X X , , , ,",
     ),
     problem(
         "ld.corner.2", LifeAndDeathUnit.Corner, LifeAndDeathGoal.Live, target = "C8", answer = "B9",
         ". . . X O , , , ,",
         ". . X X O , , , ,",
         "X X X X O , , , ,",
-        "O O O O , , , , ,",
+        "O O O O O , , , ,",
     ),
     // 귀의 판육(2×3): 바깥 공배가 없으면 2·2의 자리로 죽는다 — 변이라면 산다.
     problem(
@@ -198,14 +200,14 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         ". . . O X , , , ,",
         ". . . O X , , , ,",
         "O O O O X , , , ,",
-        "X X X X , , , , ,",
+        "X X X X X , , , ,",
     ),
     problem(
         "ld.corner.4", LifeAndDeathUnit.Corner, LifeAndDeathGoal.Live, target = "D8", answer = "B8",
         ". . . X O , , , ,",
         ". . . X O , , , ,",
         "X X X X O , , , ,",
-        "O O O O , , , , ,",
+        "O O O O O , , , ,",
     ),
     problem(
         "ld.corner.5", LifeAndDeathUnit.Corner, LifeAndDeathGoal.Kill, target = "C9", answer = "B8",
@@ -213,7 +215,7 @@ val lifeAndDeathProblems: List<LifeAndDeathProblem> = listOf(
         ". . . O X , , , ,",
         "O . O O X , , , ,",
         "O O O O X , , , ,",
-        "X X X X , , , , ,",
+        "X X X X X , , , ,",
     ),
 )
 
