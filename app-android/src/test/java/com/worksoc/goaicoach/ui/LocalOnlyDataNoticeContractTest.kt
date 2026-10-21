@@ -29,7 +29,8 @@ import org.junit.Test
  * · 앱 문구가 소실을 **단정하지 않을 것**(이제 거짓이다), 그러나 **안전하다고도 하지 않을 것**.
  *
  * ## ⚠️ 이 저장소 밖에 있는 것 — 개인정보처리방침
- * 형제 저장소 `rezen.dev`의 `src/pages/go-ai-coach/privacy/index.astro`가 그 문장을 든다.
+ * 형제 저장소 `rezen.dev`의 `web/site/src/components/legal/BadukAiPrivacy.astro`가 그 문장을 든다
+ * (정식 주소 `https://rezen.dev/apps/baduk-ai/privacy/`, 옛 주소 `/go-ai-coach/privacy/`도 같은 본문).
  * 2026-09-22에 **자동 백업을 언급하는 조건형으로 고치고 시행일자를 올렸다**(커밋 `d0fe7c9`).
  * ⚠️ **그 문서가 배포된 뒤에 앱을 내보내야 한다** — 순서가 뒤집히면 배포된 방침이 앱의 동작과
  * 어긋나 그 자체로 위반이다(함정 60). 이 테스트는 거기 닿지 못하므로 **그 순서는 사람이 지킨다.**
