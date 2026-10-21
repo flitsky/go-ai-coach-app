@@ -36,6 +36,7 @@ import com.worksoc.goaicoach.shared.content.LifeAndDeathPhase
 import com.worksoc.goaicoach.shared.content.LifeAndDeathSession
 import com.worksoc.goaicoach.shared.content.LifeAndDeathUnit
 import com.worksoc.goaicoach.shared.content.lifeAndDeathProblemsOf
+import com.worksoc.goaicoach.shared.content.section
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -50,6 +51,7 @@ import com.worksoc.goaicoach.ui.l10n.lifeAndDeathNextProblemFor
 import com.worksoc.goaicoach.ui.l10n.lifeAndDeathPreviousProblemFor
 import com.worksoc.goaicoach.ui.l10n.lifeAndDeathPromptFor
 import com.worksoc.goaicoach.ui.l10n.lifeAndDeathRetryFor
+import com.worksoc.goaicoach.ui.l10n.lifeAndDeathSectionTitleFor
 import com.worksoc.goaicoach.ui.l10n.lifeAndDeathShowAnswerFor
 import com.worksoc.goaicoach.ui.l10n.lifeAndDeathShowingAnswerFor
 import com.worksoc.goaicoach.ui.l10n.lifeAndDeathUnitSummaryFor
@@ -64,7 +66,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * 3 Depth: 「기본 사활」(백로그 #184) — 단원 목록과, 고른 단원의 문제를 **풀어 보는** 화면.
+ * 3 Depth: 「사활」(백로그 #184 · #277) — 단원 목록과, 고른 단원의 문제를 **풀어 보는** 화면.
  *
  * 학습 단원(`StudyLessonTrackScreen`)과 형식이 다르다 — 거기는 도해를 넘겨 읽고, 여기는 판에 직접 둔다(U-51 「푸는 학습」).
  * 그래서 화면을 따로 두되 **머리말 · 목록 줄 · 판과 글의 비율 · 아래 조작부의 모양**은 학습 단원과 같은 것을 쓴다 —
@@ -119,6 +121,16 @@ internal fun LifeAndDeathTrackScreen(
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             LifeAndDeathUnit.entries.forEach { unit ->
+                // 묶음이 바뀌는 자리에 칸 이름(#277) — 기본 다섯 단원 · 중급과 고급. 단원 순서가 곧 묶음 순서다(enum 순서).
+                if (unit == LifeAndDeathUnit.entries.first { it.section == unit.section }) {
+                    Text(
+                        text = lifeAndDeathSectionTitleFor(strings.language, unit.section),
+                        fontSize = AppTextSize.Text14,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(top = AppSpacing.Space8),
+                    )
+                }
                 val problems = lifeAndDeathProblemsOf(unit)
                 val solvedCount = problems.count { it.id in solved }
                 StudyEntryRow(

@@ -5,13 +5,14 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.domain.neighbors
 
 /**
  * 「기본 사활」의 단원(백로그 #184). **순서가 곧 화면의 순서다** — 앞 단원을 풀었다는 전제로 뒤 단원의
  * 문제가 놓여 있다(두 눈을 알아야 옥집이 읽히고, 궁도를 알아야 급소가 읽힌다).
  *
  * ⚠️ 이름은 저장값이 아니다 — 푼 기록은 문제의 [LifeAndDeathProblem.id] 문자열로 남는다. 단원을 갈라도
- * 기록은 이어진다. 고전 사활집의 「도전」 단원은 #277이 여기에 값을 더한다(사용자 2026-10-21 — #184에서 떼어 냄).
+ * 기록은 이어진다. 중급 · 고급(#277)은 맥에서 만든 문제다.
  */
 enum class LifeAndDeathUnit {
     /** 두 눈이 있으면 산다 — 눈을 만들어 살고, 눈 자리를 빼앗아 잡는다. */
@@ -28,7 +29,34 @@ enum class LifeAndDeathUnit {
 
     /** 귀의 사활 — 귀는 같은 모양이라도 변보다 좁다(2·1의 급소, 판육). */
     Corner,
+
+    /**
+     * 중급(백로그 #277) — 몇 수 앞을 읽어야 풀린다. 맥에서 만들고 풀이기가 증명한 9줄 판 문제(`LifeAndDeathCandidateExportTest`) 가운데,
+     * 사람 모델이 첫눈에 정답을 둘 확률이 기본 사활(약 0.9)보다 확실히 낮은 것(실험실 E11).
+     */
+    Intermediate,
+
+    /** 고급(#277) — 첫 수가 첫눈에 안 보이고(사람 모델의 확률이 가장 낮은 쪽) 수순이 길다. */
+    Advanced,
 }
+
+/** 단원의 묶음 — 단원 목록이 이 차례로 칸을 나눠 보인다(#277). */
+enum class LifeAndDeathSection {
+    /** 「기본 사활」(#184)의 다섯 단원. */
+    Basics,
+
+    /** 중급 · 고급 — 맥에서 만든 문제. */
+    Practice,
+}
+
+/** 이 단원이 속한 묶음. */
+val LifeAndDeathUnit.section: LifeAndDeathSection
+    get() = when (this) {
+        LifeAndDeathUnit.TwoEyes, LifeAndDeathUnit.FalseEye, LifeAndDeathUnit.VitalPoint,
+        LifeAndDeathUnit.EyeSpace, LifeAndDeathUnit.Corner,
+        -> LifeAndDeathSection.Basics
+        LifeAndDeathUnit.Intermediate, LifeAndDeathUnit.Advanced -> LifeAndDeathSection.Practice
+    }
 
 /** 문제의 목표 — **문제를 푸는 쪽([LifeAndDeathProblem.toPlay])이 무엇을 해내야 하는가.** */
 enum class LifeAndDeathGoal {
@@ -116,6 +144,9 @@ data class LifeAndDeathProblem(
             LifeAndDeathGoal.Live -> require(targetColor == toPlay) { "Problem $id: Live targets the solver's own group" }
         }
         require(stones[answerPoint] == null && answerPoint in playable) { "Problem $id: answer $answer is not an empty playable point" }
+        // 숨이 없는 돌은 판에 있을 수 없다 — 맥에서 만든 후보가 닫힌 구멍에 돌을 놓아 처음 드러났다(#277, 엔진이 그 판을 거부했다).
+        val breathless = stones.keys.filter { stone -> groupAt(stone).none { member -> member.neighbors(boardSize).any { it !in stones } } }
+        require(breathless.isEmpty()) { "Problem $id: stones without a liberty ${breathless.map { it.label(boardSize) }}" }
     }
 
     /** 아무 수도 두기 전의 국면. 학습 단원(`StudyLesson.startState`)과 같은 규칙(일본식)으로 앉힌다. */

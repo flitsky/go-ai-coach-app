@@ -36,10 +36,10 @@ private val StudyCategoryTitles: Map<StudyCategory, Map<UiLanguage, String>> = m
         UiLanguage.ChineseSimplified to "基础行棋",
     ),
     StudyCategory.LifeAndDeath to mapOf(
-        UiLanguage.Korean to "기본 사활 공부하기",
+        UiLanguage.Korean to "사활 공부하기",
         UiLanguage.English to "Life and Death",
         UiLanguage.Japanese to "詰碁で死活を学ぶ",
-        UiLanguage.ChineseSimplified to "基本死活练习",
+        UiLanguage.ChineseSimplified to "死活练习",
     ),
 )
 

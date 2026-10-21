@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.shared.content
 
-import com.worksoc.goaicoach.shared.domain.BoardCoordinate
-import com.worksoc.goaicoach.shared.domain.neighbors
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -42,12 +40,28 @@ class LifeAndDeathProblemsTest {
             "ld.space.4" to setOf("A8"), "ld.space.5" to setOf("B9", "E9"),
             "ld.corner.1" to setOf("B9"), "ld.corner.2" to setOf("B9"), "ld.corner.3" to setOf("B8"),
             "ld.corner.4" to setOf("B8", "B9"), "ld.corner.5" to setOf("B8"),
+            // 중급 · 고급(#277) — 맥에서 만든 문제는 정답 첫 수가 하나인 것만 골랐다.
+            "ld.mid.1" to setOf("C9"), "ld.mid.2" to setOf("F9"), "ld.mid.3" to setOf("B8"), "ld.mid.4" to setOf("E8"),
+            "ld.mid.5" to setOf("C8"), "ld.mid.6" to setOf("A8"), "ld.mid.7" to setOf("B9"), "ld.mid.8" to setOf("A8"),
+            "ld.mid.9" to setOf("D8"), "ld.mid.10" to setOf("E8"),
+            "ld.adv.1" to setOf("C9"), "ld.adv.2" to setOf("B9"), "ld.adv.3" to setOf("C8"), "ld.adv.4" to setOf("A8"),
+            "ld.adv.5" to setOf("D8"), "ld.adv.6" to setOf("D9"), "ld.adv.7" to setOf("B8"), "ld.adv.8" to setOf("E9"),
+            "ld.adv.9" to setOf("B9"), "ld.adv.10" to setOf("B9"),
         )
         assertEquals(expected.keys, lifeAndDeathProblems.map { it.id }.toSet(), "the table must cover every problem")
         lifeAndDeathProblems.forEach { problem ->
             val solver = LifeAndDeathSolver(problem)
             val correct = solver.correctMoves(solver.root()).map { it.label(problem.boardSize) }.toSet()
             assertEquals(expected.getValue(problem.id), correct, problem.id)
+        }
+    }
+
+    /** 화면에 통과 단추가 없다 — 정답을 두어 가는 길에 「통과해야만 이기는」 차례가 있으면 그 문제는 풀 수 없다(#277). */
+    @Test
+    fun everyTurnOnTheWayHasAMoveToPlay() {
+        lifeAndDeathProblems.forEach { problem ->
+            val stuck = LifeAndDeathSolver(problem).turnsWithoutAPlayableAnswer()
+            assertTrue(stuck.isEmpty(), "${problem.id}: ${stuck.size} turn(s) where only a pass wins")
         }
     }
 
@@ -65,19 +79,14 @@ class LifeAndDeathProblemsTest {
         }
     }
 
-    /** 폰에서 문제를 열 때 푼다 — 정답 보기 · 첫 수 전부 · 그 응수까지 읽어도 상한 아래여야 한다. */
+    /**
+     * 폰에서 문제를 열 때 그 자리에서 읽는다 — 정답 보기 · 첫 수 전부 · 그 응수까지 읽어도 상한 아래여야 한다. 넘는 문제(고전 · 고급)는
+     * 맥에서 미리 읽은 표를 싣는다 — 표가 있는 문제는 여기서 빠지고, 표가 낡지 않았는지는 `LifeAndDeathAnswerTableTest`가 본다.
+     */
     @Test
     fun solvingStaysInsideTheNodeBudget() {
-        lifeAndDeathProblems.forEach { problem ->
-            val solver = LifeAndDeathSolver(problem)
-            val root = solver.root()
-            val correct = solver.correctMoves(root).toSet()
-            solver.legalPoints(root).forEach { point ->
-                val child = solver.play(root, point)
-                if (point in correct) solver.replyAfterCorrect(child) else solver.refutation(child, correct)
-            }
-            LifeAndDeathSession(problem).answerLine()
-            assertTrue(solver.visitedNodes <= LifeAndDeathSolver.NodeBudget, "${problem.id}: ${solver.visitedNodes} nodes")
+        lifeAndDeathProblems.filter { it.id !in lifeAndDeathAnswerTables }.forEach { problem ->
+            assertTrue(problem.fitsTheNodeBudget(), "${problem.id}: reads more than ${LifeAndDeathSolver.NodeBudget} nodes — ship an answer table")
         }
     }
 
@@ -85,43 +94,15 @@ class LifeAndDeathProblemsTest {
     @Test
     fun theTargetGroupBreathesOnlyInsideTheProblem() {
         lifeAndDeathProblems.forEach { problem ->
-            val group = groupOf(problem, problem.targetPoint)
-            val liberties = group.flatMap { it.neighbors(problem.boardSize) }.filter { problem.stones[it] == null }.toSet()
-            val outside = liberties - problem.playable.toSet()
+            val outside = problem.targetLibertiesOutside()
             assertTrue(outside.isEmpty(), "${problem.id}: target liberties outside the problem ${outside.map { it.label(problem.boardSize) }}")
         }
     }
 
-    /**
-     * **판에 보이는 그대로도 맞는 문제여야 한다**(사용자 2026-10-21, 급소 1·2번 → 급소 여섯 전부). 풀이기는 문제 밖(`,`)에 아무도
-     * 두지 않는다고 보므로, 판에서는 약한 벽도 풀이기에게는 영원히 살아 있다 — 문제 밖 활로가 하나뿐이면 단수이고(상대가 그 점을 두면
-     * 따내고 산다), 벽이 대각선으로만 닿아 있으면 끊기는 자리가 남는다.
-     * 그래서 목표 무리가 아닌 무리는 ① 활로가 전부 문제 안이라 풀이기가 다 읽거나 ② **그 색의 바깥 벽 하나**에 속해야 한다 —
-     * 한 색에 문제 밖으로 숨 쉬는 무리는 하나뿐이고, 그 무리의 문제 밖 활로는 [SafeOutsideLiberties]개 이상이다.
-     */
+    /** **판에 보이는 그대로도 맞는 문제여야 한다**(사용자 2026-10-21) — 잣대는 [weakWalls] 한 곳이다(맥의 문제 만들기 도구와 같은 함수). */
     @Test
     fun everyWallIsOneSolidPieceOnTheBoard() {
-        val weak = lifeAndDeathProblems.flatMap { problem ->
-            val playable = problem.playable.toSet()
-            val seen = groupOf(problem, problem.targetPoint).toMutableSet()
-            val walls = mutableListOf<Pair<Set<BoardCoordinate>, Set<BoardCoordinate>>>()
-            problem.stones.keys.sortedWith(compareBy({ it.row }, { it.column })).forEach { stone ->
-                if (stone in seen) return@forEach
-                val group = groupOf(problem, stone)
-                seen += group
-                val outside = group.flatMap { it.neighbors(problem.boardSize) }
-                    .filter { problem.stones[it] == null && it !in playable }.toSet()
-                if (outside.isNotEmpty()) walls += group to outside
-            }
-            val labels = { points: Collection<BoardCoordinate> -> points.map { it.label(problem.boardSize) }.sorted() }
-            walls.groupBy { (group, _) -> problem.stones.getValue(group.first()) }.flatMap { (color, pieces) ->
-                buildList {
-                    if (pieces.size > 1) add("${problem.id}: the $color wall is cut into ${pieces.size} pieces ${pieces.map { labels(it.first) }}")
-                    pieces.filter { it.second.size < SafeOutsideLiberties }
-                        .forEach { add("${problem.id}: $color stones ${labels(it.first)} breathe outside only through ${labels(it.second)}") }
-                }
-            }
-        }
+        val weak = lifeAndDeathProblems.flatMap { it.weakWalls() }
         assertTrue(weak.isEmpty(), "weak walls on the board:\n" + weak.joinToString("\n"))
     }
 
@@ -149,22 +130,5 @@ class LifeAndDeathProblemsTest {
             assertEquals(problem.answerPoint, first.first(), "${problem.id}: the shown answer starts with the intended move")
             assertEquals(1, first.size % 2, "${problem.id}: the line ends with the solver's move")
         }
-    }
-
-    private companion object {
-        /** 문제 밖 활로가 이만큼 있으면 상대가 문제 밖에 한두 수를 두어도 잡히지 않는다 — 판에서 「안정」으로 보이는 하한. */
-        const val SafeOutsideLiberties = 3
-    }
-
-    private fun groupOf(problem: LifeAndDeathProblem, start: BoardCoordinate): Set<BoardCoordinate> {
-        val color = problem.stones.getValue(start)
-        val seen = mutableSetOf(start)
-        val pending = ArrayDeque(listOf(start))
-        while (pending.isNotEmpty()) {
-            pending.removeFirst().neighbors(problem.boardSize)
-                .filter { problem.stones[it] == color && seen.add(it) }
-                .forEach { pending += it }
-        }
-        return seen
     }
 }
