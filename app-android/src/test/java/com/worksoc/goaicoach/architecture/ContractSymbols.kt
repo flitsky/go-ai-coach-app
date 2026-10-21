@@ -210,6 +210,8 @@ internal object ContractSymbols {
         "com.worksoc.goaicoach.application.profile",
         // 승급 대국(백로그 #219) — 내 기력과 연승·연패를 이어 가는 세션 상태다. 대국 기록(5계층)을 읽어 반영한다.
         "com.worksoc.goaicoach.application.rankmeasure",
+        // 오늘의 한 줄 명언(백로그 #273) — 섞은 차례와 본 것을 이어 가는 진행도다. 하루의 정의는 출석(`attendance`, 같은 6계층)의 UTC 하루를 따른다.
+        "com.worksoc.goaicoach.application.dailyquote",
     )
 
     /**
