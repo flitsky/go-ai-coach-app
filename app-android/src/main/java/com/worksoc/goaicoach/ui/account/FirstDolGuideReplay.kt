@@ -44,10 +44,11 @@ import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
 import com.worksoc.goaicoach.ui.home.GameHistoryBoardIcon
 import com.worksoc.goaicoach.ui.home.GamePlayPreviewIcon
 import com.worksoc.goaicoach.ui.home.HomeMenuTile
+import com.worksoc.goaicoach.ui.home.HomePage
+import com.worksoc.goaicoach.ui.home.HomePageTabBar
 import com.worksoc.goaicoach.ui.home.MenuCard
 import com.worksoc.goaicoach.ui.home.MenuTile
 import com.worksoc.goaicoach.ui.home.RankMeasureIcon
-import com.worksoc.goaicoach.ui.home.StudyPreviewIcon
 import com.worksoc.goaicoach.ui.home.currentAiCharacterOrDefault
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -227,7 +228,8 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     }
                     ReplaySection(title = strings.study) {
                         ReplayLine(UiStringsGuideReplay.study(strings.language))
-                        MenuTile(HomeMenuTile(strings.study, onClick = {}) { StudyPreviewIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
+                        // #280 — 「학습 하기」는 홈의 타일이 아니라 오른쪽 페이지다. 가는 길인 아래 탭을 **진짜로** 그린다(누르면 아무 일 없음).
+                        HomePageTabBar(current = HomePage.Study, onSelect = {}, underNavigationBar = false)
                     }
                     // #261 — 바둑판 조작법(#249·#258)으로 가는 길. 이름은 설정이 쓰는 그 글자다.
                     ReplaySection(title = settingsHelpSectionFor(strings.language)) {

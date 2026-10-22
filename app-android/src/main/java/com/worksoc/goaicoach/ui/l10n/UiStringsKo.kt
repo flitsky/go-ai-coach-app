@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.ui.l10n
 internal val UiStringsKorean = UiStrings(
     language = UiLanguage.Korean,
     appTitle = "포켓 바둑 코치",
-    homeTagline = "로컬 AI와 함께하는 바둑 학습",
     languageLabel = "언어",
     settingsFontScaleTitle = "글꼴 크기",
     settingsFontScaleNormal = "기본",

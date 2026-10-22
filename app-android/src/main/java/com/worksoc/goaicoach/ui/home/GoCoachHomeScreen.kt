@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -18,31 +19,42 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.materialIcon
+import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,14 +62,16 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -73,7 +87,6 @@ import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -97,7 +110,8 @@ import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
-import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
+import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.homePagePlayTabFor
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOverwriteWarningFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
@@ -106,23 +120,22 @@ import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
+import kotlinx.coroutines.launch
 
 /**
- * 0 Depth: 홈 화면 (Home Screen)
- * - 사용자가 앱 진입 시 최초로 마주하는 엔트리 화면입니다.
- * - "캐릭터 대국" (대국 설정 로비로 이동) 및 "학습 하기" ([StudyScreen]으로 이동) 메뉴를 제공합니다.
- * - 시스템 샌드위치/소프트키 및 상단 상태바 영역 침범 방지 적용.
+ * 0 Depth: 홈 — **세 페이지를 옆으로 넘긴다**(백로그 #280, 사용자 2026-10-22): 내 정보 ‹ **대국** › 학습 하기.
+ * - 윗줄(빠른 버튼 · 설정)과 아래 탭 셋은 세 페이지 공통이라 넘겨도 움직이지 않는다. 탭은 지금 페이지를 보이고, 누르면 그 페이지로 간다.
+ * - 켜면 늘 가운데(대국)다. 다른 화면에 갔다 오면 떠났던 페이지로 돌아온다([HomePageMemory]).
+ * - 뒤로가기: 옆 페이지 → 가운데, 가운데 → 앱을 나간다(셸의 `BackHandler`는 홈에서 꺼져 있다).
+ * - 내 정보 · 학습 하기의 내용은 셸이 넘긴다 — 그 화면들은 홈보다 같거나 위층이라 홈이 import하지 못한다(`UiPackageCycleRatchetTest`).
+ *   한 줄 안내([topNotice])를 넘기는 것과 같은 방식이다.
  */
 @Composable
 internal fun GoCoachHomeScreen(
     onStartMatchClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    onStudyClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
-    onMyPageClick: () -> Unit,
     onBoardScanClick: () -> Unit,
-    /** 「기보 보기」(백로그 #269) — 넷째 반 폭 타일. */
-    onGameRecordsClick: () -> Unit,
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     /**
@@ -138,9 +151,13 @@ internal fun GoCoachHomeScreen(
     playerSetup: PlayerSetup,
     /**
      * 엔진 팩을 받는 동안의 한 줄 안내(#248) — 받기가 없으면 아무것도 그리지 않는다. 셸이 `ui.setup`의 배너를 넘긴다
-     * (홈과 대국 설정은 같은 층이라 서로 import하지 못한다 — `UiPackageCycleRatchetTest`).
+     * (홈과 대국 설정은 같은 층이라 서로 import하지 못한다 — `UiPackageCycleRatchetTest`). 대국 페이지에만 선다(#280 ⑥).
      */
     topNotice: @Composable (Modifier) -> Unit,
+    /** 왼쪽 페이지 「내 정보」(#280) — 셸이 `ui.account`의 화면을 넘긴다. */
+    myInfoPage: @Composable () -> Unit,
+    /** 오른쪽 페이지 「학습 하기」 허브(#280) — 셸이 `ui.study`의 허브를 넘긴다. */
+    studyPage: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -150,7 +167,6 @@ internal fun GoCoachHomeScreen(
     val rankMeasure = LocalRankMeasureUiState.current
     var showRankMeasureDialog by remember { mutableStateOf(false) }
     var showRankMeasureOverwriteWarning by remember { mutableStateOf(false) }
-    val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
     // 백로그 #182 — 구독 여부로 로고·타이틀 색을 가른다. `isPurchased`만 본다(광고 1시간은
     // 제외, [[premium-character-unlock-policy]]와 같은 결). `PremiumSubscriptionCard`가
     // "구독 중" 문구를 결정하는 것과 같은 기준이라 새 상태가 아니라 CompositionLocal을 그대로 읽는다.
@@ -159,221 +175,59 @@ internal fun GoCoachHomeScreen(
     var showSubscribeDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     // 다른 앱에서 「공유」로 받은 바둑판 사진이 있으면 사진 분석으로 간다(백로그 #263) — 사진은 그 화면이 꺼낸다.
-    // 셸이 아니라 여기서 하는 것은 셸의 상태 훅 여유가 0이라서다(함정 3). 다른 화면에 있으면 홈으로 돌아올 때 열린다.
+    // 셸이 아니라 여기서 하는 것은 셸의 상태 훅 여유가 0이라서다(함정 3). 다른 화면에 있으면 홈으로 돌아올 때 열린다. 어느 페이지에 있든 같다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (SharedBoardPhotoInbox.hasPhoto(context)) onBoardScanClick()
     }
 
-    // 업데이트 안내(#270)의 코치마크가 화면 전체를 덮어야 해서 한 겹 감싼다 — 들여쓰기는 그대로 둔다(셸의 `Box` + `when`과 같은 모양).
+    // 지금 페이지는 이 화면이 든다 — 셸에 두면 셸 상태 원장에 한 칸이 는다(함정 3). 홈을 떠날 때 잃지 않게 [HomePageMemory]에 적어 둔다.
+    val pagerState = rememberPagerState(initialPage = HomePageMemory.page.ordinal) { HomePage.entries.size }
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page -> HomePageMemory.page = HomePage.entries[page] }
+    }
+    val scope = rememberCoroutineScope()
+    val showPage: (HomePage) -> Unit = { page -> scope.launch { pagerState.animateScrollToPage(page.ordinal) } }
+    BackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal) { showPage(HomePage.Play) }
+
+    // 업데이트 안내(#270)의 코치마크가 화면 전체를 덮어야 해서 한 겹 감싼다.
     Box(modifier = modifier.fillMaxSize()) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .systemBarsPadding(),
-    ) {
         Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                // 이어하기 버튼이 뜨면 고정 자식(상단 Row + 버튼 + 카드 4장)만으로 화면 세로를
-                // 넘긴다. 스크롤이 없으면 Column이 그 부족분을 **가중치 자식**의 높이에서 깎아내고,
-                // 그 안의 제목 `Text`가 maxHeight 몇 dp로 측정돼 `clipRect`로 잘려 나간다 — 잘린
-                // 그 선에서 이어하기 버튼이 시작하니 "제목 위에 겹쳐 보이는" 것이다(#28).
-                //
-                // ⚠️ 아래 Spacer 전환과 **반드시 함께** 가야 한다. 이것만 넣으면 maxHeight가
-                // Infinity가 돼 가중치 자식이 0으로 붕괴하고 로고가 통째로 사라진다.
-                .verticalScroll(rememberScrollState())
-                .padding(AppSpacing.Space24),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding(),
         ) {
-            // 좌=마이 페이지, 우=설정(#34, 2026-08-30 사용자 지시). 언어 칩이 설정 안으로
-            // 들어가면서 우측이 비었고, 그 자리를 설정이 받고 좌측을 마이 페이지가 가져갔다.
-            // 마이 페이지는 #24에서 하단 카드로 났는데, 카드 넉 장이 세로를 빠듯하게 만든
-            // 장본인이기도 했다(#28).
-            // 빠른 버튼 묶음(#270)은 설정 칩 **왼쪽** — 다른 화면에서도 맨 윗줄 오른쪽 끝에 서는 그 묶음이다. 배경음악 버튼은 업데이트 안내의
-            // 동그라미 대상으로 자리를 알린다(그 보고는 **홈의 것만** 한다 — `guideTarget`의 KDoc).
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HomeTopChip(emoji = "🧑", label = strings.myPageTitle, onClick = onMyPageClick)
-                Spacer(modifier = Modifier.weight(1f))
-                AppQuickActions(musicToggleModifier = Modifier.guideTarget(GuideTarget.MusicToggle))
-                HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
-            }
-
-            // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255) · 오늘의 한 줄 명언(#273). 차례는 `homeTopNoticeOf` 한 곳이 정한다.
-            // 칩 바로 아래에 두는 이유: 아래 가중치 여백이 이 높이를 흡수해 **메뉴 카드는 움직이지 않는다**(#128 ③의 표적 원칙).
-            topNotice(Modifier.padding(top = AppSpacing.Space12))
-
-            // 남는 세로 공간을 위·아래로 나눠 로고 블록을 가운데 둔다. 예전에는 **블록 자체가**
-            // `weight(1f)`였는데, 그러면 "남는 공간"이 곧 블록의 **최대 높이**가 된다 — 공간이
-            // 모자라는 순간 제목과 부제가 잘려 나갔다. 가중치를 여백으로 옮기면 0까지 줄어드는
-            // 쪽은 여백이고, 블록은 제 크기를 지킨 채 스크롤 대상이 된다.
-            Spacer(modifier = Modifier.weight(1f))
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // 백로그 #182 — "Premium?"은 아이콘 우상단, 점선 원 테두리 바로 옆에서 이어지듯
-                // 배치한다(2026-09-21 사용자 지시). 배경 없이 금색 글자만 두고, 아이콘과 글자
-                // 둘 다 탭하면 구독 다이얼로그가 뜬다 — 표적을 하나로 묶지 않은 이유는 "Premium?"이
-                // `.offset()`으로 배지 바깥까지 밀려나 있어(오프셋은 그리기 위치만 바꾸고 부모
-                // 레이아웃 크기엔 반영되지 않는다) 부모 하나에만 `clickable`을 걸면 그 영역을
-                // 못 덮기 때문이다.
-                val premiumBadgeClickModifier = if (showsPremiumPrompt) {
-                    Modifier.clip(CircleShape).clickable { showSubscribeDialog = true }
-                } else {
-                    Modifier
-                }
-
-                Box {
-                    Box(modifier = premiumBadgeClickModifier) {
-                        GoStoneLogoBadge(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt)
-                    }
-
-                    if (showsPremiumPrompt) {
-                        Text(
-                            text = "Premium?",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = PremiumGold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = 40.dp, y = (-2).dp)
-                                .clickable { showSubscribeDialog = true }
-                                .padding(horizontal = 7.dp, vertical = AppSpacing.Space2),
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(AppSpacing.Space20))
-
-                Text(
-                    text = strings.appTitle,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = if (subscribed) PremiumGoldDeep else MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                )
-
-                Text(
-                    text = strings.homeTagline,
-                    fontSize = AppTextSize.Text14,
-                    fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.secondary,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = AppSpacing.Space6),
-                )
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
-            if (hasResumableSession) {
-                val infiniteTransition = rememberInfiniteTransition(label = "resumeBlink")
-                val blinkingAlpha by infiniteTransition.animateFloat(
-                    initialValue = 0.35f,
-                    targetValue = 1.0f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = 800, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                    label = "blinkingAlpha",
-                )
-
-                Box(
-                    modifier = Modifier
-                        .padding(bottom = AppSpacing.Space16)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                        .clickable(onClick = onResumeClick)
-                        .padding(horizontal = AppSpacing.Space18, vertical = AppSpacing.Space10),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "▶ " + strings.resumeTitle,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = AppTextSize.Text18,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
+            HomeTopBar(onSettingsClick = onSettingsClick)
+            // ⚠️ 페이지 안에 가로로 끄는 것을 두지 않는다 — 넘기기와 부딪친다. 학습의 하위 화면(판 · 도해)이 페이지 밖, 화면 전체로 열리는 이유다.
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+            ) { index ->
+                when (HomePage.entries[index]) {
+                    HomePage.MyInfo -> myInfoPage()
+                    HomePage.Play -> HomePlayPage(
+                        hasResumableSession = hasResumableSession,
+                        onResumeClick = onResumeClick,
+                        onStartMatchClick = { if (hasResumableSession) showOverwriteWarningDialog = true else onStartMatchClick() },
+                        onRankMeasureClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
+                        onGameHistoryClick = onGameHistoryClick,
+                        onBoardScanClick = onBoardScanClick,
+                        playerSetup = playerSetup,
+                        topNotice = topNotice,
+                        subscribed = subscribed,
+                        showsPremiumPrompt = showsPremiumPrompt,
+                        onPremiumClick = { showSubscribeDialog = true },
                     )
+                    HomePage.Study -> studyPage()
                 }
             }
-
-            // "캐릭터 대국" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기
-            //
-            // ⚠️ **첫돌이 말풍선을 이 열의 새 자식으로 넣지 말 것**(백로그 #128 ③). 자식을 더하면
-            // 카드가 아래로 밀려 **사용자가 눌러야 할 표적이 움직이고**, #28이 만졌던 가중치·스크롤
-            // 산수에 다시 손대는 셈이 된다. 그래서 **호출부만 `Box`로 감싸고** 말풍선은 그 안에서
-            // 겹친다 — `MenuCard`의 본문과 시그니처는 한 글자도 바뀌지 않았다.
-            // ⚠️ 말풍선은 `ZeroSizeOverlay`가 **0×0으로 보고**하므로 배율이 올라 말풍선이 커져도
-            //   Box는 카드 높이 그대로다(그 이유는 그 함수의 KDoc — 설계안 셋이 여기서 틀렸다).
-            Box(modifier = Modifier.fillMaxWidth()) {
-                MenuCard(
-                    title = strings.startMatch,
-                    subtitle = strings.homeStartMatchSubtitle,
-                    onClick = {
-                        if (hasResumableSession) {
-                            showOverwriteWarningDialog = true
-                        } else {
-                            onStartMatchClick()
-                        }
-                    },
-                    icon = { GamePlayPreviewIcon(character = lastSelectedAiCharacter) },
-                )
-                // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
-                // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
-                // (다음 단계 ④는 이 카드를 눌러 대국 설정에 도착해야 열린다).
-                // ⚠️ **팝업이 떠 있으면 억제한다** — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
-                //   2026-09-09까지 출석 팝업 **하나**만 셌는데, 엔진 안내·초기화 안내가 뜬 동안에는
-                //   출석 팝업이 억제돼 게이트가 `false`였다 → ③이 그 뒤에 깔린 채 소진됐다
-                //   (그 사유는 `GuideBlockingOverlays`의 KDoc).
-                GuideAnchor(
-                    surface = GuideSurface.Home,
-                    blocked = GuideBlockingOverlays.isShowing,
-                    modifier = Modifier.align(Alignment.TopEnd),
-                )
-            }
-
-            // 「승급 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
-            // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
-            if (rankMeasure.isAvailable) {
-                Spacer(modifier = Modifier.height(AppSpacing.Space12))
-                MenuCard(
-                    title = rankMeasureTitleFor(strings.language),
-                    subtitle = rankMeasureSubtitleFor(strings.language),
-                    onClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
-                    icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
-                )
-            }
-
-            // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
-            // 「대국 기록」이 먼저다(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다). 그 옆이 「기보 보기」(#269), 아랫줄이 「사진 분석」·「학습 하기」 —
-            // 처음엔 「학습 하기」가 둘째, 「기보 보기」가 넷째였는데 사용자가 둘의 자리를 바꿨다(2026-10-19). 「사진 분석」은 1.5.0부터 본 기능(사용자 2026-10-15).
-            // 홀로 남은 타일도 반 폭을 지킨다.
-            val tiles = buildList {
-                add(HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() })
-                add(HomeMenuTile(gameRecordsTitleFor(strings.language), onGameRecordsClick) { GameRecordsPreviewIcon() })
-                add(HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() })
-                add(HomeMenuTile(strings.study, onStudyClick) { StudyPreviewIcon() })
-            }
-            tiles.chunked(2).forEach { row ->
-                Spacer(modifier = Modifier.height(AppSpacing.Space12))
-                Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-                    row.forEach { tile -> MenuTile(tile = tile, modifier = Modifier.weight(1f)) }
-                    if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-
-            // 마이 페이지 카드는 여기 없다 — 좌상단 칩으로 올라갔다(#34). 목적지 자체는
-            // 그대로이고 진입점만 옮겼다.
+            HomePageTabBar(current = HomePage.entries[pagerState.currentPage], onSelect = showPage)
         }
-    }
-    // 윗줄 배경음악 버튼의 업데이트 안내(#270 — 1.6.x에서 한 번). 「새로워진 점」·출석 팝업이 닫힌 뒤에 뜬다(둘 다 `TrackWhileShown`).
-    // ⚠️ `Column` **뒤**에 둔다 — 코치마크의 흡수 층이 홈의 카드·칩보다 위에 있어야 어디를 눌러도 안내만 넘어간다(대국 화면 앵커와 같은 이유).
-    GuideAnchor(surface = GuideSurface.HomeQuickActions, blocked = GuideBlockingOverlays.isShowing)
+        // 윗줄 배경음악 버튼의 업데이트 안내(#270 — 1.6.x에서 한 번). 「새로워진 점」·출석 팝업이 닫힌 뒤에 뜬다(둘 다 `TrackWhileShown`).
+        // ⚠️ `Column` **뒤**에 둔다 — 코치마크의 흡수 층이 홈의 카드·칩보다 위에 있어야 어디를 눌러도 안내만 넘어간다(대국 화면 앵커와 같은 이유).
+        GuideAnchor(surface = GuideSurface.HomeQuickActions, blocked = GuideBlockingOverlays.isShowing)
     }
 
     // 이전 대국 존재 상태에서 새 캐릭터 대국 선택 시 확인 경고 팝업
@@ -436,6 +290,333 @@ internal fun GoCoachHomeScreen(
     }
 }
 
+/** 홈의 세 페이지 — **선언 순서가 왼쪽부터의 자리다**(#280). 저장하지 않는다(프로세스 안의 기억뿐). */
+internal enum class HomePage { MyInfo, Play, Study }
+
+/**
+ * 홈을 떠났다 돌아올 때 떠났던 페이지로 오게 하는 기억(#280 ①). 홈은 다른 화면으로 가면 컴포지션에서 빠져 페이지 상태를 잃는다.
+ * 프로세스 안에만 있다 — 앱을 새로 켜면 늘 가운데(대국)다. 뒤로가기로 앱을 나가는 길도 가운데를 거친다.
+ */
+internal object HomePageMemory {
+    var page: HomePage = HomePage.Play
+}
+
+/**
+ * 세 페이지 공통 윗줄(#280 ④) — 빠른 버튼 묶음(#270)과 설정 칩이 오른쪽 끝에 선다. 「내 정보」 칩은 페이지가 되며 빠졌다(아래 탭이 대신한다).
+ * 왼쪽은 비워 둔다 — 로고는 대국 페이지 위다(#280 ③ A안, 사용자 2026-10-22 — 윗줄 왼쪽의 B안은 대국 페이지 가운데가 비어 보였다).
+ * 빠른 버튼의 배경음악 버튼은 업데이트 안내의 동그라미 대상으로 자리를 알린다(그 보고는 **홈의 것만** 한다 — `guideTarget`의 KDoc).
+ */
+@Composable
+private fun HomeTopBar(onSettingsClick: () -> Unit) {
+    val strings = LocalUiStrings.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = HomeTopBarMinHeight)
+            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Spacer(modifier = Modifier.weight(1f))
+        AppQuickActions(musicToggleModifier = Modifier.guideTarget(GuideTarget.MusicToggle))
+        HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
+    }
+}
+
+private val HomeTopBarMinHeight = 56.dp
+
+/**
+ * 가운데 페이지 「대국」(#280 ⑤) — 한 줄 안내 → 로고 → 이어하기 → 대국 카드 둘 → 반 폭 타일 둘(대국 기록 · 바둑판 사진 분석).
+ * 「기보 보기」는 학습 하기 페이지로, 「학습 하기」 타일은 페이지가 돼 빠졌다.
+ */
+@Composable
+private fun HomePlayPage(
+    hasResumableSession: Boolean,
+    onResumeClick: () -> Unit,
+    onStartMatchClick: () -> Unit,
+    onRankMeasureClick: () -> Unit,
+    onGameHistoryClick: () -> Unit,
+    onBoardScanClick: () -> Unit,
+    playerSetup: PlayerSetup,
+    topNotice: @Composable (Modifier) -> Unit,
+    subscribed: Boolean,
+    showsPremiumPrompt: Boolean,
+    onPremiumClick: () -> Unit,
+) {
+    val strings = LocalUiStrings.current
+    val rankMeasure = LocalRankMeasureUiState.current
+    val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            // 이어하기 버튼이 뜨면 고정 자식만으로 페이지 세로를 넘길 수 있다. 스크롤이 없으면 Column이 그 부족분을 **가중치 자식**의 높이에서
+            // 깎아내 제목이 잘린다(#28). ⚠️ 아래 가중치 Spacer와 **반드시 함께** 간다 — 페이지가 높이를 정해 주므로(최소 = 최대) 내용이 들어가면
+            // 가중치 여백이 남는 공간을 나누고, 넘치면 0으로 줄어 스크롤이 된다.
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = AppSpacing.Space24, vertical = AppSpacing.Space8),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255) · 오늘의 한 줄 명언(#273). 차례는 `homeTopNoticeOf` 한 곳이 정한다.
+        // 맨 위에 두는 이유: 아래 가중치 여백이 이 높이를 흡수해 **메뉴 카드는 움직이지 않는다**(#128 ③의 표적 원칙).
+        topNotice(Modifier.padding(top = AppSpacing.Space4))
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        HomeLogoBlock(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, onPremiumClick = onPremiumClick)
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
+        if (hasResumableSession) {
+            val infiniteTransition = rememberInfiniteTransition(label = "resumeBlink")
+            val blinkingAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 1.0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 800, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "blinkingAlpha",
+            )
+
+            Box(
+                modifier = Modifier
+                    .padding(bottom = AppSpacing.Space16)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                    .clickable(onClick = onResumeClick)
+                    .padding(horizontal = AppSpacing.Space18, vertical = AppSpacing.Space10),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "▶ " + strings.resumeTitle,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = AppTextSize.Text18,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
+                )
+            }
+        }
+
+        // "캐릭터 대국" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기(그 팝업은 홈이 든다)
+        //
+        // ⚠️ **첫돌이 말풍선을 이 열의 새 자식으로 넣지 말 것**(백로그 #128 ③). 자식을 더하면
+        // 카드가 아래로 밀려 **사용자가 눌러야 할 표적이 움직이고**, #28이 만졌던 가중치·스크롤
+        // 산수에 다시 손대는 셈이 된다. 그래서 **호출부만 `Box`로 감싸고** 말풍선은 그 안에서
+        // 겹친다 — `MenuCard`의 본문과 시그니처는 한 글자도 바뀌지 않았다.
+        // ⚠️ 말풍선은 `ZeroSizeOverlay`가 **0×0으로 보고**하므로 배율이 올라 말풍선이 커져도
+        //   Box는 카드 높이 그대로다(그 이유는 그 함수의 KDoc — 설계안 셋이 여기서 틀렸다).
+        // 말풍선은 카드에 붙어 있어 이 페이지에서만 보인다(#280 ⑧).
+        Box(modifier = Modifier.fillMaxWidth()) {
+            MenuCard(
+                title = strings.startMatch,
+                subtitle = strings.homeStartMatchSubtitle,
+                onClick = onStartMatchClick,
+                icon = { GamePlayPreviewIcon(character = lastSelectedAiCharacter) },
+            )
+            // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
+            // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
+            // (다음 단계 ④는 이 카드를 눌러 대국 설정에 도착해야 열린다).
+            // ⚠️ **팝업이 떠 있으면 억제한다** — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
+            //   2026-09-09까지 출석 팝업 **하나**만 셌는데, 엔진 안내·초기화 안내가 뜬 동안에는
+            //   출석 팝업이 억제돼 게이트가 `false`였다 → ③이 그 뒤에 깔린 채 소진됐다
+            //   (그 사유는 `GuideBlockingOverlays`의 KDoc).
+            GuideAnchor(
+                surface = GuideSurface.Home,
+                blocked = GuideBlockingOverlays.isShowing,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        }
+
+        // 「승급 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
+        // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
+        if (rankMeasure.isAvailable) {
+            Spacer(modifier = Modifier.height(AppSpacing.Space12))
+            MenuCard(
+                title = rankMeasureTitleFor(strings.language),
+                subtitle = rankMeasureSubtitleFor(strings.language),
+                onClick = onRankMeasureClick,
+                icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
+            )
+        }
+
+        // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
+        // 「대국 기록」이 먼저다(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다). 그 옆이 「사진 분석」 — 사진의 국면에서 곧바로 둔다(#266).
+        // 「기보 보기」는 학습 하기 페이지로 갔다(#280 ⑤ — 명국 감상은 공부다).
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
+        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+            MenuTile(tile = HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() }, modifier = Modifier.weight(1f))
+            MenuTile(tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() }, modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
+    }
+}
+
+/**
+ * 대국 페이지 위의 로고 블록(#280 ③ A안, 사용자 2026-10-22) — 지금까지의 홈 로고를 작게(엠블럼 125 → 96dp), 앱 제목 한 줄만.
+ * 제목 아래 부제(「로컬 AI와 함께하는 바둑 학습」)는 사용자가 지웠다(2026-10-22). 「Premium?」은 아이콘 우상단, 점선 원 테두리 바로 옆에서 이어지듯
+ * 배치한다(백로그 #182, 2026-09-21 사용자 지시). 배경 없이 금색 글자만 두고, 아이콘과 글자 둘 다 탭하면 구독 다이얼로그가 뜬다 —
+ * 표적을 하나로 묶지 않은 이유는 "Premium?"이 `.offset()`으로 배지 바깥까지 밀려나 있어(오프셋은 그리기 위치만 바꾸고 부모
+ * 레이아웃 크기엔 반영되지 않는다) 부모 하나에만 `clickable`을 걸면 그 영역을 못 덮기 때문이다.
+ */
+@Composable
+private fun HomeLogoBlock(subscribed: Boolean, showsPremiumPrompt: Boolean, onPremiumClick: () -> Unit) {
+    val strings = LocalUiStrings.current
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box {
+            Box(modifier = if (showsPremiumPrompt) Modifier.clip(CircleShape).clickable(onClick = onPremiumClick) else Modifier) {
+                GoStoneLogoBadge(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, badgeSize = 96.dp)
+            }
+            if (showsPremiumPrompt) {
+                Text(
+                    text = "Premium?",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PremiumGold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        // 원이 작아진 만큼(125 → 96dp) 우상단의 둘레가 안쪽으로 들어와, 글자를 더 밀어야 점선에 겹치지 않는다.
+                        .offset(x = 52.dp, y = (-2).dp)
+                        .clickable(onClick = onPremiumClick)
+                        .padding(horizontal = 7.dp, vertical = AppSpacing.Space2),
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
+        Text(
+            text = strings.appTitle,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (subscribed) PremiumGoldDeep else MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * 아래 탭 셋(#280 ②) — 지금 페이지를 진하게 보이고(아이콘 뒤 옅은 알약), 누르면 그 페이지로 넘긴다. 넘기기만으로는 옆에 무엇이 있는지 모르고 지나치기 쉽다.
+ * 키는 최소 높이만 준다 — 글꼴 배율 1.3에서 이름이 두 줄이 돼도 잘리지 않게(함정 9).
+ * ⚠️ `internal`인 이유는 가이드 다시보기 하나다 — 「학습 하기」로 가는 길을 **이 진짜 탭**으로 보여 준다([MenuCard]와 같은 이유).
+ * 거기는 창 안이라 내비게이션 바 여백이 없다([underNavigationBar] = `false`).
+ */
+@Composable
+internal fun HomePageTabBar(current: HomePage, onSelect: (HomePage) -> Unit, underNavigationBar: Boolean = true) {
+    val strings = LocalUiStrings.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface),
+    ) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .let { if (underNavigationBar) it.navigationBarsPadding() else it }
+                .selectableGroup(),
+        ) {
+            HomePage.entries.forEach { page ->
+                val selected = page == current
+                val color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = HomeTabMinHeight)
+                        .selectable(selected = selected, onClick = { onSelect(page) }, role = Role.Tab)
+                        .padding(vertical = AppSpacing.Space6),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    val pill = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(AppRadius.Corner14))
+                            .let { if (selected) it.background(pill) else it }
+                            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space2),
+                    ) {
+                        Icon(imageVector = page.icon(), contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
+                    }
+                    Text(
+                        text = page.label(strings),
+                        color = color,
+                        fontSize = AppTextSize.Text12,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = AppSpacing.Space2),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val HomeTabMinHeight = 56.dp
+
+private fun HomePage.label(strings: UiStrings): String = when (this) {
+    HomePage.MyInfo -> strings.myPageTitle
+    HomePage.Play -> homePagePlayTabFor(strings.language)
+    HomePage.Study -> strings.study
+}
+
+private fun HomePage.icon(): ImageVector = when (this) {
+    HomePage.MyInfo -> Icons.Filled.Person
+    HomePage.Play -> PlayTabStonesIcon
+    HomePage.Study -> StudyTabBookIcon
+}
+
+/**
+ * 「대국」 탭 — 흑돌이 백돌에 겹친 모양(로고와 같은 짝). 백돌은 흑돌 둘레에 틈을 두고 끊긴 고리다 — 한 색으로 칠해도 두 돌로 읽힌다.
+ * 고리는 선이 아니라 칠한 면이다(바깥 호 → 틈의 호 → 안쪽 호 → 틈의 호) — `materialPath`는 칠하기만 한다. 틈의 원은 흑돌 중심에서 반지름 6.7.
+ */
+private val PlayTabStonesIcon: ImageVector = materialIcon(name = "HomeTab.Stones") {
+    materialPath {
+        // 백돌 고리 — 중심 (15.5, 12) · 바깥 6.4 · 안 4.6.
+        moveTo(12.28f, 6.47f)
+        arcTo(6.4f, 6.4f, 0f, isMoreThanHalf = true, isPositiveArc = true, 12.28f, 17.53f)
+        arcTo(6.7f, 6.7f, 0f, isMoreThanHalf = false, isPositiveArc = false, 13.7f, 16.23f)
+        arcTo(4.6f, 4.6f, 0f, isMoreThanHalf = true, isPositiveArc = false, 13.7f, 7.77f)
+        arcTo(6.7f, 6.7f, 0f, isMoreThanHalf = false, isPositiveArc = false, 12.28f, 6.47f)
+        close()
+        // 흑돌 — 중심 (8.5, 12) · 반지름 5.5.
+        moveTo(3f, 12f)
+        arcToRelative(5.5f, 5.5f, 0f, isMoreThanHalf = true, isPositiveArc = false, 11f, 0f)
+        arcToRelative(5.5f, 5.5f, 0f, isMoreThanHalf = true, isPositiveArc = false, -11f, 0f)
+        close()
+    }
+}
+
+/** 「학습 하기」 탭 — 펼친 책(Material 「menu book」 모양을 옮겨 그렸다 — 이 앱은 아이콘 확장 세트를 싣지 않는다). */
+private val StudyTabBookIcon: ImageVector = materialIcon(name = "HomeTab.Book") {
+    materialPath {
+        moveTo(21f, 5f)
+        curveToRelative(-1.11f, -0.35f, -2.33f, -0.5f, -3.5f, -0.5f)
+        curveToRelative(-1.95f, 0f, -4.05f, 0.4f, -5.5f, 1.5f)
+        curveToRelative(-1.45f, -1.1f, -3.55f, -1.5f, -5.5f, -1.5f)
+        reflectiveCurveTo(2.45f, 4.9f, 1f, 6f)
+        verticalLineToRelative(14.65f)
+        curveToRelative(0f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f)
+        curveToRelative(0.1f, 0f, 0.15f, -0.05f, 0.25f, -0.05f)
+        curveTo(3.1f, 20.45f, 5.05f, 20f, 6.5f, 20f)
+        curveToRelative(1.95f, 0f, 4.05f, 0.4f, 5.5f, 1.5f)
+        curveToRelative(1.35f, -0.85f, 3.8f, -1.5f, 5.5f, -1.5f)
+        curveToRelative(1.65f, 0f, 3.35f, 0.3f, 4.75f, 1.05f)
+        curveToRelative(0.1f, 0.05f, 0.15f, 0.05f, 0.25f, 0.05f)
+        curveToRelative(0.25f, 0f, 0.5f, -0.25f, 0.5f, -0.5f)
+        verticalLineTo(6f)
+        curveTo(22.4f, 5.55f, 21.75f, 5.25f, 21f, 5f)
+        close()
+        moveTo(21f, 18.5f)
+        curveToRelative(-1.1f, -0.35f, -2.3f, -0.5f, -3.5f, -0.5f)
+        curveToRelative(-1.7f, 0f, -4.15f, 0.65f, -5.5f, 1.5f)
+        verticalLineTo(8f)
+        curveToRelative(1.35f, -0.85f, 3.8f, -1.5f, 5.5f, -1.5f)
+        curveToRelative(1.2f, 0f, 2.4f, 0.15f, 3.5f, 0.5f)
+        verticalLineTo(18.5f)
+        close()
+    }
+}
+
 /**
  * 홈 화면 상단 양 끝에 놓이는 칩 버튼(#34). 좌측 마이 페이지와 우측 설정이 **같은 모양**을
  * 써야 해서, 설정 전용이던 `HomeSettingsButton`을 이모지와 라벨만 받는 형태로 일반화했다.
@@ -469,14 +650,16 @@ private fun HomeTopChip(emoji: String, label: String, onClick: () -> Unit) {
  * 중립 테두리. `Modifier.border`엔 점선이 없어 점선만 `drawWithContent`로 직접 그린다.
  */
 @Composable
-private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
-    val stoneSizeDp = 51.dp
+private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean, badgeSize: Dp) {
+    // 처음 그린 크기(125dp)를 기준으로 돌 · 겹침 · 그림자 · 점선을 함께 줄인다(#280 — 대국 페이지 위의 작아진 로고).
+    val scale = badgeSize / GoStoneLogoBaseSize
+    val stoneSizeDp = 51.dp * scale
     // 광원 위치/반경을 실제 픽셀 기준으로 계산해, 하드코딩된 px 값이 스톤 크기와 어긋나
     // 그라데이션이 중앙의 작은 얼룩으로만 보이던 문제(특히 흑돌에서 두드러짐)를 없앤다.
     val stoneSizePx = with(LocalDensity.current) { stoneSizeDp.toPx() }
     val highlightCenter = Offset(stoneSizePx * 0.32f, stoneSizePx * 0.28f)
     val highlightRadius = stoneSizePx * 0.85f
-    val dashedStrokeWidthPx = with(LocalDensity.current) { 2.dp.toPx() }
+    val dashedStrokeWidthPx = with(LocalDensity.current) { (2.dp * scale).coerceAtLeast(1.dp).toPx() }
 
     val borderModifier = when {
         subscribed -> Modifier.border(AppBorderWidth.Strong, PremiumGoldGradient, CircleShape)
@@ -487,7 +670,7 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
                 radius = (size.minDimension - dashedStrokeWidthPx) / 2f,
                 style = Stroke(
                     width = dashedStrokeWidthPx,
-                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f)),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f * scale, 8f * scale)),
                 ),
             )
         }
@@ -496,8 +679,8 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
 
     Box(
         modifier = Modifier
-            .size(125.dp)
-            .shadow(elevation = 8.dp, shape = CircleShape, clip = false)
+            .size(badgeSize)
+            .shadow(elevation = 8.dp * scale, shape = CircleShape, clip = false)
             .background(HomeLogoPalette.Backdrop, CircleShape)
             .then(borderModifier),
         contentAlignment = Alignment.Center,
@@ -507,14 +690,14 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
             // 겹침은 offset()이 아니라 spacedBy(음수)로 표현한다 — offset()은 레이아웃 크기에는
             // 반영되지 않고 그리기 위치만 바꾸므로, 부모 Box의 가운데 정렬 계산이 겹친 만큼을
             // 반영하지 못해 전체가 살짝 왼쪽으로 치우쳐 보이는 문제가 있었다.
-            horizontalArrangement = Arrangement.spacedBy((-13).dp),
+            horizontalArrangement = Arrangement.spacedBy((-13).dp * scale),
         ) {
             // 흑돌 (Black Stone) — 백돌과 동일한 광원 위치에 밝은 하이라이트를 두어
             // 같은 수준의 입체감/광택이 느껴지도록 4단계 그라데이션을 사용한다.
             Box(
                 modifier = Modifier
                     .size(stoneSizeDp)
-                    .shadow(elevation = 4.dp, shape = CircleShape)
+                    .shadow(elevation = 4.dp * scale, shape = CircleShape)
                     .background(
                         brush = Brush.radialGradient(
                             colors = HomeLogoPalette.BlackStoneGradient,
@@ -529,7 +712,7 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
             Box(
                 modifier = Modifier
                     .size(stoneSizeDp)
-                    .shadow(elevation = 4.dp, shape = CircleShape)
+                    .shadow(elevation = 4.dp * scale, shape = CircleShape)
                     .border(AppBorderWidth.Hairline, HomeLogoPalette.WhiteStoneBorder, CircleShape)
                     .background(
                         brush = Brush.radialGradient(
@@ -543,6 +726,8 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean) {
         }
     }
 }
+
+private val GoStoneLogoBaseSize = 125.dp
 
 /**
  * 홈의 **대국 카드** — 「캐릭터 대국」과 「승급 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
@@ -875,7 +1060,7 @@ internal fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
  *
  * ## ⚠️ 이모지가 아니라 벡터다 — 지시를 그대로 옮기지 않은 자리
  * 사용자는 *"기록을 의미하는 이모지"* 라고 했지만, **같은 지시가 참고하라고 가리킨
- * [StudyPreviewIcon]이 이모지를 일부러 쓰지 않는다**(#181: *"기기·글꼴에 따라 렌더링이 갈리는
+ * 「학습 하기」 타일 그림(돋보기 — #280에 타일과 함께 지웠다)이 이모지를 일부러 쓰지 않았다**(#181: *"기기·글꼴에 따라 렌더링이 갈리는
  * 이모지보다 크기·색이 항상 예측 가능하다"*). 배지는 원형 흰 바탕에 **틴트된 심볼**이라 이모지를
  * 넣으면 그 안에서 혼자 총천연색이 되고 기기마다 크기가 튄다. 그래서 **모양은 참고 대상에 맞추고
  * 뜻만 「기록」으로** 바꿨다 — 그것이 두 지시를 동시에 만족시키는 유일한 해석이다.
@@ -903,7 +1088,7 @@ internal fun GameHistoryBoardIcon() {
             isGameEnded = true,
             isEngineBusy = false,
         )
-        // ⚠️ **자리·크기·바탕을 [StudyPreviewIcon]과 똑같이 맞춘다** — 두 카드가 나란히 서므로
+        // ⚠️ **자리·크기·바탕을 옆 타일([BoardScanPreviewIcon])과 똑같이 맞춘다** — 두 타일이 나란히 서므로
         // 하나만 어긋나면 그것이 먼저 눈에 띈다. 상수도 그쪽 것을 그대로 쓴다.
         Box(
             modifier = Modifier
@@ -924,8 +1109,8 @@ internal fun GameHistoryBoardIcon() {
 }
 
 /**
- * "학습 하기" 카드의 정적 국면 — 실제 대국 규칙(`BoardRules.play`)을 거치지 않고 초반 포석
- * 몇 수를 바로 앉힌다(백로그 #181, 합법성 검사가 필요 없는 순수 장식용). `object`가 아니라
+ * 타일 그림의 정적 국면 — 실제 대국 규칙(`BoardRules.play`)을 거치지 않고 초반 포석
+ * 몇 수를 바로 앉힌다(백로그 #181, 합법성 검사가 필요 없는 순수 장식용). 처음은 「학습 하기」 타일의 것이었고, 그 타일이 페이지가 된 뒤(#280)로는 「사진 분석」 타일만 쓴다. `object`가 아니라
  * `private val`인 이유는 컴포지션마다 새로 만들 이유가 없어서다 — 상태가 없는 상수 데이터다.
  */
 private val StudyPreviewGameState: GameState = GameState.empty(
@@ -938,96 +1123,6 @@ private val StudyPreviewGameState: GameState = GameState.empty(
         BoardCoordinate(row = 6, column = 6) to StoneColor.Black,
     ),
 )
-
-/**
- * "학습 하기" 카드 아이콘 — 바둑판(초반 포석 세 점) 위에 돋보기를 판 한 변의 60% 크기로
- * 겹친다(백로그 #181, 2026-09-22 120% 확대). 돋보기는 이모지 대신 `Icons.Filled.Search`
- * 벡터를 쓴다 — 기기·글꼴에 따라 렌더링이 갈리는 이모지보다 크기·색이 항상 예측 가능하다.
- */
-@Composable
-internal fun StudyPreviewIcon() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = StudyPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = false,
-            isEngineBusy = false,
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
-                .clip(CircleShape)
-                // 2026-09-22 사용자 요청 — 흰 배경 불투명도를 75%로 낮춰 뒤판이 살짝 비친다.
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxSize(0.7f),
-            )
-        }
-    }
-}
-
-/**
- * "기보 보기" 카드의 정적 국면 — 수순 번호가 붙은 초반 네 수(백로그 #269). 기보는 「번호 붙은 돌」로 알아보므로 배지 없이 번호를 보인다.
- * 실제 규칙(`play`)으로 두어 번호가 수순을 따른다.
- */
-private val GameRecordsPreviewGameState: GameState = listOf(
-    Move.Play(StoneColor.Black, BoardCoordinate(row = 2, column = 6)),
-    Move.Play(StoneColor.White, BoardCoordinate(row = 6, column = 2)),
-    Move.Play(StoneColor.Black, BoardCoordinate(row = 6, column = 6)),
-    Move.Play(StoneColor.White, BoardCoordinate(row = 2, column = 2)),
-).fold(GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese)) { state, move -> state.play(move) }
-
-/**
- * "기보 보기" 카드 아이콘 — 수순 번호가 붙은 9줄 판 위에 책 배지(다른 타일과 같은 자리·같은 모양).
- * 번호만으로는 타일 크기에서 읽히지 않아(에뮬레이터 2026-10-19) 배지로 알아보게 한다.
- */
-@Composable
-private fun GameRecordsPreviewIcon() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = GameRecordsPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(showMoveNumbers = true, showLastMoveRing = false),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = false,
-            isEngineBusy = false,
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = "📖",
-                fontSize = AppTextSize.Text20,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
 
 /** 판 한 변 대비 돋보기·카메라 배지의 비율(기존 50%에서 120% 확대한 60%). */
 private const val StudyPreviewMagnifierSizeFraction = 0.6f

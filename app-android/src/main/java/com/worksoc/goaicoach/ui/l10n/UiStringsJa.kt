@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.ui.l10n
 internal val UiStringsJapanese = UiStringsKorean.copy(
     appTitle = "囲碁AIコーチ",
     language = UiLanguage.Japanese,
-    homeTagline = "ローカルAIと学ぶ囲碁",
     languageLabel = "言語",
     settingsFontScaleTitle = "文字サイズ",
     settingsFontScaleNormal = "標準",

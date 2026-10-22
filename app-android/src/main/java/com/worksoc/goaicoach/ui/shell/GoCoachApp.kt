@@ -153,6 +153,7 @@ import com.worksoc.goaicoach.ui.setup.GameSetupLobby
 import com.worksoc.goaicoach.ui.setup.HomeTopNotice
 import com.worksoc.goaicoach.ui.setup.engineSetupGateVisible
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
+import com.worksoc.goaicoach.ui.study.StudyHubPage
 import com.worksoc.goaicoach.ui.study.StudyScreen
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import com.worksoc.goaicoach.wireGoCoachControllers
@@ -960,15 +961,15 @@ private fun GoCoachScreen(
                     currentDestination = ScreenDestination.InGame
                 },
                 onSettingsClick = { currentDestination = ScreenDestination.Settings },
-                onStudyClick = { currentDestination = ScreenDestination.Study },
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
-                onMyPageClick = { currentDestination = ScreenDestination.MyPage },
                 onBoardScanClick = { currentDestination = ScreenDestination.BoardScan },
-                onGameRecordsClick = { currentDestination = ScreenDestination.GameRecords },
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
                 playerSetup = screenState.playerSetup,
                 topNotice = { HomeTopNotice(it) },
+                // 홈의 양옆 페이지(#280) — 내 정보는 그 화면 그대로, 학습 하기는 허브만(분류는 아래 「학습」 목적지가 화면 전체로 연다).
+                myInfoPage = { MyPageScreen() },
+                studyPage = { StudyHubPage(onOpenCategory = { currentDestination = ScreenDestination.Study }, onGameRecordsClick = { currentDestination = ScreenDestination.GameRecords }) },
             )
         }
         ScreenDestination.Study -> {
@@ -1008,9 +1009,6 @@ private fun GoCoachScreen(
         }
         // 「기보 보기」(#269, 홈 타일 — 사용자 2026-10-18). 보기 화면은 그 화면의 상태다(목록 → 판), 셸의 뒤로 가기는 목록에서 홈으로.
         ScreenDestination.GameRecords -> GameRecordsScreen(engineScoring = engineClient, engineAnalysis = engineClient, onBackClick = exitToHome)
-        ScreenDestination.MyPage -> {
-            MyPageScreen(onBackClick = { currentDestination = ScreenDestination.Home })
-        }
         ScreenDestination.Settings -> {
             SettingsScreen(
                 authClient = authClient,
@@ -1074,7 +1072,6 @@ internal enum class ScreenDestination {
     Settings,
     Study,
     GameHistory,
-    MyPage,
     GameSetup,
     InGame,
     BoardScan,

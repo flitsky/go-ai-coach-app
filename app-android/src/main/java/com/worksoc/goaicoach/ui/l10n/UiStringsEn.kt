@@ -3,7 +3,6 @@ package com.worksoc.goaicoach.ui.l10n
 internal val UiStringsEnglish = UiStringsKorean.copy(
     appTitle = "Go AI Coach",
     language = UiLanguage.English,
-    homeTagline = "Learn Go with your local AI",
     languageLabel = "Language",
     settingsFontScaleTitle = "Font size",
     settingsFontScaleNormal = "Default",

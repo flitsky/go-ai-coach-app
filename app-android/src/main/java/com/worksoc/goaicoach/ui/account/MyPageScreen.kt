@@ -10,17 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,10 +56,9 @@ import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoardFolded
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscriptionCard
 import com.worksoc.goaicoach.ui.monetization.consumableGlyphRes
-import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 
 /**
- * 3 Depth: **내 정보**(화면 이름은 #256에서 「마이 페이지」 → 「내 정보」, 사용자 2026-10-13 — 코드 이름 `MyPage…`는 그대로 둔다).
+ * **내 정보** — 홈의 왼쪽 페이지(#280, 사용자 2026-10-22 — 그전에는 홈의 칩이 여는 따로 된 화면이었다). 화면 이름은 #256에서 「마이 페이지」 → 「내 정보」(사용자 2026-10-13) — 코드 이름 `MyPage…`는 그대로 둔다.
  * 순서: 머리말(기력·전적) → 내 캐릭터(#256 · #260) → 구독 카드 → 출석(접힘 — #256) → 1회권 → 고지 한 줄.
  *
  * **왜 새 목적지인가**(2026-08-30 사용자 확정, ⓒ안): 설정 화면 한 절이나 홈 카드로 끼워 넣는
@@ -79,7 +74,6 @@ import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
  */
 @Composable
 internal fun MyPageScreen(
-    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -103,40 +97,12 @@ internal fun MyPageScreen(
         )
     }
 
+    // 머리말(← 제목)이 없다 — 홈의 왼쪽 페이지라 돌아갈 곳이 없고, 이름은 홈의 아래 탭이 말한다(#280). 상태 표시줄 여백도 홈의 윗줄이 맡는다.
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                // targetSdk 36부터 시스템 바 영역까지 앱이 그린다 — 이 한 줄이 없으면 제목과
-                // 뒤로가기가 상태 표시줄(시계·배터리) 아래에 깔린다(#25). 설정·학습 화면이
-                // 쓰는 것과 같은 자리·같은 방식이다.
-                .statusBarsPadding()
-                .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space12),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = strings.close,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-            Text(
-                text = strings.myPageTitle,
-                fontSize = AppTextSize.Text20,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.weight(1f),
-            )
-            // 빠른 버튼 묶음(#270) — 모든 화면의 윗줄 오른쪽 끝.
-            AppQuickActions()
-        }
-        HorizontalDivider()
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()

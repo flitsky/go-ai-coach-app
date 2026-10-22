@@ -91,7 +91,6 @@ internal data class UiStrings(
      * 네 언어와 스토어·런처를 함께 바꾼다.
      */
     val appTitle: String,
-    val homeTagline: String,
     val languageLabel: String,
     /**
      * 글꼴 크기 설정(백로그 #106) — 개발자 도구에서 **정식 설정으로 승격**된 값이다.

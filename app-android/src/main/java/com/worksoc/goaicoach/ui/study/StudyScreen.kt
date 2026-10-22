@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -20,10 +19,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,85 +30,130 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
+import com.worksoc.goaicoach.ui.l10n.gameRecordsStudySubtitleFor
+import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
 import com.worksoc.goaicoach.ui.l10n.studyLessonTrackFor
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 
 /**
- * 2 Depth: 학습 하기 **허브**(백로그 #163) — 하위 분류를 세우고, 고른 분류의 화면을 연다.
+ * 학습 하기 **허브** — 홈의 오른쪽 페이지다(백로그 #280, 사용자 2026-10-22 · 처음은 #163의 목적지). 줄의 차례는 [StudyHubRows] 한 곳이 정한다.
+ * 머리말(← 제목)이 없다 — 페이지에는 돌아갈 곳이 없고, 이름은 홈의 아래 탭이 말한다.
  *
- * ⚠️ **하위 분류는 이 화면의 상태다 — 셸의 목적지가 아니다.** 셸(`GoCoachApp.kt`)의 상태 훅
- * 예산이 42/42로 여유 0이라(함정 3) 목적지를 늘리면 `LayeringContractTest`가 깨진다. 같은
- * 판단의 선례가 다시보기다(백로그 #156).
+ * ⚠️ **분류를 누르면 페이지 안이 아니라 화면 전체로 연다**([StudyScreen]). 페이지 안에서 열면 판 끌기 · 도해 넘기기가
+ * 페이지 넘기기와 부딪친다. 고른 분류는 [StudyEntry]에 맡기고 [onOpenCategory]가 셸의 「학습」 목적지로 간다.
+ */
+@Composable
+internal fun StudyHubPage(
+    onOpenCategory: () -> Unit,
+    onGameRecordsClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val strings = LocalUiStrings.current
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space16),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
+    ) {
+        StudyHubRows.forEach { row ->
+            when (row) {
+                is StudyHubRow.Category -> {
+                    val category = row.category
+                    StudyEntryRow(
+                        title = strings.studyCategoryTitle(category),
+                        subtitle = strings.studyCategorySubtitle(category),
+                        badge = strings.studyComingSoon.takeIf { !category.available },
+                        onClick = {
+                            StudyEntry.request(category)
+                            onOpenCategory()
+                        }.takeIf { category.available },
+                    )
+                }
+                // 「기보 보기」는 분류가 아니라 셸의 목적지다(#269) — 명국 감상은 공부라 이 페이지로 왔다(#280).
+                StudyHubRow.GameRecords -> StudyEntryRow(
+                    title = gameRecordsTitleFor(strings.language),
+                    subtitle = gameRecordsStudySubtitleFor(strings.language),
+                    badge = null,
+                    onClick = onGameRecordsClick,
+                )
+            }
+        }
+    }
+}
+
+/** 학습 하기 페이지의 한 줄 — 분류 하나, 또는 「기보 보기」. */
+internal sealed interface StudyHubRow {
+    data class Category(val category: StudyCategory) : StudyHubRow
+
+    data object GameRecords : StudyHubRow
+}
+
+/**
+ * 학습 하기 페이지의 **줄 차례 — 이 표 한 곳이 정한다**(#280). 분류는 빠짐없이 한 번씩 선다(`StudyHubContractTest`).
+ * 「유튜브 강좌」는 맨 아래다 — 사용자 2026-10-22 *"유투브 강좌를 맨 아래로"*(그전에는 맨 위였다).
+ */
+internal val StudyHubRows: List<StudyHubRow> = listOf(
+    StudyHubRow.Category(StudyCategory.Rules),
+    StudyHubRow.Category(StudyCategory.Fundamentals),
+    StudyHubRow.Category(StudyCategory.LifeAndDeath),
+    StudyHubRow.GameRecords,
+    StudyHubRow.Category(StudyCategory.YoutubeLessons),
+)
+
+/**
+ * 허브 페이지가 고른 분류를 셸의 「학습」 목적지에 넘기는 **한 번짜리 요청**(백로그 #280) — `FinishedGameFlow`(대국 기록의 「복기 하기」)와 같은 틀이다.
  *
- * ⚠️ **뒤로가기 경로가 둘이라는 것이 이 조각의 본체다.** 시스템 뒤로가기는 셸의 `BackHandler`
- * 가 잡아 `exitToHome()`으로 보내고, 상단 화살표는 그 길을 타지 않는다. 그래서 하위 화면은
- * **자기 `BackHandler`를 갖고** 둘을 한 곳(허브)으로 모은다 — 화살표만 고치면 시스템
- * 뒤로가기가 허브를 건너뛰고 홈으로 튄다.
+ * ⚠️ 셸에 들게 하지 않는다 — 셸이 학습의 하위 분류를 알게 되고(`StudyHubContractTest`) 셸 상태 원장에 한 칸이 는다(함정 3).
+ */
+internal object StudyEntry {
+    private var pending: StudyCategory? = null
+
+    fun request(category: StudyCategory) {
+        pending = category
+    }
+
+    /** 꺼내는 즉시 비운다 — 비우지 않으면 다음에 「학습」 목적지로 올 때 옛 분류가 또 열린다. */
+    fun take(): StudyCategory? = pending.also { pending = null }
+}
+
+/**
+ * 학습 하기의 **하위 화면**(영상 · 규칙 · 행마 · 사활) — 셸의 「학습」 목적지가 화면 전체로 그린다(백로그 #280 — 허브는 홈의 페이지가 됐다).
+ *
+ * ⚠️ **뒤로가기 경로가 둘이다.** 시스템 뒤로가기는 셸의 `BackHandler`가 잡아 `exitToHome()`으로 보내고, 상단 화살표는 그 길을 타지 않는다.
+ * 하위 화면은 **자기 `BackHandler`를 갖고** 안쪽 단계(단원 → 문제)를 제 손으로 닫는다 — 맨 위 단계의 둘은 [onBackClick](홈의 학습 페이지)으로 모인다.
  */
 @Composable
 internal fun StudyScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val strings = LocalUiStrings.current
-    var opened by remember { mutableStateOf<StudyCategory?>(null) }
-
-    // ⚠️ 지역 값으로 한 번 받는다 — `by remember`는 위임 프로퍼티라 `when` 안에서
-    // 스마트 캐스트가 되지 않는다.
-    val openedCategory = opened
-    when (openedCategory) {
-        StudyCategory.YoutubeLessons -> {
-            StudyVideoListScreen(onBackClick = { opened = null }, modifier = modifier)
-            return
-        }
+    // 한 번만 꺼낸다 — 다시 그릴 때마다 꺼내면 둘째부터 비어 있다.
+    val category = remember { StudyEntry.take() }
+    when (category) {
+        StudyCategory.YoutubeLessons -> StudyVideoListScreen(onBackClick = onBackClick, modifier = modifier)
         // ⚠️ **분류마다 화면을 파지 않는다** — 규칙과 행마는 형식이 같아(정적 문구 + 도해
         // 넘김) **한 화면이 갈래만 바꿔** 그린다. 분류를 갈래로 옮기는 자리는
         // `studyLessonTrackFor` 하나다(백로그 #183).
         StudyCategory.Rules, StudyCategory.Fundamentals -> {
-            val track = studyLessonTrackFor(openedCategory)
+            val track = studyLessonTrackFor(category)
             if (track != null) {
-                StudyLessonTrackScreen(
-                    track = track,
-                    category = openedCategory,
-                    onBackClick = { opened = null },
-                    modifier = modifier,
-                )
-                return
+                StudyLessonTrackScreen(track = track, category = category, onBackClick = onBackClick, modifier = modifier)
+            } else {
+                LeaveAtOnce(onBackClick)
             }
         }
-        // 「기본 사활」은 형식이 달라(판에 직접 두는 문제 풀이 — U-51) 화면이 따로다(백로그 #184).
-        StudyCategory.LifeAndDeath -> {
-            LifeAndDeathTrackScreen(onBackClick = { opened = null }, modifier = modifier)
-            return
-        }
-        null -> Unit
+        // 「사활 공부하기」는 형식이 달라(판에 직접 두는 문제 풀이 — U-51) 화면이 따로다(백로그 #184).
+        StudyCategory.LifeAndDeath -> LifeAndDeathTrackScreen(onBackClick = onBackClick, modifier = modifier)
+        // 요청 없이 왔다(허브를 거치지 않았다) — 보여 줄 것이 없으니 곧바로 홈으로 돌아간다. 아무 분류나 여는 것은 거짓말이다(함정 40).
+        null -> LeaveAtOnce(onBackClick)
     }
+}
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-    ) {
-        StudyScreenHeader(title = strings.study, onBackClick = onBackClick)
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .padding(horizontal = AppSpacing.Space16),
-            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
-        ) {
-            StudyCategory.entries.forEach { category ->
-                StudyEntryRow(
-                    title = strings.studyCategoryTitle(category),
-                    subtitle = strings.studyCategorySubtitle(category),
-                    badge = strings.studyComingSoon.takeIf { !category.available },
-                    onClick = { opened = category }.takeIf { category.available },
-                )
-            }
-        }
-    }
+@Composable
+private fun LeaveAtOnce(onBackClick: () -> Unit) {
+    LaunchedEffect(Unit) { onBackClick() }
 }
 
 /**
