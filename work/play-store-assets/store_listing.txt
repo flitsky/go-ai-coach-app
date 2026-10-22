@@ -24,10 +24,10 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 - 대국 다시보기: 끝난 판을 수순대로 되짚어 보고, 형세가 크게 움직인 수로 바로 건너뛰고, 형세 그래프를 크게 펼쳐 좌우로 넘기며 판이 어디서 기울었는지 확인. 지나간 국면에서도 형세 보기·추천 수를 쓸 수 있습니다
 - 복기 후 다시 두기: 아쉬웠던 그 수로 돌아가 거기서부터 다시 둘 수 있습니다
 - 바둑판 사진 분석: 바둑판을 카메라로 비추거나 사진첩·다른 앱에서 공유한 사진에서 국면을 읽어, 보정한 뒤 그 자리부터 AI와 대국하거나 AI 추천 수·형세를 보고(프리미엄) SGF 파일로 보냅니다
-- 기보 보기: 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 보고, 형세 그래프와 변곡점으로 흐름을 짚습니다. 자동 진행과 10수씩 넘기기, 가지고 있는 SGF 파일 열기도 됩니다
+- 명국 기보: 도사쿠·슈사쿠의 고전부터 이창호·이세돌, 알파고 대국까지 명국 33판을 한 수씩 놓아 보고, 형세 그래프와 변곡점으로 흐름을 짚습니다. 자동 진행과 10수씩 넘기기, 가지고 있는 SGF 파일 열기도 됩니다
 - 학습 하기 — 바둑 규칙: 바둑판과 첫 수 / 활로 / 단수와 따냄 / 둘 수 없는 자리 / 패 / 집과 계가 여섯 단원
 - 학습 하기 — 기초 행마: 이음과 끊음 / 뻗어서 달아나기 / 호구 / 한 칸 뜀 / 날일자 다섯 단원. 판 위에 한 수씩 놓아 가며 배웁니다
-- 학습 하기 — 사활 공부하기: 판에 직접 두어 푸는 사활 문제. 기본 26 · 중급 · 고급 20 · 고전 『기경중묘』 · 『발양론』 12문제(원전의 정답) — 틀리면 붉은 점과 상대의 응수로 알려 줍니다
+- 학습 하기 — 사활 풀기: 판에 직접 두어 푸는 사활 문제. 기본 26 · 중급 · 고급 20 · 고전 『기경중묘』 · 『발양론』 12문제(원전의 정답) — 틀리면 붉은 점과 상대의 응수로 알려 줍니다
 - 유튜브 기초 강좌 모음: 입문 강좌를 앱 안에서 골라 바로 시청
 - 점수/승률 그래프: 대국 흐름을 그래프로 한눈에 확인
 - 무르기(Undo): 착수를 되돌려 다른 수를 다시 검토
@@ -92,7 +92,7 @@ Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the op
 - Top moves: the engine's five best candidate moves, drawn on the board
 - Evaluation: score difference, win rate and a score graph, with a shaded overlay of whose area each part of the board is
 - Board Photo Analysis: point the camera at a real board, or use a gallery or shared photo; fix the position, then play the AI from there, see AI moves and the score (Premium), or send it as SGF
-- Game records: step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the score graph and turning points; auto play, 10-move jumps, and your own SGF files
+- Famous Games: step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the score graph and turning points; auto play, 10-move jumps, and your own SGF files
 - Game history and replay: your games and win rate stay on your device; replay them, jump to the biggest swings, and use evaluation and top moves on past positions
 - Play on from the review: go back to the move you regret and continue from there
 - Learn: the rules (6 lessons) and basic shape (5) on the board; life-and-death problems to solve, 26 basic, 20 intermediate and advanced, 12 classics with their original answers; beginner videos

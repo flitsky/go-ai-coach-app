@@ -120,10 +120,10 @@ private fun inGameTopMovesBody(language: UiLanguage, label: String): String {
  * 먼저 말하고, 같은 버튼이 다른 화면에도 같은 자리에 있다는 것을 덧붙인다(그것이 빠른 버튼 묶음의 약속이다).
  */
 private val HomeMusicToggleBody: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "배경음악은 이 버튼으로 바로 켜고 끌 수 있어요. 대국·기보 보기 같은 다른 화면에서도 맨 윗줄 오른쪽에 있어요.",
-    UiLanguage.English to "Turn the background music on or off right here. The same button sits at the top right of other screens too, including games and game records.",
-    UiLanguage.Japanese to "背景音楽はこのボタンですぐにオン・オフできます。対局や棋譜並べなど、ほかの画面でもいちばん上の右側にあります。",
-    UiLanguage.ChineseSimplified to "点这个按钮就能随时开关背景音乐。对局、打谱等其他画面的顶部右侧也有它。",
+    UiLanguage.Korean to "배경음악은 이 버튼으로 바로 켜고 끌 수 있어요. 대국·명국 기보 같은 다른 화면에서도 맨 윗줄 오른쪽에 있어요.",
+    UiLanguage.English to "Turn the background music on or off right here. The same button sits at the top right of other screens too, including games and Famous Games.",
+    UiLanguage.Japanese to "背景音楽はこのボタンですぐにオン・オフできます。対局や名局の棋譜など、ほかの画面でもいちばん上の右側にあります。",
+    UiLanguage.ChineseSimplified to "点这个按钮就能随时开关背景音乐。对局、名局棋谱等其他画面的顶部右侧也有它。",
 )
 
 /**

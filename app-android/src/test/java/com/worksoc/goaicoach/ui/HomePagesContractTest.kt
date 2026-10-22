@@ -51,9 +51,9 @@ class HomePagesContractTest {
         assertTrue("셸이 홈에 학습 허브 페이지를 넘기지 않는다.", shell.contains("studyPage = { StudyHubPage("))
     }
 
-    /** 학습 하기 페이지의 줄 — 분류는 빠짐없이 한 번씩, 「기보 보기」 다음 맨 아래가 「유튜브 강좌」(사용자 2026-10-22). */
+    /** 학습 하기 페이지의 줄 — 분류는 빠짐없이 한 번씩, 차례는 사용자가 적어 준 그대로(2026-10-22): 바둑 규칙 · 기초 행마 · 유튜브 강좌 · 사활 풀기 · 명국 기보. */
     @Test
-    fun theStudyPageListsEveryCategoryOnceWithYoutubeLast() {
+    fun theStudyPageListsEveryCategoryOnceInTheChosenOrder() {
         val categories = StudyHubRows.filterIsInstance<StudyHubRow.Category>().map { it.category }
         assertEquals("학습 하기 페이지에 빠진 분류가 있다 — 새 분류를 열면 줄 표에도 더할 것.", StudyCategory.entries.toSet(), categories.toSet())
         assertEquals("학습 하기 페이지에 두 번 선 분류가 있다.", categories.size, categories.toSet().size)
@@ -62,9 +62,9 @@ class HomePagesContractTest {
             listOf(
                 StudyHubRow.Category(StudyCategory.Rules),
                 StudyHubRow.Category(StudyCategory.Fundamentals),
+                StudyHubRow.Category(StudyCategory.YoutubeLessons),
                 StudyHubRow.Category(StudyCategory.LifeAndDeath),
                 StudyHubRow.GameRecords,
-                StudyHubRow.Category(StudyCategory.YoutubeLessons),
             ),
             StudyHubRows,
         )

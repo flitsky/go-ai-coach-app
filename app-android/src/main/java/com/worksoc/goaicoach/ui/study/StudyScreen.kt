@@ -71,7 +71,7 @@ internal fun StudyHubPage(
                         }.takeIf { category.available },
                     )
                 }
-                // 「기보 보기」는 분류가 아니라 셸의 목적지다(#269) — 명국 감상은 공부라 이 페이지로 왔다(#280).
+                // 「명국 기보」(옛 「기보 보기」)는 분류가 아니라 셸의 목적지다(#269) — 명국 감상은 공부라 이 페이지로 왔다(#280).
                 StudyHubRow.GameRecords -> StudyEntryRow(
                     title = gameRecordsTitleFor(strings.language),
                     subtitle = gameRecordsStudySubtitleFor(strings.language),
@@ -83,7 +83,7 @@ internal fun StudyHubPage(
     }
 }
 
-/** 학습 하기 페이지의 한 줄 — 분류 하나, 또는 「기보 보기」. */
+/** 학습 하기 페이지의 한 줄 — 분류 하나, 또는 「명국 기보」(셸의 목적지). */
 internal sealed interface StudyHubRow {
     data class Category(val category: StudyCategory) : StudyHubRow
 
@@ -91,15 +91,15 @@ internal sealed interface StudyHubRow {
 }
 
 /**
- * 학습 하기 페이지의 **줄 차례 — 이 표 한 곳이 정한다**(#280). 분류는 빠짐없이 한 번씩 선다(`StudyHubContractTest`).
- * 「유튜브 강좌」는 맨 아래다 — 사용자 2026-10-22 *"유투브 강좌를 맨 아래로"*(그전에는 맨 위였다).
+ * 학습 하기 페이지의 **줄 차례 — 이 표 한 곳이 정한다**(#280). 분류는 빠짐없이 한 번씩 선다(`HomePagesContractTest`).
+ * 바둑 규칙 · 기초 행마 · 유튜브 강좌 · 사활 풀기 · 명국 기보 — 사용자가 이름과 함께 적어 준 차례다(2026-10-22, 그전에는 유튜브가 맨 위).
  */
 internal val StudyHubRows: List<StudyHubRow> = listOf(
     StudyHubRow.Category(StudyCategory.Rules),
     StudyHubRow.Category(StudyCategory.Fundamentals),
+    StudyHubRow.Category(StudyCategory.YoutubeLessons),
     StudyHubRow.Category(StudyCategory.LifeAndDeath),
     StudyHubRow.GameRecords,
-    StudyHubRow.Category(StudyCategory.YoutubeLessons),
 )
 
 /**

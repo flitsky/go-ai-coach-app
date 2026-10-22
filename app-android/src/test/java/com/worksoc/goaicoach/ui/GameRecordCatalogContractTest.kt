@@ -138,7 +138,7 @@ class GameRecordCatalogContractTest {
                 .forEach { assertTrue("$language 문구가 비었다", it.isNotBlank()) }
             GameRecordOpenFailure.entries.forEach { assertTrue("$language/$it", gameRecordOpenFailureFor(language, it).isNotBlank()) }
         }
-        assertEquals("기보 보기", gameRecordsTitleFor(UiLanguage.Korean))
+        assertEquals("명국 기보", gameRecordsTitleFor(UiLanguage.Korean)) // #280 — 「기보 보기」에서 바꿨다(사용자 2026-10-22)
     }
 
     @Test

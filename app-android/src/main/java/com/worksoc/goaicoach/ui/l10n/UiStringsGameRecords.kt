@@ -6,14 +6,14 @@ package com.worksoc.goaicoach.ui.l10n
  * [UiStrings] 생성자는 여유가 없어(함정 61) 곁표 + 함수로 둔다. ⚠️ 리플렉션 그물 밖이라(함정 10) 네 언어가 다 찼는지는
  * `GameRecordCatalogContractTest`가 손으로 본다. 묶음 enum이 여기 있는 것은 [StudyCategory]와 같은 이유다 — l10n(L0)은 위층 타입을 볼 수 없다.
  *
- * 화면 이름은 언어마다 그 말에서 「기보를 한 수씩 놓아 본다」는 말을 골랐다(스레드가 정한 표기): 일본어 棋譜並べ · 중국어 打谱.
+ * 화면 이름은 「명국 기보」다(사용자 2026-10-22, #280 — 처음은 「기보 보기」 · 일본어 棋譜並べ · 중국어 打谱). 영 Famous Games · 일 名局の棋譜 · 중 名局棋谱는 스레드가 맞춰 옮긴 표기다.
  * 대국자 이름은 그 나라에서 흔히 쓰는 표기를 골랐다(스레드) — 기보의 영어 표기(SGF `PB`·`PW`)가 열쇠다.
  */
 private val Titles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "기보 보기",
-    UiLanguage.English to "Game records",
-    UiLanguage.Japanese to "棋譜並べ",
-    UiLanguage.ChineseSimplified to "打谱",
+    UiLanguage.Korean to "명국 기보",
+    UiLanguage.English to "Famous Games",
+    UiLanguage.Japanese to "名局の棋譜",
+    UiLanguage.ChineseSimplified to "名局棋谱",
 )
 
 private val Intros: Map<UiLanguage, String> = mapOf(
@@ -23,7 +23,7 @@ private val Intros: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "一手一手地打谱名局。也可以打开你自己的SGF棋谱文件。",
 )
 
-/** 학습 하기 페이지의 「기보 보기」 줄의 한 줄 소개(#280 — 홈 타일에서 옮겨 오며 생겼다, 문구는 스레드가 정함). 위 [Intros]의 짧은 꼴. */
+/** 학습 하기 페이지의 「명국 기보」 줄의 한 줄 소개(#280 — 홈 타일에서 옮겨 오며 생겼다, 문구는 스레드가 정함). 위 [Intros]의 짧은 꼴. */
 private val StudySubtitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "명국을 한 수씩 놓아 보고, SGF 기보 파일도 엽니다.",
     UiLanguage.English to "Replay famous games move by move, or open an SGF file.",

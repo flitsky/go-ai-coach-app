@@ -16,29 +16,33 @@ package com.worksoc.goaicoach.ui.l10n
  * ⚠️ **「준비 중」 배지는 분류마다 두지 않는다** — 셋이 같은 말을 네 언어로 세 번 적는 모양이
  * 되고, #164가 하나를 켤 때 지워야 할 줄만 늘어난다. 하나를 돌려 쓴다.
  */
+/**
+ * 분류 이름 — **짧은 명사형**(사용자 2026-10-22, #280: 바둑 규칙 · 기초 행마 · 유튜브 강좌 · 사활 풀기 — 그전에는 「…배우기」 · 「…보기」 · 「…공부하기」).
+ * 영·일·중은 스레드가 한국어에 맞춰 줄인 것이다(원어민 확인 없음). 하위 화면의 머리 제목도 이 이름이다.
+ */
 private val StudyCategoryTitles: Map<StudyCategory, Map<UiLanguage, String>> = mapOf(
     StudyCategory.YoutubeLessons to mapOf(
-        UiLanguage.Korean to "유튜브 강좌 보기",
+        UiLanguage.Korean to "유튜브 강좌",
         UiLanguage.English to "YouTube Lessons",
-        UiLanguage.Japanese to "YouTube講座を見る",
-        UiLanguage.ChineseSimplified to "观看YouTube讲座",
+        UiLanguage.Japanese to "YouTube講座",
+        UiLanguage.ChineseSimplified to "YouTube讲座",
     ),
     StudyCategory.Rules to mapOf(
-        UiLanguage.Korean to "바둑 규칙 배우기",
-        UiLanguage.English to "Learn the Rules",
-        UiLanguage.Japanese to "囲碁のルールを学ぶ",
-        UiLanguage.ChineseSimplified to "学习围棋规则",
+        UiLanguage.Korean to "바둑 규칙",
+        UiLanguage.English to "Rules of Go",
+        UiLanguage.Japanese to "囲碁のルール",
+        UiLanguage.ChineseSimplified to "围棋规则",
     ),
     StudyCategory.Fundamentals to mapOf(
-        UiLanguage.Korean to "바둑 기초 행마",
-        UiLanguage.English to "Fundamental Shapes",
-        UiLanguage.Japanese to "基本の形（行馬）",
+        UiLanguage.Korean to "기초 행마",
+        UiLanguage.English to "Basic Shapes",
+        UiLanguage.Japanese to "基本の形",
         UiLanguage.ChineseSimplified to "基础行棋",
     ),
     StudyCategory.LifeAndDeath to mapOf(
-        UiLanguage.Korean to "사활 공부하기",
-        UiLanguage.English to "Life and Death",
-        UiLanguage.Japanese to "詰碁で死活を学ぶ",
+        UiLanguage.Korean to "사활 풀기",
+        UiLanguage.English to "Life & Death Problems",
+        UiLanguage.Japanese to "詰碁を解く",
         UiLanguage.ChineseSimplified to "死活练习",
     ),
 )
