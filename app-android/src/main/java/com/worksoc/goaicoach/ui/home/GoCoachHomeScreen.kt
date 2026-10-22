@@ -363,6 +363,8 @@ private fun HomePlayPage(
 
         HomeLogoBlock(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, onPremiumClick = onPremiumClick)
 
+        // 가중치 여백은 페이지가 모자라면 0까지 줄어든다 — 그래도 제목이 카드에 붙지 않게 바닥값을 둔다(360×640dp에서 붙었다).
+        Spacer(modifier = Modifier.height(AppSpacing.Space16))
         Spacer(modifier = Modifier.weight(1f))
 
         // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
@@ -476,9 +478,9 @@ private fun HomeLogoBlock(subscribed: Boolean, showsPremiumPrompt: Boolean, onPr
                     color = PremiumGold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        // 원이 작아진 만큼(125 → 96dp) 우상단의 둘레가 안쪽으로 들어와, 글자를 더 밀어야 점선에 겹치지 않는다.
-                        .offset(x = 52.dp, y = (-2).dp)
+                        // 왼쪽 끝을 원의 왼쪽에서 재어 고정한다 — 오른쪽 끝에 묶으면 글꼴이 커질 때 글자가 왼쪽(점선 쪽)으로 자라 겹친다(1.3배에서 겹쳤다).
+                        .align(Alignment.TopStart)
+                        .offset(x = 80.dp, y = (-2).dp)
                         .clickable(onClick = onPremiumClick)
                         .padding(horizontal = 7.dp, vertical = AppSpacing.Space2),
                 )
