@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.AlertDialog
@@ -44,6 +45,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,6 +73,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -197,7 +200,12 @@ internal fun GoCoachHomeScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding(),
         ) {
-            HomeTopBar(onSettingsClick = onSettingsClick)
+            HomeTopBar(
+                subscribed = subscribed,
+                showsPremiumPrompt = showsPremiumPrompt,
+                onPremiumClick = { showSubscribeDialog = true },
+                onSettingsClick = onSettingsClick,
+            )
             // ⚠️ 페이지 안에 가로로 끄는 것을 두지 않는다 — 넘기기와 부딪친다. 학습의 하위 화면(판 · 도해)이 페이지 밖, 화면 전체로 열리는 이유다.
             HorizontalPager(
                 state = pagerState,
@@ -216,9 +224,6 @@ internal fun GoCoachHomeScreen(
                         onBoardScanClick = onBoardScanClick,
                         playerSetup = playerSetup,
                         topNotice = topNotice,
-                        subscribed = subscribed,
-                        showsPremiumPrompt = showsPremiumPrompt,
-                        onPremiumClick = { showSubscribeDialog = true },
                     )
                     HomePage.Study -> studyPage()
                 }
@@ -302,30 +307,82 @@ internal object HomePageMemory {
 }
 
 /**
- * 세 페이지 공통 윗줄(#280 ④) — 빠른 버튼 묶음(#270)과 설정 칩이 오른쪽 끝에 선다. 「내 정보」 칩은 페이지가 되며 빠졌다(아래 탭이 대신한다).
- * 왼쪽은 비워 둔다 — 로고는 대국 페이지 위다(#280 ③ A안, 사용자 2026-10-22 — 윗줄 왼쪽의 B안은 대국 페이지 가운데가 비어 보였다).
+ * 세 페이지 공통 윗줄(#280 ④) — 왼쪽에 앱의 로고 한 줄, 오른쪽 끝에 빠른 버튼 묶음(#270)과 설정. 「내 정보」 칩은 페이지가 되며 빠졌다(아래 탭이 대신한다).
+ * 로고가 여기 있는 것은 사용자 결정이다(#280 ③ B안, 2026-10-22 — 처음에 고른 A안(대국 페이지 위의 큰 로고)을 같은 날 바꿨다). 세 페이지 어디서나 앱 이름이 보인다.
  * 빠른 버튼의 배경음악 버튼은 업데이트 안내의 동그라미 대상으로 자리를 알린다(그 보고는 **홈의 것만** 한다 — `guideTarget`의 KDoc).
  */
 @Composable
-private fun HomeTopBar(onSettingsClick: () -> Unit) {
+private fun HomeTopBar(
+    subscribed: Boolean,
+    showsPremiumPrompt: Boolean,
+    onPremiumClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+) {
     val strings = LocalUiStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = HomeTopBarMinHeight)
-            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space4),
+            // 끝은 톱니 버튼의 터치 여백(48dp)이 바깥 여백을 대신한다.
+            .padding(start = AppSpacing.Space16, end = AppSpacing.Space8, top = AppSpacing.Space4, bottom = AppSpacing.Space4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.weight(1f))
+        // 로고는 남는 폭을 혼자 갖고 그 안에서 왼쪽에 붙는다 — 빠른 버튼과 설정이 언제나 제 폭을 먼저 가진다(큰 글꼴에서 제목이 길면 말줄임).
+        // ⚠️ 로고 뒤에 가중치 여백을 또 두지 않는다 — 가중치 둘이 남는 폭을 반씩 나눠 짧은 제목도 「포켓 …」으로 잘렸다.
+        Box(modifier = Modifier.weight(1f)) {
+            HomeTopBarLogo(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, onPremiumClick = onPremiumClick)
+        }
         AppQuickActions(musicToggleModifier = Modifier.guideTarget(GuideTarget.MusicToggle))
-        HomeTopChip(emoji = "⚙", label = strings.settingsTitle, onClick = onSettingsClick)
+        // 설정은 글자 없는 톱니다 — 로고가 왼쪽을 쓰면 360dp에서 영어 「Settings」 칩까지는 한 줄에 서지 못한다(함정 21).
+        IconButton(onClick = onSettingsClick) {
+            Icon(imageVector = Icons.Filled.Settings, contentDescription = strings.settingsTitle, tint = MaterialTheme.colorScheme.primary)
+        }
     }
 }
 
 private val HomeTopBarMinHeight = 56.dp
 
 /**
- * 가운데 페이지 「대국」(#280 ⑤) — 한 줄 안내 → 로고 → 이어하기 → 대국 카드 둘 → 반 폭 타일 둘(대국 기록 · 바둑판 사진 분석).
+ * 윗줄 왼쪽의 로고 한 줄(#280 ③ B안) — 흑백 돌 엠블럼 + 앱 제목, 그 아래 「Premium?」(백로그 #182 — 구독 창구를 띄울 수 있을 때만).
+ * 구독 중이면 제목이 금색이다. 구독 창구를 띄울 수 있으면 묶음 전체가 누르는 표적이다(엠블럼만이 아니라).
+ */
+@Composable
+private fun HomeTopBarLogo(
+    subscribed: Boolean,
+    showsPremiumPrompt: Boolean,
+    onPremiumClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val strings = LocalUiStrings.current
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(AppRadius.Corner10))
+            .let { if (showsPremiumPrompt) it.clickable(onClick = onPremiumClick) else it }
+            .padding(vertical = AppSpacing.Space4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GoStoneLogoBadge(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, badgeSize = HomeTopBarLogoSize)
+        Spacer(modifier = Modifier.width(AppSpacing.Space8))
+        Column {
+            Text(
+                text = strings.appTitle,
+                fontSize = AppTextSize.Text16,
+                fontWeight = FontWeight.ExtraBold,
+                color = if (subscribed) PremiumGoldDeep else MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (showsPremiumPrompt) {
+                Text(text = "Premium?", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = PremiumGold, maxLines = 1)
+            }
+        }
+    }
+}
+
+private val HomeTopBarLogoSize = 38.dp
+
+/**
+ * 가운데 페이지 「대국」(#280 ⑤) — 한 줄 안내 → 이어하기 → 대국 카드 둘 → 반 폭 타일 둘(대국 기록 · 바둑판 사진 분석).
  * 「기보 보기」는 학습 하기 페이지로, 「학습 하기」 타일은 페이지가 돼 빠졌다.
  */
 @Composable
@@ -338,9 +395,6 @@ private fun HomePlayPage(
     onBoardScanClick: () -> Unit,
     playerSetup: PlayerSetup,
     topNotice: @Composable (Modifier) -> Unit,
-    subscribed: Boolean,
-    showsPremiumPrompt: Boolean,
-    onPremiumClick: () -> Unit,
 ) {
     val strings = LocalUiStrings.current
     val rankMeasure = LocalRankMeasureUiState.current
@@ -359,12 +413,7 @@ private fun HomePlayPage(
         // 맨 위에 두는 이유: 아래 가중치 여백이 이 높이를 흡수해 **메뉴 카드는 움직이지 않는다**(#128 ③의 표적 원칙).
         topNotice(Modifier.padding(top = AppSpacing.Space4))
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        HomeLogoBlock(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, onPremiumClick = onPremiumClick)
-
-        // 가중치 여백은 페이지가 모자라면 0까지 줄어든다 — 그래도 제목이 카드에 붙지 않게 바닥값을 둔다(360×640dp에서 붙었다).
-        Spacer(modifier = Modifier.height(AppSpacing.Space16))
+        // 메뉴는 남는 세로의 가운데에 선다 — 위아래 가중치 여백이 나눠 갖는다(로고는 윗줄로 갔다, #280 ③ B안).
         Spacer(modifier = Modifier.weight(1f))
 
         // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
@@ -451,49 +500,7 @@ private fun HomePlayPage(
             MenuTile(tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() }, modifier = Modifier.weight(1f))
         }
 
-        Spacer(modifier = Modifier.height(AppSpacing.Space16))
-    }
-}
-
-/**
- * 대국 페이지 위의 로고 블록(#280 ③ A안, 사용자 2026-10-22) — 지금까지의 홈 로고를 작게(엠블럼 125 → 96dp), 앱 제목 한 줄만.
- * 제목 아래 부제(「로컬 AI와 함께하는 바둑 학습」)는 사용자가 지웠다(2026-10-22). 「Premium?」은 아이콘 우상단, 점선 원 테두리 바로 옆에서 이어지듯
- * 배치한다(백로그 #182, 2026-09-21 사용자 지시). 배경 없이 금색 글자만 두고, 아이콘과 글자 둘 다 탭하면 구독 다이얼로그가 뜬다 —
- * 표적을 하나로 묶지 않은 이유는 "Premium?"이 `.offset()`으로 배지 바깥까지 밀려나 있어(오프셋은 그리기 위치만 바꾸고 부모
- * 레이아웃 크기엔 반영되지 않는다) 부모 하나에만 `clickable`을 걸면 그 영역을 못 덮기 때문이다.
- */
-@Composable
-private fun HomeLogoBlock(subscribed: Boolean, showsPremiumPrompt: Boolean, onPremiumClick: () -> Unit) {
-    val strings = LocalUiStrings.current
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box {
-            Box(modifier = if (showsPremiumPrompt) Modifier.clip(CircleShape).clickable(onClick = onPremiumClick) else Modifier) {
-                GoStoneLogoBadge(subscribed = subscribed, showsPremiumPrompt = showsPremiumPrompt, badgeSize = 96.dp)
-            }
-            if (showsPremiumPrompt) {
-                Text(
-                    text = "Premium?",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = PremiumGold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        // 왼쪽 끝을 원의 왼쪽에서 재어 고정한다 — 오른쪽 끝에 묶으면 글꼴이 커질 때 글자가 왼쪽(점선 쪽)으로 자라 겹친다(1.3배에서 겹쳤다).
-                        .align(Alignment.TopStart)
-                        .offset(x = 80.dp, y = (-2).dp)
-                        .clickable(onClick = onPremiumClick)
-                        .padding(horizontal = 7.dp, vertical = AppSpacing.Space2),
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(AppSpacing.Space12))
-        Text(
-            text = strings.appTitle,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = if (subscribed) PremiumGoldDeep else MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-        )
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
@@ -620,40 +627,13 @@ private val StudyTabBookIcon: ImageVector = materialIcon(name = "HomeTab.Book") 
 }
 
 /**
- * 홈 화면 상단 양 끝에 놓이는 칩 버튼(#34). 좌측 마이 페이지와 우측 설정이 **같은 모양**을
- * 써야 해서, 설정 전용이던 `HomeSettingsButton`을 이모지와 라벨만 받는 형태로 일반화했다.
- *
- * 언어 선택 칩(`HomeLanguageSelector`)도 같은 겉모습이었지만 그쪽은 드롭다운을 품고 있어
- * 합치지 않았다 — 지금은 설정 화면 안에서만 쓰인다.
- */
-@Composable
-private fun HomeTopChip(emoji: String, label: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(AppRadius.Corner18))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
-            .padding(horizontal = AppSpacing.Space14, vertical = AppSpacing.Space8),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
-    ) {
-        Text(
-            text = "$emoji $label",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = AppTextSize.Text12,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-/**
  * 백로그 #182 — 테두리로 프리미엄 상태를 알린다: 구독 중이면 금색 실선, 구독 창구를
  * 보여줄 수 있으면(미구독 + [FeatureFlags.isPurchaseEnabled]) 금색 점선, 그 외엔 원래
  * 중립 테두리. `Modifier.border`엔 점선이 없어 점선만 `drawWithContent`로 직접 그린다.
  */
 @Composable
 private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean, badgeSize: Dp) {
-    // 처음 그린 크기(125dp)를 기준으로 돌 · 겹침 · 그림자 · 점선을 함께 줄인다(#280 — 대국 페이지 위의 작아진 로고).
+    // 처음 그린 크기(125dp)를 기준으로 돌 · 겹침 · 그림자 · 점선을 함께 줄인다(#280 — 윗줄의 작은 로고).
     val scale = badgeSize / GoStoneLogoBaseSize
     val stoneSizeDp = 51.dp * scale
     // 광원 위치/반경을 실제 픽셀 기준으로 계산해, 하드코딩된 px 값이 스톤 크기와 어긋나
