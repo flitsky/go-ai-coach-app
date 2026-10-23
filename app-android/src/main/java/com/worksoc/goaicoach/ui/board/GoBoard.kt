@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -135,7 +136,7 @@ internal fun GoBoard(
     onCoordinateTap: (BoardCoordinate) -> Unit,
     isGameEnded: Boolean = false,
     isEngineBusy: Boolean = false,
-    colors: GoBoardColors = GoBoardColors.Default,
+    colors: GoBoardColors = GoBoardColors.current,
 ) {
     val premium = LocalPremiumUiState.current
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
@@ -433,7 +434,7 @@ internal fun GoBoard(
                 val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates, shownLines)
                 drawBoardGrid(geometry, gameState.boardSize, colors.gridLine, shownLines)
                 if (uxOptions.showCoordinates) {
-                    drawBoardCoordinates(geometry, gameState.boardSize)
+                    drawBoardCoordinates(geometry, gameState.boardSize, colors.coordinateLabel.toArgb())
                 }
                 // 그릴지 말지의 권한 판정은 호출부(GamePlaySection)가 한다 — 여기서 premium.isActive를
                 // 다시 보면 1회권으로 켠 표시가 걸러진다(1회권 사용자는 정의상 프리미엄이 비활성이라
@@ -712,6 +713,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverla
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinates(
     geometry: BoardGeometry,
     boardSize: BoardSize,
+    labelArgb: Int,
 ) {
     val textSize = geometry.spacing * 0.24f
     val columnLabels = boardColumnLabels(boardSize)
@@ -721,6 +723,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
             label = columnLabels[index].toString(),
             center = Offset(bottomPoint.x, bottomPoint.y + geometry.boardPadding / 2f),
             textSize = textSize,
+            labelArgb = labelArgb,
         )
 
         val rowLabel = (boardSize.value - index).toString()
@@ -729,6 +732,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
             label = rowLabel,
             center = Offset(rightPoint.x + geometry.boardPadding / 2f, rightPoint.y),
             textSize = textSize,
+            labelArgb = labelArgb,
         )
     }
 }
@@ -839,10 +843,11 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardLabel(
     center: Offset,
     label: String,
     textSize: Float,
+    labelArgb: Int,
 ) {
     drawIntoCanvas { canvas ->
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = GoBoardPalette.CoordinateLabelArgb
+            color = labelArgb
             textAlign = Paint.Align.CENTER
             this.textSize = textSize
             typeface = Typeface.DEFAULT_BOLD
@@ -953,7 +958,7 @@ private fun GameState.currentMoveNumberAt(coordinate: BoardCoordinate): Int? {
 internal fun BoardCellStoneMark(
     stone: StoneColor,
     modifier: Modifier = Modifier,
-    colors: GoBoardColors = GoBoardColors.Default,
+    colors: GoBoardColors = GoBoardColors.current,
 ) {
     Canvas(
         modifier = modifier

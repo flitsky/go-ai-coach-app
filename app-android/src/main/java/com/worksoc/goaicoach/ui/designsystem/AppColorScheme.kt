@@ -23,7 +23,8 @@ internal val AppLightColorScheme: ColorScheme = lightColorScheme(
  * **야간 모드**의 색(백로그 #272, 사용자 2026-10-20). 밝은 쪽의 크림 · 나무 결을 그대로 어둡게 — 차가운 회색이 아니라 **따뜻한 짙은 갈색**이다.
  * 브랜드 초록은 어두운 바탕에서 글자로도 읽히게 조금 밝혔고(`#0E8C72` → `#26A585`), 그 위 글자는 밝은 쪽처럼 흰색으로 둔다
  * (초록 버튼의 흰 글자 — `AppPalette.OnAccent`와 같은 모습).
- * 바둑판 · 돌 · 캐릭터 그림 · 홈 로고 배지는 바꾸지 않는다(사용자 결정) — 그 색은 `GoBoardPalette` · `StonePalette` · `HomeLogoPalette`에 고정이다.
+ * 돌 · 캐릭터 그림 · 홈 로고 배지는 바꾸지 않는다(사용자 결정) — 그 색은 `GoBoardPalette` · `StonePalette` · `HomeLogoPalette`에 고정이다.
+ * 바둑판은 한 단 어두운 판으로 바뀐다(사용자 2026-10-23 — 「준비 중」 때의 판 정도, `GoBoardColors.Dark`).
  * ⚠️ 밝은 바탕을 전제로 한 이름 붙은 색(형세 그래프 판 · 좌석 카드)은 [LocalAppDarkTheme]을 보고 어두운 짝을 고른다.
  */
 internal val AppDarkColorScheme: ColorScheme = darkColorScheme(

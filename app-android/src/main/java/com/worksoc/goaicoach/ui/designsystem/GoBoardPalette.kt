@@ -3,12 +3,12 @@ package com.worksoc.goaicoach.ui.designsystem
 import androidx.compose.ui.graphics.Color
 
 /**
- * 바둑판 **위**의 돌·표식 색(refactor backlog #51). 판의 바탕·격자·마지막 수 표시처럼 테마로 바꿀 수 있는
- * 색은 [GoBoardColors]가 들고, 여기 있는 것은 **돌 자체의 질감**과 판 위 글자다 — 흑은 검고 백은 희어야
+ * 바둑판 **위**의 돌·표식 색(refactor backlog #51). 판의 바탕·격자·좌표 글자·마지막 수 표시처럼 화면 모드(야간 모드)를
+ * 따라 바뀌는 색은 [GoBoardColors]가 들고, 여기 있는 것은 **돌 자체의 질감**과 돌·표식 위 글자다 — 흑은 검고 백은 희어야
  * 하므로 테마를 따라 바뀌지 않는다.
  *
  * 값은 `GoBoard.kt`에 흩어져 있던 리터럴을 **그대로** 옮긴 것이다(전후 스크린샷이 픽셀까지 같다).
- * `…Argb`는 `android.graphics.Paint`에 넣는 정수 색이다(좌표·수순 번호는 네이티브 캔버스로 그린다).
+ * `…Argb`는 `android.graphics.Paint`에 넣는 정수 색이다(수순 번호·추천 수 글자는 네이티브 캔버스로 그린다).
  * ⚠️ `Color.rgb(…)`는 **게터**로 둔다 — 객체 초기화에서 부르면 JVM 단위 테스트가 이 객체에 닿는 순간
  *   안드로이드 스텁(`not mocked`)으로 터진다. 원래도 그리는 순간에만 불리던 값이다.
  */
@@ -61,7 +61,6 @@ internal object GoBoardPalette {
     val WhiteStoneEndedEdge = Color(0xFF726E63)
 
     val SpotLabelArgb: Int = android.graphics.Color.BLACK
-    val CoordinateLabelArgb: Int get() = android.graphics.Color.rgb(74, 47, 23)
     val MoveNumberOnBlackArgb: Int = android.graphics.Color.WHITE
     val MoveNumberOnWhiteArgb: Int get() = android.graphics.Color.rgb(24, 24, 24)
     val MoveNumberOutlineOnBlackArgb: Int get() = android.graphics.Color.rgb(18, 18, 18)
