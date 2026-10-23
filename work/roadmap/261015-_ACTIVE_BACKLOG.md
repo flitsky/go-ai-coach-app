@@ -123,7 +123,10 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   색은 `ui.designsystem`의 밝은 · 어두운 구성 둘(브랜드 초록 · 바둑판 나무색 — 시스템 색을 따르는 dynamic color는 쓰지 않는다).
 - **조사 요약**(2026-10-23 — 출처를 확인한 것만):
   ① 앱은 Compose BOM `2025.04.01` = Material3 **1.3.2**. 안정판은 1.4.0이고, Expressive API는 **1.5.0-beta02(2026-10-21)에만** 있다 — 정식이 아니다(developer.android.com 「Compose Material 3」 릴리스 페이지).
-     → 라이브러리를 올리지 않고 **원칙만 손으로** 옮긴다(아래 탭 줄을 손으로 만든 지금 방식과 같다). 판을 올리는 안이면 먼저 묻는다.
+     → Expressive 부품은 쓰지 않고 **원칙만 손으로** 옮긴다(아래 탭 줄을 손으로 만든 지금 방식과 같다).
+     ✅ **안정판으로는 올렸다**(사용자 2026-10-23, `4d5aae63`): BOM `2025.11.01` = Material3 1.4.0 · Compose UI 1.9.5(lifecycle 2.9.4 · savedstate 1.3.3이 따라온다) ·
+     1.4.0이 끌어오지 않는 `material-icons-core`는 따로 선언. 게이트의 Gradle 작업 · 릴리스 R8 통과, lint는 올리기 전과 같다. ⏳ 에뮬레이터 · 폰 확인 전.
+     ⚠️ 클라우드 세션에서는 `GoCoachControllerWiringTest`의 「엔진 작업이 Dispatchers.IO에서 돌아오지 않았다」가 실행마다 1~2개 실패한다 — **올리기 전 BOM에서도 같다**(4회씩: 전 6 · 후 3).
   ② Expressive의 원칙 셋: **모양**(둥근 정도가 바뀌는 그릇 · 누를 때 모양이 바뀐다) · **움직임**(스프링) · **글자**(굵기로 강조) — 「levels of expression」은 중간 단계(excellent) 이상을 권한다(Android Developers 「Material 3 Expressive design language」).
   ③ 아래 내비게이션: 같은 무게의 목적지 3~5개 · 좁은 폭에 쓴다(Android Developers 「Navigation bar」). 「옆으로 넘기기」와 함께 쓰는 것을 다룬 공식 지침은 **찾지 못했다** — 지금처럼 탭이 페이지를 따라간다.
   ④ 예측 뒤로가기: targetSdk 36 앱은 Android 16에서 시스템 뒤로가기 애니메이션이 기본으로 켜지고 `onBackPressed`가 불리지 않는다(「Behavior changes: Android 16」). 앱은 Compose `BackHandler`를 쓴다 —
