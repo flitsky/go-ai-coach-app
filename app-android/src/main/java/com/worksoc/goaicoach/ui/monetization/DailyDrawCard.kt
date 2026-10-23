@@ -77,7 +77,7 @@ import kotlinx.coroutines.launch
  * - 뽑을 수 있음: 초록 테두리 알약 「▶ 광고 보고 뽑기」(구독자는 「▶ 뽑기」 — 광고 없이). 광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99).
  * - 광고 · 뽑는 중: 도는 표시(두 번 누를 수 없다).
  * - **쿨타임**: 뽑은 때부터 24시간 — 지나간 만큼 차오르는 고리와 남은 시간(시:분:초, 1초마다). 눌리지 않는다.
- * - 카드 아래에 **지금의 확률**을 늘 적는다 — 줄 수 없는 상품이 빠지면 나머지의 비율이 바뀌므로 지금 판정(`dailyDrawOdds`)에서 센다.
+ * - 카드 아래에 **지금의 확률**을 상품마다 한 줄씩 늘 적는다(「(30%) 광고 스킵권」, 사용자 2026-10-23) — 줄 수 없는 상품이 빠지면 나머지의 비율이 바뀌므로 지금 판정(`dailyDrawOdds`)에서 센다.
  *   조각 · 캐릭터에는 지금 대상의 이름을 단다. 확률을 감추지 않는 것은 스레드가 정했다(무작위 보상의 확률 공개 관행).
  * - 결과: 캐릭터를 얻었으면 기존 획득 축하 창(`BotCharacterUiState.enqueueAcquired`), 아니면 「뽑기 결과」 창.
  *
@@ -165,12 +165,15 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
                 }
             }
         }
-        Text(
-            text = oddsLine(strings, bots.collection, consumables),
-            fontSize = AppTextSize.Text12,
-            color = colors.secondary,
-            textAlign = TextAlign.Center,
-        )
+        // 상품마다 한 줄 — 「(30%) 광고 스킵권」(사용자 2026-10-23). 줄들은 왼쪽에 맞춰 확률이 한 기둥으로 서고, 묶음 전체는 카드 가운데에 선다.
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4)) {
+            oddsRows(strings, bots.collection, consumables).forEach { (percent, label) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+                    Text(text = "($percent%)", fontSize = AppTextSize.Text13, fontWeight = FontWeight.SemiBold, color = colors.primary)
+                    Text(text = label, fontSize = AppTextSize.Text13, color = colors.onSurfaceVariant)
+                }
+            }
+        }
     }
 
     shown?.let { result ->
@@ -219,26 +222,37 @@ private fun CooldownLine(remainingMillis: Long) {
     }
 }
 
-/** 지금의 확률 한 줄 — 줄 수 없는 상품을 뺀 나머지의 비율(합 100%). */
-private fun oddsLine(
+/**
+ * 지금의 확률 — 상품마다 (확률, 이름) 한 줄. 줄 수 없는 상품을 뺀 나머지의 비율(합 100%)이다.
+ * 차례는 사용자가 적은 대로 1회권 → 광고 스킵권 → 조각 → 캐릭터(2026-10-23) — 뽑기의 칸 순서(`DailyDrawPrizeKind`)와는 따로다.
+ */
+private fun oddsRows(
     strings: UiStrings,
     collection: BotCollectionState,
     consumables: ConsumableUiState,
-): String {
+): List<Pair<Int, String>> {
     val language = strings.language
     val odds = dailyDrawOdds(consumables.inventory, collection)
     val total = odds.values.sum()
     val targetName = dailyDrawCharacterTarget(collection)?.let(strings::botCharacterName).orEmpty()
-    return odds.entries.joinToString(" · ") { (kind, weight) ->
+    return OddsDisplayOrder.mapNotNull { kind ->
+        val weight = odds[kind] ?: return@mapNotNull null
         val label = when (kind) {
-            DailyDrawPrizeKind.CharacterShard -> dailyDrawShardLabelFor(language, targetName)
             DailyDrawPrizeKind.Tickets -> dailyDrawTicketsLabelFor(language, DailyDrawTicketsEach)
             DailyDrawPrizeKind.AdSkipTicket -> strings.consumableRewardName(ConsumableCatalog.PremiumOnce)
+            DailyDrawPrizeKind.CharacterShard -> dailyDrawShardLabelFor(language, targetName)
             DailyDrawPrizeKind.Character -> targetName
         }
-        "$label ${(weight * 100 + total / 2) / total}%"
+        (weight * 100 + total / 2) / total to label
     }
 }
+
+private val OddsDisplayOrder = listOf(
+    DailyDrawPrizeKind.Tickets,
+    DailyDrawPrizeKind.AdSkipTicket,
+    DailyDrawPrizeKind.CharacterShard,
+    DailyDrawPrizeKind.Character,
+)
 
 /** 결과 창의 본문 한 줄. 캐릭터를 얻은 경우는 이 창이 아니라 획득 축하 창이 뜬다. */
 private fun resultLine(strings: UiStrings, result: DailyDrawResult): String =

@@ -157,7 +157,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - ✅ **결정**(사용자): 광고 1편 = 한 번(구독자는 광고 없이) · 하루 한 번, 뽑으면 쿨타임 · 상품과 확률 **조각 30 · 1회권(형세 · 추천 수 10장씩) 30 · 스킵권 30 · 캐릭터 완전판 10** ·
   조각 · 완전판은 **아직 갖지 않은 조각 길 캐릭터(2 · 4단계) 중 가장 낮은 등급**(출석 캐릭터는 출석으로만 — §8.4 유령 출석 보상을 깨우지 않는다).
 - 한 것: 명언록 › 오늘의 운세 › **1일 1회 뽑기** 섹션 — 「▶ 광고 보고 뽑기」 → 광고 → 결과 창(캐릭터를 얻으면 기존 획득 축하 창) → 24시간 쿨타임(차오르는 고리 + 시:분:초) ·
-  카드 아래에 **지금의 확률**(대상 캐릭터 이름 포함). 규칙 shared `application/dailydraw/DailyDraw.kt`(테스트 `DailyDrawTest`) · 뽑은 때 `DailyDrawStore` · 카드 `ui/monetization/DailyDrawCard.kt`.
+  카드 아래에 **지금의 확률**을 상품마다 한 줄씩(「(30%) 광고 스킵권」 — 사용자 2026-10-23, 차례 1회권 → 스킵권 → 조각 → 캐릭터, 대상 캐릭터 이름 포함). 규칙 shared `application/dailydraw/DailyDraw.kt`(테스트 `DailyDrawTest`) · 뽑은 때 `DailyDrawStore` · 카드 `ui/monetization/DailyDrawCard.kt`.
   정책 문서 둘(`FEATURE_ACCESS_PRINCIPLES.md` §8.1 · `ATTENDANCE_REWARD_POLICY.md` §3)과 UI 명세 §2.1에 적었다(함정 14).
 - 스레드가 정한 것: 쿨타임 = **뽑은 때부터 24시간**(UTC 하루면 한국 오전 9시에 풀린다) · 줄 수 없는 상품은 빼고 나머지끼리 나눔(꽝 없음) · 확률을 카드에 늘 적음 ·
   시계를 되감아 기록이 미래면 막지 않음 · 문구(4개 언어, 섹션 이름 「1일 1회 뽑기」만 사용자의 말).
