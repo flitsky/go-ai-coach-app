@@ -19,6 +19,23 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.8.2 — #287 「이전 대국 이어하기」의 둘째 줄(사용자 2026-10-24 — 1.8.1 뒤에 더해 1.8.2로 낸다). 1.7.0에서 오는 사람에게는 1.8.0 · 1.8.1 묶음과 함께 뜬다.
+        WhatsNewRelease(versionCode = 10802, versionName = "1.8.2") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "「이전 대국 이어하기」에 어떤 판인지 보여요 — 상대, 내 돌, 판 크기와 수.",
+                )
+                UiLanguage.English -> listOf(
+                    "Resume previous game now shows which game it is: the opponent, your stones, the board size and the move count.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "「前回の対局を再開」にどの対局かが表示されます — 相手、自分の石、碁盤のサイズと手数。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "「继续上一局」会显示是哪一局——对手、执子、棋盘大小和手数。",
+                )
+            }
+        },
         // 1.8.1 — #286 「일반 대국」 · 승급 대국이 지난 설정을 기억 · 대국 페이지 타일 아이콘(사용자 2026-10-23 — 1.8.0을 내지 않고 1.8.1로 낸다).
         // 1.7.0에서 오는 사람에게는 1.8.0 묶음과 함께 뜬다(`whatsNewPending`) — 여기에는 1.8.0 뒤의 것만 적는다.
         WhatsNewRelease(versionCode = 10801, versionName = "1.8.1") { language ->

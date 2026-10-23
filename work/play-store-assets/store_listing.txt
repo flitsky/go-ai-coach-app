@@ -134,7 +134,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.8.1): 한국어 396자 · 영어 497자.
+⚠️ **언어당 500자 이내.** 지금(1.8.2): 한국어 444자 · 영어 493자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -145,18 +145,17 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.8.1 (versionCode 10801, 2026-10-24) ────────
+──────── 지금 붙여넣을 것 — 1.8.2 (versionCode 10802, 2026-10-24) ────────
 
-✅ **기준선은 1.7.0**(프로덕션 10700 — 버전을 올린 날 2026-10-22, 같은 날 승격 확인). 1.8.0(10800)은 프로덕션에 나가지 않고 **1.8.1이 대신 나간다**(사용자 2026-10-23) —
-   그래서 이 본문은 1.8.0의 것에 #286을 더한 것이다(1.5.0 → 1.5.1 때와 같다).
-   #280 세 페이지 홈(내 정보 ‹ 대국 › 실험실 · 아래 탭 · 윗줄 로고 한 줄 · ⚙) · #281 움직임(Material3 1.4.0 · 스프링 · 누르면 모양이 바뀌는 카드 · 예측 뒤로가기) · 명언록 ·
-   #276 오늘의 운세(랜덤 운세 · 첫 운세 무료 · 광고로 하루 3번 갱신) · #283 1일 1회 뽑기(광고 1편 · 24시간 · 확률 공개) · #282 야간 모드의 어두운 바둑판 ·
-   #286 「일반 대국」 · 승급 대국이 지난 진영 · 판 크기를 기억 · 대국 페이지 타일 아이콘.
+✅ **기준선은 1.7.0**(프로덕션 10700 — 버전을 올린 날 2026-10-22, 같은 날 승격 확인). 1.8.0 · 1.8.1은 프로덕션에 나가지 않고 **1.8.2가 대신 나간다**(사용자 2026-10-24 — 1.8.1 뒤에 #287을 더해 1.8.2로) —
+   그래서 이 본문은 1.8.1의 것에 #287을 더한 것이다(1.5.0 → 1.5.1 때와 같다).
+   #280 세 페이지 홈 · #281 움직임 · 명언록 · #276 오늘의 운세 · #283 1일 1회 뽑기 · #282 야간 모드의 어두운 바둑판 · #286 「일반 대국」 · 승급 대국 설정 기억 · 타일 아이콘 ·
+   #287 「이전 대국 이어하기」의 둘째 줄(대국 · 상대 · 내 돌 · 판 크기와 수).
    적지 않은 것: 「준비 중」인 별자리별 · 띠별 운세와 「나만의 명언 추가」(함정 51) · 뽑기의 확률 숫자(화면에 있다) · 운세 글의 수(368) · 개인정보처리방침 주소 바뀜(PR #7) · 학습 이름 줄임.
-   영어는 한도에 맞추려 명언록을 머리 줄에 넣었다(같은 범위).
-   앱 안 「새로워진 점」은 1.8.0 묶음 + 1.8.1 묶음(#286만 — 1.7.0에서 오는 사람에게는 둘이 함께 뜬다, `UiStringsWhatsNew.kt`).
-⚠️ 언어당 500자 이내 — 지금: 한국어 396자 · 영어 497자. 본문은 스레드가 쓴 초안이다(2026-10-23) — 콘솔에 붙이기 전에 사용자가 본다.
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.8.1이 나간 뒤의 기준선은 1.8.1이다.
+   영어는 한도에 맞추려 명언록을 머리 줄에 넣고 뽑기 상품을 「tickets」로 묶었다(같은 범위).
+   앱 안 「새로워진 점」은 1.8.0 · 1.8.1 · 1.8.2 묶음(1.7.0에서 오는 사람에게는 셋이 함께 뜬다, `UiStringsWhatsNew.kt`).
+⚠️ 언어당 500자 이내 — 지금: 한국어 444자 · 영어 493자. 본문은 스레드가 쓴 초안이다(2026-10-24) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.8.2가 나간 뒤의 기준선은 1.8.2다.
    지난 본문: 1.7.0 `git show 2f46ba3f:work/play-store-assets/store_listing.txt` · 1.6.0 `git show 8b43c159:work/play-store-assets/store_listing.txt` · 1.5.1 `git show f41e3dab:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
@@ -167,6 +166,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 · 1일 1회 뽑기: 광고 1편으로 하루 한 번 — 형세 · 추천 수 1회권, 광고 스킵권, 캐릭터 조각, 캐릭터 중 하나(확률은 화면에 공개)
 · 명언록: 명언을 카드로 넘겨 봐요
 · 「캐릭터 대국」은 「일반 대국」으로 이름이 바뀌고, 대국 페이지의 메뉴 아이콘이 새로워졌어요
+· 「이전 대국 이어하기」에 어떤 판인지(상대 · 내 돌 · 판 크기 · 수) 보여요
 · 승급 대국이 지난번에 고른 진영과 판 크기를 기억해요
 · 야간 모드에서는 바둑판도 한 단 어두워져요
 </ko-KR>
@@ -175,8 +175,9 @@ New: a three-page home, and Today's fortune, a Daily draw and a Quote book in th
 
 · New home: My info ‹ Play › Lab; swipe or tap the tabs. Smoother motion
 · Today's fortune: tap to draw; an ad changes your luck, up to 3 times a day (Premium: no ads)
-· Daily draw: one ad a day for coaching or ad-skip tickets, a shard or a character (odds on screen)
-· Character Match is now Standard Match; new menu icons on Play
+· Daily draw: one ad a day for tickets, a shard or a character (odds on screen)
+· Character Match is now Standard Match; new menu icons
+· Resume names the game
 · Rank Match remembers your side and board size
 · A darker board in dark mode
 </en-US>
