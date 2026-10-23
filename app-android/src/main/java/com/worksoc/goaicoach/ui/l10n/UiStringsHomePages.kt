@@ -23,7 +23,10 @@ private val LabTabLabels: Map<UiLanguage, String> = mapOf(
 
 internal fun homePageLabTabFor(language: UiLanguage): String = LabTabLabels.getValue(language)
 
-/** 명언록 카드의 이름 — 오늘의 명언에서 시작해 옆으로 밀어 지난 · 다음 날의 명언을 본다. */
+/**
+ * 명언록의 이름 — 오늘의 명언에서 시작해 옆으로 밀어 지난 · 다음 날의 명언을 본다.
+ * 「오늘」 표시와 「옆으로 밀어…」 안내는 없앴다(사용자 2026-10-23, #281) — 양옆 카드가 보이는 모양이 그 안내를 대신한다.
+ */
 private val QuoteBookTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "명언록",
     UiLanguage.English to "Quote book",
@@ -32,26 +35,6 @@ private val QuoteBookTitles: Map<UiLanguage, String> = mapOf(
 )
 
 internal fun labQuoteBookTitleFor(language: UiLanguage): String = QuoteBookTitles.getValue(language)
-
-/** 명언록 카드 아래의 안내 — 옆으로 밀면 된다는 것. */
-private val QuoteBookHints: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "옆으로 밀어 지난 명언 · 다음 명언",
-    UiLanguage.English to "Swipe for earlier and later quotes",
-    UiLanguage.Japanese to "横にスワイプして前後の名言へ",
-    UiLanguage.ChineseSimplified to "左右滑动查看前后的名言",
-)
-
-internal fun labQuoteBookHintFor(language: UiLanguage): String = QuoteBookHints.getValue(language)
-
-/** 명언록에서 오늘의 명언에만 붙는 표시 — 날짜는 붙이지 않는다(사용자 2026-10-22: 본 날을 적지 않아 지난 명언의 날짜는 맞출 수 없다). */
-private val QuoteBookTodayLabels: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "오늘",
-    UiLanguage.English to "Today",
-    UiLanguage.Japanese to "今日",
-    UiLanguage.ChineseSimplified to "今天",
-)
-
-internal fun labQuoteTodayFor(language: UiLanguage): String = QuoteBookTodayLabels.getValue(language)
 
 /** 아직 없는 실험(#280 — 「준비 중」 배지와 함께 눌리지 않는다, U-16과 같은 결). */
 private val AddMyQuoteTitles: Map<UiLanguage, String> = mapOf(

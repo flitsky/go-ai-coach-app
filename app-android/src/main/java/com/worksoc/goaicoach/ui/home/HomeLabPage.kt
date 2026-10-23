@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui.home
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,22 +26,27 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.utcDayIndex
 import com.worksoc.goaicoach.application.dailyquote.pickDailyQuote
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.persistence.DailyQuoteStore
+import com.worksoc.goaicoach.ui.designsystem.AppMotion
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
@@ -51,9 +57,7 @@ import com.worksoc.goaicoach.ui.l10n.QuoteLineBreak
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.labAddMyQuoteTitleFor
 import com.worksoc.goaicoach.ui.l10n.labFortuneTitleFor
-import com.worksoc.goaicoach.ui.l10n.labQuoteBookHintFor
 import com.worksoc.goaicoach.ui.l10n.labQuoteBookTitleFor
-import com.worksoc.goaicoach.ui.l10n.labQuoteTodayFor
 import com.worksoc.goaicoach.ui.l10n.quoteLocaleTag
 import com.worksoc.goaicoach.ui.l10n.studyComingSoonFor
 import kotlin.random.Random
@@ -68,20 +72,21 @@ import kotlin.random.Random
 internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modifier) {
     val strings = LocalUiStrings.current
     val language = strings.language
+    // 가로 여백은 줄마다 준다 — 명언록의 넘기기만은 화면 끝까지 닿아야 양옆 카드가 잘리지 않고 보인다(#281).
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space16),
+            .padding(vertical = AppSpacing.Space16),
         verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
-        QuoteBookCard()
-        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+        QuoteBookCarousel()
+        Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
             LabPlaceholderTile(title = labAddMyQuoteTitleFor(language), icon = Icons.Filled.Edit, modifier = Modifier.weight(1f))
             LabPlaceholderTile(title = labFortuneTitleFor(language), icon = Icons.Filled.Star, modifier = Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+        Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
             LabPlaceholderTile(title = null, icon = Icons.Filled.Add, modifier = Modifier.weight(1f))
             MenuTile(
                 tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() },
@@ -119,46 +124,66 @@ private fun quoteBookOf(store: DailyQuoteStore, today: Long): List<QuoteBookEntr
 }
 
 /**
- * 명언록 카드(#280) — 오늘의 명언에서 시작해 **옆으로 밀면** 지난 · 다음 날의 명언이 나온다.
- * ⚠️ 홈의 페이지 넘기기 안에 있는 넘기기다 — 카드 위에서 민 것은 카드가 먼저 가져가고, 카드가 끝(가장 지난 명언)에 닿으면 페이지가 넘어간다. 카드 밖에서 밀면 페이지가 넘어간다.
+ * 명언록(#280) — 오늘의 명언에서 시작해 **옆으로 밀면** 지난 · 다음 날의 명언이 나온다.
+ *
+ * #281(사용자 2026-10-23): 명언 하나가 **카드 한 장**이고 양옆 카드의 끝이 보인다(카드 메뉴 UX) — 앞뒤에 명언이 더 있다는 것을 글이 아니라 모양으로 알린다.
+ * 그래서 「옆으로 밀어…」 안내와 「오늘」 표시를 없앴다(오늘의 것만 달라 보이지 않게). 출처 줄은 오른쪽 끝에 붙는다.
+ *
+ * **카드의 키**: 보이는 카드(지금 것과 양옆)의 **가장 긴 명언에 맞춘다** — 고정 최소 높이로 빈 칸을 남기지 않으면서, 넘길 때 양옆 카드의 키가
+ * 들쭉날쭉하지 않게. 각 카드는 제 글의 높이를 적고(최소 높이를 받지 않는 안쪽에서 잰다 — 바깥에서 재면 늘린 키가 다시 적혀 줄지 않는다),
+ * 키는 스프링으로 바뀐다. 처음 잰 키는 곧바로 쓴다(열자마자 자라는 움직임이 없게).
+ *
+ * ⚠️ 홈의 페이지 넘기기 안에 있는 넘기기다 — 카드 위에서 민 것은 카드가 먼저 가져가고, 끝(가장 지난 명언)에 닿으면 페이지가 넘어간다. 카드 밖에서 밀면 페이지가 넘어간다.
  */
 @Composable
-private fun QuoteBookCard() {
+private fun QuoteBookCarousel() {
     val context = LocalContext.current
     val language = LocalUiStrings.current.language
     val colors = MaterialTheme.colorScheme
+    val density = LocalDensity.current
     val entries = remember(context) { quoteBookOf(DailyQuoteStore(context), utcDayIndex(System.currentTimeMillis())) }
     if (entries.isEmpty()) return
     val todayIndex = entries.indexOfFirst { it.isToday }.coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = todayIndex) { entries.size }
-    // 모서리는 대국 페이지의 카드 결을 따른다(#281 A안) — 넓은 카드라 크게 둥글다.
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppRadius.Corner24),
-        color = colors.surfaceVariant,
-    ) {
-        Column(modifier = Modifier.padding(vertical = AppSpacing.Space16)) {
-            Text(
-                text = labQuoteBookTitleFor(language),
-                fontSize = AppTextSize.Text16,
-                fontWeight = FontWeight.Bold,
-                color = colors.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = AppSpacing.Space16),
-            )
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth().padding(top = AppSpacing.Space8),
-                contentPadding = PaddingValues(horizontal = AppSpacing.Space16),
-                pageSpacing = AppSpacing.Space16,
-            ) { index ->
-                val entry = entries[index]
-                val line = entry.quote.lineFor(language)
-                // 장마다 글 길이가 달라 키가 다르다 — 최소 키를 두어 밀 때 카드가 덜 출렁이게 한다.
-                Column(modifier = Modifier.fillMaxWidth().heightIn(min = QuoteBookPageMinHeight)) {
-                    if (entry.isToday) {
-                        Text(text = labQuoteTodayFor(language), fontSize = AppTextSize.Text12, fontWeight = FontWeight.Bold, color = colors.primary)
-                        Spacer(modifier = Modifier.size(AppSpacing.Space8))
-                    }
+    val heights = remember { mutableStateMapOf<Int, Int>() }
+    val shown = pagerState.currentPage
+    val tallestPx = (shown - 1..shown + 1).maxOf { heights[it] ?: 0 }
+    val cardMinHeight = remember { Animatable(0f) }
+    LaunchedEffect(tallestPx) {
+        if (tallestPx == 0) return@LaunchedEffect
+        val target = with(density) { tallestPx.toDp().value }
+        if (cardMinHeight.value == 0f) cardMinHeight.snapTo(target) else cardMinHeight.animateTo(target, AppMotion.defaultSpatial())
+    }
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+        Text(
+            text = labQuoteBookTitleFor(language),
+            fontSize = AppTextSize.Text16,
+            fontWeight = FontWeight.Bold,
+            color = colors.onBackground,
+            modifier = Modifier.padding(horizontal = AppSpacing.Space16),
+        )
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = QuoteBookSideInset),
+            pageSpacing = AppSpacing.Space10,
+            verticalAlignment = Alignment.Top,
+        ) { index ->
+            val line = entries[index].quote.lineFor(language)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(AppRadius.Corner24))
+                    .background(colors.surfaceVariant)
+                    .heightIn(min = cardMinHeight.value.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { heights[index] = it.height }
+                        .padding(horizontal = AppSpacing.Space18, vertical = AppSpacing.Space16),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
+                ) {
                     Text(
                         text = keepWordsWhole(line.text, language),
                         fontSize = AppTextSize.Text16,
@@ -166,21 +191,21 @@ private fun QuoteBookCard() {
                         color = colors.onSurface,
                         style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
                     )
-                    Spacer(modifier = Modifier.size(AppSpacing.Space6))
-                    Text(text = "— " + line.by, fontSize = AppTextSize.Text13, color = colors.onSurfaceVariant)
+                    Text(
+                        text = "— " + line.by,
+                        fontSize = AppTextSize.Text13,
+                        color = colors.onSurfaceVariant,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
-            Text(
-                text = labQuoteBookHintFor(language),
-                fontSize = AppTextSize.Text12,
-                color = colors.secondary,
-                modifier = Modifier.padding(start = AppSpacing.Space16, end = AppSpacing.Space16, top = AppSpacing.Space8),
-            )
         }
     }
 }
 
-private val QuoteBookPageMinHeight = 96.dp
+/** 명언록 넘기기의 양옆 여백 — 이 폭에서 사이 간격(10dp)을 뺀 만큼 양옆 카드가 보인다. 스레드가 정한 값(#281). */
+private val QuoteBookSideInset = 32.dp
 
 /**
  * 아직 없는 실험의 칸 — [MenuTile]과 같은 크기 · 같은 자리의 그림이지만 흐리고 눌리지 않는다. [title]이 없으면 이름 없는 빈자리다(사용자의 「(예정)」).
