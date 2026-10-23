@@ -24,8 +24,8 @@ internal fun fortuneRandomTitleFor(language: UiLanguage): String = when (languag
 internal fun fortuneDrawPromptFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "누르는 순간의 기운으로 오늘의 운세를 뽑아요."
     UiLanguage.English -> "Your fortune is drawn from the very moment you tap."
-    UiLanguage.Japanese -> "押した瞬間の気から、今日の運勢を引きます。"
-    UiLanguage.ChineseSimplified -> "以你按下的那一刻，抽取今日运势。"
+    UiLanguage.Japanese -> "押した瞬間の気で、今日の運勢を引きます。"
+    UiLanguage.ChineseSimplified -> "凭你按下那一刻的气运，抽出今日运势。"
 }
 
 /** 하루의 첫 운세를 뽑는 단추(무료). */
@@ -89,7 +89,7 @@ internal fun fortuneRefreshButtonFor(language: UiLanguage, withAd: Boolean): Str
 /** 갱신 단추 위의 한 줄 — 갱신이 「운에 스스로 개입하는 일」임을 바둑에 빗댄다. */
 internal fun fortuneRefreshInviteFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "한 수로 판이 바뀌듯, 오늘의 운도 내 손으로 바꿀 수 있어요."
-    UiLanguage.English -> "One move can turn a game — and your luck is yours to turn, too."
+    UiLanguage.English -> "One move can change a game — and you can change today's luck yourself, too."
     UiLanguage.Japanese -> "一手で形勢が変わるように、今日の運も自分の手で変えられます。"
     UiLanguage.ChineseSimplified -> "就像一手棋能改变整盘棋，今天的运势也能由你亲手改写。"
 }
@@ -97,7 +97,7 @@ internal fun fortuneRefreshInviteFor(language: UiLanguage): String = when (langu
 /** 오늘 남은 갱신 횟수 — 「오늘 남은 기회 2/3」. */
 internal fun fortuneRefreshesLeftFor(language: UiLanguage, left: Int): String = when (language) {
     UiLanguage.Korean -> "오늘 남은 기회 $left/$DailyFortuneMaxRefreshes"
-    UiLanguage.English -> "$left of $DailyFortuneMaxRefreshes left today"
+    UiLanguage.English -> "$left of $DailyFortuneMaxRefreshes changes left today"
     UiLanguage.Japanese -> "今日の残り回数 $left/$DailyFortuneMaxRefreshes"
     UiLanguage.ChineseSimplified -> "今日剩余次数 $left/$DailyFortuneMaxRefreshes"
 }
@@ -106,8 +106,8 @@ internal fun fortuneRefreshesLeftFor(language: UiLanguage, left: Int): String = 
 internal fun fortuneRefreshesDoneFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "오늘은 운을 충분히 바꿨어요. 내일 새 운세가 열려요."
     UiLanguage.English -> "You've changed your luck plenty today. A new fortune awaits tomorrow."
-    UiLanguage.Japanese -> "今日はもう十分に運を変えましたね。明日また新しい運勢が届きます。"
-    UiLanguage.ChineseSimplified -> "今天已经改过运了，明天会有新的运势。"
+    UiLanguage.Japanese -> "今日はもう十分に運を変えましたね。明日また新しい運勢を引けます。"
+    UiLanguage.ChineseSimplified -> "今天的运已经改得够多了，明天会有新的运势。"
 }
 
 /** 카드 맨 아래의 고지(사용자에게 물은 「재미로 보세요」 — 2026-10-23 착수 질문). */

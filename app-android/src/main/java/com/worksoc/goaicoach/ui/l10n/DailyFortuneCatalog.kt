@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.ui.l10n
 /**
  * 실험실 「오늘의 운세」 — **랜덤 운세**의 글(백로그 #276, 사용자 2026-10-23). 고르기는 shared `application/dailyfortune/DailyFortune.kt` 한 곳이고, 여기는 글만 싣는다.
  *
- * - 사용자: 설정 없이 누른 순간의 타임스탬프로 뽑는 랜덤 운세 · **글은 최소 365개**(지금 368 — 일반 160 · 별빛 88 · 바둑 120). 띠별 · 별자리별 운세는 근거 데이터가 없어 「(준비 중)」이다(I-7).
+ * - 사용자: 설정 없이 누른 순간의 타임스탬프로 뽑는 랜덤 운세 · **글은 최소 365개**(지금 368 — 일반 148 · 별빛 88 · 바둑 132). 띠별 · 별자리별 운세는 근거 데이터가 없어 「(준비 중)」이다(I-7).
  * - 세 묶음은 글의 결일 뿐 고르는 사람이 따로 없다 — 셋을 이은 [DailyFortuneCatalog.fortunes]에서 하나를 뽑는다. 별빛 묶음은 별 · 달 · 행성의 말투지만 별자리를 고른 사람을 전제하지 않는다.
  * - 공개된 운세 데이터는 쓰지 않았다(2026-10-23 조사 — 웹의 별자리 운세는 글에 저작권이 있고, 찾은 데이터셋은 라이선스가 없거나 하루 운세가 아니었다).
  *   글은 스레드가 지었다 — 한국어를 먼저 쓰고 영 · 일 · 중으로 옮겼고(원어민 확인 없음), 언어마다 LLM 검수를 두 번 거쳤다(사용자 2026-10-23).
@@ -38,10 +38,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-2",
-            "뜻밖의 곳에서 귀인을 만나는 날이에요. 먼저 건넨 인사가 좋은 인연이 돼요.",
-            "You may meet a helpful person somewhere unexpected today. Saying hello first could lead to a good connection.",
-            "思いがけない場所で、助けてくれる人に出会える日です。自分から先にあいさつすると、良いご縁につながります。",
-            "今天可能在意想不到的地方遇到贵人。主动打个招呼，就能结下好缘分。",
+            "뜻밖의 곳에서 귀인의 도움을 받는 날이에요. 주변 사람에게 먼저 건넨 인사가 좋은 인연으로 이어져요.",
+            "Help may come from an unexpected place today. A hello you offer the people around you can lead to a good connection.",
+            "思いがけないところから助けが届く日です。周りの人に自分からかけたあいさつが、良いご縁につながります。",
+            "今天可能会在意想不到的地方得到贵人相助。主动向身边的人打个招呼，会结下好缘分。",
         ),
         FortuneText(
             "g-3",
@@ -68,7 +68,7 @@ internal object DailyFortuneCatalog {
             "g-6",
             "말 한마디가 천 냥 빚을 갚는 날이에요. 고마운 마음은 미루지 말고 전해 보세요.",
             "Kind words go a long way today. Don't put off saying thank you.",
-            "ひと言の力が大きく働く日です。感謝の気持ちは後回しにせず伝えてみましょう。",
+            "ひと言が大きな力を持つ日です。感謝の気持ちは後回しにせず伝えてみましょう。",
             "今天一句好话能起大作用。心里的谢意别拖着，及时说出来吧。",
         ),
         FortuneText(
@@ -97,7 +97,7 @@ internal object DailyFortuneCatalog {
             "주변 사람의 도움이 큰 힘이 되는 날이에요. 혼자 끙끙대지 말고 도움을 청해 보세요.",
             "The people around you can be a big help today. Don't struggle alone — reach out.",
             "周りの人の助けが大きな力になる日です。一人で抱え込まず、助けを求めてみましょう。",
-            "今天身边人的帮助会给你很大的力量。别一个人硬撑，向身边的人求助吧。",
+            "今天身边人的帮助会给你很大的力量。别一个人硬撑，大胆开口求助吧。",
         ),
         FortuneText(
             "g-11",
@@ -178,10 +178,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-22",
-            "새로운 사람에게서 좋은 영감을 얻어요. 열린 마음으로 이야기를 나눠 보세요.",
-            "Someone new may inspire you today. Chat with an open mind.",
-            "新しく出会う人から良いひらめきをもらえます。心を開いて話してみましょう。",
-            "你会从新认识的人身上得到灵感。敞开心扉聊一聊吧。",
+            "새로 알게 된 친구에게서 좋은 영감을 얻어요. 열린 마음으로 이야기를 나눠 보세요.",
+            "A friend you've recently made may inspire you today. Chat with an open mind.",
+            "新しく知り合った友人から良いひらめきをもらえます。心を開いて話してみましょう。",
+            "你会从新认识的朋友身上得到灵感。敞开心扉聊一聊吧。",
         ),
         FortuneText(
             "g-23",
@@ -284,8 +284,8 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-37",
             "책 속에 오늘의 복이 숨어 있어요. 마음 가는 책을 펼쳐 몇 쪽이라도 읽어 보세요.",
-            "Today's good fortune is hidden in a book. Open one that calls to you, even for just a few pages.",
-            "本の中に今日の福が隠れています。気になる本を数ページだけでも開いてみましょう。",
+            "Today's good fortune is hidden in a book. Open one that calls to you and read even just a few pages.",
+            "本の中に今日の福が隠れています。気になる本を開いて、数ページだけでも読んでみましょう。",
             "今天的福气藏在书里。翻开一本想读的书，哪怕只读几页也好。",
         ),
         FortuneText(
@@ -325,10 +325,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-43",
-            "물건을 제자리에 두면 마음도 제자리를 찾아요. 가볍게 정돈해 보세요.",
-            "Put things back where they belong and your mind settles too. Tidy up a little.",
-            "物を元の場所に戻すと、心も落ち着きます。軽く整えてみましょう。",
-            "东西归位，心也会归位。稍微整理一下吧。",
+            "물건을 제자리에 두면 마음도 제자리를 찾아요. 꺼내 둔 물건을 하나씩 제자리에 돌려놓아 보세요.",
+            "Put things back where they belong and your mind settles too. Return the things you've left out, one at a time.",
+            "物を元の場所に戻すと、心も落ち着きます。出しっぱなしのものを、ひとつずつ片づけてみましょう。",
+            "东西归位，心也会归位。把随手放着的东西一件件放回原处吧。",
         ),
         FortuneText(
             "g-44",
@@ -389,14 +389,14 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-52",
             "물의 기운이 마음을 유연하게 해 줘요. 막힌 일은 돌아가는 길에서 답이 보여요.",
-            "The energy of water makes you flexible today. When something is stuck, the answer may lie on a detour.",
-            "水の気が心をしなやかにしてくれます。行き詰まったことは、回り道に答えが見つかります。",
+            "The energy of water makes you flexible today. When you're stuck, taking the long way around may show you the answer.",
+            "水の気が心をしなやかにしてくれます。行き詰まったときは、回り道の先に答えが見つかります。",
             "今天水之气让你的心更柔韧。遇到卡住的事，绕个弯就能找到答案。",
         ),
         FortuneText(
             "g-53",
             "서쪽에서 기분 좋은 기운이 찾아오는 날이에요. 오늘 만나는 사람을 반갑게 맞아 보세요.",
-            "Happy energy arrives from the west today. Give the people you meet a warm welcome.",
+            "Cheerful energy arrives from the west today. Give the people you meet a warm welcome.",
             "西の方角から、うれしい巡り合わせがやってくる日です。今日会う人を笑顔で迎えてみましょう。",
             "今天好运从西方而来。热情地迎接今天遇到的人吧。",
         ),
@@ -424,22 +424,22 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-57",
             "오늘의 행운의 색은 하얀색이에요. 깨끗한 흰 종이처럼 새로운 마음으로 하루를 보내 보세요.",
-            "Today's lucky color is white. Like a clean white page, meet the day with a fresh mind.",
+            "Today's lucky color is white. Go through your day with a mind as fresh as a clean white page.",
             "今日のラッキーカラーは白です。真っ白な紙のように、まっさらな気持ちで一日を過ごしましょう。",
             "今天的幸运色是白色。像一张干净的白纸一样，用崭新的心情面对这一天吧。",
         ),
         FortuneText(
             "g-58",
             "오늘의 행운의 숫자는 8이에요. 끝없이 이어지는 8처럼 좋은 인연이 오래가요.",
-            "Today's lucky number is 8. Like its endless loop, good connections keep going.",
+            "Today's lucky number is 8. Like the endless loop of an 8, good connections keep going.",
             "今日のラッキーナンバーは8です。途切れない8の形のように、良いご縁が続いていきます。",
             "今天的幸运数字是8。就像连绵不断的8一样，好缘分会一直延续。",
         ),
         FortuneText(
             "g-59",
             "오늘의 행운의 숫자는 5예요. 1부터 9까지의 한가운데인 5처럼 한쪽으로 치우치지 않는 균형이 힘이 돼요.",
-            "Today's lucky number is 5. Like 5 in the middle, staying balanced gives you strength.",
-            "今日のラッキーナンバーは5です。真ん中にある5のように、偏らないバランスが力になります。",
+            "Today's lucky number is 5. Just as 5 sits in the middle of 1 to 9, staying balanced gives you strength.",
+            "今日のラッキーナンバーは5です。1から9のちょうど真ん中にある5のように、偏らないバランスが力になります。",
             "今天的幸运数字是5。就像居中的5一样，不偏不倚的平衡会成为你的力量。",
         ),
         FortuneText(
@@ -529,9 +529,9 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-72",
             "창밖의 하늘을 잠깐 올려다보세요. 넓은 하늘처럼 마음에도 여유가 생겨요.",
-            "Look up at the sky for a moment. Like the open sky, your mind will find room.",
+            "Look up at the sky for a moment. Your mind will feel as open as the sky.",
             "窓の外の空を少し見上げてみましょう。広い空のように、心にもゆとりが生まれます。",
-            "抬头看看窗外的天空吧。像辽阔的天空一样，心里也会宽敞起来。",
+            "抬头看看窗外的天空吧。就像辽阔的天空一样，心胸也会开阔起来。",
         ),
         FortuneText(
             "g-73",
@@ -557,7 +557,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-76",
             "약속 장소에 조금 일찍 도착해 보세요. 기다리는 여유 속에서 좋은 생각이 떠올라요.",
-            "Try arriving a little early to your plans. Good ideas come in the calm of waiting.",
+            "Try arriving a little early when you're meeting someone. Good ideas come in the calm of waiting.",
             "約束の場所に少し早めに着いてみましょう。待つ余裕の中で良い考えが浮かびます。",
             "试着提前一点到约定的地方吧。在从容的等待中，会冒出好点子。",
         ),
@@ -571,7 +571,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-78",
             "고마운 사람의 이름을 한 번 불러 보세요. 이름을 부르는 다정함이 인연을 깊게 해요.",
-            "Call someone you're grateful for by name. The warmth of a name deepens a bond.",
+            "Say the name of someone you're grateful for. Warmly calling someone by name deepens a bond.",
             "感謝している人の名前を呼んでみましょう。名前を呼ぶやさしさが、ご縁を深めます。",
             "叫一叫你感激的人的名字吧。亲切地喊出名字，会让缘分更深。",
         ),
@@ -654,10 +654,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-90",
-            "새로운 낱말 하나를 배워 보는 날이에요. 작은 배움이 생각을 넓혀 줘요.",
-            "A day to learn one new word. A little learning broadens your thinking.",
-            "新しい言葉をひとつ覚えてみる日です。小さな学びが考えを広げてくれます。",
-            "今天学一个新词吧。小小的收获会拓宽你的思路。",
+            "새로운 낱말 하나를 배워 보는 날이에요. 오늘 배운 말을 대화에서 한 번 써 보세요.",
+            "A day to learn one new word. Try using it once in conversation today.",
+            "新しい言葉をひとつ覚えてみる日です。覚えた言葉を、今日の会話で一度使ってみましょう。",
+            "今天学一个新词吧。试着在聊天中用上一次。",
         ),
         FortuneText(
             "g-91",
@@ -691,7 +691,7 @@ internal object DailyFortuneCatalog {
             "g-95",
             "높은 곳에서 멀리 바라보면 생각이 넓어져요. 계단 몇 칸 위에서라도 풍경을 둘러보세요.",
             "Looking out from somewhere high broadens your thinking. Even from a few steps up, take in the view.",
-            "高いところから遠くを眺めると考えが広がります。階段を数段上がってでも、景色を見渡してみましょう。",
+            "高いところから遠くを眺めると考えが広がります。階段を数段上がるだけでもいいので、景色を見渡してみましょう。",
             "站在高处远眺，思路会更开阔。哪怕只登上几级台阶，也去看看风景吧。",
         ),
         FortuneText(
@@ -726,7 +726,7 @@ internal object DailyFortuneCatalog {
             "g-100",
             "나보다 어린 사람에게서 배울 점을 찾는 날이에요. 새로운 눈으로 보면 몰랐던 것이 보여요.",
             "A day to learn something from someone younger. Fresh eyes show you new things.",
-            "年下の人から学べることを見つける日です。新しい目で見ると、新しいものが見えます。",
+            "年下の人から学べることを見つける日です。新鮮な目で見ると、知らなかったことが見えてきます。",
             "今天试着向比你年轻的人学习吧。换个眼光，就会看到新东西。",
         ),
         FortuneText(
@@ -745,7 +745,7 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-103",
-            "빌린 것을 돌려주기 좋은 날이에요. 마음이 가벼워지면 운도 술술 흘러요.",
+            "빌린 것을 돌려주기 좋은 날이에요. 마음이 가벼워지면 운도 술술 풀려요.",
             "A good day to return something you borrowed. When your mind feels lighter, luck flows more freely.",
             "借りたものを返すのに良い日です。心が軽くなると、運の流れもよくなります。",
             "今天适合把借来的东西还回去。心里轻松了，好运也会更顺畅。",
@@ -755,7 +755,7 @@ internal object DailyFortuneCatalog {
             "안 쓰는 물건을 필요한 사람과 나눠 보세요. 내 손을 떠난 물건이 누군가의 기쁨이 돼요.",
             "Give things you don't use to someone who needs them. What leaves your hands becomes someone's joy.",
             "使わないものを必要な人に譲ってみましょう。手放したものが誰かの喜びになります。",
-            "把不用的东西送给需要的人吧。离开你手的东西会成为别人的快乐。",
+            "把不用的东西送给需要的人吧。你送出的东西会成为别人的快乐。",
         ),
         FortuneText(
             "g-105",
@@ -780,7 +780,7 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-108",
-            "겸손한 마음에 사람이 모이는 날이에요. 잘한 일도 자랑보다 감사로 말해 보세요.",
+            "겸손한 마음에 사람이 모이는 날이에요. 잘한 일도 자랑하기보다 감사하는 마음으로 이야기해 보세요.",
             "People gather around a humble heart today. Talk about your successes with gratitude rather than pride.",
             "謙虚な心に人が集まる日です。うまくいったことも、自慢より感謝として話してみましょう。",
             "今天谦虚的心会吸引人。做得好的事，也用感谢而不是炫耀来表达吧。",
@@ -811,7 +811,7 @@ internal object DailyFortuneCatalog {
             "좋아하는 향기가 기분을 바꿔 주는 날이에요. 마음에 드는 향을 곁에 두어 보세요.",
             "A favorite scent can lift your mood today. Keep a scent you like nearby.",
             "好きな香りが気分を変えてくれる日です。お気に入りの香りをそばに置いてみましょう。",
-            "今天喜欢的香味能改变心情。在身边放一种你喜欢的香气吧。",
+            "今天，喜欢的香味能改变心情。把一种你喜欢的香味带在身边吧。",
         ),
         FortuneText(
             "g-113",
@@ -843,7 +843,7 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-117",
-            "작은 깜짝 기쁨을 준비해 보세요. 누군가의 웃는 얼굴이 내 운도 밝혀 줘요.",
+            "주변 사람을 깜짝 기쁘게 할 작은 일을 준비해 보세요. 그 사람의 웃는 얼굴이 내 운도 밝혀 줘요.",
             "Plan a small happy surprise. Someone's smile will brighten your luck too.",
             "ちょっとしたサプライズを用意してみましょう。誰かの笑顔が自分の運も明るくします。",
             "准备一个小惊喜吧。别人的笑脸也会照亮你的好运。",
@@ -865,7 +865,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-120",
             "잠시 쉬었던 취미를 다시 꺼내 보세요. 즐거웠던 손맛이 되살아나요.",
-            "Pick up a hobby you set aside. The fun of it will come back to you.",
+            "Get back into a hobby you've set aside. The fun of it will come back to you.",
             "しばらく休んでいた趣味をもう一度始めてみましょう。楽しかった感覚がよみがえります。",
             "把搁置的爱好重新拾起来吧。那份乐趣会回来的。",
         ),
@@ -914,7 +914,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-127",
             "집안일을 함께 나누면 웃음이 늘어요. 오늘은 먼저 나서서 한 가지를 맡아 보세요.",
-            "Sharing chores means more laughter. Step up and take on one task first today.",
+            "Sharing chores means more laughter. Volunteer to take on one of them today.",
             "家事を分け合うと笑顔が増えます。今日は自分から進んでひとつ引き受けてみましょう。",
             "一起分担家务，笑声会更多。今天主动承担一件吧。",
         ),
@@ -935,7 +935,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-130",
             "가장 하기 싫은 일을 먼저 끝내 보세요. 큰 산을 넘고 나면 하루가 가벼워져요.",
-            "Get the task you least want to do out of the way first. Once you're over that hill, the day feels light.",
+            "Get the task you least want to do out of the way first. Once you're over that hill, the rest of the day feels lighter.",
             "いちばんやりたくないことを先に片づけてみましょう。大きな山を越えれば、一日が軽くなります。",
             "先把最不想做的事做完吧。翻过这座大山，这一天就轻松了。",
         ),
@@ -956,9 +956,9 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "g-133",
             "같은 일도 좋게 보면 좋은 일이 돼요. 오늘 생긴 일에서 좋은 점 하나를 찾아보세요.",
-            "Seen kindly, the same event becomes a good one. Find one good thing in what happens today.",
+            "Even the same event can turn out good when you see it kindly. Find one good thing in what happens today.",
             "同じことでも良く見れば良いことになります。今日あったことの中から、良い点をひとつ見つけてみましょう。",
-            "同一件事，往好处看就是好事。从今天发生的事里找一个优点吧。",
+            "同一件事，往好处看就是好事。在今天发生的事里找一找好的一面吧。",
         ),
         FortuneText(
             "g-134",
@@ -976,7 +976,7 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "g-136",
-            "오늘은 인내보다 즐거움이 힘이 되는 날이에요. 즐기면서 하면 더 오래 갈 수 있어요.",
+            "오늘은 인내보다 즐거움이 힘이 되는 날이에요. 즐기면서 하면 더 오래갈 수 있어요.",
             "Today, enjoyment gives you more strength than endurance. If you enjoy it, you can keep going longer.",
             "今日は我慢より楽しさが力になる日です。楽しみながらやれば、もっと長く続けられます。",
             "今天比起忍耐，乐趣更能给你力量。乐在其中，才能走得更久。",
@@ -999,7 +999,7 @@ internal object DailyFortuneCatalog {
             "g-139",
             "오늘은 귀가 밝아지는 날이에요. 지나가는 말 속에 좋은 힌트가 숨어 있어요.",
             "Your ears are sharp today. A good hint may be hidden in a passing remark.",
-            "今日は耳がさえる日です。何気ないひと言に良いヒントが隠れています。",
+            "今日は人の話がよく耳に入る日です。何気ないひと言に良いヒントが隠れています。",
             "今天耳朵特别灵。随口的一句话里可能藏着好提示。",
         ),
         FortuneText(
@@ -1041,7 +1041,7 @@ internal object DailyFortuneCatalog {
             "g-145",
             "새로 시작하는 사람을 응원해 주는 날이에요. 반이나 모임에 처음 온 친구가 있다면 먼저 도와주세요.",
             "A day to cheer on someone who's just starting out. If a newcomer joins your class or club, be the first to help.",
-            "新しく始める人を応援する日です。クラスやサークルに新しく来た友人がいたら、先に手を貸してあげましょう。",
+            "新しく始める人を応援する日です。クラスやサークルに入ったばかりの人がいたら、自分から手を貸してあげましょう。",
             "今天为刚起步的人加油吧。如果班级或社团里来了新朋友，就主动帮一把吧。",
         ),
         FortuneText(
@@ -1093,7 +1093,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "s-4",
             "별의 흐름이 새로운 시작을 가리켜요. 작은 도전 하나를 골라 보세요.",
-            "The stars point toward a new beginning. Pick one small challenge.",
+            "The stars point toward a new beginning. Pick one small challenge to take on.",
             "星の流れが新しい始まりを指しています。小さな挑戦をひとつ選んでみましょう。",
             "星象指向新的开始。选一件小事挑战一下吧。",
         ),
@@ -1115,7 +1115,7 @@ internal object DailyFortuneCatalog {
             "s-7",
             "금성의 기운이 다정함을 더해 줘요. 고마운 사람에게 작은 마음을 전해 보세요.",
             "Venus adds warmth to your day. Send a small token of thanks to someone you appreciate.",
-            "金星の力がやさしさを添えてくれます。感謝している人にささやかな気持ちを伝えてみましょう。",
+            "金星の力がやさしさを添えてくれます。感謝している人に、ささやかなお礼をしてみましょう。",
             "金星为你增添温柔。向想感谢的人送上一点小心意吧。",
         ),
         FortuneText(
@@ -1134,24 +1134,24 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-10",
-            "별들이 쉼표를 권하는 날이에요. 잠깐 손을 놓고 좋아하는 일로 마음을 채워 보세요.",
-            "The stars suggest taking a break today. Set things down for a while and fill your heart with something you love.",
-            "星たちがひと休みを勧める日です。少し手を止めて、好きなことで心を満たしましょう。",
-            "群星建议你今天歇一歇。暂时放下手头的事，用喜欢的事填满内心吧。",
+            "별들이 작은 나들이를 반기는 날이에요. 가 보고 싶었던 곳 하나를 정해 계획을 세워 보세요.",
+            "The stars welcome a little outing today. Pick one place you've wanted to visit and make a plan.",
+            "星たちが小さなお出かけを歓迎する日です。行ってみたかった場所をひとつ決めて、計画を立ててみましょう。",
+            "今天群星欢迎一次小小的出游。选一个一直想去的地方，做个计划吧。",
         ),
         FortuneText(
             "s-11",
             "행운의 흐름이 사람 사이에 있어요. 모임이나 약속에 기분 좋게 나가 보세요.",
-            "Luck flows between people today. Head out to a gathering or meetup with a light heart.",
+            "Luck flows between people today. Head out to a get-together or a hangout with friends in good spirits.",
             "幸運の流れは人と人の間にあります。集まりや約束に楽しい気持ちで出かけてみましょう。",
             "好运在人与人之间流动。高高兴兴地去参加聚会或赴约吧。",
         ),
         FortuneText(
             "s-12",
-            "별들이 꾸준한 노력을 지켜보고 있어요. 하던 일을 묵묵히 이어 가세요.",
-            "The stars are watching your steady effort. Quietly keep at what you're doing.",
-            "星たちがあなたのコツコツとした努力を見守っています。続けていることを黙々と進めましょう。",
-            "群星在看着你的坚持。默默把手上的事做下去吧。",
+            "별들이 꾸준한 노력을 지켜보고 있어요. 매일 하는 일을 마치면 달력에 작은 표시를 남겨 보세요.",
+            "The stars are watching your steady effort. When you finish a daily task, mark it on your calendar.",
+            "星たちがあなたの地道な努力を見守っています。毎日の習慣を終えたら、カレンダーに小さな印をつけてみましょう。",
+            "群星在看着你的坚持。每完成一件每天要做的事，就在日历上做个小记号吧。",
         ),
         FortuneText(
             "s-13",
@@ -1211,17 +1211,17 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-21",
-            "별들이 오래된 인연을 비춰요. 한동안 못 본 친구에게 안부를 전해 보세요.",
-            "The stars shine on old ties. Say hello to a friend you haven't seen in a while.",
-            "星たちが懐かしいご縁を照らします。しばらく会っていない友人に連絡して、近況を尋ねてみましょう。",
-            "群星照亮旧日的缘分。给好久不见的朋友捎个问候吧。",
+            "별들이 오래된 인연을 비춰요. 오랜 친구와 즐거운 약속을 하나 잡아 보세요.",
+            "The stars shine on old ties. Make fun plans with an old friend.",
+            "星たちが懐かしいご縁を照らします。古くからの友人と、楽しい約束をひとつしてみましょう。",
+            "群星照亮旧日的缘分。和老朋友约一件开心的事吧。",
         ),
         FortuneText(
             "s-22",
-            "화성의 기운이 의욕을 북돋아요. 몸을 움직이면 하루가 더 밝아져요.",
-            "Mars boosts your drive. Get moving and the day gets brighter.",
-            "火星の力がやる気を高めます。体を動かすと一日がもっと明るくなります。",
-            "火星激发你的干劲。动起来，这一天会更明亮。",
+            "화성의 기운이 의욕을 북돋아요. 평소보다 조금 높은 목표를 하나 세워 보세요.",
+            "Mars boosts your drive. Set yourself a goal a little higher than usual.",
+            "火星の力がやる気を高めます。いつもより少し高い目標をひとつ立ててみましょう。",
+            "火星激发你的干劲。给自己定一个比平时稍高一点的目标吧。",
         ),
         FortuneText(
             "s-23",
@@ -1232,10 +1232,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-24",
-            "별빛이 너그러움을 더해 주는 날이에요. 작은 실수는 웃으며 넘겨 보세요.",
-            "Starlight adds a little generosity to your day. Laugh off small mistakes.",
-            "星の光が心に寛大さを添えてくれる日です。小さな失敗は笑って受け流しましょう。",
-            "今天星光让你多一份宽容。小错误就一笑而过吧。",
+            "별빛이 너그러움을 더해 주는 날이에요. 다른 사람의 작은 실수는 웃으며 넘겨 주세요.",
+            "Starlight adds a little generosity to your day. Go easy on someone who makes a small mistake.",
+            "星の光が心に寛大さを添えてくれる日です。人の小さな失敗は、笑って大目に見てあげましょう。",
+            "今天星光让你多一份宽容。别人的小失误，就一笑而过吧。",
         ),
         FortuneText(
             "s-25",
@@ -1253,10 +1253,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-27",
-            "별들이 정돈된 공간을 좋아하는 날이에요. 주변을 깔끔하게 하면 기분도 맑아져요.",
-            "The stars like a tidy space today. Clean up around you and your mood will clear too.",
-            "星たちが整った空間を好む日です。身の回りをすっきりさせると気分も晴れます。",
-            "群星今天喜欢整洁的空间。把周围收拾干净，心情也会变好。",
+            "별들이 정돈된 공간을 좋아하는 날이에요. 가방이나 서랍 속을 한번 정리해 보세요.",
+            "The stars like a tidy space today. Sort out the inside of a bag or a drawer.",
+            "星たちが整った空間を好む日です。かばんや引き出しの中を一度整理してみましょう。",
+            "群星今天喜欢整洁的空间。把包或抽屉里整理一下吧。",
         ),
         FortuneText(
             "s-28",
@@ -1281,10 +1281,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-31",
-            "별들이 새로운 만남에 미소 짓는 날이에요. 처음 만나는 사람에게 먼저 웃어 보세요.",
-            "The stars smile on new encounters today. Smile first at someone you're meeting for the first time.",
-            "星たちが新しい出会いにほほえむ日です。初めて会う人に自分から笑顔を向けてみましょう。",
-            "今天群星眷顾新的相遇。对初次见面的人主动笑一笑吧。",
+            "별들이 새로운 만남에 미소 짓는 날이에요. 반이나 모임에서 처음 만나는 사람에게 먼저 웃어 보세요.",
+            "The stars smile on new encounters today. Smile first at someone new in your class or club.",
+            "星たちが新しい出会いにほほえむ日です。クラスやサークルで初めて会う人に、自分から笑顔を向けてみましょう。",
+            "今天群星眷顾新的相遇。在班级或社团里遇到新面孔时，主动笑一笑吧。",
         ),
         FortuneText(
             "s-32",
@@ -1295,10 +1295,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-33",
-            "행운의 흐름이 천천히 차오르는 날이에요. 미리 준비해 두면 기회를 잡기 쉬워요.",
-            "Luck builds slowly today. Prepare ahead and you'll catch your chance more easily.",
-            "幸運の流れがゆっくり満ちてくる日です。前もって準備しておくとチャンスをつかみやすくなります。",
-            "今天好运在一点点积聚。提前做好准备，更容易抓住机会。",
+            "행운의 흐름이 천천히 차오르는 날이에요. 내일 쓸 것을 오늘 미리 챙겨 두세요.",
+            "Luck builds slowly today. Get tomorrow's things ready ahead of time.",
+            "幸運の流れがゆっくり満ちてくる日です。明日の持ち物を、今日のうちにそろえておきましょう。",
+            "今天好运会慢慢积聚。把明天要用的东西今天就准备好吧。",
         ),
         FortuneText(
             "s-34",
@@ -1317,7 +1317,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "s-36",
             "오늘은 별들의 배치가 명쾌한 결정을 도와요. 미루던 선택을 가볍게 정해 보세요.",
-            "Today the stars line up for clear decisions. Make that choice you've been putting off without overthinking it.",
+            "Today the stars line up for clear decisions. Make that choice you've been putting off — no need to overthink it.",
             "今日は星の配置が迷いのない決断を助けてくれます。先延ばしにしていた選択を気軽に決めてみましょう。",
             "今天的星象有助于你果断做决定。把一直拖着的选择轻松定下来吧。",
         ),
@@ -1351,10 +1351,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-41",
-            "별빛이 길을 밝히듯 해답이 가까이 있어요. 가까운 사람에게 조언을 구해 보세요.",
-            "As starlight shows the way, the answer is close at hand. Ask someone near you for advice.",
-            "星の光が道を照らすように、答えはすぐ近くにあります。身近な人に助言を求めてみましょう。",
-            "就像星光照亮道路，答案就在身边。向身边的人请教一下吧。",
+            "별빛이 길을 밝히듯 해답이 가까이 있어요. 이미 알고 있는 것 속에서 답을 다시 찾아보세요.",
+            "As starlight shows the way, the answer is close at hand. Look for it again in what you already know.",
+            "星の光が道を照らすように、答えはすぐ近くにあります。すでに知っていることの中から、もう一度答えを探してみましょう。",
+            "就像星光照亮道路，答案就在身边。在你已经知道的东西里再找找答案吧。",
         ),
         FortuneText(
             "s-42",
@@ -1365,17 +1365,17 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-43",
-            "별들이 감사의 마음을 비추는 날이에요. 고마운 일을 세 가지 떠올려 보세요.",
-            "The stars shine on gratitude today. Think of three things you're thankful for.",
-            "星たちが感謝の気持ちを照らす日です。ありがたいことを三つ思い浮かべてみましょう。",
-            "群星今天照亮感恩之心。想想三件值得感谢的事吧。",
+            "별들이 감사의 마음을 비추는 날이에요. 늘 당연하게 여기던 것 하나에 고마움을 느껴 보세요.",
+            "The stars shine on gratitude today. Feel thankful for one thing you usually take for granted.",
+            "星たちが感謝の気持ちを照らす日です。当たり前だと思っていることの中から、「ありがとう」をひとつ見つけてみましょう。",
+            "群星今天照亮感恩之心。为一件平时习以为常的事心怀感激吧。",
         ),
         FortuneText(
             "s-44",
             "천왕성의 기운이 변화에 힘을 실어 줘요. 작은 습관 하나를 바꿔 보세요.",
             "Uranus backs change today. Try switching up one small habit.",
             "天王星の力が変化を後押ししてくれます。小さな習慣をひとつ変えてみましょう。",
-            "天王星为改变助力。试着改掉一个小习惯吧。",
+            "天王星为改变助力。试着调整一个小习惯吧。",
         ),
         FortuneText(
             "s-45",
@@ -1424,12 +1424,12 @@ internal object DailyFortuneCatalog {
             "명왕성의 기운이 변화를 응원해요. 오래된 틀에서 한 걸음 벗어나 보세요.",
             "Pluto cheers on a fresh start today. Take one step outside the box.",
             "冥王星の力が新しい変化を応援しています。古い枠から一歩踏み出してみましょう。",
-            "冥王星支持新的改变。试着从旧框架里迈出一步吧。",
+            "冥王星为你的蜕变加油。试着从旧框架里迈出一步吧。",
         ),
         FortuneText(
             "s-52",
             "북극성처럼 길을 알려 주는 별이 떠 있어요. 마음속 목표를 다시 한번 바라보세요.",
-            "Like the North Star, a guiding star is shining. Look again at the goal in your heart.",
+            "A star is shining to guide you, like the North Star. Look again at the goal in your heart.",
             "北極星のように道を示す星が輝いています。心の中の目標をもう一度見つめてみましょう。",
             "有一颗像北极星一样指路的星星在闪耀。再看看心中的目标吧。",
         ),
@@ -1438,7 +1438,7 @@ internal object DailyFortuneCatalog {
             "별과 별을 잇는 선처럼 사람과 사람을 잇는 날이에요. 취미가 같은 친구들을 한자리에 모아 함께 어울려 보세요.",
             "Like lines joining stars, today you connect people. Bring together friends who share a hobby.",
             "星と星をつなぐ線のように、人と人をつなぐ日です。趣味が同じ友人たちを集めて、一緒に過ごしてみましょう。",
-            "像连接星星的线一样，今天适合连接人与人。把爱好相同的朋友聚在一起玩吧。",
+            "就像连接星星的线，今天适合把人与人联系起来。约上爱好相同的朋友，一起玩吧。",
         ),
         FortuneText(
             "s-54",
@@ -1450,7 +1450,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "s-55",
             "별빛 아래 마음이 고요해지는 날이에요. 조용한 곳에서 잠시 나 자신과 대화해 보세요.",
-            "Your heart grows quiet under the starlight today. Find a quiet spot and talk with yourself for a while.",
+            "Your heart grows calm under the starlight today. Find a quiet spot and talk with yourself for a while.",
             "星の光の下で心が静まる日です。静かな場所で、少し自分と対話してみましょう。",
             "今天在星光下，心会安静下来。找个安静的地方，和自己聊一聊吧。",
         ),
@@ -1464,7 +1464,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "s-57",
             "별똥별을 기다리듯 설레는 마음이 찾아와요. 기대되는 일을 하나 만들어 보세요.",
-            "An excited feeling arrives, like waiting for a shooting star. Plan something to look forward to.",
+            "A thrill of anticipation arrives, like waiting for a shooting star. Plan something to look forward to.",
             "流れ星を待つようなわくわくした気持ちが訪れます。楽しみなことをひとつつくってみましょう。",
             "今天会有像等待流星时那样的雀跃心情。给自己安排一件值得期待的事吧。",
         ),
@@ -1478,7 +1478,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "s-59",
             "달빛이 따뜻한 추억을 비춰 줘요. 함께 웃었던 이야기를 친구와 나눠 보세요.",
-            "Moonlight shines on warm memories. Share a story you once laughed about with a friend.",
+            "Moonlight shines on warm memories. Reminisce with a friend about something you once laughed at together.",
             "月の光が温かい思い出を照らします。一緒に笑った話を友人と語り合ってみましょう。",
             "月光照亮温暖的回忆。和朋友聊聊曾经一起笑过的事吧。",
         ),
@@ -1575,10 +1575,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "s-73",
-            "태양과 화성이 함께 힘을 보태 주는 날이에요. 친구와 공놀이처럼 함께 뛰노는 놀이를 즐겨 보세요.",
+            "태양과 화성이 함께 힘을 보태 주는 날이에요. 친구와 함께 공놀이처럼 몸을 쓰는 활동을 즐겨 보세요.",
             "The Sun and Mars lend a hand together today. Enjoy an active game with friends, like playing ball.",
-            "太陽と火星がそろって力を貸してくれる日です。友人とボール遊びのように体を動かす遊びを楽しみましょう。",
-            "今天太阳和火星一起为你助力。和朋友一起玩玩球类等活动身体的游戏吧。",
+            "太陽と火星がそろって力を貸してくれる日です。ボール遊びなど、友人と体を動かす遊びを楽しみましょう。",
+            "今天太阳和火星一起为你助力。和朋友一起打打球，玩些跑跑跳跳的游戏吧。",
         ),
         FortuneText(
             "s-74",
@@ -1591,7 +1591,7 @@ internal object DailyFortuneCatalog {
             "s-75",
             "별빛을 보려면 불을 꺼야 하듯 잠시 화면을 꺼 보세요. 고요한 시간이 마음을 맑게 해 줘요.",
             "Just as you turn off the lights to see the stars, turn off your screen for a while. Quiet time clears your mind.",
-            "星を見るには明かりを消すように、少し画面を消してみましょう。静かな時間が心を澄ませてくれます。",
+            "星を見るときに明かりを消すように、少し画面を消してみましょう。静かな時間が心を澄ませてくれます。",
             "就像要关灯才能看见星星，暂时把屏幕关掉吧。安静的时光会让心变清澈。",
         ),
         FortuneText(
@@ -1694,7 +1694,7 @@ internal object DailyFortuneCatalog {
             "오늘은 공격보다 두터움에 운이 있어요. 서두르지 말고 한 수씩 단단히 두세요.",
             "Today, luck favors thickness over attack. Don't hurry — play each move solidly.",
             "今日は攻めより厚みに運があります。急がず一手ずつしっかり打ちましょう。",
-            "今天的好运在厚实而非进攻。别着急，一步一步下扎实。",
+            "今天的好运在于厚实，而不在于进攻。别着急，每一手都下得扎实些。",
         ),
         FortuneText(
             "b-2",
@@ -1761,10 +1761,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "b-11",
-            "패를 피하지 않는 용기가 운을 불러요. 팻감을 미리 헤아려 두세요.",
-            "The courage to fight ko brings luck today. Count your ko threats ahead of time.",
-            "コウを避けない勇気が運を呼びます。コウ材を前もって数えておきましょう。",
-            "不回避劫争的勇气会带来好运。提前数好劫材吧。",
+            "패를 피하지 않는 용기가 운을 불러요. 패가 나면 물러서지 말고 당당히 맞서 보세요.",
+            "The courage to fight ko brings luck today. When a ko appears, face it without flinching.",
+            "コウを避けない勇気が運を呼びます。コウになったら、ひるまず堂々と立ち向かいましょう。",
+            "不回避劫争的勇气会带来好运。出现劫争时，别退缩，勇敢面对吧。",
         ),
         FortuneText(
             "b-12",
@@ -1810,7 +1810,7 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "b-18",
-            "세력을 쌓기 좋은 날이에요. 당장의 집보다 먼 미래의 판을 그려 보세요.",
+            "세력을 쌓기 좋은 날이에요. 당장의 집보다 멀리 내다보며 판을 그려 보세요.",
             "A good day for building influence. Picture the board far ahead rather than immediate territory.",
             "勢力を築くのに良い日です。目先の地より、先の盤面を思い描きましょう。",
             "今天适合构筑外势。比起眼前的实地，想想以后的局面吧。",
@@ -1902,7 +1902,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "b-31",
             "작은 이득을 탐하지 않으면 더 큰 것을 얻어요. 욕심을 한 수만 참아 보세요.",
-            "Skip the small gains and you'll win the bigger game. Hold back your greed for just one move.",
+            "Skip the small gains and you'll get something bigger. Hold back your greed for just one move.",
             "目先の小さな得を欲張らなければ、大局で勝てます。欲張りたい気持ちを一手だけこらえてみましょう。",
             "不贪小利，就能赢得大局。想贪的时候，先忍住一手试试吧。",
         ),
@@ -1938,7 +1938,7 @@ internal object DailyFortuneCatalog {
             "b-36",
             "실수를 웃어넘기는 여유가 운을 지켜요. 다음 수가 언제나 더 중요해요.",
             "Being able to laugh off mistakes protects your luck. The next move always matters more.",
-            "失敗を笑って流す余裕が運を守ります。いつだって次の一手のほうが大切です。",
+            "ミスを笑い飛ばせる余裕が運を守ります。いつだって次の一手のほうが大切です。",
             "笑对失误的从容能守住好运。下一手永远更重要。",
         ),
         FortuneText(
@@ -1974,7 +1974,7 @@ internal object DailyFortuneCatalog {
             "오늘은 공격의 기운이 강해요. 상대의 약한 돌을 몰아붙이며 이득을 챙겨 보세요.",
             "Your attacking energy is strong today. Chase your opponent's weak stones and pick up profit along the way.",
             "今日は攻めの気が強い日です。相手の弱い石を追い立てながら得を重ねましょう。",
-            "今天进攻气势很强。追击对手的弱棋，顺势获利吧。",
+            "今天进攻气势很强。追击对手的弱棋，在攻击中顺势取得优势吧。",
         ),
         FortuneText(
             "b-42",
@@ -1988,7 +1988,7 @@ internal object DailyFortuneCatalog {
             "수상전에 강한 날이에요. 내 수와 상대 수를 차분히 세어 보고 싸움을 시작하세요.",
             "You're strong in capturing races today. Calmly count your liberties and your opponent's before starting the fight.",
             "攻め合いに強い日です。自分と相手の手数を落ち着いて数えてから戦いを始めましょう。",
-            "今天对杀很强。冷静数清双方的气，再开始战斗吧。",
+            "今天你特别擅长对杀。冷静数清双方的气，再开始战斗吧。",
         ),
         FortuneText(
             "b-44",
@@ -2029,7 +2029,7 @@ internal object DailyFortuneCatalog {
             "b-49",
             "호구를 치듯 빈틈을 미리 막아 두는 날이에요. 작은 틈을 메워 두면 걱정이 줄어요.",
             "Like playing a tiger's mouth, close up the gaps ahead of time today. Fill the small holes and your worries shrink.",
-            "虎の口を打つように、すき間を前もってふさいでおく日です。小さなすき間を埋めておけば、心配が減ります。",
+            "カケツギで備えるように、弱いところを前もって補っておく日です。小さなすき間を埋めておけば、心配が減ります。",
             "今天像补个虎口一样，提前堵住漏洞吧。把小缝隙补好，烦恼就会少。",
         ),
         FortuneText(
@@ -2056,14 +2056,14 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "b-53",
             "두 집을 내면 사는 것처럼 기본만 지키면 든든해요. 오늘 꼭 해야 할 두 가지를 먼저 챙기세요.",
-            "Just as two eyes mean life, sticking to the basics keeps you safe. Take care of the two things you must do today first.",
+            "Just as two eyes mean life, sticking to the basics keeps you safe. First, take care of the two things you must do today.",
             "二眼あれば生きるように、基本を守れば安心です。今日必ずすべき二つのことを先に片づけましょう。",
             "就像做出两只眼就能活，守住基本就很踏实。先把今天必须做的两件事办好吧。",
         ),
         FortuneText(
             "b-54",
             "빅처럼 서로 양보해야 모두가 사는 날이에요. 고집을 조금 내려놓으면 함께 웃을 수 있어요.",
-            "Like seki, everyone lives today only if both sides hold back. Let go of a little stubbornness and you can all smile.",
+            "Like seki, today both sides live only if each holds back. Let go of a little stubbornness and you can all smile.",
             "セキのように、お互いに譲ってこそみんなが生きる日です。少し意地を手放せば、一緒に笑えます。",
             "今天像双活一样，彼此退让才能共存。放下一点固执，大家都能笑。",
         ),
@@ -2092,7 +2092,7 @@ internal object DailyFortuneCatalog {
             "b-58",
             "단수를 먼저 보는 눈이 밝은 날이에요. 급한 일부터 손을 쓰면 판이 편해져요.",
             "Your eye for ataris is sharp today. Deal with the urgent things first and the game gets easier.",
-            "アタリをいち早く見つける目がさえる日です。急ぎのことから手を打てば碁が楽になります。",
+            "アタリをいち早く見つける目が利く日です。急ぎのことから手を打てば、碁が楽になります。",
             "今天对打吃特别敏感。先处理要紧的事，棋就好下了。",
         ),
         FortuneText(
@@ -2114,7 +2114,7 @@ internal object DailyFortuneCatalog {
             "붙여서 수를 내는 감각이 좋은 날이에요. 막혀 보이는 곳에도 붙이면 길이 생겨요.",
             "Your feel for contact plays is good today. Even where things look blocked, an attachment can open a path.",
             "ツケて手をつくる感覚が良い日です。行き詰まって見える所も、ツケてみれば道が開けます。",
-            "今天碰的手感很好。看似堵住的地方，碰一下就会有出路。",
+            "今天借碰出棋的感觉很好。看似堵住的地方，碰一下就会有出路。",
         ),
         FortuneText(
             "b-62",
@@ -2140,7 +2140,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "b-65",
             "굳힘처럼 내 자리를 단단히 하는 날이에요. 지킬 것을 먼저 지키면 마음이 편해요.",
-            "Secure your own ground today, like an enclosure. Protect what matters first and you'll feel at ease.",
+            "Secure your own ground today, like a corner enclosure. Protect what matters first and you'll feel at ease.",
             "シマリのように自分の陣地を固める日です。守るべきものを先に守れば気持ちが楽になります。",
             "今天像守角一样稳住自己的阵地。先守住该守的，心里就踏实。",
         ),
@@ -2217,7 +2217,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "b-76",
             "계가가 즐거운 날이에요. 대국을 마치고 집을 세며 오늘의 한 판을 돌아보세요.",
-            "Counting up is fun today. When the game ends, count the territory and look back on today's game.",
+            "Scoring the game is fun today. When it ends, count the territory and look back on how it went.",
             "整地が楽しい日です。対局を終えたら地を数えて、今日の一局を振り返りましょう。",
             "今天数目也是一种乐趣。下完棋数一数目，回顾今天这盘棋吧。",
         ),
@@ -2309,15 +2309,15 @@ internal object DailyFortuneCatalog {
             "b-89",
             "겸손한 마음이 빛나는 날이에요. 이겼을 때일수록 상대에게 고마움을 전해 보세요.",
             "A humble heart shines even in victory today. When you win, be sure to thank your opponent.",
-            "勝った碁でも謙虚な心が光る日です。勝ったときこそ、相手に感謝を伝えましょう。",
+            "謙虚な心が光る日です。勝ったときこそ、相手に感謝を伝えましょう。",
             "今天赢了棋也要保持谦虚。越是赢了，越要向对手表达感谢。",
         ),
         FortuneText(
             "b-90",
-            "승패와 상관없이 웃으며 마무리하는 날이에요. 돌을 거두며 다음 판을 기약해 보세요.",
-            "Win or lose, finish every game with a smile today. As you clear the stones, look forward to the next one.",
-            "勝ち負けに関係なく、笑顔で締めくくる日です。石を片づけながら、次の一局を楽しみにしましょう。",
-            "今天不论输赢，都笑着收尾吧。收拾棋子时，期待下一盘。",
+            "승패와 상관없이 웃으며 마무리하는 날이에요. 이긴 판이든 진 판이든 즐거웠던 한 수를 떠올려 보세요.",
+            "Win or lose, finish every game with a smile today. Whatever the result, recall one move you enjoyed.",
+            "勝ち負けに関係なく、笑顔で締めくくる日です。勝っても負けても、楽しかった一手を思い出してみましょう。",
+            "今天不论输赢，都笑着收尾吧。想一想这盘棋里让你开心的一手。",
         ),
         FortuneText(
             "b-91",
@@ -2398,10 +2398,10 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "b-102",
-            "바꿔치기가 잘 통하는 날이에요. 작은 돌을 내주고 큰 자리를 차지하는 길을 찾아보세요.",
+            "바꿔치기가 잘 통하는 날이에요. 돌 몇 점을 내주고 큰 자리를 차지하는 길을 찾아보세요.",
             "Trades on the board go your way today. Look for ways to give up a few stones and take a big point.",
-            "振り替わりがうまくいく日です。小さな石を渡して大きな場所を取る道を探してみましょう。",
-            "今天棋盘上的转换很顺利。找找舍弃几颗小子、抢占大场的下法吧。",
+            "振り替わりがうまくいく日です。少しの石を捨てて、大場を取る道を探してみましょう。",
+            "今天棋盘上的转换很顺利。找找舍弃几颗棋子、抢占大场的下法吧。",
         ),
         FortuneText(
             "b-103",
@@ -2428,7 +2428,7 @@ internal object DailyFortuneCatalog {
             "b-106",
             "갈라치기 한 수가 판을 넓게 쓰게 하는 날이에요. 상대의 두 진영 사이에 내 자리를 마련해 보세요.",
             "A splitting move opens up the whole board today. Stake out your own spot between your opponent's large areas.",
-            "ワリウチの一手で盤を広く使える日です。相手の広い所の間に、自分の居場所をつくってみましょう。",
+            "ワリウチの一手で盤を広く使える日です。相手の二つの陣地の間に、自分の居場所をつくってみましょう。",
             "今天一手分投能让你把棋盘用得更开阔。在对手宽阔的地盘之间，给自己找个位置吧。",
         ),
         FortuneText(
@@ -2471,7 +2471,7 @@ internal object DailyFortuneCatalog {
             "가장 자연스러운 수가 정답인 날이에요. 어렵게 꼬지 말고 손이 가는 곳을 믿어 보세요.",
             "The most natural move is the right one today. Don't overcomplicate it — trust where your hand wants to go.",
             "いちばん自然な手が正解の日です。難しくひねらず、手が伸びる場所を信じてみましょう。",
-            "今天最自然的一手就是正解。别想得太复杂，相信手自然想落的地方。",
+            "今天最自然的一手就是正解。别想得太复杂，相信你的第一感吧。",
         ),
         FortuneText(
             "b-113",
@@ -2490,7 +2490,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "b-115",
             "추천 수를 보며 새 길을 배우는 날이에요. 왜 그 수인지 스스로 이유를 찾아보세요.",
-            "A day to learn new paths from the top moves. Work out for yourself why each one is good.",
+            "A day to learn new ideas from Top moves. Work out for yourself why each one is good.",
             "候補手を見ながら新しい道を学ぶ日です。なぜその手なのか、自分で理由を探してみましょう。",
             "今天看着推荐手学习新思路吧。自己想想为什么是那一手。",
         ),
@@ -2517,17 +2517,17 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "b-119",
-            "공격의 방향을 잘 고르는 날이에요. 상대를 내 세력 쪽으로 몰아 보세요.",
-            "You choose the right direction of attack today. Drive your opponent toward your own strength.",
-            "攻めの方向をうまく選べる日です。相手を自分の厚みのほうへ追い込んでみましょう。",
-            "今天进攻方向选得很准。把对手往自己的外势那边赶吧。",
+            "공격의 방향을 잘 고르는 날이에요. 상대 돌을 잡으려 하기보다 어느 쪽으로 몰지 먼저 정해 보세요.",
+            "You choose the right direction of attack today. Before trying to capture, decide which way to drive your opponent's stones.",
+            "攻めの方向をうまく選べる日です。相手の石を取ろうとするより、どちらへ追うかを先に決めてみましょう。",
+            "今天进攻方向选得很准。与其急着吃子，不如先想好往哪边赶。",
         ),
         FortuneText(
             "b-120",
             "오늘 둔 바둑에서 배운 점을 한 줄로 적어 보세요. 작은 메모가 실력을 쌓아 줘요.",
             "Write one line about what you learned from today's game. Small notes build real strength.",
             "今日打った碁から学んだことを一行書いてみましょう。小さなメモが実力を積み上げます。",
-            "把今天下棋学到的东西写成一句话吧。小小的笔记会积累实力。",
+            "把今天下棋学到的东西写成一句话吧。小小的笔记能帮你积累实力。",
         ),
         FortuneText(
             "b-121",
@@ -2538,7 +2538,7 @@ internal object DailyFortuneCatalog {
         ),
         FortuneText(
             "b-122",
-            "나보다 센 상대와 두기 좋은 날이에요. 결과보다 배운 만큼 강해진다는 마음으로 두어 보세요.",
+            "나보다 센 상대와 두기 좋은 날이에요. 결과와 상관없이 배운 만큼 강해진다는 마음으로 두어 보세요.",
             "A good day to play someone stronger than you. Whatever the result, play knowing that every lesson helps you grow.",
             "自分より強い相手と打つのに良い日です。結果より、学んだ分だけ強くなると思って打ってみましょう。",
             "今天适合和比你强的对手下棋。别在意结果，带着“学到多少就进步多少”的心态去下吧。",
@@ -2553,7 +2553,7 @@ internal object DailyFortuneCatalog {
         FortuneText(
             "b-124",
             "오늘은 평소와 다른 색 돌로 두어 보기 좋은 날이에요. 반대편에서 보면 판이 새롭게 보여요.",
-            "A good day to play with the other color from usual. From the other side, the game looks new.",
+            "A good day to play the color you don't usually play. From the other side, the game looks new.",
             "今日はいつもと違う色の石で打ってみるのに良い日です。反対側から見ると、碁が新しく見えます。",
             "今天适合换一种颜色的棋子下一盘。换到另一边，棋局会显得很新鲜。",
         ),
