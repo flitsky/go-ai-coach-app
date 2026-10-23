@@ -61,7 +61,7 @@ import kotlin.random.Random
 
 /**
  * 셋째 페이지 「실험실」(#280, 사용자 2026-10-22 — 처음에는 「학습 하기」였고, 학습은 대국 페이지의 타일로 갔다).
- * **섹션 셋 + 타일 하나**(#281 · #283, 사용자 2026-10-23): 명언록(제목 줄 오른쪽에 「+ 나만의 명언 추가 (준비 중)」) → 오늘의 운세(#276 — 카드 안 가운데에 「준비 중」)
+ * **섹션 셋 + 타일 하나**(#281 · #283, 사용자 2026-10-23): 명언록(제목 줄 오른쪽에 「+ 나만의 명언 추가 (준비 중)」) → 오늘의 운세(#276 — `DailyFortuneCard`)
  * → **1일 1회 뽑기**(#283) → **바둑판 사진 분석** 타일(오른쪽 아래, 사용자 2026-10-22). 「준비 중」 칸 둘(나만의 명언 추가하기 · 이름 없는 빈자리)은 없앴다.
  *
  * ⚠️ 아직 없는 실험은 눌리지 않는다 — 누를 것처럼 보이는 모양(타일 · 단추)으로 두지 않는다(학습 허브의 U-16과 같은 결). 스토어 글에는 적지 않는다(함정 51).
@@ -81,26 +81,9 @@ internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modi
     ) {
         QuoteBookCarousel()
         Spacer(modifier = Modifier.height(AppSpacing.Space4))
-        // 오늘의 운세(#276) — 명언록과 같은 섹션 모양. 아직 없으니 카드 안 가운데에 「준비 중」뿐이고 눌리지 않는다.
+        // 오늘의 운세(#276, 사용자 2026-10-23) — 띠 · 별자리를 고르면 운세 셋(띠 또는 별자리 · 바둑 · 행운의 자리), 광고로 하루 3번 갱신. 규칙은 shared `DailyFortune.kt`.
         LabSectionHeader(title = labFortuneTitleFor(language))
-        Box(
-            modifier = Modifier
-                .padding(horizontal = AppSpacing.Space16)
-                .fillMaxWidth()
-                .heightIn(min = LabComingSoonCardMinHeight)
-                .clip(RoundedCornerShape(AppRadius.Corner24))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = studyComingSoonFor(language),
-                fontSize = AppTextSize.Text14,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(AppSpacing.Space16),
-            )
-        }
+        DailyFortuneCard(modifier = Modifier.padding(horizontal = AppSpacing.Space16))
         Spacer(modifier = Modifier.height(AppSpacing.Space4))
         // 1일 1회 뽑기(#283, 사용자 2026-10-23) — 광고 1편(구독자는 광고 없이)으로 하루 한 번. 규칙은 shared `DailyDraw.kt`, 카드는 `ui.monetization`.
         LabSectionHeader(title = dailyDrawTitleFor(language))
@@ -251,6 +234,3 @@ private fun LabSectionHeader(title: String, trailing: String? = null) {
         }
     }
 }
-
-/** 「준비 중」 섹션 카드의 최소 키 — 스레드가 정한 값(#281). */
-private val LabComingSoonCardMinHeight = 96.dp
