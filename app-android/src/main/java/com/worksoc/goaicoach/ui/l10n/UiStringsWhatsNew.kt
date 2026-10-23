@@ -19,6 +19,32 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.8.1 — #286 「일반 대국」 · 승급 대국이 지난 설정을 기억 · 대국 페이지 타일 아이콘(사용자 2026-10-23 — 1.8.0을 내지 않고 1.8.1로 낸다).
+        // 1.7.0에서 오는 사람에게는 1.8.0 묶음과 함께 뜬다(`whatsNewPending`) — 여기에는 1.8.0 뒤의 것만 적는다.
+        WhatsNewRelease(versionCode = 10801, versionName = "1.8.1") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "「캐릭터 대국」의 이름이 「일반 대국」으로 바뀌었어요.",
+                    "승급 대국이 지난번에 고른 진영과 판 크기를 기억해요.",
+                    "대국 페이지의 메뉴 아이콘이 새로워졌어요.",
+                )
+                UiLanguage.English -> listOf(
+                    "Character Match is now called Standard Match.",
+                    "Rank Match remembers the side and board size you chose last time.",
+                    "New icons for the menus on the Play page.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "「キャラクター対局」の名前が「通常対局」になりました。",
+                    "昇級対局が前回選んだ手番と碁盤のサイズを覚えています。",
+                    "対局ページのメニューのアイコンが新しくなりました。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "「角色对局」更名为「普通对局」。",
+                    "升级对局会记住上次选择的执子和棋盘大小。",
+                    "对弈页面的菜单图标焕然一新。",
+                )
+            }
+        },
         // 1.8.0 — #280 세 페이지 홈(내 정보 ‹ 대국 › 실험실) · #281 움직임(Material3 1.4.0) · 명언록 · #276 오늘의 운세(랜덤 운세 — 별자리별 · 띠별은 준비 중이라 적지 않는다) ·
         // #283 1일 1회 뽑기 · #282 야간 모드의 어두운 바둑판(사용자 2026-10-23 — 1.8.0으로 낸다).
         WhatsNewRelease(versionCode = 10800, versionName = "1.8.0") { language ->
