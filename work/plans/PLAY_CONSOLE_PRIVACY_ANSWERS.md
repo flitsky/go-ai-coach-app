@@ -47,10 +47,10 @@ https://rezen.dev/apps/baduk-ai/privacy/
 ```
 
 - 2026-10-21에 rezen.dev가 한 트리(`/apps/<앱>/`)로 통합되면서 정식 위치가 바뀌었다.
-  옛 값 `https://rezen.dev/go-ai-coach/privacy/`는 1.6.0 이하 바이너리가 열기 때문에
+  옛 값 `https://rezen.dev/go-ai-coach/privacy/`는 1.7.0 이하 바이너리가 열기 때문에
   rezen-dev가 **같은 본문으로 영구히 200**을 낸다(`contracts/urls.json`이 감시). 지우거나 리다이렉트하지 않는다.
 - ✅ 앱은 `SettingsScreen.kt`의 `PRIVACY_POLICY_URL` 상수를 설정 화면 「개인정보처리방침」 행에서
-  `ACTION_VIEW`로 띄운다. 1.6.0 다음 빌드부터 새 주소를 연다.
+  `ACTION_VIEW`로 띄운다. 1.7.0 다음 빌드부터 새 주소를 연다.
 - ✅ 문서 원문은 이 저장소에 없다. **형제 저장소** `/Users/ryan9kim/worksoc/rezen.dev`(모노레포)의
   `web/site/src/components/legal/BadukAiPrivacy.astro`가 소스다(두 주소가 이 컴포넌트 하나를 렌더한다).
   아래 2026-09 기록의 `src/pages/go-ai-coach/privacy/index.astro`는 그 이전 위치다.
