@@ -131,9 +131,10 @@ private fun QuoteBookCard() {
     if (entries.isEmpty()) return
     val todayIndex = entries.indexOfFirst { it.isToday }.coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = todayIndex) { entries.size }
+    // 모서리는 대국 페이지의 카드 결을 따른다(#281 A안) — 넓은 카드라 크게 둥글다.
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppRadius.Corner14),
+        shape = RoundedCornerShape(AppRadius.Corner24),
         color = colors.surfaceVariant,
     ) {
         Column(modifier = Modifier.padding(vertical = AppSpacing.Space16)) {
@@ -191,7 +192,7 @@ private fun LabPlaceholderTile(title: String?, icon: ImageVector, modifier: Modi
     val language = LocalUiStrings.current.language
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(AppRadius.Corner14))
+            .clip(RoundedCornerShape(MenuTileCorner))
             .background(colors.surfaceVariant.copy(alpha = 0.5f))
             .heightIn(min = LabTileMinHeight)
             .padding(start = AppSpacing.Space8, top = AppSpacing.Space10, end = AppSpacing.Space12, bottom = AppSpacing.Space10),

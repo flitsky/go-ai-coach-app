@@ -73,6 +73,18 @@ internal object HomeLogoPalette {
 }
 
 /**
+ * 홈 아래 탭 줄의 바탕(백로그 #281 A안, 사용자 2026-10-23) — 구분선 없이 **바탕 톤**으로 페이지와 가른다.
+ * 밝은 쪽은 페이지 크림(`background`)보다 한 단 짙고, 어두운 쪽은 페이지(`#1A1815`)와 카드(`surface` `#24211D`) 사이다.
+ * ⚠️ 테마의 `surfaceContainer`를 쓰지 않는 이유: 앱의 두 색 구성이 그 역할을 채우지 않아 M3 기본(보라 끼)이 들어 있고,
+ *   그 역할을 채우면 메뉴 · 대화창 같은 다른 부품의 바탕까지 함께 바뀐다.
+ */
+internal object HomeTabBarPalette {
+    val Container: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Color(0xFF221F1B) else Color(0xFFEFE8DA)
+}
+
+/**
  * 사용자 아바타 원. ⚠️ [Backgrounds]는 **전부 흰 글자([Initial])가 읽히는 어두운 색이다** — 밝은 색을
  * 더하면 원 안 글자가 사라진다.
  */

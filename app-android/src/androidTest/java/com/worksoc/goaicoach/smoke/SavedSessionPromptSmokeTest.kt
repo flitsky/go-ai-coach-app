@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 /**
  * M-04 smoke coverage: the saved-session-prompt flow. Seeds a resumable
  * [SavedGameSnapshot] into the real [GameSessionStore] (SharedPreferences)
- * before composing, then verifies the blinking "이어하기" pill appears on
+ * before composing, then verifies the breathing "이어하기" pill appears on
  * Home, tapping it shows the resume dialog (`ResumeSavedSessionDialog`), and
  * confirming resume navigates into the board with the saved move already
  * applied -- not just that some board appears, but that the *restored* state

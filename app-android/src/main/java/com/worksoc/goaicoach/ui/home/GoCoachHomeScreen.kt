@@ -1,20 +1,27 @@
 package com.worksoc.goaicoach.ui.home
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.LinearEasing
+import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,7 +32,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -44,12 +53,12 @@ import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,6 +86,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -102,11 +112,13 @@ import com.worksoc.goaicoach.shared.policy.customRank
 import com.worksoc.goaicoach.shared.policy.customRankFallbackTier
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppMotion
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterSquareIcon
 import com.worksoc.goaicoach.ui.designsystem.HomeLogoPalette
+import com.worksoc.goaicoach.ui.designsystem.HomeTabBarPalette
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
@@ -199,8 +211,27 @@ internal fun GoCoachHomeScreen(
         snapshotFlow { pagerState.currentPage }.collect { page -> HomePageMemory.page = HomePage.entries[page] }
     }
     val scope = rememberCoroutineScope()
-    val showPage: (HomePage) -> Unit = { page -> scope.launch { pagerState.animateScrollToPage(page.ordinal) } }
-    BackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal) { showPage(HomePage.Play) }
+    // 탭을 누르면 Expressive 스프링으로 넘어간다(#281 A안) — 아래 탭의 알약이 페이지 위치를 따라가므로 알약도 같은 스프링으로 미끄러진다.
+    val showPage: (HomePage) -> Unit = { page -> scope.launch { pagerState.animateScrollToPage(page.ordinal, animationSpec = AppMotion.defaultSpatial()) } }
+    // 옆 페이지의 뒤로가기는 가운데로(#280 ⑦) — 예측 뒤로가기(#281): 뒤로 제스처를 끄는 동안 가운데 페이지가 손가락만큼 들어오고,
+    // 놓으면 가운데로 넘어가며, 거두면 제자리로 돌아온다. 제스처의 진행을 주지 않는 기기(Android 13 이하 · 버튼 내비)에서는 곧바로 가운데로 간다.
+    // ⚠️ 끄는 동안의 비율은 [PredictiveBackPeek]까지 — 반(0.5)을 넘으면 `currentPage`가 바뀌어 이 처리기가 꺼진다.
+    // ⚠️ 마지막 넘김은 이 처리기의 코루틴이 아니라 **화면의 스코프**에서 돌린다 — 넘어가는 도중 가운데가 되면 처리기가 꺼지고, 꺼질 때
+    //   `PredictiveBackHandlerCallback.setIsEnabled(false)`가 그 코루틴을 취소한다(activity-compose 1.10.1 바이트코드로 확인). 처리기 안에서 넘기면
+    //   반쯤 가다 멈추고, 취소를 「거둔 제스처」로 읽으면 옆 페이지로 되돌아간다.
+    PredictiveBackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal) { progress ->
+        val from = pagerState.currentPage
+        val toward = if (from < HomePage.Play.ordinal) 1f else -1f
+        var committed = false
+        try {
+            progress.collect { event -> pagerState.scrollToPage(from, toward * event.progress * PredictiveBackPeek) }
+            committed = true
+        } finally {
+            // 놓았으면 가운데로, 거뒀으면(취소) 제자리로.
+            val target = if (committed) HomePage.Play.ordinal else from
+            scope.launch { pagerState.animateScrollToPage(target, animationSpec = AppMotion.defaultSpatial()) }
+        }
+    }
 
     // 업데이트 안내(#270)의 코치마크가 화면 전체를 덮어야 해서 한 겹 감싼다.
     Box(modifier = modifier.fillMaxSize()) {
@@ -223,25 +254,30 @@ internal fun GoCoachHomeScreen(
                     .weight(1f)
                     .fillMaxWidth(),
             ) { index ->
-                when (HomePage.entries[index]) {
-                    HomePage.MyInfo -> myInfoPage()
-                    HomePage.Play -> HomePlayPage(
-                        hasResumableSession = hasResumableSession,
-                        onResumeClick = onResumeClick,
-                        onStartMatchClick = { if (hasResumableSession) showOverwriteWarningDialog = true else onStartMatchClick() },
-                        onRankMeasureClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
-                        onGameHistoryClick = onGameHistoryClick,
-                        onGameRecordsClick = onGameRecordsClick,
-                        onLifeAndDeathClick = onLifeAndDeathClick,
-                        onBasicsClick = onBasicsClick,
-                        onBoardScanClick = onBoardScanClick,
-                        playerSetup = playerSetup,
-                        topNotice = topNotice,
-                    )
-                    HomePage.Lab -> HomeLabPage(onBoardScanClick = onBoardScanClick)
+                // 큰 화면(접는 폰 · 태블릿)에서 카드가 끝까지 늘어나지 않게 페이지 내용의 폭을 [HomePageMaxWidth]에서 멈추고 가운데에 둔다(#281). 폰 폭에는 아무 일도 없다.
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    Box(modifier = Modifier.widthIn(max = HomePageMaxWidth).fillMaxHeight()) {
+                        when (HomePage.entries[index]) {
+                            HomePage.MyInfo -> myInfoPage()
+                            HomePage.Play -> HomePlayPage(
+                                hasResumableSession = hasResumableSession,
+                                onResumeClick = onResumeClick,
+                                onStartMatchClick = { if (hasResumableSession) showOverwriteWarningDialog = true else onStartMatchClick() },
+                                onRankMeasureClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
+                                onGameHistoryClick = onGameHistoryClick,
+                                onGameRecordsClick = onGameRecordsClick,
+                                onLifeAndDeathClick = onLifeAndDeathClick,
+                                onBasicsClick = onBasicsClick,
+                                onBoardScanClick = onBoardScanClick,
+                                playerSetup = playerSetup,
+                                topNotice = topNotice,
+                            )
+                            HomePage.Lab -> HomeLabPage(onBoardScanClick = onBoardScanClick)
+                        }
+                    }
                 }
             }
-            HomePageTabBar(current = HomePage.entries[pagerState.currentPage], onSelect = showPage)
+            HomePageTabBar(pagerState = pagerState, onSelect = showPage)
         }
         // 윗줄 배경음악 버튼의 업데이트 안내(#270 — 1.6.x에서 한 번). 「새로워진 점」·출석 팝업이 닫힌 뒤에 뜬다(둘 다 `TrackWhileShown`).
         // ⚠️ `Column` **뒤**에 둔다 — 코치마크의 흡수 층이 홈의 카드·칩보다 위에 있어야 어디를 눌러도 안내만 넘어간다(대국 화면 앵커와 같은 이유).
@@ -318,6 +354,12 @@ internal enum class HomePage { MyInfo, Play, Lab }
 internal object HomePageMemory {
     var page: HomePage = HomePage.Play
 }
+
+/** 예측 뒤로가기를 끝까지 끌었을 때 가운데 페이지가 들어오는 비율(#281) — 스레드가 정한 값. 0.5를 넘기면 안 된다(`scrollToPage`의 범위 · 처리기가 꺼진다). */
+private const val PredictiveBackPeek = 0.3f
+
+/** 큰 화면에서 페이지 내용이 넓어질 수 있는 끝(#281) — 큰 화면의 문턱(sw 600dp)과 같은 값, 스레드가 정했다. */
+private val HomePageMaxWidth = 600.dp
 
 /**
  * 세 페이지 공통 윗줄(#280 ④) — 왼쪽에 앱의 로고 한 줄, 오른쪽 끝에 빠른 버튼 묶음(#270)과 설정. 「내 정보」 칩은 페이지가 되며 빠졌다(아래 탭이 대신한다).
@@ -432,26 +474,30 @@ private fun HomePlayPage(
         // 메뉴는 남는 세로의 가운데에 선다 — 위아래 가중치 여백이 나눠 갖는다(로고는 윗줄로 갔다, #280 ③ B안).
         Spacer(modifier = Modifier.weight(1f))
 
-        // 저장된 대국이 있을 때 노출되는 확대 및 깜빡이는 "이전 대국 이어하기" 버튼
+        // 저장된 대국이 있을 때 노출되는 "이전 대국 이어하기" 버튼 — 눈길을 끄는 움직임은 깜빡임이 아니라 **숨쉬기**다(#281 A안, 사용자 2026-10-23):
+        // 글자가 흐려지지 않아 읽기 쉽고(옛 깜빡임은 투명도 0.35까지 내려갔다), 알약 전체가 천천히 커졌다 작아진다.
         if (hasResumableSession) {
-            val infiniteTransition = rememberInfiniteTransition(label = "resumeBlink")
-            val blinkingAlpha by infiniteTransition.animateFloat(
-                initialValue = 0.35f,
-                targetValue = 1.0f,
+            val breath by rememberInfiniteTransition(label = "resumeBreath").animateFloat(
+                initialValue = 1f,
+                targetValue = ResumeBreathScale,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 800, easing = LinearEasing),
+                    animation = tween(durationMillis = ResumeBreathMillis, easing = FastOutSlowInEasing),
                     repeatMode = RepeatMode.Reverse,
                 ),
-                label = "blinkingAlpha",
+                label = "resumeBreathScale",
             )
 
             Box(
                 modifier = Modifier
                     .padding(bottom = AppSpacing.Space16)
-                    .clip(RoundedCornerShape(20.dp))
+                    .graphicsLayer {
+                        scaleX = breath
+                        scaleY = breath
+                    }
+                    .clip(RoundedCornerShape(percent = 50))
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                     .clickable(onClick = onResumeClick)
-                    .padding(horizontal = AppSpacing.Space18, vertical = AppSpacing.Space10),
+                    .padding(horizontal = AppSpacing.Space20, vertical = AppSpacing.Space10),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -460,7 +506,6 @@ private fun HomePlayPage(
                     fontSize = AppTextSize.Text18,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.graphicsLayer { alpha = blinkingAlpha },
                 )
             }
         }
@@ -525,65 +570,23 @@ private fun HomePlayPage(
         Spacer(modifier = Modifier.weight(1f))
 
         // 「바둑판 사진 분석」은 페이지 오른쪽 아래의 **카메라 단추 하나**다(#280, 사용자 2026-10-22 — 아는 사람은 여기로, 이름 붙은 입구는 실험실 페이지).
+        // #281 A안: 맨 아이콘이 아니라 타일과 같은 바탕의 둥근 네모에 담는다 — 누를 수 있는 것으로 읽히고, 누르면 타일처럼 모양이 바뀐다.
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            IconButton(onClick = onBoardScanClick) {
-                Icon(
-                    imageVector = BoardScanCameraIcon,
-                    contentDescription = strings.featureShortName(FeatureId.BoardScan),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                )
-            }
-        }
-    }
-}
-
-/**
- * 아래 탭 셋(#280 ②) — 지금 페이지를 진하게 보이고(아이콘 뒤 옅은 알약), 누르면 그 페이지로 넘긴다. 넘기기만으로는 옆에 무엇이 있는지 모르고 지나치기 쉽다.
- * 키는 최소 높이만 준다 — 글꼴 배율 1.3에서 이름이 두 줄이 돼도 잘리지 않게(함정 9).
- */
-@Composable
-private fun HomePageTabBar(current: HomePage, onSelect: (HomePage) -> Unit) {
-    val strings = LocalUiStrings.current
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface),
-    ) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .selectableGroup(),
-        ) {
-            HomePage.entries.forEach { page ->
-                val selected = page == current
-                val color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = HomeTabMinHeight)
-                        .selectable(selected = selected, onClick = { onSelect(page) }, role = Role.Tab)
-                        .padding(vertical = AppSpacing.Space6),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    val pill = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(AppRadius.Corner14))
-                            .let { if (selected) it.background(pill) else it }
-                            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space2),
-                    ) {
-                        Icon(imageVector = page.icon(), contentDescription = null, tint = color, modifier = Modifier.size(24.dp))
-                    }
-                    Text(
-                        text = page.label(strings),
-                        color = color,
-                        fontSize = AppTextSize.Text12,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = AppSpacing.Space2),
+            val interaction = remember { MutableInteractionSource() }
+            val pressed by interaction.collectIsPressedAsState()
+            val corner by animateDpAsState(if (pressed) HomePressedCorner else BoardScanButtonCorner, AppMotion.fastSpatial(), label = "boardScanCorner")
+            Card(
+                onClick = onBoardScanClick,
+                interactionSource = interaction,
+                shape = RoundedCornerShape(corner),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                modifier = Modifier.size(BoardScanButtonSize),
+            ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = BoardScanCameraIcon,
+                        contentDescription = strings.featureShortName(FeatureId.BoardScan),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -591,7 +594,86 @@ private fun HomePageTabBar(current: HomePage, onSelect: (HomePage) -> Unit) {
     }
 }
 
-private val HomeTabMinHeight = 56.dp
+/**
+ * 아래 탭 셋(#280 ②) — 지금 페이지를 알약으로 보이고, 누르면 그 페이지로 넘긴다. 넘기기만으로는 옆에 무엇이 있는지 모르고 지나치기 쉽다.
+ * 키는 최소 높이만 준다 — 글꼴 배율 1.3에서 이름이 두 줄이 돼도 잘리지 않게(함정 9).
+ *
+ * #281 A안(사용자 2026-10-23):
+ * - 알약은 **하나**이고 페이지 위치(`currentPage + currentPageOffsetFraction`)를 그대로 따라간다 — 손가락으로 넘기면 손가락을, 탭을 누르면
+ *   페이지의 스프링을 따라 미끄러진다. 알약은 아이콘 칸과 같은 높이에서 시작한다(아이콘 칸을 위에 붙여 큰 글꼴에서도 어긋나지 않는다).
+ * - 구분선 대신 바탕 톤([HomeTabBarPalette])으로 페이지와 가른다. 고른 탭의 이름은 브랜드 초록이 아니라 짙은 글자(`onSurface`)다 —
+ *   초록 12sp는 이 바탕에서 대비가 모자라다. 초록은 알약 안의 아이콘이 맡는다.
+ * - 누를 때의 물결은 탭 칸 전체가 아니라 알약 모양 안에만 번진다(M3 내비게이션 막대와 같은 결).
+ */
+@Composable
+private fun HomePageTabBar(pagerState: PagerState, onSelect: (HomePage) -> Unit) {
+    val strings = LocalUiStrings.current
+    val colors = MaterialTheme.colorScheme
+    val current = HomePage.entries[pagerState.currentPage]
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(HomeTabBarPalette.Container)
+            .navigationBarsPadding(),
+    ) {
+        val tabWidth = maxWidth / HomePage.entries.size
+        Box(
+            modifier = Modifier
+                .padding(top = HomeTabTopPadding)
+                .offset {
+                    val position = pagerState.currentPage + pagerState.currentPageOffsetFraction
+                    IntOffset((tabWidth * (position + 0.5f) - HomeTabPillWidth / 2).roundToPx(), 0)
+                }
+                .size(width = HomeTabPillWidth, height = HomeTabPillHeight)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(colors.primary.copy(alpha = 0.14f)),
+        )
+        Row(modifier = Modifier.fillMaxWidth().selectableGroup()) {
+            HomePage.entries.forEach { page ->
+                val selected = page == current
+                val interaction = remember { MutableInteractionSource() }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = HomeTabMinHeight)
+                        .selectable(selected = selected, interactionSource = interaction, indication = null, role = Role.Tab, onClick = { onSelect(page) })
+                        .padding(top = HomeTabTopPadding, bottom = AppSpacing.Space6),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = HomeTabPillWidth, height = HomeTabPillHeight)
+                            .clip(RoundedCornerShape(percent = 50))
+                            .indication(interaction, ripple()),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = page.icon(),
+                            contentDescription = null,
+                            tint = if (selected) colors.primary else colors.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+                    Text(
+                        text = page.label(strings),
+                        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+                        fontSize = AppTextSize.Text12,
+                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = AppSpacing.Space4),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private val HomeTabMinHeight = 64.dp
+private val HomeTabTopPadding = 8.dp
+
+/** 탭 알약 — M3 내비게이션 막대의 활성 표시와 같은 64×32. */
+private val HomeTabPillWidth = 64.dp
+private val HomeTabPillHeight = 32.dp
 
 private fun HomePage.label(strings: UiStrings): String = when (this) {
     HomePage.MyInfo -> strings.myPageTitle
@@ -783,12 +865,26 @@ internal fun MenuCard(
     icon: @Composable () -> Unit,
 ) {
     // ⚠️ 누르기는 `Card(onClick)`에 맡긴다 — 바깥 modifier에 `clip` + `clickable`을 걸면 그림자까지 잘려 카드가 떠 보이지 않는다.
+    // #281 A안(사용자 2026-10-23): 누르면 카드가 살짝 줄고 모서리가 덜 둥글어진다(Expressive의 「누를 때 모양이 바뀐다」). ▶ 단추도 함께 바뀐다.
+    // 크기는 그리기 단계(`graphicsLayer`)에서만 바꾼다 — 자리와 키가 그대로라 아래 타일이 움직이지 않는다(#128 ③의 표적 원칙).
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val corner by animateDpAsState(if (pressed) HomePressedCorner else MenuCardCorner, AppMotion.fastSpatial(), label = "menuCardCorner")
+    val scale by animateFloatAsState(if (pressed) MenuCardPressedScale else 1f, AppMotion.fastSpatial(), label = "menuCardScale")
+    val goCorner by animateDpAsState(if (pressed) HomePressedCorner else MenuCardPlayButtonSize / 2, AppMotion.fastSpatial(), label = "menuCardGoCorner")
+    val goTurn by animateFloatAsState(if (pressed) MenuCardPressedGoTurn else 0f, AppMotion.fastSpatial(), label = "menuCardGoTurn")
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(AppRadius.Corner14),
+        interactionSource = interaction,
+        shape = RoundedCornerShape(corner),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = MenuCardElevation),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
     ) {
         Row(
             modifier = Modifier
@@ -822,7 +918,7 @@ internal fun MenuCard(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = AppTextSize.Text20,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                 )
 
                 Spacer(modifier = Modifier.height(AppSpacing.Space4))
@@ -837,11 +933,12 @@ internal fun MenuCard(
                 )
             }
             Spacer(modifier = Modifier.width(AppSpacing.Space10))
-            // 장식이다 — 누르는 표적은 카드 전체라 따로 읽어 줄 이름이 없다.
+            // 장식이다 — 누르는 표적은 카드 전체라 따로 읽어 줄 이름이 없다. 누르면 동그라미가 둥근 네모로 바뀌며 살짝 돈다(#281 A안).
             Box(
                 modifier = Modifier
                     .size(MenuCardPlayButtonSize)
-                    .clip(CircleShape)
+                    .graphicsLayer { rotationZ = goTurn }
+                    .clip(RoundedCornerShape(goCorner))
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center,
             ) {
@@ -860,8 +957,28 @@ internal fun MenuCard(
 private val MenuCardIconSize = 68.dp
 private val MenuCardMinHeight = 104.dp
 private val MenuCardElevation = 3.dp
-private val MenuCardPlayButtonSize = 36.dp
+private val MenuCardPlayButtonSize = 40.dp
 private val MenuCardPlayGlyphSize = 22.dp
+
+/*
+ * #281 A안의 모양 — 값은 사용자가 고른 시안(2026-10-23)을 옮긴 것이고 스레드가 정했다.
+ * 쉴 때는 크게 둥글고, 누르면 [HomePressedCorner]로 덜 둥글어진다. 대국 카드 · 타일 · 카메라 단추가 같은 「누른 모서리」를 쓴다.
+ */
+private val MenuCardCorner = 28.dp
+/** 반 폭 타일의 모서리 — 실험실의 「준비 중」 칸(`HomeLabPage.kt`)도 같은 값을 쓴다. */
+internal val MenuTileCorner = 22.dp
+private val BoardScanButtonCorner = 16.dp
+private val BoardScanButtonSize = 48.dp
+private val HomePressedCorner = 12.dp
+private const val MenuCardPressedScale = 0.965f
+private const val MenuTilePressedScale = 0.95f
+
+/** 누를 때 ▶ 단추가 도는 각(도) — 왼쪽으로 조금. */
+private const val MenuCardPressedGoTurn = -8f
+
+/** 「이전 대국 이어하기」의 숨쉬기 — 1.0 ↔ 1.04를 한 번에 1.2초씩. */
+private const val ResumeBreathScale = 1.04f
+private const val ResumeBreathMillis = 1200
 
 /** 홈의 반 폭 타일 하나 — 제목과 그림, 누르면 갈 곳. */
 internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
@@ -872,12 +989,21 @@ internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon
  */
 @Composable
 internal fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
+    // #281 A안: 누르면 살짝 줄고 모서리가 덜 둥글어진다 — [MenuCard]와 같은 움직임, 크기만 그리기 단계에서 바꾼다.
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val corner by animateDpAsState(if (pressed) HomePressedCorner else MenuTileCorner, AppMotion.fastSpatial(), label = "menuTileCorner")
+    val scale by animateFloatAsState(if (pressed) MenuTilePressedScale else 1f, AppMotion.fastSpatial(), label = "menuTileScale")
     Card(
         onClick = tile.onClick,
-        shape = RoundedCornerShape(AppRadius.Corner14),
+        interactionSource = interaction,
+        shape = RoundedCornerShape(corner),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier,
+        modifier = modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        },
     ) {
         Row(
             modifier = Modifier

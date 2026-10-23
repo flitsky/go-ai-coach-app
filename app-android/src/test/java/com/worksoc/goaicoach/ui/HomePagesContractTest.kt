@@ -42,12 +42,19 @@ class HomePagesContractTest {
         assertTrue("페이지의 기억이 처음에 대국이 아니다 — 켜면 늘 가운데다(#280 ①).", home.contains("var page: HomePage = HomePage.Play"))
     }
 
-    /** ⑦ 옆 페이지의 뒤로가기는 가운데로 — 가운데에서는 홈이 잡지 않아 앱을 나간다(셸의 뒤로가기는 홈에서 꺼져 있다). */
+    /**
+     * ⑦ 옆 페이지의 뒤로가기는 가운데로 — 가운데에서는 홈이 잡지 않아 앱을 나간다(셸의 뒤로가기는 홈에서 꺼져 있다).
+     * #281부터는 예측 뒤로가기다 — 끄는 동안 가운데가 들어오고, 놓으면 가운데로 넘어간다.
+     */
     @Test
     fun backFromASidePageGoesToTheMiddle() {
         assertTrue(
-            "옆 페이지의 뒤로가기가 가운데로 가지 않는다(#280 ⑦).",
-            home.contains("BackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal) { showPage(HomePage.Play) }"),
+            "옆 페이지에서만 뒤로가기를 잡지 않는다(#280 ⑦ · #281).",
+            home.contains("PredictiveBackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal)"),
+        )
+        assertTrue(
+            "뒤로가기를 놓았을 때 가운데로 넘어가지 않는다(#280 ⑦).",
+            home.contains("val target = if (committed) HomePage.Play.ordinal else from"),
         )
         assertTrue("셸의 뒤로가기가 홈에서도 켜졌다 — 가운데에서 앱을 나가지 못한다.", shell.contains("currentDestination != ScreenDestination.Home"))
     }
