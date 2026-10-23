@@ -77,7 +77,7 @@ internal fun myPageNoRecordFor(language: UiLanguage): String =
  */
 internal fun localOnlyDataNoticePointerFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "이 기록은 이 기기에 보관돼요"
+        UiLanguage.Korean -> "기록은 이 기기에 보관돼요"
         UiLanguage.English -> "These records are kept on this device"
         UiLanguage.Japanese -> "この記録はこの端末に保存されます"
         UiLanguage.ChineseSimplified -> "这些记录保存在本机"
