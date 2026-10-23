@@ -141,10 +141,10 @@ internal fun fortuneSignNameFor(language: UiLanguage, sign: FortuneSign): String
     is FortuneSign.Star -> starSignNameFor(language, sign.sign)
 }
 
-/** 별자리의 날짜(고를 때 보이는 작은 글자) — 월 · 일만, 연도는 없다. */
+/** 별자리의 날짜(고를 때 보이는 작은 글자) — 월 · 일만, 연도는 없다. 영어는 달과 날 사이를 붙는 빈칸으로(「Nov 22–」에서 줄이 갈라지지 않게). */
 internal fun starSignDatesFor(language: UiLanguage, sign: StarSign): String = when (language) {
     UiLanguage.Korean -> "${sign.fromMonth}.${sign.fromDay}~${sign.toMonth}.${sign.toDay}"
-    UiLanguage.English -> "${EnglishMonths[sign.fromMonth - 1]} ${sign.fromDay}–${EnglishMonths[sign.toMonth - 1]} ${sign.toDay}"
+    UiLanguage.English -> "${EnglishMonths[sign.fromMonth - 1]}\u00A0${sign.fromDay}–${EnglishMonths[sign.toMonth - 1]}\u00A0${sign.toDay}"
     UiLanguage.Japanese -> "${sign.fromMonth}/${sign.fromDay}〜${sign.toMonth}/${sign.toDay}"
     UiLanguage.ChineseSimplified -> "${sign.fromMonth}.${sign.fromDay}–${sign.toMonth}.${sign.toDay}"
 }
@@ -155,14 +155,14 @@ private val EnglishMonths = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Ju
 internal fun fortunePickPromptFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "띠나 별자리를 고르면 오늘의 운세가 열려요."
     UiLanguage.English -> "Choose your zodiac animal or star sign to open today's fortune."
-    UiLanguage.Japanese -> "干支か星座を選ぶと、今日の運勢が開きます。"
+    UiLanguage.Japanese -> "干支か星座を選ぶと、今日の運勢が見られます。"
     UiLanguage.ChineseSimplified -> "选择生肖或星座，查看今日运势。"
 }
 
 /** 고르기 단추(처음). */
 internal fun fortunePickButtonFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "띠 · 별자리 고르기"
-    UiLanguage.English -> "Choose"
+    UiLanguage.English -> "Choose your sign"
     UiLanguage.Japanese -> "干支・星座を選ぶ"
     UiLanguage.ChineseSimplified -> "选择生肖或星座"
 }
@@ -186,7 +186,7 @@ internal fun fortunePickerTitleFor(language: UiLanguage): String = when (languag
 /** 고르는 창의 탭 — 띠 / 별자리. */
 internal fun fortuneZodiacTabFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "띠"
-    UiLanguage.English -> "Zodiac"
+    UiLanguage.English -> "Zodiac animal"
     UiLanguage.Japanese -> "干支"
     UiLanguage.ChineseSimplified -> "生肖"
 }
@@ -228,9 +228,9 @@ internal fun fortuneStrandLabelFor(language: UiLanguage, strand: FortuneStrand):
     }
     FortuneStrand.LuckyPoint -> when (language) {
         UiLanguage.Korean -> "행운의 자리"
-        UiLanguage.English -> "Lucky point"
-        UiLanguage.Japanese -> "ラッキーポイント"
-        UiLanguage.ChineseSimplified -> "幸运点位"
+        UiLanguage.English -> "Lucky spot"
+        UiLanguage.Japanese -> "幸運の着点"
+        UiLanguage.ChineseSimplified -> "幸运落点"
     }
 }
 
@@ -239,7 +239,7 @@ internal fun fortuneRefreshButtonFor(language: UiLanguage, withAd: Boolean): Str
     if (withAd) {
         when (language) {
             UiLanguage.Korean -> "광고 보고 운 바꾸기"
-            UiLanguage.English -> "Watch an ad to change your luck"
+            UiLanguage.English -> "Watch ad to change luck"
             UiLanguage.Japanese -> "広告を見て運を変える"
             UiLanguage.ChineseSimplified -> "看广告改运"
         }
@@ -256,23 +256,23 @@ internal fun fortuneRefreshButtonFor(language: UiLanguage, withAd: Boolean): Str
 internal fun fortuneRefreshInviteFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "한 수로 판이 바뀌듯, 오늘의 운도 내 손으로 바꿀 수 있어요."
     UiLanguage.English -> "One move can turn a game — and your luck is yours to turn, too."
-    UiLanguage.Japanese -> "一手で盤面が変わるように、今日の運も自分の手で変えられます。"
-    UiLanguage.ChineseSimplified -> "一手棋能扭转棋局，今天的运势也能由你亲手改变。"
+    UiLanguage.Japanese -> "一手で形勢が変わるように、今日の運も自分の手で変えられます。"
+    UiLanguage.ChineseSimplified -> "就像一手棋能改变整盘棋，今天的运势也能由你亲手改写。"
 }
 
 /** 오늘 남은 갱신 횟수 — 「오늘 남은 기회 2/3」. */
 internal fun fortuneRefreshesLeftFor(language: UiLanguage, left: Int): String = when (language) {
     UiLanguage.Korean -> "오늘 남은 기회 $left/$DailyFortuneMaxRefreshes"
     UiLanguage.English -> "$left of $DailyFortuneMaxRefreshes left today"
-    UiLanguage.Japanese -> "今日の残り $left/$DailyFortuneMaxRefreshes 回"
-    UiLanguage.ChineseSimplified -> "今日剩余 $left/$DailyFortuneMaxRefreshes 次"
+    UiLanguage.Japanese -> "今日の残り回数 $left/$DailyFortuneMaxRefreshes"
+    UiLanguage.ChineseSimplified -> "今日剩余次数 $left/$DailyFortuneMaxRefreshes"
 }
 
 /** 오늘의 갱신을 다 썼을 때. */
 internal fun fortuneRefreshesDoneFor(language: UiLanguage): String = when (language) {
     UiLanguage.Korean -> "오늘은 운을 충분히 바꿨어요. 내일 새 운세가 열려요."
-    UiLanguage.English -> "You've changed your luck enough for today. A new fortune opens tomorrow."
-    UiLanguage.Japanese -> "今日はもう十分に運を変えました。明日また新しい運勢が開きます。"
+    UiLanguage.English -> "You've changed your luck plenty today. A new fortune awaits tomorrow."
+    UiLanguage.Japanese -> "今日はもう十分に運を変えましたね。明日また新しい運勢が届きます。"
     UiLanguage.ChineseSimplified -> "今天已经改过运了，明天会有新的运势。"
 }
 
