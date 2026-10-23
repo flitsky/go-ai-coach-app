@@ -43,10 +43,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
@@ -1209,22 +1207,9 @@ internal fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
 }
 
 /**
- * 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린 뒤, **「기록」을
- * 뜻하는 배지**를 얹는다(2026-09-22 사용자 지시, 백로그 #192 — 「학습 하기」를 참고하라는 지시였다).
- * `isGameEnded = true`로 둬 끝난 대국다운 톤을 준다 — 실제로 끝난 판이다.
- *
- * ## ⚠️ 이모지가 아니라 벡터다 — 지시를 그대로 옮기지 않은 자리
- * 사용자는 *"기록을 의미하는 이모지"* 라고 했지만, **같은 지시가 참고하라고 가리킨
- * 「학습 하기」 타일 그림(돋보기 — #280에 타일과 함께 지웠다)이 이모지를 일부러 쓰지 않았다**(#181: *"기기·글꼴에 따라 렌더링이 갈리는
- * 이모지보다 크기·색이 항상 예측 가능하다"*). 배지는 원형 흰 바탕에 **틴트된 심볼**이라 이모지를
- * 넣으면 그 안에서 혼자 총천연색이 되고 기기마다 크기가 튄다. 그래서 **모양은 참고 대상에 맞추고
- * 뜻만 「기록」으로** 바꿨다 — 그것이 두 지시를 동시에 만족시키는 유일한 해석이다.
- *
- * ⚠️ **`Icons.Filled.History`를 쓰고 싶었지만 못 썼다** — 그것은 `material-icons-extended`에 있고
- * 이 앱은 **코어 세트만** 의존한다(확장 세트는 APK를 크게 불린다). 코어 안에서 「지나간 대국의
- * 목록」에 가장 가까운 것이 `AutoMirrored.Filled.List`이고, **대국 기록 화면이 실제로 목록**이다.
- * ⚠️ `AutoMirrored`인 이유는 RTL에서 좌우가 뒤집혀야 하기 때문이다(이 앱은 아직 RTL 언어가
- * 없지만, 뒤집히면 안 되는 심볼과 섞이지 않게 기본형을 지킨다).
+ * 「대국 기록」 타일 그림 — 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린 뒤 **「기록」을 뜻하는 배지**(📝)를 얹는다
+ * (백로그 #192 → #286). `isGameEnded = true`로 둬 끝난 대국다운 톤을 준다 — 실제로 끝난 판이다.
+ * 배지가 #192의 목록 벡터에서 그림 문자로 바뀐 사연은 [GameHistoryBadgeEmoji].
  */
 @Composable
 internal fun GameHistoryBoardIcon() {
@@ -1253,12 +1238,7 @@ internal fun GameHistoryBoardIcon() {
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.List,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxSize(0.7f),
-            )
+            TileBadgeEmoji(GameHistoryBadgeEmoji)
         }
     }
 }
@@ -1280,9 +1260,8 @@ private val StudyPreviewGameState: GameState = GameState.empty(
 )
 
 /**
- * 「기초 학습」 타일 그림(#280 — 옛 「학습 하기」 타일의 그림을 되살렸다) — 바둑판(초반 포석 세 점) 위에 돋보기를 판 한 변의 60% 크기로
- * 겹친다(백로그 #181, 2026-09-22 120% 확대). 돋보기는 이모지 대신 `Icons.Filled.Search`
- * 벡터를 쓴다 — 기기·글꼴에 따라 렌더링이 갈리는 이모지보다 크기·색이 항상 예측 가능하다.
+ * 「기초 학습」 타일 그림(#280 — 옛 「학습 하기」 타일의 그림을 되살렸다) — 바둑판(초반 포석 세 점) 위에 책 배지(📖)를 판 한 변의 60% 크기로
+ * 겹친다(백로그 #181 돋보기 벡터 → #286 📖, [StudyBasicsBadgeEmoji]).
  */
 @Composable
 internal fun StudyPreviewIcon() {
@@ -1310,12 +1289,7 @@ internal fun StudyPreviewIcon() {
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Filled.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxSize(0.7f),
-            )
+            TileBadgeEmoji(StudyBasicsBadgeEmoji)
         }
     }
 }
@@ -1332,7 +1306,7 @@ private val GameRecordsPreviewGameState: GameState = listOf(
 ).fold(GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese)) { state, move -> state.play(move) }
 
 /**
- * 「명국 기보」 타일 그림 — 수순 번호가 붙은 9줄 판 위에 책 배지(다른 타일과 같은 자리·같은 모양).
+ * 「명국 기보」 타일 그림 — 수순 번호가 붙은 9줄 판 위에 두루마리 배지(📜 — #269의 📖를 #286에 기초 학습으로 넘겼다, 다른 타일과 같은 자리·같은 모양).
  * 번호만으로는 타일 크기에서 읽히지 않아(에뮬레이터 2026-10-19) 배지로 알아보게 한다.
  */
 @Composable
@@ -1360,11 +1334,7 @@ private fun GameRecordsPreviewIcon() {
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = "📖",
-                fontSize = AppTextSize.Text20,
-                textAlign = TextAlign.Center,
-            )
+            TileBadgeEmoji(GameRecordsBadgeEmoji)
         }
     }
 }
@@ -1386,7 +1356,7 @@ private val LifeAndDeathPreviewGameState: GameState = GameState.empty(
     },
 )
 
-/** 「사활 풀기」 타일 그림(#280) — 귀의 사활 모양 위에 「?」 배지(다른 타일과 같은 자리 · 같은 모양). 문제를 푼다는 뜻이다. */
+/** 「사활 풀기」 타일 그림(#280) — 귀의 사활 모양 위에 돋보기 배지(🔍 — #280의 「?」를 #286에 바꿨다, 다른 타일과 같은 자리 · 같은 모양). 수를 읽는다는 뜻이다. */
 @Composable
 private fun LifeAndDeathPreviewIcon() {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -1412,19 +1382,29 @@ private fun LifeAndDeathPreviewIcon() {
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = "?",
-                fontSize = AppTextSize.Text20,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.primary,
-                textAlign = TextAlign.Center,
-            )
+            TileBadgeEmoji(LifeAndDeathBadgeEmoji)
         }
     }
 }
 
 /** 판 한 변 대비 돋보기·카메라 배지의 비율(기존 50%에서 120% 확대한 60%). */
 private const val StudyPreviewMagnifierSizeFraction = 0.6f
+
+/**
+ * 대국 페이지 타일 넷의 배지 그림(백로그 #286, 사용자 2026-10-23) — 넷 다 「명국 기보」의 📖처럼 **그림 문자**다(사용자: *"명국 기보 아이콘 스타일이 좀 더 좋음"*).
+ * 기초 학습이 그 📖를 물려받고, 명국 기보는 옛 기록의 두루마리, 대국 기록은 적어 둔 메모, 사활 풀기는 돋보기 — 고른 그림은 스레드가 정했다.
+ * ⚠️ 그림 문자는 기기 글꼴마다 모양이 다르다(#181이 벡터를 쓴 이유) — 사용자가 그 모양을 골랐다. 카메라 타일의 📷와 같은 크기로 그린다([TileBadgeEmoji]).
+ */
+private const val GameHistoryBadgeEmoji = "📝"
+private const val GameRecordsBadgeEmoji = "📜"
+private const val LifeAndDeathBadgeEmoji = "🔍"
+private const val StudyBasicsBadgeEmoji = "📖"
+
+/** 타일 배지 안의 그림 문자 한 자 — 카메라 타일(📷)과 같은 글자 크기. */
+@Composable
+private fun TileBadgeEmoji(emoji: String) {
+    Text(text = emoji, fontSize = AppTextSize.Text20, textAlign = TextAlign.Center)
+}
 
 /**
  * "바둑판 사진 분석" 카드 아이콘 — 바둑판 위에 카메라 심볼을 겹친 프리뷰 배지.
