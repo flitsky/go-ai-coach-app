@@ -512,8 +512,8 @@ class PortSignatureContractTest {
 
         /**
          * 기준선의 계약 수 — `*Port` 인터페이스 21개 + 명시 등록 1개(`PositionAnalysisCacheStore`). `#73` 실측(19 + 1)에
-         * `RankMeasureStorePort`(승급 대국의 상태 저장, 백로그 #219 — 2026-10-06)와 `AdSkipTicketAdStorePort`(광고로 스킵권을
-         * 받은 때, 백로그 #283 — 2026-10-23)가 더해졌다. 포트를 새로 만들거나 지우면 여기를 고친다.
+         * `RankMeasureStorePort`(승급 대국의 상태 저장, 백로그 #219 — 2026-10-06)와 `DailyDrawStorePort`(실험실 1일 1회
+         * 뽑기를 마지막으로 뽑은 때, 백로그 #283 — 2026-10-23)가 더해졌다. 포트를 새로 만들거나 지우면 여기를 고친다.
          */
         const val EXPECTED_CONTRACT_COUNT = 22
 

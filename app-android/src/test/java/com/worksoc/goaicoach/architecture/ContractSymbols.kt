@@ -212,6 +212,8 @@ internal object ContractSymbols {
         "com.worksoc.goaicoach.application.rankmeasure",
         // 오늘의 한 줄 명언(백로그 #273) — 섞은 차례와 본 것을 이어 가는 진행도다. 하루의 정의는 출석(`attendance`, 같은 6계층)의 UTC 하루를 따른다.
         "com.worksoc.goaicoach.application.dailyquote",
+        // 실험실 1일 1회 뽑기(백로그 #283) — 뽑은 때(쿨타임)를 이어 가고, 소모품 · 봇 캐릭터(같은 6계층)의 지급 함수를 그대로 지난다.
+        "com.worksoc.goaicoach.application.dailydraw",
     )
 
     /**
