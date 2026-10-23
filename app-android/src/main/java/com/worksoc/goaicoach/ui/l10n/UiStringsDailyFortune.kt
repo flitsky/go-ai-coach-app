@@ -161,7 +161,7 @@ internal fun fortunePickPromptFor(language: UiLanguage): String = when (language
 
 /** 고르기 단추(처음). */
 internal fun fortunePickButtonFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "띠 · 별자리 고르기"
+    UiLanguage.Korean -> "띠·별자리 고르기"
     UiLanguage.English -> "Choose your sign"
     UiLanguage.Japanese -> "干支・星座を選ぶ"
     UiLanguage.ChineseSimplified -> "选择生肖或星座"
@@ -177,7 +177,7 @@ internal fun fortuneChangeSignFor(language: UiLanguage): String = when (language
 
 /** 고르는 창의 제목. */
 internal fun fortunePickerTitleFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "띠 · 별자리 고르기"
+    UiLanguage.Korean -> "띠·별자리 고르기"
     UiLanguage.English -> "Zodiac animal or star sign"
     UiLanguage.Japanese -> "干支・星座を選ぶ"
     UiLanguage.ChineseSimplified -> "选择生肖或星座"

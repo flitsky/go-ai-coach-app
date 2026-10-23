@@ -48,10 +48,10 @@ class DailyFortuneCatalogTest {
         }
     }
 
-    /** 사용자: 점수 · 등급이 드러나지 않게 — 글에 등급 낱말이 들어가지 않았는지 본다(그물일 뿐, 검수는 사람 · LLM이 했다). */
+    /** 사용자: 점수 · 등급이 드러나지 않게 — 글에 등급 낱말(길흉 · 吉凶 포함 — 2차 검수가 「길해요」 · 「更吉」을 등급으로 읽었다)이 없는지 본다. 그물일 뿐, 검수는 LLM 두 번이 했다. */
     @Test
     fun noGradeWords() {
-        val gradeWords = listOf("대길", "소길", "흉", "점수", "등급", "大吉", "小吉", "凶", "★")
+        val gradeWords = listOf("대길", "소길", "길해", "길하", "흉", "점수", "등급", "吉", "凶", "★")
         pools.values.flatten().forEach { text ->
             UiLanguage.entries.forEach { language ->
                 val line = text.textFor(language)
