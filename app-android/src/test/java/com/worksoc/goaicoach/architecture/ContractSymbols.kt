@@ -214,6 +214,8 @@ internal object ContractSymbols {
         "com.worksoc.goaicoach.application.dailyquote",
         // 실험실 1일 1회 뽑기(백로그 #283) — 뽑은 때(쿨타임)를 이어 가고, 소모품 · 봇 캐릭터(같은 6계층)의 지급 함수를 그대로 지난다.
         "com.worksoc.goaicoach.application.dailydraw",
+        // 실험실 오늘의 운세(백로그 #276) — 고른 띠 · 별자리와 그날 쓴 갱신 횟수를 이어 간다. 하루는 출석(`attendance`, 같은 6계층)의 UTC 하루를 따른다.
+        "com.worksoc.goaicoach.application.dailyfortune",
     )
 
     /**
