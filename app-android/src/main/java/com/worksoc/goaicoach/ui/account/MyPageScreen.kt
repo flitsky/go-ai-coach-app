@@ -51,6 +51,7 @@ import com.worksoc.goaicoach.ui.l10n.editNicknameDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.expandLabelFor
 import com.worksoc.goaicoach.ui.l10n.guideMyPageGreetingFor
 import com.worksoc.goaicoach.ui.l10n.nicknamePlaceholderFor
+import com.worksoc.goaicoach.ui.monetization.AdSkipTicketAdButton
 import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoard
 import com.worksoc.goaicoach.ui.monetization.AttendanceStampBoardFolded
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
@@ -208,11 +209,19 @@ internal fun MyPageScreen(
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             }
-                            Text(
-                                text = strings.consumableRewardAmount(consumables.countOf(item)),
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8),
+                            ) {
+                                // 광고 스킵권 줄에만 「광고 보고 +1」(백로그 #283) — 받으면 바로 옆 숫자가 오르는 게 보이도록 숫자 앞에 둔다.
+                                // 하루 한 번(받으면 24시간 쿨타임), 상한 · 구독 중의 모양은 단추가 스스로 정한다.
+                                if (item == ConsumableCatalog.PremiumOnce) AdSkipTicketAdButton()
+                                Text(
+                                    text = strings.consumableRewardAmount(consumables.countOf(item)),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
                     }
                 }
