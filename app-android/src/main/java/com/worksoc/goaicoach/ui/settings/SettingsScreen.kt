@@ -70,8 +70,10 @@ import com.worksoc.goaicoach.wipeToFreshInstall
 
 // AdMob·Play Billing 등 Play Console 필수 제출 항목(개인정보처리방침 URL)과 동일한 문서를
 // 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과
-// 무관한 콘솔 설정, GOOGLE_PLAY_LAUNCH_PLAN.md 참고).
-private const val PRIVACY_POLICY_URL = "https://rezen.dev/go-ai-coach/privacy/"
+// 무관한 콘솔 설정, GOOGLE_PLAY_LAUNCH_PLAN.md 참고). 2026-10-21부터 정식 위치는 rezen.dev
+// 트리의 /apps/baduk-ai/privacy/ 이고 Play 필드도 같은 값이다. 1.7.0 이하 바이너리가 여는
+// 옛 주소 /go-ai-coach/privacy/ 는 rezen-dev가 같은 본문으로 영구히 200을 낸다(contracts/urls.json).
+private const val PRIVACY_POLICY_URL = "https://rezen.dev/apps/baduk-ai/privacy/"
 
 // 버전 텍스트를 이만큼 두드리면 개발자 모드가 활성화된다.
 private const val DeveloperModeTapsRequired = 10
