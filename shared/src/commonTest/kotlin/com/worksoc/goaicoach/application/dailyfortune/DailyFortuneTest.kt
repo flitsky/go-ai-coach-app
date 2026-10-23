@@ -3,138 +3,93 @@ package com.worksoc.goaicoach.application.dailyfortune
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private const val Today = 20_384L
-private val Sizes = FortunePoolSizes(general = 48, star = 48, go = 48, luckyPoint = 8)
-private val Dragon = FortuneSign.Zodiac(ZodiacAnimal.Dragon)
-private val Leo = FortuneSign.Star(StarSign.Leo)
+private const val Today = 20_749L
+private const val Pool = 368
+private const val Tap = 1_793_000_000_123L
 
-/** 백로그 #276 — 오늘의 운세 규칙(`DailyFortune.kt`). */
+/** 백로그 #276 — 오늘의 운세 규칙(`DailyFortune.kt`): 누른 순간으로 뽑는 랜덤 운세 · 하루 3번 갱신. */
 class DailyFortuneTest {
     @Test
-    fun sameDaySignAndRefreshGiveTheSameReadingForEveryone() {
-        repeat(DailyFortuneSlotsPerDay) { used ->
-            assertEquals(dailyFortuneReading(Dragon, Today, used, Sizes), dailyFortuneReading(Dragon, Today, used, Sizes))
-        }
-    }
-
-    /**
-     * 씨앗과 섞기를 바꾸면 모두의 그날 운세가 바뀐다 — 그런 변경을 알아채려고 한 값을 못 박는다. iOS(Kotlin/Native)에서도 같은 답이어야 한다.
-     * 일부러 바꾼 것이면 이 값을 새로 적는다.
-     */
-    @Test
-    fun theSeedIsPinned() {
-        assertEquals(PinnedDragonReading, dailyFortuneReading(Dragon, Today, 0, Sizes))
+    fun theFirstDrawOfTheDayUsesTheTapTimestamp() {
+        val drawn = assertNotNull(drawDailyFortune(DailyFortuneProgress(), Today, Tap, Pool))
+        assertEquals(Today, drawn.day)
+        assertEquals(fortuneIndexAt(Tap, Pool, excluding = null), drawn.fortuneIndex)
+        assertEquals(0, drawn.refreshesUsed)
+        assertEquals(drawn.fortuneIndex, drawn.todaysIndex(Today, Pool))
     }
 
     @Test
-    fun aZodiacAnimalReadsTheGeneralStrandAndAStarSignTheStarStrand() {
-        assertEquals(FortuneStrand.General, dailyFortuneReading(Dragon, Today, 0, Sizes).mainStrand)
-        assertEquals(FortuneStrand.Star, dailyFortuneReading(Leo, Today, 0, Sizes).mainStrand)
+    fun differentMomentsDrawAcrossThePool() {
+        val picks = (0L until 2_000L).map { fortuneIndexAt(Tap + it * 997, Pool, excluding = null) }.toSet()
+        assertTrue(picks.size > Pool / 2, "누른 순간이 달라도 고르는 글이 몇 개에 몰린다: ${picks.size}")
+        assertTrue(picks.all { it in 0 until Pool })
     }
 
     @Test
-    fun everyRefreshOfADayShowsADifferentFortune() {
-        FortuneSign.all.forEach { sign ->
-            (Today until Today + 30).forEach { day ->
-                val readings = (0 until DailyFortuneSlotsPerDay).map { dailyFortuneReading(sign, day, it, Sizes) }
-                assertEquals(DailyFortuneSlotsPerDay, readings.map { it.mainIndex }.toSet().size, "${sign.key} $day 운세")
-                assertEquals(DailyFortuneSlotsPerDay, readings.map { it.goIndex }.toSet().size, "${sign.key} $day 바둑 운세")
-                assertEquals(DailyFortuneSlotsPerDay, readings.map { it.luckyPointIndex }.toSet().size, "${sign.key} $day 행운의 자리")
-            }
-        }
+    fun theSameMomentDrawsTheSameFortune() {
+        assertEquals(fortuneIndexAt(Tap, Pool, null), fortuneIndexAt(Tap, Pool, null))
     }
 
     @Test
-    fun theFirstFortuneDoesNotRepeatWithinACycle() {
-        val daysPerCycle = Sizes.general / DailyFortuneSlotsPerDay
-        val firstDay = Today - Today.mod(daysPerCycle.toLong())
-        val firsts = (firstDay until firstDay + daysPerCycle).map { dailyFortuneReading(Dragon, it, 0, Sizes).mainIndex }
-        assertEquals(daysPerCycle, firsts.toSet().size)
+    fun aDrawnFortuneStaysForTheRestOfTheDay() {
+        val drawn = drawDailyFortune(DailyFortuneProgress(), Today, Tap, Pool)!!
+        assertNull(drawDailyFortune(drawn, Today, Tap + 60_000, Pool), "같은 날 다시 누르면 새로 뽑지 않는다")
+        assertEquals(drawn.fortuneIndex, drawn.todaysIndex(Today, Pool))
     }
 
     @Test
-    fun indicesStayInsideTheirPools() {
-        FortuneSign.all.forEach { sign ->
-            (0 until DailyFortuneSlotsPerDay).forEach { used ->
-                val reading = dailyFortuneReading(sign, Today, used, Sizes)
-                assertTrue(reading.mainIndex in 0 until Sizes.of(reading.mainStrand))
-                assertTrue(reading.goIndex in 0 until Sizes.go)
-                assertTrue(reading.luckyPointIndex in 0 until Sizes.luckyPoint)
-            }
-        }
+    fun aNewDayNeedsANewDrawAndResetsTheRefreshes() {
+        val spent = DailyFortuneProgress(day = Today, fortuneIndex = 7, refreshesUsed = DailyFortuneMaxRefreshes)
+        assertNull(spent.todaysIndex(Today + 1, Pool))
+        assertNull(spent.todaysIndex(Today - 1, Pool), "시계를 되감아도 새 날로 본다")
+        assertEquals(DailyFortuneMaxRefreshes, spent.refreshesLeftOn(Today + 1))
+        val drawn = drawDailyFortune(spent, Today + 1, Tap, Pool)!!
+        assertEquals(0, drawn.refreshesUsed)
     }
 
     @Test
-    fun differentSignsReadDifferently() {
-        val firsts = FortuneSign.all.filterIsInstance<FortuneSign.Zodiac>().map { dailyFortuneReading(it, Today, 0, Sizes).mainIndex }
-        assertTrue(firsts.toSet().size > 1, "띠 열둘이 모두 같은 운세다")
-    }
-
-    @Test
-    fun threeRefreshesADayThenNone() {
-        var progress = DailyFortuneProgress().withSign(Dragon)
+    fun threeRefreshesADayEachShowingSomethingNew() {
+        var progress = drawDailyFortune(DailyFortuneProgress(), Today, Tap, Pool)!!
         repeat(DailyFortuneMaxRefreshes) { time ->
             assertEquals(DailyFortuneMaxRefreshes - time, progress.refreshesLeftOn(Today))
-            progress = refreshDailyFortune(progress, Today)!!
+            val before = progress.fortuneIndex
+            progress = refreshDailyFortune(progress, Today, Tap + (time + 1) * 1_000L, Pool)!!
+            assertNotEquals(before, progress.fortuneIndex)
         }
         assertEquals(0, progress.refreshesLeftOn(Today))
-        assertNull(refreshDailyFortune(progress, Today))
+        assertNull(refreshDailyFortune(progress, Today, Tap + 9_000, Pool))
     }
 
     @Test
-    fun aNewDayResetsTheRefreshesEvenWhenTheClockWentBack() {
-        val spent = DailyFortuneProgress(signKey = Dragon.key, day = Today, refreshesUsed = DailyFortuneMaxRefreshes)
-        assertEquals(DailyFortuneMaxRefreshes, spent.refreshesLeftOn(Today + 1))
-        assertEquals(DailyFortuneMaxRefreshes, spent.refreshesLeftOn(Today - 1))
-        assertEquals(DailyFortuneProgress(Dragon.key, Today + 1, 1), refreshDailyFortune(spent, Today + 1))
+    fun aRefreshThatLandsOnTheSameFortuneMovesOn() {
+        val same = fortuneIndexAt(Tap, Pool, excluding = null)
+        assertEquals((same + 1) % Pool, fortuneIndexAt(Tap, Pool, excluding = same))
+        assertEquals(0, fortuneIndexAt(Tap, 1, excluding = 0), "글이 하나뿐이면 그대로")
     }
 
     @Test
-    fun changingTheSignKeepsTheRefreshesSpentToday() {
-        val progress = refreshDailyFortune(DailyFortuneProgress().withSign(Dragon), Today)!!.withSign(Leo)
-        assertEquals(Leo, progress.sign)
-        assertEquals(1, progress.refreshesUsedOn(Today))
+    fun nothingToRefreshBeforeTheDaysDraw() {
+        assertNull(refreshDailyFortune(DailyFortuneProgress(), Today, Tap, Pool))
+        val yesterday = DailyFortuneProgress(day = Today - 1, fortuneIndex = 3, refreshesUsed = 0)
+        assertNull(refreshDailyFortune(yesterday, Today, Tap, Pool))
     }
 
     @Test
-    fun nothingToRefreshBeforeASignIsChosen() {
-        assertNull(refreshDailyFortune(DailyFortuneProgress(), Today))
-        assertNull(refreshDailyFortune(DailyFortuneProgress(signKey = "zodiac:cat"), Today))
+    fun aFortuneThatNoLongerExistsIsDrawnAgainKeepingTheRefreshesSpent() {
+        val shrunk = DailyFortuneProgress(day = Today, fortuneIndex = Pool + 5, refreshesUsed = 2)
+        assertNull(shrunk.todaysIndex(Today, Pool))
+        val redrawn = drawDailyFortune(shrunk, Today, Tap, Pool)!!
+        assertEquals(2, redrawn.refreshesUsed)
     }
 
     @Test
     fun storedRefreshCountsOutsideTheRangeAreClamped() {
-        val tampered = DailyFortuneProgress(signKey = Dragon.key, day = Today, refreshesUsed = 99)
+        val tampered = DailyFortuneProgress(day = Today, fortuneIndex = 1, refreshesUsed = 99)
         assertEquals(0, tampered.refreshesLeftOn(Today))
-        assertEquals(dailyFortuneReading(Dragon, Today, DailyFortuneMaxRefreshes, Sizes), dailyFortuneReading(Dragon, Today, 99, Sizes))
-    }
-
-    @Test
-    fun signKeysAreUniqueAndReadBack() {
-        val keys = FortuneSign.all.map { it.key }
-        assertEquals(24, keys.toSet().size)
-        FortuneSign.all.forEach { assertEquals(it, FortuneSign.fromKey(it.key)) }
-        assertNull(FortuneSign.fromKey(null))
-        assertNull(FortuneSign.fromKey("dragon"))
-        assertNull(FortuneSign.fromKey("zodiac:"))
-        assertNotEquals(Dragon.key, Leo.key)
-    }
-
-    @Test
-    fun starSignDatesCoverTheWholeYearWithoutGaps() {
-        // 별자리의 끝 다음 날이 다음 별자리의 첫날이다(물고기자리 다음은 양자리).
-        val daysInMonth = intArrayOf(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-        StarSign.entries.forEachIndexed { index, sign ->
-            val next = StarSign.entries[(index + 1) % StarSign.entries.size]
-            val endIsMonthEnd = sign.toDay == daysInMonth[sign.toMonth - 1]
-            val (month, day) = if (endIsMonthEnd) (sign.toMonth % 12 + 1) to 1 else sign.toMonth to sign.toDay + 1
-            assertEquals(month to day, next.fromMonth to next.fromDay, "${sign.key} 다음")
-        }
+        assertNull(refreshDailyFortune(tampered, Today, Tap, Pool))
     }
 }
-
-/** [DailyFortuneTest.theSeedIsPinned]의 값 — 2026-10-23 처음 적었다. */
-private val PinnedDragonReading = DailyFortuneReading(FortuneStrand.General, mainIndex = 12, goIndex = 10, luckyPointIndex = 1)

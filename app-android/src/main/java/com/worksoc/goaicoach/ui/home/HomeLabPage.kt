@@ -81,7 +81,7 @@ internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modi
     ) {
         QuoteBookCarousel()
         Spacer(modifier = Modifier.height(AppSpacing.Space4))
-        // 오늘의 운세(#276, 사용자 2026-10-23) — 띠 · 별자리를 고르면 운세 셋(띠 또는 별자리 · 바둑 · 행운의 자리), 광고로 하루 3번 갱신. 규칙은 shared `DailyFortune.kt`.
+        // 오늘의 운세(#276, 사용자 2026-10-23) — 랜덤 운세(누른 순간으로 뽑기 · 광고로 하루 3번 갱신) · 별자리별 · 띠별(준비 중). 규칙은 shared `DailyFortune.kt`.
         LabSectionHeader(title = labFortuneTitleFor(language))
         DailyFortuneCard(modifier = Modifier.padding(horizontal = AppSpacing.Space16))
         Spacer(modifier = Modifier.height(AppSpacing.Space4))

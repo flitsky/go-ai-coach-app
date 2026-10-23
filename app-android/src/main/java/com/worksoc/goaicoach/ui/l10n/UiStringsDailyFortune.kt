@@ -1,237 +1,71 @@
 package com.worksoc.goaicoach.ui.l10n
 
 import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneMaxRefreshes
-import com.worksoc.goaicoach.application.dailyfortune.FortuneSign
-import com.worksoc.goaicoach.application.dailyfortune.FortuneStrand
-import com.worksoc.goaicoach.application.dailyfortune.StarSign
-import com.worksoc.goaicoach.application.dailyfortune.ZodiacAnimal
 import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 
 /*
  * 실험실 「오늘의 운세」(백로그 #276, 사용자 2026-10-23)의 화면 문구 — `UiStrings` 생성자가 아니라 곁표다(함정 61). 운세 글 자체는 `DailyFortuneCatalog.kt`.
  *
+ * 사용자가 정한 구성: 랜덤 운세 → 별자리별 운세(+ 「별자리 설정하기」) → 띠별 운세(+ 「띠 설정하기」). 별자리별 · 띠별은 근거 데이터가 없어 「(준비 중)」(I-7).
  * 사용자의 말: 갱신의 내러티브 — *"광고 시청을 통해 자신의 운세를 강하게 개입하여 더 나은 방향으로 바꾸려는 의지"*. 그래서 갱신 단추는 「운 바꾸기」이고,
- * 그 위의 한 줄이 그 의지를 바둑에 빗댄다(「한 수로 판이 바뀌듯 …」). 문장과 영 · 일 · 중은 스레드가 정한 표기(원어민 확인 없음).
+ * 그 위의 한 줄이 그 의지를 바둑에 빗댄다(「한 수로 판이 바뀌듯 …」). 문장과 영 · 일 · 중은 스레드가 정한 표기(원어민 확인 없음, LLM 검수 두 번).
  * ⚠️ 등급 · 점수를 떠올리게 하는 말(「더 좋은 운」 · 「대길」)을 쓰지 않는다 — 사용자: 점수 · 등급이 드러나지 않게.
  */
 
-/** 띠 이름 — 한국어는 「용띠」, 일본어는 「たつ年」(亥는 いのしし年), 중국어는 「属龙」. */
-internal fun zodiacNameFor(language: UiLanguage, animal: ZodiacAnimal): String = when (language) {
-    UiLanguage.Korean -> when (animal) {
-        ZodiacAnimal.Rat -> "쥐띠"
-        ZodiacAnimal.Ox -> "소띠"
-        ZodiacAnimal.Tiger -> "호랑이띠"
-        ZodiacAnimal.Rabbit -> "토끼띠"
-        ZodiacAnimal.Dragon -> "용띠"
-        ZodiacAnimal.Snake -> "뱀띠"
-        ZodiacAnimal.Horse -> "말띠"
-        ZodiacAnimal.Goat -> "양띠"
-        ZodiacAnimal.Monkey -> "원숭이띠"
-        ZodiacAnimal.Rooster -> "닭띠"
-        ZodiacAnimal.Dog -> "개띠"
-        ZodiacAnimal.Pig -> "돼지띠"
-    }
-    UiLanguage.English -> when (animal) {
-        ZodiacAnimal.Rat -> "Rat"
-        ZodiacAnimal.Ox -> "Ox"
-        ZodiacAnimal.Tiger -> "Tiger"
-        ZodiacAnimal.Rabbit -> "Rabbit"
-        ZodiacAnimal.Dragon -> "Dragon"
-        ZodiacAnimal.Snake -> "Snake"
-        ZodiacAnimal.Horse -> "Horse"
-        ZodiacAnimal.Goat -> "Goat"
-        ZodiacAnimal.Monkey -> "Monkey"
-        ZodiacAnimal.Rooster -> "Rooster"
-        ZodiacAnimal.Dog -> "Dog"
-        ZodiacAnimal.Pig -> "Pig"
-    }
-    UiLanguage.Japanese -> when (animal) {
-        ZodiacAnimal.Rat -> "ねずみ年"
-        ZodiacAnimal.Ox -> "うし年"
-        ZodiacAnimal.Tiger -> "とら年"
-        ZodiacAnimal.Rabbit -> "うさぎ年"
-        ZodiacAnimal.Dragon -> "たつ年"
-        ZodiacAnimal.Snake -> "へび年"
-        ZodiacAnimal.Horse -> "うま年"
-        ZodiacAnimal.Goat -> "ひつじ年"
-        ZodiacAnimal.Monkey -> "さる年"
-        ZodiacAnimal.Rooster -> "とり年"
-        ZodiacAnimal.Dog -> "いぬ年"
-        ZodiacAnimal.Pig -> "いのしし年"
-    }
-    UiLanguage.ChineseSimplified -> when (animal) {
-        ZodiacAnimal.Rat -> "属鼠"
-        ZodiacAnimal.Ox -> "属牛"
-        ZodiacAnimal.Tiger -> "属虎"
-        ZodiacAnimal.Rabbit -> "属兔"
-        ZodiacAnimal.Dragon -> "属龙"
-        ZodiacAnimal.Snake -> "属蛇"
-        ZodiacAnimal.Horse -> "属马"
-        ZodiacAnimal.Goat -> "属羊"
-        ZodiacAnimal.Monkey -> "属猴"
-        ZodiacAnimal.Rooster -> "属鸡"
-        ZodiacAnimal.Dog -> "属狗"
-        ZodiacAnimal.Pig -> "属猪"
-    }
+/** 첫 칸의 이름 — 설정 없이 뽑는 랜덤 운세(사용자의 말 「랜덤 운세」). */
+internal fun fortuneRandomTitleFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "랜덤 운세"
+    UiLanguage.English -> "Random fortune"
+    UiLanguage.Japanese -> "ランダム運勢"
+    UiLanguage.ChineseSimplified -> "随机运势"
 }
 
-/** 별자리 이름. */
-internal fun starSignNameFor(language: UiLanguage, sign: StarSign): String = when (language) {
-    UiLanguage.Korean -> when (sign) {
-        StarSign.Aries -> "양자리"
-        StarSign.Taurus -> "황소자리"
-        StarSign.Gemini -> "쌍둥이자리"
-        StarSign.Cancer -> "게자리"
-        StarSign.Leo -> "사자자리"
-        StarSign.Virgo -> "처녀자리"
-        StarSign.Libra -> "천칭자리"
-        StarSign.Scorpio -> "전갈자리"
-        StarSign.Sagittarius -> "사수자리"
-        StarSign.Capricorn -> "염소자리"
-        StarSign.Aquarius -> "물병자리"
-        StarSign.Pisces -> "물고기자리"
-    }
-    UiLanguage.English -> when (sign) {
-        StarSign.Aries -> "Aries"
-        StarSign.Taurus -> "Taurus"
-        StarSign.Gemini -> "Gemini"
-        StarSign.Cancer -> "Cancer"
-        StarSign.Leo -> "Leo"
-        StarSign.Virgo -> "Virgo"
-        StarSign.Libra -> "Libra"
-        StarSign.Scorpio -> "Scorpio"
-        StarSign.Sagittarius -> "Sagittarius"
-        StarSign.Capricorn -> "Capricorn"
-        StarSign.Aquarius -> "Aquarius"
-        StarSign.Pisces -> "Pisces"
-    }
-    UiLanguage.Japanese -> when (sign) {
-        StarSign.Aries -> "おひつじ座"
-        StarSign.Taurus -> "おうし座"
-        StarSign.Gemini -> "ふたご座"
-        StarSign.Cancer -> "かに座"
-        StarSign.Leo -> "しし座"
-        StarSign.Virgo -> "おとめ座"
-        StarSign.Libra -> "てんびん座"
-        StarSign.Scorpio -> "さそり座"
-        StarSign.Sagittarius -> "いて座"
-        StarSign.Capricorn -> "やぎ座"
-        StarSign.Aquarius -> "みずがめ座"
-        StarSign.Pisces -> "うお座"
-    }
-    UiLanguage.ChineseSimplified -> when (sign) {
-        StarSign.Aries -> "白羊座"
-        StarSign.Taurus -> "金牛座"
-        StarSign.Gemini -> "双子座"
-        StarSign.Cancer -> "巨蟹座"
-        StarSign.Leo -> "狮子座"
-        StarSign.Virgo -> "处女座"
-        StarSign.Libra -> "天秤座"
-        StarSign.Scorpio -> "天蝎座"
-        StarSign.Sagittarius -> "射手座"
-        StarSign.Capricorn -> "摩羯座"
-        StarSign.Aquarius -> "水瓶座"
-        StarSign.Pisces -> "双鱼座"
-    }
+/** 오늘 아직 뽑지 않았을 때의 안내 — 사용자: 누른 순간의 타임스탬프로 뽑는다. */
+internal fun fortuneDrawPromptFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "누르는 순간의 기운으로 오늘의 운세를 뽑아요."
+    UiLanguage.English -> "Your fortune is drawn from the very moment you tap."
+    UiLanguage.Japanese -> "押した瞬間の気から、今日の運勢を引きます。"
+    UiLanguage.ChineseSimplified -> "以你按下的那一刻，抽取今日运势。"
 }
 
-/** 고른 것의 이름 — 띠면 띠 이름, 별자리면 별자리 이름. */
-internal fun fortuneSignNameFor(language: UiLanguage, sign: FortuneSign): String = when (sign) {
-    is FortuneSign.Zodiac -> zodiacNameFor(language, sign.animal)
-    is FortuneSign.Star -> starSignNameFor(language, sign.sign)
+/** 하루의 첫 운세를 뽑는 단추(무료). */
+internal fun fortuneDrawButtonFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "오늘의 운세 뽑기"
+    UiLanguage.English -> "Draw today's fortune"
+    UiLanguage.Japanese -> "今日の運勢を引く"
+    UiLanguage.ChineseSimplified -> "抽取今日运势"
 }
 
-/** 별자리의 날짜(고를 때 보이는 작은 글자) — 월 · 일만, 연도는 없다. 영어는 달과 날 사이를 붙는 빈칸으로(「Nov 22–」에서 줄이 갈라지지 않게). */
-internal fun starSignDatesFor(language: UiLanguage, sign: StarSign): String = when (language) {
-    UiLanguage.Korean -> "${sign.fromMonth}.${sign.fromDay}~${sign.toMonth}.${sign.toDay}"
-    UiLanguage.English -> "${EnglishMonths[sign.fromMonth - 1]}\u00A0${sign.fromDay}–${EnglishMonths[sign.toMonth - 1]}\u00A0${sign.toDay}"
-    UiLanguage.Japanese -> "${sign.fromMonth}/${sign.fromDay}〜${sign.toMonth}/${sign.toDay}"
-    UiLanguage.ChineseSimplified -> "${sign.fromMonth}.${sign.fromDay}–${sign.toMonth}.${sign.toDay}"
+/** 둘째 칸 — 별자리별 운세(준비 중). */
+internal fun fortuneStarSignTitleFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "별자리별 운세"
+    UiLanguage.English -> "Star sign fortune"
+    UiLanguage.Japanese -> "星座別の運勢"
+    UiLanguage.ChineseSimplified -> "星座运势"
 }
 
-private val EnglishMonths = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-
-/** 아직 고르지 않았을 때 카드의 안내. */
-internal fun fortunePickPromptFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "띠나 별자리를 고르면 오늘의 운세가 열려요."
-    UiLanguage.English -> "Choose your zodiac animal or star sign to open today's fortune."
-    UiLanguage.Japanese -> "干支か星座を選ぶと、今日の運勢が見られます。"
-    UiLanguage.ChineseSimplified -> "选择生肖或星座，查看今日运势。"
+/** 둘째 칸 제목 줄 오른쪽 — 별자리를 고르는 자리(지금은 「(준비 중)」을 붙여 흐리게만 보인다). */
+internal fun fortuneSetStarSignFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "별자리 설정하기"
+    UiLanguage.English -> "Set star sign"
+    UiLanguage.Japanese -> "星座を設定"
+    UiLanguage.ChineseSimplified -> "设置星座"
 }
 
-/** 고르기 단추(처음). */
-internal fun fortunePickButtonFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "띠·별자리 고르기"
-    UiLanguage.English -> "Choose your sign"
-    UiLanguage.Japanese -> "干支・星座を選ぶ"
-    UiLanguage.ChineseSimplified -> "选择生肖或星座"
+/** 셋째 칸 — 띠별 운세(준비 중). */
+internal fun fortuneZodiacTitleFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "띠별 운세"
+    UiLanguage.English -> "Zodiac animal fortune"
+    UiLanguage.Japanese -> "干支別の運勢"
+    UiLanguage.ChineseSimplified -> "生肖运势"
 }
 
-/** 고른 뒤 이름 옆의 작은 단추 — 다시 고르기. */
-internal fun fortuneChangeSignFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "다시 고르기"
-    UiLanguage.English -> "Change"
-    UiLanguage.Japanese -> "選び直す"
-    UiLanguage.ChineseSimplified -> "重新选择"
-}
-
-/** 고르는 창의 제목. */
-internal fun fortunePickerTitleFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "띠·별자리 고르기"
-    UiLanguage.English -> "Zodiac animal or star sign"
-    UiLanguage.Japanese -> "干支・星座を選ぶ"
-    UiLanguage.ChineseSimplified -> "选择生肖或星座"
-}
-
-/** 고르는 창의 탭 — 띠 / 별자리. */
-internal fun fortuneZodiacTabFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "띠"
-    UiLanguage.English -> "Zodiac animal"
-    UiLanguage.Japanese -> "干支"
-    UiLanguage.ChineseSimplified -> "生肖"
-}
-
-internal fun fortuneStarTabFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "별자리"
-    UiLanguage.English -> "Star sign"
-    UiLanguage.Japanese -> "星座"
-    UiLanguage.ChineseSimplified -> "星座"
-}
-
-/** 고르는 창 아래의 한 줄 — 무엇을 받지 않는지(생년월일)와 어디에 남는지. */
-internal fun fortunePickerNoteFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "생년월일은 묻지 않아요. 고른 것은 이 기기에만 남아요."
-    UiLanguage.English -> "We never ask for your birthday. Your choice stays on this device."
-    UiLanguage.Japanese -> "生年月日はお聞きしません。選んだものはこの端末にだけ残ります。"
-    UiLanguage.ChineseSimplified -> "不会询问你的生日。你的选择只保存在本设备上。"
-}
-
-/** 운세 갈래의 제목 — 띠 운세 · 별자리 운세 · 바둑 운세 · 행운의 자리. */
-internal fun fortuneStrandLabelFor(language: UiLanguage, strand: FortuneStrand): String = when (strand) {
-    FortuneStrand.General -> when (language) {
-        UiLanguage.Korean -> "띠 운세"
-        UiLanguage.English -> "Zodiac reading"
-        UiLanguage.Japanese -> "干支の運勢"
-        UiLanguage.ChineseSimplified -> "生肖运势"
-    }
-    FortuneStrand.Star -> when (language) {
-        UiLanguage.Korean -> "별자리 운세"
-        UiLanguage.English -> "Star sign reading"
-        UiLanguage.Japanese -> "星座の運勢"
-        UiLanguage.ChineseSimplified -> "星座运势"
-    }
-    FortuneStrand.Go -> when (language) {
-        UiLanguage.Korean -> "바둑 운세"
-        UiLanguage.English -> "Go reading"
-        UiLanguage.Japanese -> "囲碁の運勢"
-        UiLanguage.ChineseSimplified -> "围棋运势"
-    }
-    FortuneStrand.LuckyPoint -> when (language) {
-        UiLanguage.Korean -> "행운의 자리"
-        UiLanguage.English -> "Lucky spot"
-        UiLanguage.Japanese -> "幸運の着点"
-        UiLanguage.ChineseSimplified -> "幸运落点"
-    }
+/** 셋째 칸 제목 줄 오른쪽 — 띠를 고르는 자리(지금은 「(준비 중)」). */
+internal fun fortuneSetZodiacFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "띠 설정하기"
+    UiLanguage.English -> "Set zodiac animal"
+    UiLanguage.Japanese -> "干支を設定"
+    UiLanguage.ChineseSimplified -> "设置生肖"
 }
 
 /** 갱신 단추 — 광고를 보는 사람과 구독자(광고 없이)가 다르다. 「운 바꾸기」는 사용자의 내러티브(운에 스스로 개입한다). */
