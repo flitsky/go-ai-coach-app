@@ -104,7 +104,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - **화면 모드 · 스플래시**: 설정 › 「화면 모드」와 빠른 버튼이 같은 값(`ThemeModeStore`)이고, 색은 `ui.designsystem`의 밝은 · 어두운 구성 둘이다. 밤 시간(21:00~04:59)은
   `shared/policy/DisplayTheme.kt` 한 곳 — 「밤 시간 자동」과 기동 그림(밤 스포트라이트 · 낮 한옥 둘 중 무작위, `ui/splash/` · `work/splash/README.md`)이 함께 쓴다. (← #262)
 - **릴리스**: `make bundle-aab VERSION=x.y.z` → 인터널 → 프로덕션 → 태그(버전을 올린 커밋, 메시지에 sha256). 절차와 콘솔의 함정은 `GOOGLE_PLAY_LAUNCH_PLAN.md` §0,
-  스토어 글 · 그림은 `work/play-store-assets/`, 「새로워진 점」은 버전마다 `UiStringsWhatsNew.kt`에 묶음을 더한다(1.7.0까지 있다).
+  스토어 글 · 그림은 `work/play-store-assets/`, 「새로워진 점」은 버전마다 `UiStringsWhatsNew.kt`에 묶음을 더한다(1.8.0까지 있다).
   넘어온 메모(일감이 아니다): 태그 구멍 `v1.3.6` · `v1.4.0` · 콘솔의 받는 크기를 §0에 적은 적이 없다.
 - **학습**(대국 페이지의 타일, #280): 「기초 학습」 목록 — 바둑 규칙(읽기) · 기초 행마(읽기) · 유튜브 강좌, 그리고 **사활 풀기**(#184 · #277 — 푸는 학습 58문제: 기본 26 · 중급 · 고급 20 · 고전 『기경중묘』 5 · 『발양론』 7).
   판정은 `LifeAndDeathJudge` 하나(어느 판정을 쓰는지는 `lifeAndDeathJudgeFor` 한 곳) — 만든 문제는 풀이기(`LifeAndDeathSolver.kt`, 패는 오답 · 손을 빼도 되면 다 푼 것)가 읽고, 폰에서 읽기에 큰 문제와 고전은
@@ -151,6 +151,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - 실을 것: 1.7.0 버전 커밋 `2f46ba3f` 뒤의 #280 세 페이지 홈 · #281 Material3 1.4.0 움직임 · 명언록 · #282 야간 모드의 어두운 바둑판 · #276 오늘의 운세(랜덤 운세 — 별자리별 · 띠별은 「준비 중」) ·
   #283 1일 1회 뽑기 · 개인정보처리방침 최종 주소(PR #7). #276은 카드가 「지금」인 채로 싣는다 — 사용자가 최신 main을 직접 빌드해 테스트한 뒤 릴리스를 시켰다(2026-10-23).
 - 할 일: 「새로워진 점」 1.8.0 묶음(`UiStringsWhatsNew.kt`, 4개 언어) · 스토어 글(출시 노트 · 자세한 설명의 실험실 줄) · `make bundle-aab VERSION=1.8.0` · §0의 1.8.0 절 · rezen.dev `1.8.0.yaml`(soon).
+· 🔨 **1.8.0 번들(2026-10-23)** — 「새로워진 점」 · 스토어 글(`c12ca874`) · rezen.dev `1.8.0.yaml`(soon — 푸시됨, Cloudflare가 배포) · `dist/go-ai-coach-release.aab`(§0의 1.8.0 절).
   ⏳ 사용자: 인터널 → 기다려 폰에서 업데이트 · 엔진 확인 → 프로덕션 승격 → 태그 `v1.8.0`(버전을 올린 커밋) · rezen.dev는 `status: live`로.
 
 ---
