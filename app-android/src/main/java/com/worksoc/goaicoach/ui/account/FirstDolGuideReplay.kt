@@ -44,11 +44,10 @@ import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
 import com.worksoc.goaicoach.ui.home.GameHistoryBoardIcon
 import com.worksoc.goaicoach.ui.home.GamePlayPreviewIcon
 import com.worksoc.goaicoach.ui.home.HomeMenuTile
-import com.worksoc.goaicoach.ui.home.HomePage
-import com.worksoc.goaicoach.ui.home.HomePageTabBar
 import com.worksoc.goaicoach.ui.home.MenuCard
 import com.worksoc.goaicoach.ui.home.MenuTile
 import com.worksoc.goaicoach.ui.home.RankMeasureIcon
+import com.worksoc.goaicoach.ui.home.StudyPreviewIcon
 import com.worksoc.goaicoach.ui.home.currentAiCharacterOrDefault
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -62,6 +61,7 @@ import com.worksoc.goaicoach.ui.l10n.myCharactersTitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.settingsHelpSectionFor
+import com.worksoc.goaicoach.ui.l10n.studyBasicsTitleFor
 
 /**
  * **가이드 다시보기**(백로그 #128). 진입점은 **설정 하단** 하나다(`SettingsHelpLinks`, 백로그 #241 — 2026-10-09에 사용자가
@@ -226,10 +226,10 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                         ReplayLine(UiStringsGuideReplay.gameHistory(strings.language))
                         MenuTile(HomeMenuTile(strings.gameHistoryTitle, onClick = {}) { GameHistoryBoardIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
                     }
-                    ReplaySection(title = strings.study) {
+                    ReplaySection(title = studyBasicsTitleFor(strings.language)) {
                         ReplayLine(UiStringsGuideReplay.study(strings.language))
-                        // #280 — 「학습 하기」는 홈의 타일이 아니라 오른쪽 페이지다. 가는 길인 아래 탭을 **진짜로** 그린다(누르면 아무 일 없음).
-                        HomePageTabBar(current = HomePage.Study, onSelect = {}, underNavigationBar = false)
+                        // #280 — 학습은 대국 페이지의 타일이다(사활 풀기 · 명국 기보 · 기초 학습). 기초 학습 타일을 **진짜로** 그린다(누르면 아무 일 없음).
+                        MenuTile(HomeMenuTile(studyBasicsTitleFor(strings.language), onClick = {}) { StudyPreviewIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
                     }
                     // #261 — 바둑판 조작법(#249·#258)으로 가는 길. 이름은 설정이 쓰는 그 글자다.
                     ReplaySection(title = settingsHelpSectionFor(strings.language)) {

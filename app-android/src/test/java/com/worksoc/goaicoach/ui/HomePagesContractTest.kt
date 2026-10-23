@@ -3,27 +3,36 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
 import com.worksoc.goaicoach.ui.home.HomePage
+import com.worksoc.goaicoach.ui.l10n.StudyBasicsCategories
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
-import com.worksoc.goaicoach.ui.study.StudyHubRow
-import com.worksoc.goaicoach.ui.study.StudyHubRows
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 백로그 #280 — 홈은 세 페이지를 옆으로 넘긴다(사용자 2026-10-22): 내 정보 ‹ **대국** › 학습 하기.
- * 페이지 배치는 화면 코드라 단위 테스트가 없다 — 사용자가 정한 것을 소스로 못박는다(주석은 걷어내고 본다).
+ * 백로그 #280 — 홈은 세 페이지를 옆으로 넘긴다(사용자 2026-10-22 · 10-23): 내 정보 ‹ **대국** › 실험실.
+ * 페이지 배치는 화면 코드라 단위 테스트가 없다 — 사용자가 정한 것을 소스로 못박는다(주석 · import는 걷어내고 본다).
  */
 class HomePagesContractTest {
 
-    private val home = RepoPaths.uiFile("GoCoachHomeScreen.kt").readContractSource()
-    private val shell = RepoPaths.uiFile("GoCoachApp.kt").readContractSource()
+    /** 주석·import를 걷어낸 본문만 본다 — 이름이 주석에 남아 그물이 헐거워지는 것을 막는다(함정 10-2). */
+    private fun codeOf(file: File): String =
+        file.readContractSource()
+            .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
+            .lines()
+            .filterNot { it.trimStart().startsWith("import ") }
+            .joinToString("\n") { it.substringBefore("//") }
 
-    /** 선언 순서가 왼쪽부터의 자리다 — 가운데가 대국. */
+    private val home = codeOf(RepoPaths.uiFile("GoCoachHomeScreen.kt"))
+    private val lab = codeOf(RepoPaths.uiFile("HomeLabPage.kt"))
+    private val shell = codeOf(RepoPaths.uiFile("GoCoachApp.kt"))
+
+    /** 선언 순서가 왼쪽부터의 자리다 — 가운데가 대국, 셋째가 실험실(처음에는 「학습 하기」였다). */
     @Test
-    fun pagesRunMyInfoPlayStudyFromTheLeft() {
-        assertEquals(listOf(HomePage.MyInfo, HomePage.Play, HomePage.Study), HomePage.entries)
+    fun pagesRunMyInfoPlayLabFromTheLeft() {
+        assertEquals(listOf(HomePage.MyInfo, HomePage.Play, HomePage.Lab), HomePage.entries)
     }
 
     /** ① 켜면 늘 가운데 · 다른 화면에서 돌아오면 떠났던 페이지 — 그 기억은 프로세스 안에만 있고 처음 값이 대국이다. */
@@ -48,25 +57,40 @@ class HomePagesContractTest {
     fun myInfoIsAPageNotADestination() {
         assertFalse("셸에 「내 정보」 목적지가 되살아났다(#280).", shell.contains("ScreenDestination.MyPage"))
         assertTrue("셸이 홈에 내 정보 페이지를 넘기지 않는다.", shell.contains("myInfoPage = { MyPageScreen() }"))
-        assertTrue("셸이 홈에 학습 허브 페이지를 넘기지 않는다.", shell.contains("studyPage = { StudyHubPage("))
     }
 
-    /** 학습 하기 페이지의 줄 — 분류는 빠짐없이 한 번씩, 차례는 사용자가 적어 준 그대로(2026-10-22): 바둑 규칙 · 기초 행마 · 유튜브 강좌 · 사활 풀기 · 명국 기보. */
+    /** 대국 페이지의 첫 카드는 「캐릭터 대국」이다 — 「서 있는 답」(#239), 2026-10-23 사용자가 시안에서 다시 확인했다. */
     @Test
-    fun theStudyPageListsEveryCategoryOnceInTheChosenOrder() {
-        val categories = StudyHubRows.filterIsInstance<StudyHubRow.Category>().map { it.category }
-        assertEquals("학습 하기 페이지에 빠진 분류가 있다 — 새 분류를 열면 줄 표에도 더할 것.", StudyCategory.entries.toSet(), categories.toSet())
-        assertEquals("학습 하기 페이지에 두 번 선 분류가 있다.", categories.size, categories.toSet().size)
+    fun characterMatchIsTheFirstCard() {
+        val character = home.indexOf("title = strings.startMatch")
+        val rank = home.indexOf("title = rankMeasureTitleFor(strings.language)")
+        assertTrue("대국 카드를 찾지 못했다 — 이 계약의 전제가 바뀌었다.", character >= 0 && rank >= 0)
+        assertTrue("「승급 대국」이 「캐릭터 대국」보다 위에 있다(서 있는 답 #239).", character < rank)
+    }
+
+    /** 학습은 대국 페이지의 타일이다 — 「사활 풀기」는 곧바로, 나머지 셋은 「기초 학습」 목록으로(사용자 2026-10-23). 분류는 빠짐없이 한 곳에 선다. */
+    @Test
+    fun everyStudyCategoryHasExactlyOnePlace() {
         assertEquals(
-            "학습 하기 페이지의 줄 차례가 사용자가 정한 것과 다르다(#280).",
-            listOf(
-                StudyHubRow.Category(StudyCategory.Rules),
-                StudyHubRow.Category(StudyCategory.Fundamentals),
-                StudyHubRow.Category(StudyCategory.YoutubeLessons),
-                StudyHubRow.Category(StudyCategory.LifeAndDeath),
-                StudyHubRow.GameRecords,
-            ),
-            StudyHubRows,
+            "「기초 학습」 목록의 차례가 사용자가 정한 것과 다르다(#280).",
+            listOf(StudyCategory.Rules, StudyCategory.Fundamentals, StudyCategory.YoutubeLessons),
+            StudyBasicsCategories,
         )
+        assertFalse("「사활 풀기」가 「기초 학습」 목록에도 있다 — 대국 페이지의 타일이 곧바로 연다.", StudyCategory.LifeAndDeath in StudyBasicsCategories)
+        assertEquals(
+            "자리가 없는 분류가 있다 — 새 분류를 열면 「기초 학습」 목록이나 대국 페이지의 타일에 자리를 줄 것.",
+            StudyCategory.entries.toSet(),
+            StudyBasicsCategories.toSet() + StudyCategory.LifeAndDeath,
+        )
+        listOf("onGameRecordsClick", "onLifeAndDeathClick", "onBasicsClick").forEach { tile ->
+            assertTrue("대국 페이지에 `$tile` 타일이 없다(#280).", home.contains("$tile) {"))
+        }
+    }
+
+    /** 바둑판 사진 분석의 입구는 둘이다 — 대국 페이지 오른쪽 아래의 카메라 단추, 실험실 오른쪽 아래의 카드(사용자 2026-10-23). */
+    @Test
+    fun boardScanHasTwoQuietDoors() {
+        assertTrue("대국 페이지에 카메라 단추가 없다(#280).", home.contains("imageVector = BoardScanCameraIcon"))
+        assertTrue("실험실에 바둑판 사진 분석 카드가 없다(#280).", lab.contains("HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick)"))
     }
 }

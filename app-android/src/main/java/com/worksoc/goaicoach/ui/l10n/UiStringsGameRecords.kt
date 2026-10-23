@@ -23,13 +23,6 @@ private val Intros: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "一手一手地打谱名局。也可以打开你自己的SGF棋谱文件。",
 )
 
-/** 학습 하기 페이지의 「명국 기보」 줄의 한 줄 소개(#280 — 홈 타일에서 옮겨 오며 생겼다, 문구는 스레드가 정함). 위 [Intros]의 짧은 꼴. */
-private val StudySubtitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "명국을 한 수씩 놓아 보고, SGF 기보 파일도 엽니다.",
-    UiLanguage.English to "Replay famous games move by move, or open an SGF file.",
-    UiLanguage.Japanese to "名局を一手ずつ並べ、SGF棋譜ファイルも開けます。",
-    UiLanguage.ChineseSimplified to "逐手打谱名局，也可以打开SGF棋谱文件。",
-)
 
 private val OpenFileLabels: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "SGF 파일 열기",
@@ -262,8 +255,6 @@ internal fun gameRecordSecondsFor(language: UiLanguage, seconds: Int): String = 
 }
 
 internal fun gameRecordsIntroFor(language: UiLanguage): String = Intros.getValue(language)
-
-internal fun gameRecordsStudySubtitleFor(language: UiLanguage): String = StudySubtitles.getValue(language)
 
 internal fun gameRecordsOpenFileFor(language: UiLanguage): String = OpenFileLabels.getValue(language)
 

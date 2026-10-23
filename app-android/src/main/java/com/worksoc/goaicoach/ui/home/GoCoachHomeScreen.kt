@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
@@ -65,6 +66,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -90,6 +92,7 @@ import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -113,12 +116,16 @@ import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
+import com.worksoc.goaicoach.ui.l10n.homePageLabTabFor
 import com.worksoc.goaicoach.ui.l10n.homePagePlayTabFor
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOverwriteWarningFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
+import com.worksoc.goaicoach.ui.l10n.studyBasicsTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
@@ -138,7 +145,12 @@ internal fun GoCoachHomeScreen(
     onStartMatchClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
+    /** 「바둑판 사진 분석」 — 대국 페이지 오른쪽 아래의 카메라 단추 · 실험실 페이지의 카드(#280), 그리고 다른 앱에서 「공유」로 받은 사진이 있을 때. */
     onBoardScanClick: () -> Unit,
+    /** 대국 페이지의 타일 셋(#280, 사용자 2026-10-23) — 「명국 기보」 · 「사활 풀기」 · 「기초 학습」. 셸이 그 목적지로 보낸다. */
+    onGameRecordsClick: () -> Unit,
+    onLifeAndDeathClick: () -> Unit,
+    onBasicsClick: () -> Unit,
     hasResumableSession: Boolean,
     onResumeClick: () -> Unit,
     /**
@@ -159,8 +171,6 @@ internal fun GoCoachHomeScreen(
     topNotice: @Composable (Modifier) -> Unit,
     /** 왼쪽 페이지 「내 정보」(#280) — 셸이 `ui.account`의 화면을 넘긴다. */
     myInfoPage: @Composable () -> Unit,
-    /** 오른쪽 페이지 「학습 하기」 허브(#280) — 셸이 `ui.study`의 허브를 넘긴다. */
-    studyPage: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -221,11 +231,14 @@ internal fun GoCoachHomeScreen(
                         onStartMatchClick = { if (hasResumableSession) showOverwriteWarningDialog = true else onStartMatchClick() },
                         onRankMeasureClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
                         onGameHistoryClick = onGameHistoryClick,
+                        onGameRecordsClick = onGameRecordsClick,
+                        onLifeAndDeathClick = onLifeAndDeathClick,
+                        onBasicsClick = onBasicsClick,
                         onBoardScanClick = onBoardScanClick,
                         playerSetup = playerSetup,
                         topNotice = topNotice,
                     )
-                    HomePage.Study -> studyPage()
+                    HomePage.Lab -> HomeLabPage(onBoardScanClick = onBoardScanClick)
                 }
             }
             HomePageTabBar(current = HomePage.entries[pagerState.currentPage], onSelect = showPage)
@@ -295,8 +308,8 @@ internal fun GoCoachHomeScreen(
     }
 }
 
-/** 홈의 세 페이지 — **선언 순서가 왼쪽부터의 자리다**(#280). 저장하지 않는다(프로세스 안의 기억뿐). */
-internal enum class HomePage { MyInfo, Play, Study }
+/** 홈의 세 페이지 — **선언 순서가 왼쪽부터의 자리다**(#280): 내 정보 ‹ 대국 › 실험실(사용자 2026-10-22 — 셋째는 처음에 「학습 하기」였다). 저장하지 않는다(프로세스 안의 기억뿐). */
+internal enum class HomePage { MyInfo, Play, Lab }
 
 /**
  * 홈을 떠났다 돌아올 때 떠났던 페이지로 오게 하는 기억(#280 ①). 홈은 다른 화면으로 가면 컴포지션에서 빠져 페이지 상태를 잃는다.
@@ -382,8 +395,8 @@ private fun HomeTopBarLogo(
 private val HomeTopBarLogoSize = 38.dp
 
 /**
- * 가운데 페이지 「대국」(#280 ⑤) — 한 줄 안내 → 이어하기 → 대국 카드 둘 → 반 폭 타일 둘(대국 기록 · 바둑판 사진 분석).
- * 「기보 보기」는 학습 하기 페이지로, 「학습 하기」 타일은 페이지가 돼 빠졌다.
+ * 가운데 페이지 「대국」(#280, 사용자 2026-10-23) — 한 줄 안내(오늘의 명언) → 이어하기 → 캐릭터 대국 → 승급 대국
+ * → 반 폭 타일 넷(대국 기록 · 명국 기보 / 사활 풀기 · 기초 학습) → 오른쪽 아래 카메라 단추(바둑판 사진 분석).
  */
 @Composable
 private fun HomePlayPage(
@@ -392,6 +405,9 @@ private fun HomePlayPage(
     onStartMatchClick: () -> Unit,
     onRankMeasureClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
+    onGameRecordsClick: () -> Unit,
+    onLifeAndDeathClick: () -> Unit,
+    onBasicsClick: () -> Unit,
     onBoardScanClick: () -> Unit,
     playerSetup: PlayerSetup,
     topNotice: @Composable (Modifier) -> Unit,
@@ -479,7 +495,7 @@ private fun HomePlayPage(
             )
         }
 
-        // 「승급 대국」 — **두 번째 메뉴**(백로그 #219, 2026-10-06 사용자). 자기 기력과 같은 급수의 AI와 두고 결과가 기력을 옮긴다.
+        // 「승급 대국」 — **두 번째 카드**(백로그 #219). 첫 카드는 「캐릭터 대국」이다(「서 있는 답」 #239 — 2026-10-22 시안에서 위로 올렸다가 사용자가 되돌렸다).
         // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
         if (rankMeasure.isAvailable) {
             Spacer(modifier = Modifier.height(AppSpacing.Space12))
@@ -492,26 +508,41 @@ private fun HomePlayPage(
         }
 
         // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
-        // 「대국 기록」이 먼저다(백로그 #45 — 두고 → 돌아보는 동선이 앱 안에서 이어진다). 그 옆이 「사진 분석」 — 사진의 국면에서 곧바로 둔다(#266).
-        // 「기보 보기」는 학습 하기 페이지로 갔다(#280 ⑤ — 명국 감상은 공부다).
-        Spacer(modifier = Modifier.height(AppSpacing.Space12))
-        Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-            MenuTile(tile = HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() }, modifier = Modifier.weight(1f))
-            MenuTile(tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() }, modifier = Modifier.weight(1f))
+        // 타일 넷(#280, 사용자 2026-10-22): 대국 기록 · 명국 기보 / 사활 풀기 · 기초 학습(바둑 규칙 · 기초 행마 · 유튜브 강좌를 모은 목록).
+        val tiles = listOf(
+            HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() },
+            HomeMenuTile(gameRecordsTitleFor(strings.language), onGameRecordsClick) { GameRecordsPreviewIcon() },
+            HomeMenuTile(strings.studyCategoryTitle(StudyCategory.LifeAndDeath), onLifeAndDeathClick) { LifeAndDeathPreviewIcon() },
+            HomeMenuTile(studyBasicsTitleFor(strings.language), onBasicsClick) { StudyPreviewIcon() },
+        )
+        tiles.chunked(2).forEach { row ->
+            Spacer(modifier = Modifier.height(AppSpacing.Space12))
+            Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+                row.forEach { tile -> MenuTile(tile = tile, modifier = Modifier.weight(1f)) }
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
+
+        // 「바둑판 사진 분석」은 페이지 오른쪽 아래의 **카메라 단추 하나**다(#280, 사용자 2026-10-22 — 아는 사람은 여기로, 이름 붙은 입구는 실험실 페이지).
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            IconButton(onClick = onBoardScanClick) {
+                Icon(
+                    imageVector = BoardScanCameraIcon,
+                    contentDescription = strings.featureShortName(FeatureId.BoardScan),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
+        }
     }
 }
 
 /**
  * 아래 탭 셋(#280 ②) — 지금 페이지를 진하게 보이고(아이콘 뒤 옅은 알약), 누르면 그 페이지로 넘긴다. 넘기기만으로는 옆에 무엇이 있는지 모르고 지나치기 쉽다.
  * 키는 최소 높이만 준다 — 글꼴 배율 1.3에서 이름이 두 줄이 돼도 잘리지 않게(함정 9).
- * ⚠️ `internal`인 이유는 가이드 다시보기 하나다 — 「학습 하기」로 가는 길을 **이 진짜 탭**으로 보여 준다([MenuCard]와 같은 이유).
- * 거기는 창 안이라 내비게이션 바 여백이 없다([underNavigationBar] = `false`).
  */
 @Composable
-internal fun HomePageTabBar(current: HomePage, onSelect: (HomePage) -> Unit, underNavigationBar: Boolean = true) {
+private fun HomePageTabBar(current: HomePage, onSelect: (HomePage) -> Unit) {
     val strings = LocalUiStrings.current
     Column(
         modifier = Modifier
@@ -522,7 +553,7 @@ internal fun HomePageTabBar(current: HomePage, onSelect: (HomePage) -> Unit, und
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .let { if (underNavigationBar) it.navigationBarsPadding() else it }
+                .navigationBarsPadding()
                 .selectableGroup(),
         ) {
             HomePage.entries.forEach { page ->
@@ -565,13 +596,13 @@ private val HomeTabMinHeight = 56.dp
 private fun HomePage.label(strings: UiStrings): String = when (this) {
     HomePage.MyInfo -> strings.myPageTitle
     HomePage.Play -> homePagePlayTabFor(strings.language)
-    HomePage.Study -> strings.study
+    HomePage.Lab -> homePageLabTabFor(strings.language)
 }
 
 private fun HomePage.icon(): ImageVector = when (this) {
     HomePage.MyInfo -> Icons.Filled.Person
     HomePage.Play -> PlayTabStonesIcon
-    HomePage.Study -> StudyTabBookIcon
+    HomePage.Lab -> LabTabFlaskIcon
 }
 
 /**
@@ -595,33 +626,49 @@ private val PlayTabStonesIcon: ImageVector = materialIcon(name = "HomeTab.Stones
     }
 }
 
-/** 「학습 하기」 탭 — 펼친 책(Material 「menu book」 모양을 옮겨 그렸다 — 이 앱은 아이콘 확장 세트를 싣지 않는다). */
-private val StudyTabBookIcon: ImageVector = materialIcon(name = "HomeTab.Book") {
+/** 「실험실」 탭 — 플라스크(Material 「science」 모양을 옮겨 그렸다 — 이 앱은 아이콘 확장 세트를 싣지 않는다). */
+private val LabTabFlaskIcon: ImageVector = materialIcon(name = "HomeTab.Flask") {
     materialPath {
-        moveTo(21f, 5f)
-        curveToRelative(-1.11f, -0.35f, -2.33f, -0.5f, -3.5f, -0.5f)
-        curveToRelative(-1.95f, 0f, -4.05f, 0.4f, -5.5f, 1.5f)
-        curveToRelative(-1.45f, -1.1f, -3.55f, -1.5f, -5.5f, -1.5f)
-        reflectiveCurveTo(2.45f, 4.9f, 1f, 6f)
-        verticalLineToRelative(14.65f)
-        curveToRelative(0f, 0.25f, 0.25f, 0.5f, 0.5f, 0.5f)
-        curveToRelative(0.1f, 0f, 0.15f, -0.05f, 0.25f, -0.05f)
-        curveTo(3.1f, 20.45f, 5.05f, 20f, 6.5f, 20f)
-        curveToRelative(1.95f, 0f, 4.05f, 0.4f, 5.5f, 1.5f)
-        curveToRelative(1.35f, -0.85f, 3.8f, -1.5f, 5.5f, -1.5f)
-        curveToRelative(1.65f, 0f, 3.35f, 0.3f, 4.75f, 1.05f)
-        curveToRelative(0.1f, 0.05f, 0.15f, 0.05f, 0.25f, 0.05f)
-        curveToRelative(0.25f, 0f, 0.5f, -0.25f, 0.5f, -0.5f)
-        verticalLineTo(6f)
-        curveTo(22.4f, 5.55f, 21.75f, 5.25f, 21f, 5f)
+        moveTo(19.8f, 18.4f)
+        lineTo(14f, 10.67f)
+        verticalLineTo(6.5f)
+        lineToRelative(1.35f, -1.69f)
+        curveTo(15.61f, 4.48f, 15.38f, 4f, 14.96f, 4f)
+        horizontalLineTo(9.04f)
+        curveTo(8.62f, 4f, 8.39f, 4.48f, 8.65f, 4.81f)
+        lineTo(10f, 6.5f)
+        verticalLineToRelative(4.17f)
+        lineTo(4.2f, 18.4f)
+        curveTo(3.71f, 19.06f, 4.18f, 20f, 5f, 20f)
+        horizontalLineToRelative(14f)
+        curveTo(19.82f, 20f, 20.29f, 19.06f, 19.8f, 18.4f)
         close()
-        moveTo(21f, 18.5f)
-        curveToRelative(-1.1f, -0.35f, -2.3f, -0.5f, -3.5f, -0.5f)
-        curveToRelative(-1.7f, 0f, -4.15f, 0.65f, -5.5f, 1.5f)
-        verticalLineTo(8f)
-        curveToRelative(1.35f, -0.85f, 3.8f, -1.5f, 5.5f, -1.5f)
-        curveToRelative(1.2f, 0f, 2.4f, 0.15f, 3.5f, 0.5f)
-        verticalLineTo(18.5f)
+    }
+}
+
+/** 대국 페이지 오른쪽 아래의 사진 분석 단추(#280) — 카메라(Material 「photo camera」 모양을 옮겨 그렸다). 몸체 · 렌즈 테 · 렌즈를 홀짝 채우기로 가른다. */
+private val BoardScanCameraIcon: ImageVector = materialIcon(name = "Home.BoardScanCamera") {
+    materialPath(pathFillType = PathFillType.EvenOdd) {
+        moveTo(9f, 2f)
+        lineTo(7.17f, 4f)
+        horizontalLineTo(4f)
+        curveToRelative(-1.1f, 0f, -2f, 0.9f, -2f, 2f)
+        verticalLineToRelative(12f)
+        curveToRelative(0f, 1.1f, 0.9f, 2f, 2f, 2f)
+        horizontalLineToRelative(16f)
+        curveToRelative(1.1f, 0f, 2f, -0.9f, 2f, -2f)
+        verticalLineTo(6f)
+        curveToRelative(0f, -1.1f, -0.9f, -2f, -2f, -2f)
+        horizontalLineToRelative(-3.17f)
+        lineTo(15f, 2f)
+        close()
+        moveTo(7f, 12f)
+        arcToRelative(5f, 5f, 0f, isMoreThanHalf = true, isPositiveArc = true, 10f, 0f)
+        arcToRelative(5f, 5f, 0f, isMoreThanHalf = true, isPositiveArc = true, -10f, 0f)
+        close()
+        moveTo(8.8f, 12f)
+        arcToRelative(3.2f, 3.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 6.4f, 0f)
+        arcToRelative(3.2f, 3.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, -6.4f, 0f)
         close()
     }
 }
@@ -1106,6 +1153,150 @@ private val StudyPreviewGameState: GameState = GameState.empty(
     ),
 )
 
+/**
+ * 「기초 학습」 타일 그림(#280 — 옛 「학습 하기」 타일의 그림을 되살렸다) — 바둑판(초반 포석 세 점) 위에 돋보기를 판 한 변의 60% 크기로
+ * 겹친다(백로그 #181, 2026-09-22 120% 확대). 돋보기는 이모지 대신 `Icons.Filled.Search`
+ * 벡터를 쓴다 — 기기·글꼴에 따라 렌더링이 갈리는 이모지보다 크기·색이 항상 예측 가능하다.
+ */
+@Composable
+internal fun StudyPreviewIcon() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = StudyPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                // 2026-09-22 사용자 요청 — 흰 배경 불투명도를 75%로 낮춰 뒤판이 살짝 비친다.
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxSize(0.7f),
+            )
+        }
+    }
+}
+
+/**
+ * 「명국 기보」 타일의 정적 국면 — 수순 번호가 붙은 초반 네 수(백로그 #269). 기보는 「번호 붙은 돌」로 알아보므로 배지 없이 번호를 보인다.
+ * 실제 규칙(`play`)으로 두어 번호가 수순을 따른다.
+ */
+private val GameRecordsPreviewGameState: GameState = listOf(
+    Move.Play(StoneColor.Black, BoardCoordinate(row = 2, column = 6)),
+    Move.Play(StoneColor.White, BoardCoordinate(row = 6, column = 2)),
+    Move.Play(StoneColor.Black, BoardCoordinate(row = 6, column = 6)),
+    Move.Play(StoneColor.White, BoardCoordinate(row = 2, column = 2)),
+).fold(GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese)) { state, move -> state.play(move) }
+
+/**
+ * 「명국 기보」 타일 그림 — 수순 번호가 붙은 9줄 판 위에 책 배지(다른 타일과 같은 자리·같은 모양).
+ * 번호만으로는 타일 크기에서 읽히지 않아(에뮬레이터 2026-10-19) 배지로 알아보게 한다.
+ */
+@Composable
+private fun GameRecordsPreviewIcon() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = GameRecordsPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(showMoveNumbers = true, showLastMoveRing = false),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "📖",
+                fontSize = AppTextSize.Text20,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/**
+ * 「사활 풀기」 타일의 정적 국면(#280) — 귀의 백 한 무리를 흑이 둘러쌌다. 사는가 죽는가를 묻는 모양이다(장식용 — 규칙을 거치지 않고 앉힌다).
+ */
+private val LifeAndDeathPreviewGameState: GameState = GameState.empty(
+    boardSize = BoardSize.Nine,
+    ruleset = Ruleset.Japanese,
+).copy(
+    stones = buildMap {
+        listOf(BoardCoordinate(row = 7, column = 0), BoardCoordinate(row = 7, column = 1), BoardCoordinate(row = 7, column = 2), BoardCoordinate(row = 8, column = 3))
+            .forEach { put(it, StoneColor.White) }
+        listOf(
+            BoardCoordinate(row = 6, column = 0), BoardCoordinate(row = 6, column = 1), BoardCoordinate(row = 6, column = 2),
+            BoardCoordinate(row = 6, column = 3), BoardCoordinate(row = 7, column = 3), BoardCoordinate(row = 7, column = 4), BoardCoordinate(row = 8, column = 4),
+        ).forEach { put(it, StoneColor.Black) }
+    },
+)
+
+/** 「사활 풀기」 타일 그림(#280) — 귀의 사활 모양 위에 「?」 배지(다른 타일과 같은 자리 · 같은 모양). 문제를 푼다는 뜻이다. */
+@Composable
+private fun LifeAndDeathPreviewIcon() {
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoBoard(
+            gameState = LifeAndDeathPreviewGameState,
+            candidateMoves = emptyList(),
+            moveReviews = emptyList(),
+            ownershipEstimate = null,
+            uxOptions = KaTrainUxOptions(),
+            inputEnabled = false,
+            engineActivityIndicator = null,
+            modifier = Modifier.fillMaxSize(),
+            tentativeMove = null,
+            onCoordinateTap = {},
+            isGameEnded = false,
+            isEngineBusy = false,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "?",
+                fontSize = AppTextSize.Text20,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
 /** 판 한 변 대비 돋보기·카메라 배지의 비율(기존 50%에서 120% 확대한 60%). */
 private const val StudyPreviewMagnifierSizeFraction = 0.6f
 
@@ -1113,7 +1304,7 @@ private const val StudyPreviewMagnifierSizeFraction = 0.6f
  * "바둑판 사진 분석" 카드 아이콘 — 바둑판 위에 카메라 심볼을 겹친 프리뷰 배지.
  */
 @Composable
-private fun BoardScanPreviewIcon() {
+internal fun BoardScanPreviewIcon() {
     Box(modifier = Modifier.fillMaxSize()) {
         GoBoard(
             gameState = StudyPreviewGameState,

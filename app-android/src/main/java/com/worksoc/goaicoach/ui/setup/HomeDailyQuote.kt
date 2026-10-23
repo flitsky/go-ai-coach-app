@@ -36,7 +36,6 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
-import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.BuildConfig
@@ -50,9 +49,10 @@ import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.DailyQuote
 import com.worksoc.goaicoach.ui.l10n.DailyQuoteCatalog
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
-import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.QuoteLineBreak
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
+import com.worksoc.goaicoach.ui.l10n.quoteLocaleTag
 import com.worksoc.goaicoach.ui.l10n.unbreakable
 import com.worksoc.goaicoach.ui.monetization.AttendanceClaimReplaySignal
 import java.io.File
@@ -104,19 +104,6 @@ internal fun rememberDailyQuoteLineState(): DailyQuoteLineState {
     return remember(context) { DailyQuoteLineState(DailyQuoteStore(context), utcDayIndex(System.currentTimeMillis())) }
 }
 
-private val QuoteLineBreak = LineBreak(
-    strategy = LineBreak.Strategy.Simple,
-    strictness = LineBreak.Strictness.Normal,
-    wordBreak = LineBreak.WordBreak.Phrase,
-)
-
-private val UiLanguage.quoteLocaleTag: String
-    get() = when (this) {
-        UiLanguage.Korean -> "ko"
-        UiLanguage.English -> "en"
-        UiLanguage.Japanese -> "ja"
-        UiLanguage.ChineseSimplified -> "zh-CN"
-    }
 
 
 /**

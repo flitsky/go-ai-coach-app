@@ -1,21 +1,31 @@
 package com.worksoc.goaicoach.ui.account
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -35,9 +45,10 @@ import com.worksoc.goaicoach.ui.designsystem.RankTierBadge
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.home.RankResetButton
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.collapseLabelFor
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
-import com.worksoc.goaicoach.ui.l10n.myPageCurrentRankCaptionFor
 import com.worksoc.goaicoach.ui.l10n.myPageNoRecordFor
+import com.worksoc.goaicoach.ui.l10n.myPageProfileDetailsFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasurePeakRankFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureTitleFor
 import com.worksoc.goaicoach.ui.l10n.winRateSummaryFor
@@ -86,58 +97,70 @@ internal fun MyPageProfileHeader(modifier: Modifier = Modifier) {
     )
 }
 
-/** [MyPageProfileHeader]의 그림 — 값만 받아 그린다(구간마다의 모습을 나란히 찍어 볼 수 있게 나눴다). */
+/**
+ * [MyPageProfileHeader]의 그림 — 값만 받아 그린다(구간마다의 모습을 나란히 찍어 볼 수 있게 나눴다).
+ *
+ * **처음에는 간소하게, 누르면 자세히**(#280, 사용자 2026-10-22): 간소 = 기력 테두리 옆에 최고 기력 · 승급 대국 전적 두 줄 + 오른쪽 아래 「자세히 보기」.
+ * 승급 대국만 보이는 것은 그 테두리의 기력을 움직이는 판이 승급 대국이라서다. 자세히 = 거기에 캐릭터 대국 전적과 「급수 초기화하기」가 더해진다.
+ * 카드 어디를 눌러도 펼치고 접는다. 테두리 아래의 「현재 기력」 글자는 없앴다(사용자 — 테두리가 이미 말한다).
+ * 기력이 없는 기기(사람 모델이 없다)는 캐릭터 대국 한 줄뿐이라 접고 펼 것이 없다.
+ */
 @Composable
 internal fun MyPageProfileCard(
     profile: MyPageProfile,
     modifier: Modifier = Modifier,
-    /** 카드 오른쪽 아래의 동작 — 「급수 초기화하기」. 없으면 자리를 비우지 않는다. */
+    /** 펼쳤을 때 카드 아래 줄의 동작 — 「급수 초기화하기」. 없으면 자리를 비우지 않는다. */
     resetAction: (@Composable () -> Unit)? = null,
 ) {
     val strings = LocalUiStrings.current
     val language = strings.language
+    val foldable = profile.rank != null
+    // 열 때마다 간소하게 시작한다 — 펼친 것을 기억하지 않는다(스레드가 정한 것).
+    var expanded by remember { mutableStateOf(false) }
+    val showsAll = expanded || !foldable
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(ActionButtonShape)
+            .let { if (foldable) it.clickable { expanded = !expanded } else it },
         shape = ActionButtonShape,
         tonalElevation = AppElevation.Level1,
     ) {
         Column {
         Row(
-            modifier = Modifier.padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space12),
+            modifier = Modifier.padding(start = AppSpacing.Space16, end = AppSpacing.Space16, top = AppSpacing.Space12, bottom = AppSpacing.Space4),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
             profile.rank?.let { rank ->
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
-                ) {
-                    RankTierBadge(rank = rank, label = kgsRankLabelFor(language, rank), modifier = Modifier.size(ProfileRankBadgeSize))
-                    Text(
-                        text = myPageCurrentRankCaptionFor(language),
-                        fontSize = AppTextSize.Text12,
-                        color = MaterialTheme.colorScheme.secondary,
-                    )
-                }
+                RankTierBadge(rank = rank, label = kgsRankLabelFor(language, rank), modifier = Modifier.size(ProfileRankBadgeSize))
             }
             BoxWithConstraints(modifier = Modifier.weight(1f)) {
-                // 줄의 이름은 홈의 두 카드와 같다 — 어느 메뉴에서 둔 판인지가 그대로 읽힌다.
-                val records = listOfNotNull(
-                    strings.startMatch to (winRateSummaryFor(language, profile.winRate.regular) ?: myPageNoRecordFor(language)),
-                    (rankMeasureTitleFor(language) to (winRateSummaryFor(language, profile.winRate.rankMeasure) ?: myPageNoRecordFor(language)))
-                        .takeIf { profile.rank != null },
-                )
+                // 줄의 이름은 대국 페이지의 두 카드와 같다 — 어느 메뉴에서 둔 판인지가 그대로 읽힌다.
+                val rankMeasureRecord = (rankMeasureTitleFor(language) to (winRateSummaryFor(language, profile.winRate.rankMeasure) ?: myPageNoRecordFor(language)))
+                    .takeIf { profile.rank != null }
+                val regularRecord = strings.startMatch to (winRateSummaryFor(language, profile.winRate.regular) ?: myPageNoRecordFor(language))
+                val allRecords = listOfNotNull(rankMeasureRecord, regularRecord)
+                val records = if (showsAll) allRecords else listOfNotNull(rankMeasureRecord)
                 // 이름과 전적을 한 줄에 나란히 두되, **한 줄이라도 넘치면 전부 위아래로 쌓는다** — 긴 언어(영어의 `Character Match`) ·
                 // 세 자리 판 수 · 큰 글꼴 배율에서 전적이 `27승 / 19패`처럼 중간에서 접히지 않게.
-                // 나란히 둘 때는 이름 칸의 폭을 긴 쪽에 맞춰, 두 줄의 전적이 같은 자리에서 시작한다.
+                // 폭은 펼친 모습(두 줄)으로 잰다 — 접고 펼 때 줄의 모양이 바뀌지 않게.
                 val labelStyle = LocalTextStyle.current.copy(fontSize = AppTextSize.Text12)
                 val summaryStyle = LocalTextStyle.current.copy(fontSize = AppTextSize.Text13, fontWeight = FontWeight.SemiBold)
                 val measurer = rememberTextMeasurer()
                 val density = LocalDensity.current
-                val labelWidth = with(density) { records.maxOf { measurer.measure(it.first, labelStyle, maxLines = 1).size.width }.toDp() }
-                val summaryWidth = with(density) { records.maxOf { measurer.measure(it.second, summaryStyle, maxLines = 1).size.width }.toDp() }
+                val labelWidth = with(density) { allRecords.maxOf { measurer.measure(it.first, labelStyle, maxLines = 1).size.width }.toDp() }
+                val summaryWidth = with(density) { allRecords.maxOf { measurer.measure(it.second, summaryStyle, maxLines = 1).size.width }.toDp() }
                 val sideBySide = labelWidth + AppSpacing.Space8 + summaryWidth <= maxWidth
                 Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
+                    // 최고 기력이 첫 줄이다(사용자 2026-10-22).
+                    if (profile.rank != null) {
+                        Text(
+                            text = rankMeasurePeakRankFor(language, profile.peakRank),
+                            fontSize = AppTextSize.Text13,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     records.forEach { (label, summary) ->
                         if (sideBySide) {
                             Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
@@ -158,18 +181,32 @@ internal fun MyPageProfileCard(
                             }
                         }
                     }
-                    if (profile.rank != null) {
-                        Text(
-                            text = rankMeasurePeakRankFor(language, profile.peakRank),
-                            fontSize = AppTextSize.Text13,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
             }
         }
-        resetAction?.let { action ->
-            Row(modifier = Modifier.fillMaxWidth().padding(end = AppSpacing.Space4), horizontalArrangement = Arrangement.End) { action() }
+        if (foldable) {
+            // 아래 줄 — 펼치면 왼쪽에 「급수 초기화하기」, 오른쪽 끝은 늘 「자세히 보기 ⌄」 / 「접기 ⌃」(같은 자리에서 바뀐다).
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = AppSpacing.Space4, end = AppSpacing.Space12, bottom = AppSpacing.Space4),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (expanded) resetAction?.invoke()
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = if (expanded) collapseLabelFor(language) else myPageProfileDetailsFor(language),
+                    fontSize = AppTextSize.Text13,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = AppSpacing.Space8),
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.size(AppSpacing.Space8))
         }
         }
     }

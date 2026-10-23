@@ -153,7 +153,7 @@ import com.worksoc.goaicoach.ui.setup.GameSetupLobby
 import com.worksoc.goaicoach.ui.setup.HomeTopNotice
 import com.worksoc.goaicoach.ui.setup.engineSetupGateVisible
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
-import com.worksoc.goaicoach.ui.study.StudyHubPage
+import com.worksoc.goaicoach.ui.study.StudyEntry
 import com.worksoc.goaicoach.ui.study.StudyScreen
 import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import com.worksoc.goaicoach.wireGoCoachControllers
@@ -963,13 +963,15 @@ private fun GoCoachScreen(
                 onSettingsClick = { currentDestination = ScreenDestination.Settings },
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
                 onBoardScanClick = { currentDestination = ScreenDestination.BoardScan },
+                onGameRecordsClick = { currentDestination = ScreenDestination.GameRecords },
+                onLifeAndDeathClick = { StudyEntry.requestLifeAndDeath(); currentDestination = ScreenDestination.Study },
+                onBasicsClick = { StudyEntry.requestBasics(); currentDestination = ScreenDestination.Study },
                 hasResumableSession = savedSessionToPrompt != null,
                 onResumeClick = { showResumeDialog = true },
                 playerSetup = screenState.playerSetup,
                 topNotice = { HomeTopNotice(it) },
-                // 홈의 양옆 페이지(#280) — 내 정보는 그 화면 그대로, 학습 하기는 허브만(분류는 아래 「학습」 목적지가 화면 전체로 연다).
+                // 홈의 왼쪽 페이지(#280) — 내 정보는 그 화면 그대로. 셋째 「실험실」은 홈이 스스로 그린다.
                 myInfoPage = { MyPageScreen() },
-                studyPage = { StudyHubPage(onOpenCategory = { currentDestination = ScreenDestination.Study }, onGameRecordsClick = { currentDestination = ScreenDestination.GameRecords }) },
             )
         }
         ScreenDestination.Study -> {

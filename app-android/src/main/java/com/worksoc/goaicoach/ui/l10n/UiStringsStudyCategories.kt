@@ -93,3 +93,16 @@ internal fun studyCategorySubtitleFor(language: UiLanguage, category: StudyCateg
 
 internal fun studyComingSoonFor(language: UiLanguage): String =
     StudyComingSoonBadge[language] ?: StudyComingSoonBadge.getValue(UiLanguage.Korean)
+
+/** 「기초 학습」(#280, 사용자 2026-10-23) — 대국 페이지의 타일이 여는 목록: 바둑 규칙 · 기초 행마 · 유튜브 강좌. 영 · 일 · 중은 스레드가 정한 표기. */
+private val StudyBasicsTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "기초 학습",
+    UiLanguage.English to "Basics",
+    UiLanguage.Japanese to "基礎学習",
+    UiLanguage.ChineseSimplified to "基础学习",
+)
+
+internal fun studyBasicsTitleFor(language: UiLanguage): String = StudyBasicsTitles.getValue(language)
+
+/** 「기초 학습」이 모으는 분류 — 이 차례로 선다(사용자 2026-10-23). 「사활 풀기」는 여기 없다 — 대국 페이지의 타일이 곧바로 연다. */
+internal val StudyBasicsCategories: List<StudyCategory> = listOf(StudyCategory.Rules, StudyCategory.Fundamentals, StudyCategory.YoutubeLessons)

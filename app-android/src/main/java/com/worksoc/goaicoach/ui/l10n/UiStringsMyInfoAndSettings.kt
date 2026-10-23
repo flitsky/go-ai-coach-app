@@ -90,4 +90,14 @@ internal fun expandLabelFor(language: UiLanguage): String = ShowAll.getValue(lan
 
 internal fun collapseLabelFor(language: UiLanguage): String = Collapse.getValue(language)
 
+/** 내 정보 머리말을 펼치는 말(#280, 사용자 2026-10-22 「자세히 보기」) — 접을 때는 위의 「접기」. 영 · 일 · 중은 스레드가 정한 표기. */
+private val ProfileDetails: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "자세히 보기",
+    UiLanguage.English to "Details",
+    UiLanguage.Japanese to "詳しく見る",
+    UiLanguage.ChineseSimplified to "查看详情",
+)
+
+internal fun myPageProfileDetailsFor(language: UiLanguage): String = ProfileDetails.getValue(language)
+
 internal fun myCharactersTitleFor(language: UiLanguage): String = MyCharacters.getValue(language)
