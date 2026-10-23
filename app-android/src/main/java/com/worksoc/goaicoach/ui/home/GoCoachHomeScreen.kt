@@ -166,6 +166,11 @@ internal fun GoCoachHomeScreen(
     resumeSummary: String?,
     onResumeClick: () -> Unit,
     /**
+     * 이어 둘 판을 지운다 — 「덮어쓰기」 경고를 확인한 순간(#287 뒤, 사용자 2026-10-24). 일반 대국은 셸의 [onStartMatchClick]이 같은 일을 하고,
+     * 승급 대국은 확인 뒤 설정 창이 뜨므로 여기서 지운다 — 설정 창을 닫고 나와도 두 메뉴가 같다(이어하기 버튼이 사라진다).
+     */
+    onDiscardResumableSession: () -> Unit,
+    /**
      * 「승급 대국」(백로그 #219)을 시작한다 — 설정 창에서 고른 진영·판 크기(와 최초 1회의 시작 기력)를 준다.
      * 창과 그 상태는 이 화면이 들고, 셸은 시작하는 일만 한다(셸의 훅 예산, 함정 3).
      */
@@ -318,6 +323,7 @@ internal fun GoCoachHomeScreen(
                 TextButton(
                     onClick = {
                         showRankMeasureOverwriteWarning = false
+                        onDiscardResumableSession()
                         showRankMeasureDialog = true
                     },
                 ) { Text(strings.confirm) }

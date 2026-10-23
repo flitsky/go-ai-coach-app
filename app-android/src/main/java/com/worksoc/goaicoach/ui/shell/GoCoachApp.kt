@@ -970,6 +970,7 @@ private fun GoCoachScreen(
                 hasResumableSession = savedSessionToPrompt != null,
                 resumeSummary = savedSessionToPrompt?.let { resumeSummaryFor(LocalUiStrings.current, it, screenState.engine.name) },
                 onResumeClick = { showResumeDialog = true },
+                onDiscardResumableSession = { dispatch(GameUiEvent.DismissResumePrompt) },
                 playerSetup = screenState.playerSetup,
                 topNotice = { HomeTopNotice(it) },
                 // 홈의 왼쪽 페이지(#280) — 내 정보는 그 화면 그대로. 셋째 「실험실」은 홈이 스스로 그린다.
