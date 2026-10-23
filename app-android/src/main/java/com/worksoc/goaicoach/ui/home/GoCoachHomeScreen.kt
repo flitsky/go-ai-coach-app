@@ -162,6 +162,8 @@ internal fun GoCoachHomeScreen(
     onLifeAndDeathClick: () -> Unit,
     onBasicsClick: () -> Unit,
     hasResumableSession: Boolean,
+    /** 이어 둘 판의 한 줄 요약(#287 — `resumeSummaryFor`) — 이어하기 알약의 둘째 줄. 없으면 첫 줄만. */
+    resumeSummary: String?,
     onResumeClick: () -> Unit,
     /**
      * 「승급 대국」(백로그 #219)을 시작한다 — 설정 창에서 고른 진영·판 크기(와 최초 1회의 시작 기력)를 준다.
@@ -259,6 +261,7 @@ internal fun GoCoachHomeScreen(
                             HomePage.MyInfo -> myInfoPage()
                             HomePage.Play -> HomePlayPage(
                                 hasResumableSession = hasResumableSession,
+                                resumeSummary = resumeSummary,
                                 onResumeClick = onResumeClick,
                                 onStartMatchClick = { if (hasResumableSession) showOverwriteWarningDialog = true else onStartMatchClick() },
                                 onRankMeasureClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
@@ -441,6 +444,7 @@ private val HomeTopBarLogoSize = 38.dp
 @Composable
 private fun HomePlayPage(
     hasResumableSession: Boolean,
+    resumeSummary: String?,
     onResumeClick: () -> Unit,
     onStartMatchClick: () -> Unit,
     onRankMeasureClick: () -> Unit,
@@ -498,13 +502,27 @@ private fun HomePlayPage(
                     .padding(horizontal = AppSpacing.Space20, vertical = AppSpacing.Space10),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "▶ " + strings.resumeTitle,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = AppTextSize.Text18,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "▶ " + strings.resumeTitle,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = AppTextSize.Text18,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                    )
+                    // 어떤 판을 이어 두는지(#287, 사용자 2026-10-24) — 대국 · 상대 · 내 돌 · 판 크기와 수. 큰 글꼴 · 긴 언어에서는 두 줄까지.
+                    resumeSummary?.let { summary ->
+                        Text(
+                            text = summary,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
         }
 

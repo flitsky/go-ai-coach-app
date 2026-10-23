@@ -132,6 +132,7 @@ import com.worksoc.goaicoach.ui.home.prepareNextRankMeasureGame
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.ProvideUiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.resumeSummaryFor
 import com.worksoc.goaicoach.ui.monetization.AttendanceRewardClaimDialog
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
 import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
@@ -967,6 +968,7 @@ private fun GoCoachScreen(
                 onLifeAndDeathClick = { StudyEntry.requestLifeAndDeath(); currentDestination = ScreenDestination.Study },
                 onBasicsClick = { StudyEntry.requestBasics(); currentDestination = ScreenDestination.Study },
                 hasResumableSession = savedSessionToPrompt != null,
+                resumeSummary = savedSessionToPrompt?.let { resumeSummaryFor(LocalUiStrings.current, it, screenState.engine.name) },
                 onResumeClick = { showResumeDialog = true },
                 playerSetup = screenState.playerSetup,
                 topNotice = { HomeTopNotice(it) },
