@@ -20,6 +20,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 - 추천 수(Top Moves): 현재 국면에서 AI가 추천하는 상위 5개 후보수를 보드 위에 바로 표시
 - 형세 보기(Eval): 사석과 영역을 반영한 실시간 형세(집차)·승률과 함께, 지금 누구의 집인지 보드 위에 음영으로 표시
 - 출석 보상: 매일 접속하면 AI 코칭 1회권과 상대 캐릭터 조각을 지급
+- 실험실: 명언을 카드로 넘겨 보는 명언록, 재미로 보는 오늘의 운세, 광고 1편으로 하루 한 번 1회권 · 광고 스킵권 · 캐릭터 조각 · 캐릭터 중 하나를 뽑는 1일 1회 뽑기(확률 공개)
 - 대국 기록: 지금까지 둔 대국을 다시 확인하고, 승률(최근 10판 · 최근 한 달 · 누적)을 봅니다
 - 대국 다시보기: 끝난 판을 수순대로 되짚어 보고, 형세가 크게 움직인 수로 바로 건너뛰고, 형세 그래프를 크게 펼쳐 좌우로 넘기며 판이 어디서 기울었는지 확인. 지나간 국면에서도 형세 보기·추천 수를 쓸 수 있습니다
 - 복기 후 다시 두기: 아쉬웠던 그 수로 돌아가 거기서부터 다시 둘 수 있습니다
@@ -63,7 +64,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 
 
 ────────────────────────────────────────────────────────────────
-[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,997자)
+[자세한 설명 — 영어 등재정보] (4000자 이내, 현재 3,991자)
 
 ⚠️ **2026-09-24에 영어 등재정보를 열었다.** 그전까지 등재정보는 한국어 하나뿐이었고,
    이 파일 곳곳의 *"한국어 하나뿐이니 다른 언어 탭을 만들지 말 것"* 은 **그때 기준이다.**
@@ -91,12 +92,13 @@ Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the op
 - Move review: each move is shaded by the points it lost against the engine's best, from deep green to red
 - Top moves: the engine's five best candidate moves, drawn on the board
 - Evaluation: score difference, win rate and a score graph, with a shaded overlay of whose area each part of the board is
-- Board Photo Analysis: point the camera at a real board, or use a gallery or shared photo; fix the position, then play the AI from there, see AI moves and the score (Premium), or send it as SGF
+- Board Photo Analysis: read a real board from the camera or a photo, fix the position, then play on from there, see AI moves and the score (Premium), or send it as SGF
 - Famous Games: step through 33 famous games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and AlphaGo, with the score graph and turning points; auto play, 10-move jumps, and your own SGF files
 - Game history and replay: your games and win rate stay on your device; replay them, jump to the biggest swings, and use evaluation and top moves on past positions
 - Play on from the review: go back to the move you regret and continue from there
 - Learn: the rules (6 lessons) and basic shape (5) on the board; life-and-death problems to solve, 26 basic, 20 intermediate and advanced, 12 classics with their original answers; beginner videos
 - Daily check-in: single-use coaching passes and opponent shards
+- Lab: a quote book, today's fortune and a once-a-day draw
 - Undo, and two ways to place a stone: play on tap, or pick a point and confirm
 - Haptic feedback and app background music; turn the music off from the note button at the top right of any screen
 - Board sizes 9x9, 13x13 and 19x19, shown with a margin or edge to edge; area or territory scoring; komi and handicap; light, dark or night-hours theme
@@ -114,7 +116,7 @@ If you would rather not watch ads, there is a Premium subscription (billed month
 [WHO IT'S FOR]
 - Beginners, and anyone who wants a coach that can say exactly which move was the mistake
 - Players who want engine analysis on the device itself, not on a server
-- Anyone who wants to start from the rules: the board and the very first move are in the app
+- Anyone who wants to start from the very first rules
 
 [WHAT MAKES IT DIFFERENT]
 - A real KataGo engine running locally, not an API call: play and analysis both work offline
@@ -132,7 +134,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.7.0): 한국어 305자 · 영어 453자.
+⚠️ **언어당 500자 이내.** 지금(1.8.0): 한국어 310자 · 영어 493자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -143,34 +145,34 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.7.0 (versionCode 10700, 2026-10-22) ────────
+──────── 지금 붙여넣을 것 — 1.8.0 (versionCode 10800, 2026-10-23) ────────
 
-✅ **기준선은 1.6.0**(프로덕션 10600 — 버전을 올린 날 2026-10-19, 2026-10-20 출시 확인).
-   #184 · #277 사활 공부하기(기본 26 · 중급 10 · 고급 10 · 고전 12 — 모두 무료) · #272 야간 모드 · #275 윗줄의 화면 모드 버튼 · #273 오늘의 한 줄 명언 · #212 캐릭터 착수 템포 ·
-   #271 시각별 기동 그림 · 나무 바둑판 아이콘.
-   적지 않은 것: 착수 템포의 숫자(10%까지 1초 · 20%까지 2초 …) · 명언의 수(174) · 사활을 판정하는 방법(풀이기 · 미리 푼 표) · 기동 그림의 시각(21~5시).
-   앱 안 「새로워진 점」은 1.7.0 묶음(`UiStringsWhatsNew.kt`, 4개 언어).
-⚠️ 언어당 500자 이내 — 지금: 한국어 305자 · 영어 453자. 본문은 스레드가 쓴 초안이다(2026-10-22) — 콘솔에 붙이기 전에 사용자가 본다.
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.7.0이 나간 뒤의 기준선은 1.7.0이다.
-   지난 본문: 1.6.0 `git show 8b43c159:work/play-store-assets/store_listing.txt` · 1.5.1 `git show f41e3dab:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
+✅ **기준선은 1.7.0**(프로덕션 10700 — 버전을 올린 날 2026-10-22, 같은 날 승격 확인).
+   #280 세 페이지 홈(내 정보 ‹ 대국 › 실험실 · 아래 탭 · 윗줄 로고 한 줄 · ⚙) · #281 움직임(Material3 1.4.0 · 스프링 · 누르면 모양이 바뀌는 카드 · 예측 뒤로가기) · 명언록 ·
+   #276 오늘의 운세(랜덤 운세 · 첫 운세 무료 · 광고로 하루 3번 갱신) · #283 1일 1회 뽑기(광고 1편 · 24시간 · 확률 공개) · #282 야간 모드의 어두운 바둑판.
+   적지 않은 것: 「준비 중」인 별자리별 · 띠별 운세와 「나만의 명언 추가」(함정 51) · 뽑기의 확률 숫자(화면에 있다) · 운세 글의 수(368) · 개인정보처리방침 주소 바뀜(PR #7) · 학습 이름 줄임.
+   앱 안 「새로워진 점」은 1.8.0 묶음(`UiStringsWhatsNew.kt`, 4개 언어).
+⚠️ 언어당 500자 이내 — 지금: 한국어 310자 · 영어 493자. 본문은 스레드가 쓴 초안이다(2026-10-23) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.8.0이 나간 뒤의 기준선은 1.8.0이다.
+   지난 본문: 1.7.0 `git show 2f46ba3f:work/play-store-assets/store_listing.txt` · 1.6.0 `git show 8b43c159:work/play-store-assets/store_listing.txt` · 1.5.1 `git show f41e3dab:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
-학습 하기에 「사활 공부하기」가 생기고, 야간 모드가 들어왔습니다.
+홈이 세 페이지로 새로워지고, 실험실에 「오늘의 운세」와 「1일 1회 뽑기」가 생겼습니다.
 
-· 사활 공부하기: 판에 직접 두어 푸는 사활 문제 — 기본 26 · 중급 · 고급 20 · 고전 『기경중묘』 · 『발양론』 12문제(원전의 정답). 틀리면 붉은 점과 상대의 응수로 알려 주고, 정답 보기도 있어요
-· 야간 모드: 설정 › 화면 모드(시스템 따라가기 · 밝게 · 어둡게 · 밤 시간 자동), 맨 윗줄 버튼으로 바로 바꿀 수 있어요
-· 홈에 하루 한 줄 명언이 떠요
-· 캐릭터가 사람처럼 생각할 시간을 두고 둬요
-· 새 앱 아이콘(나무 바둑판)과 시작 화면 그림
+· 새 홈: 내 정보 ‹ 대국 › 실험실을 옆으로 넘기거나 아래 탭으로 오가요. 움직임도 더 부드러워졌어요
+· 오늘의 운세: 누르는 순간 오늘의 운세를 뽑아요. 광고를 보면 하루 3번까지 운을 바꿀 수 있어요(구독 중에는 광고 없이)
+· 1일 1회 뽑기: 광고 1편으로 하루 한 번 — 형세 · 추천 수 1회권, 광고 스킵권, 캐릭터 조각, 캐릭터 중 하나(확률은 화면에 공개)
+· 명언록: 명언을 카드로 넘겨 봐요
+· 야간 모드에서는 바둑판도 한 단 어두워져요
 </ko-KR>
 <en-US>
-New: Life and Death problems in Study Mode, and night mode.
+New: a three-page home, and Today's fortune and a Daily draw in the Lab.
 
-· Life and Death: solve problems on the board, 26 basic, 20 intermediate and advanced, and 12 classics from Gokyo Shumyo and Igo Hatsuyoron with their original answers. A wrong move shows a red mark and the reply
-· Night mode: Settings › Theme, or the button at the top
-· A quote of the day on home
-· Characters take time to think, like people
-· A new wooden Go board icon and launch pictures
+· New home: My info ‹ Play › Lab — swipe or use the tabs at the bottom. Smoother motion throughout
+· Today's fortune: draw it with a tap; watch an ad to change your luck up to 3 times a day (no ads while subscribed)
+· Daily draw: one ad, once a day, for coaching tickets, an ad-skip ticket, a character shard or a character (odds on screen)
+· Quote book: swipe through quotes as cards
+· The board is darker in dark mode
 </en-US>
 
 ──────────────────────────────────────────────

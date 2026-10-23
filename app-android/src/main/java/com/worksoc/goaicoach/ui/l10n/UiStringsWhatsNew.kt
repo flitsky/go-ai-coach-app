@@ -19,6 +19,40 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.8.0 — #280 세 페이지 홈(내 정보 ‹ 대국 › 실험실) · #281 움직임(Material3 1.4.0) · 명언록 · #276 오늘의 운세(랜덤 운세 — 별자리별 · 띠별은 준비 중이라 적지 않는다) ·
+        // #283 1일 1회 뽑기 · #282 야간 모드의 어두운 바둑판(사용자 2026-10-23 — 1.8.0으로 낸다).
+        WhatsNewRelease(versionCode = 10800, versionName = "1.8.0") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "홈이 세 페이지로 바뀌었어요. 내 정보 ‹ 대국 › 실험실을 옆으로 넘기거나 아래 탭으로 오가요. 움직임도 더 부드러워졌어요.",
+                    "실험실에 「오늘의 운세」가 생겼어요. 누르는 순간 오늘의 운세를 뽑고, 광고를 보면 하루 3번까지 운을 바꿀 수 있어요(구독 중에는 광고 없이).",
+                    "실험실의 「1일 1회 뽑기」 — 광고 1편으로 하루 한 번, 형세 · 추천 수 1회권 · 광고 스킵권 · 캐릭터 조각 · 캐릭터 중 하나를 뽑아요(확률은 화면에 있어요).",
+                    "실험실의 「명언록」에서 명언을 카드로 넘겨 볼 수 있어요.",
+                    "야간 모드에서는 바둑판도 한 단 어두워져요.",
+                )
+                UiLanguage.English -> listOf(
+                    "Home now has three pages — My info ‹ Play › Lab. Swipe between them or use the tabs at the bottom. Everything moves more smoothly, too.",
+                    "New in the Lab: Today's fortune. Draw your fortune with a tap, and watch an ad to change your luck up to three times a day (no ads while subscribed).",
+                    "Daily draw in the Lab: one ad, once a day, for eval and top-move tickets, an ad-skip ticket, a character shard or a character (the odds are on screen).",
+                    "Swipe through quotes as cards in the Lab's Quote book.",
+                    "In dark mode the board is darker as well.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "ホームが3ページになりました。マイ情報 ‹ 対局 › 実験室を横にめくるか、下のタブで行き来できます。動きもなめらかになりました。",
+                    "実験室に「今日の運勢」ができました。押した瞬間に今日の運勢を引き、広告を見ると1日3回まで運を変えられます（サブスク中は広告なし）。",
+                    "実験室の「1日1回くじ」— 広告1本で1日1回、形勢・推奨手チケット・広告スキップ券・キャラクターのかけら・キャラクターのどれかを引きます（確率は画面にあります）。",
+                    "実験室の「名言録」で名言をカードでめくって見られます。",
+                    "ナイトモードでは碁盤も一段暗くなります。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "主页变成了三页：我的信息 ‹ 对弈 › 实验室，可以左右滑动或用底部的标签切换。动画也更流畅了。",
+                    "实验室新增「今日运势」：点一下即抽取今日运势，看广告每天最多可改运3次（订阅期间无需看广告）。",
+                    "实验室的「每日一抽」：每天看1个广告抽一次，可抽到形势·推荐券、免广告券、角色碎片或角色（概率显示在画面上）。",
+                    "在实验室的「名言录」中可以像翻卡片一样浏览名言。",
+                    "夜间模式下棋盘也会更暗一些。",
+                )
+            }
+        },
         // 1.7.0 — #184 · #277 사활 공부하기(기본 26 · 중급 10 · 고급 10 · 고전 12 — 모두 무료) · #272 야간 모드 · #275 윗줄의 화면 모드 버튼 · #273 오늘의 한 줄 명언 ·
         // #212 캐릭터 착수 템포 · #271 시각별 기동 그림 · 나무 바둑판 아이콘(사용자 2026-10-22 — 1.7.0으로 낸다).
         WhatsNewRelease(versionCode = 10700, versionName = "1.7.0") { language ->
