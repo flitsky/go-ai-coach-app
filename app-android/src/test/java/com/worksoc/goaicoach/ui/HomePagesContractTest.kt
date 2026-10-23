@@ -66,13 +66,13 @@ class HomePagesContractTest {
         assertTrue("셸이 홈에 내 정보 페이지를 넘기지 않는다.", shell.contains("myInfoPage = { MyPageScreen() }"))
     }
 
-    /** 대국 페이지의 첫 카드는 「캐릭터 대국」이다 — 「서 있는 답」(#239), 2026-10-23 사용자가 시안에서 다시 확인했다. */
+    /** 대국 페이지의 첫 카드는 「일반 대국」(옛 「캐릭터 대국」, #286)이다 — 「서 있는 답」(#239), 2026-10-23 사용자가 시안에서 다시 확인했다. */
     @Test
     fun characterMatchIsTheFirstCard() {
         val character = home.indexOf("title = strings.startMatch")
         val rank = home.indexOf("title = rankMeasureTitleFor(strings.language)")
         assertTrue("대국 카드를 찾지 못했다 — 이 계약의 전제가 바뀌었다.", character >= 0 && rank >= 0)
-        assertTrue("「승급 대국」이 「캐릭터 대국」보다 위에 있다(서 있는 답 #239).", character < rank)
+        assertTrue("「승급 대국」이 「일반 대국」보다 위에 있다(서 있는 답 #239).", character < rank)
     }
 
     /** 학습은 대국 페이지의 타일이다 — 「사활 풀기」는 곧바로, 나머지 셋은 「기초 학습」 목록으로(사용자 2026-10-23). 분류는 빠짐없이 한 곳에 선다. */
