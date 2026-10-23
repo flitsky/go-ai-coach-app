@@ -5,6 +5,8 @@ import com.worksoc.goaicoach.application.rankmeasure.RankMeasureMaxPromotionStep
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureStorePort
 import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
 import org.json.JSONObject
 
@@ -25,9 +27,49 @@ internal class RankMeasureStore(context: Context) : RankMeasureStorePort {
         prefs.edit().putString(StateKey, RankMeasureCodec.encode(state)).apply()
     }
 
+    /** 설정 창이 마지막으로 시작한 진영 · 판 크기(#286). 없거나 깨졌으면 처음 값(흑 · 9줄)이다. */
+    fun loadLastSetup(): RankMeasureLastSetup =
+        prefs.getString(LastSetupKey, null)?.let(RankMeasureLastSetupCodec::decode) ?: RankMeasureLastSetup()
+
+    fun saveLastSetup(setup: RankMeasureLastSetup) {
+        prefs.edit().putString(LastSetupKey, RankMeasureLastSetupCodec.encode(setup)).apply()
+    }
+
     private companion object {
         const val PrefsName = "go_ai_coach_rank_measure"
         const val StateKey = "rank_measure_state"
+        const val LastSetupKey = "rank_measure_last_setup"
+    }
+}
+
+/**
+ * 승급 대국 설정 창에서 **마지막으로 시작한** 진영과 판 크기(백로그 #286 — 사용자: *"19*19를 선택해서 플레이 했었을 경우, 앱 재실행하여
+ * 메뉴 진입시에 그대로 유지"*). 설정 창은 이 값으로 열린다.
+ *
+ * ⚠️ 기력 상태([RankMeasureState])와 **다른 키**다 — 「급수 초기화하기」는 기력만 처음으로 되돌리고 고른 판은 남긴다.
+ * 일반 대국 설정(`UserPreferencesSnapshot`)과도 섞지 않는다 — 승급 대국의 판은 일반 설정을 덮어쓰지 않는다(`leaveRankMeasureGame`).
+ * 판 크기는 고른 그대로 남긴다 — 그 기력에서 못 두는 판이면 설정 창이 둘 수 있는 가장 작은 판으로 보인다(`rankMeasureBoardSizeFor`).
+ */
+internal data class RankMeasureLastSetup(
+    val userColor: StoneColor = StoneColor.Black,
+    val boardSize: BoardSize = BoardSize.Nine,
+)
+
+/** 모르는 색 · 지원하지 않는 판 크기는 그 필드의 처음 값으로 읽는다(함정 69 — 키만 더한다). */
+internal object RankMeasureLastSetupCodec {
+    fun encode(setup: RankMeasureLastSetup): String =
+        JSONObject()
+            .put("userColor", setup.userColor.name)
+            .put("boardSize", setup.boardSize.value)
+            .toString()
+
+    fun decode(raw: String): RankMeasureLastSetup? {
+        val json = runCatching { JSONObject(raw) }.getOrNull() ?: return null
+        val defaults = RankMeasureLastSetup()
+        return RankMeasureLastSetup(
+            userColor = StoneColor.entries.firstOrNull { it.name == json.optString("userColor") } ?: defaults.userColor,
+            boardSize = BoardSize.supported().firstOrNull { it.value == json.optInt("boardSize") } ?: defaults.boardSize,
+        )
     }
 }
 

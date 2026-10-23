@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
+import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
 import org.junit.Assert.assertEquals
@@ -103,5 +104,16 @@ class RankMeasureCodecTest {
         assertEquals(setup, decoded)
         assertTrue(decoded.isRankMeasure())
         assertEquals(KgsRank.kyu(5), decoded.rankMeasureMatchup()?.opponentRank)
+    }
+
+    /** 승급 대국 설정 창의 지난 선택(#286) — 진영 · 판 크기가 그대로 돌아오고, 모르는 값은 그 필드의 처음 값(흑 · 9줄)으로 읽는다. */
+    @Test
+    fun theLastSetupRoundTrips() {
+        val setup = RankMeasureLastSetup(userColor = StoneColor.White, boardSize = BoardSize.Nineteen)
+
+        assertEquals(setup, RankMeasureLastSetupCodec.decode(RankMeasureLastSetupCodec.encode(setup)))
+        assertEquals(RankMeasureLastSetup(), RankMeasureLastSetupCodec.decode("""{"userColor":"Green","boardSize":15}"""))
+        assertEquals(RankMeasureLastSetup(boardSize = BoardSize.Thirteen), RankMeasureLastSetupCodec.decode("""{"boardSize":13}"""))
+        assertNull(RankMeasureLastSetupCodec.decode("not json"))
     }
 }

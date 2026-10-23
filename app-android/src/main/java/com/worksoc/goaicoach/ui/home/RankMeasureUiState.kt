@@ -55,6 +55,7 @@ import com.worksoc.goaicoach.application.rankmeasure.withRankForNextMeasureGame
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
 import com.worksoc.goaicoach.persistence.GameHistoryStore
+import com.worksoc.goaicoach.persistence.RankMeasureLastSetup
 import com.worksoc.goaicoach.persistence.RankMeasureStore
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
@@ -136,6 +137,10 @@ internal data class RankMeasureUiState(
      * 이미 기력에 반영한 마지막 판의 표지(`lastCountedGameId`)만 남긴다 — 지우면 그 판을 처음 기력에 다시 셀 수 있다.
      */
     val reset: () -> Unit = {},
+    /** 설정 창이 마지막으로 시작한 진영 · 판 크기(#286) — 설정 창이 이 값으로 열린다. 「급수 초기화하기」는 건드리지 않는다. */
+    val lastSetup: RankMeasureLastSetup = RankMeasureLastSetup(),
+    /** 설정 창의 「대국 시작」이 고른 진영 · 판 크기를 남긴다. */
+    val rememberSetup: (RankMeasureLastSetup) -> Unit = {},
 )
 
 internal val LocalRankMeasureUiState = staticCompositionLocalOf { RankMeasureUiState() }
@@ -148,6 +153,7 @@ internal fun buildRankMeasureUiState(
     val store = remember(context) { RankMeasureStore(context) }
     var state by remember(store) { mutableStateOf(store.load()) }
     var pendingChange by remember { mutableStateOf<RankMeasureChange?>(null) }
+    var lastSetup by remember(store) { mutableStateOf(store.loadLastSetup()) }
     // 판 하나를 반영한 결과를 화면에 올린다 — 기력이 바뀌었으면(또는 이미 9단이라고 알릴 일이면) 팝업으로 띄울 것을 남긴다.
     fun adopt(adjustment: RankMeasureAdjustment): RankMeasureAdjustment {
         state = adjustment.state
@@ -174,6 +180,11 @@ internal fun buildRankMeasureUiState(
         },
         pendingChange = pendingChange,
         dismissChange = { pendingChange = null },
+        lastSetup = lastSetup,
+        rememberSetup = { setup ->
+            store.saveLastSetup(setup)
+            lastSetup = setup
+        },
         reset = {
             val next = RankMeasureState(lastCountedGameId = state.lastCountedGameId)
             store.save(next)
@@ -409,8 +420,9 @@ internal fun RankMeasureSetupDialog(
     val canChoose = rankMeasure.state.canChooseStartingRank
     // 급수를 초기화하면 처음 기력(20급)과 시작 급수 고르기로 돌아온다 — 저장된 상태가 바뀌면 다시 읽는다.
     var rank by remember(rankMeasure.state.rank, canChoose) { mutableStateOf(rankMeasure.state.rank) }
-    var userColor by remember { mutableStateOf(StoneColor.Black) }
-    var preferredBoardSize by remember { mutableStateOf(BoardSize.Nine) }
+    // 지난번에 시작한 진영 · 판 크기로 연다(#286) — 앱을 다시 켜도 19줄을 골랐던 사람은 19줄로 본다.
+    var userColor by remember { mutableStateOf(rankMeasure.lastSetup.userColor) }
+    var preferredBoardSize by remember { mutableStateOf(rankMeasure.lastSetup.boardSize) }
     val allowedBoardSizes = rankMeasureBoardSizesFor(rank)
     val boardSize = rankMeasureBoardSizeFor(rank, preferredBoardSize)
     AlertDialog(
@@ -483,7 +495,10 @@ internal fun RankMeasureSetupDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onStart(RankMeasureStart(userColor, boardSize, startingRank = rank.takeIf { canChoose })) },
+                onClick = {
+                    rankMeasure.rememberSetup(RankMeasureLastSetup(userColor, boardSize))
+                    onStart(RankMeasureStart(userColor, boardSize, startingRank = rank.takeIf { canChoose }))
+                },
                 modifier = Modifier.testTag(RankMeasureStartTag),
             ) { Text(rankMeasureStartFor(language)) }
         },
