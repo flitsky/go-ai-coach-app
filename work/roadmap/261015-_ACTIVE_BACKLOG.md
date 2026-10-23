@@ -121,14 +121,21 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   세 페이지 **내 정보 ‹ 대국 › 실험실**(`HorizontalPager` · `ui/home/GoCoachHomeScreen.kt` · `ui/home/HomeLabPage.kt`) · 공통 윗줄(왼쪽 로고 한 줄 · 빠른 버튼 · ⚙ 톱니) ·
   아래 탭 셋(손으로 만든 줄 — M3 `NavigationBar`가 아니다, 높이를 최소값만 줘 큰 글꼴에서 안 잘리게) · 켜면 가운데 · 옆 페이지의 뒤로가기는 가운데로.
   색은 `ui.designsystem`의 밝은 · 어두운 구성 둘(브랜드 초록 · 바둑판 나무색 — 시스템 색을 따르는 dynamic color는 쓰지 않는다).
-- **조사할 것**(스레드의 초안 — 착수 때 최신 자료로 다시 확인, 출처를 확인한 것만 적는다): Material 3 Expressive(모양 · 움직임 · 강조) · 하단 내비게이션의 최신 지침과
-  「옆으로 넘기기」를 함께 써도 되는지 · 예측 뒤로가기(predictive back) · 가장자리까지 그리기(edge-to-edge — 이미 시스템 바 여백을 쓰고 있다) ·
-  접는 폰 · 태블릿의 적응형 배치(내비게이션 레일 등 — 세로 고정은 큰 화면에서 무시된다, 함정 41) · 접근성(글꼴 1.3배 · 4개 언어).
+- **조사 요약**(2026-10-23 — 출처를 확인한 것만):
+  ① 앱은 Compose BOM `2025.04.01` = Material3 **1.3.2**. 안정판은 1.4.0이고, Expressive API는 **1.5.0-beta02(2026-10-21)에만** 있다 — 정식이 아니다(developer.android.com 「Compose Material 3」 릴리스 페이지).
+     → 라이브러리를 올리지 않고 **원칙만 손으로** 옮긴다(아래 탭 줄을 손으로 만든 지금 방식과 같다). 판을 올리는 안이면 먼저 묻는다.
+  ② Expressive의 원칙 셋: **모양**(둥근 정도가 바뀌는 그릇 · 누를 때 모양이 바뀐다) · **움직임**(스프링) · **글자**(굵기로 강조) — 「levels of expression」은 중간 단계(excellent) 이상을 권한다(Android Developers 「Material 3 Expressive design language」).
+  ③ 아래 내비게이션: 같은 무게의 목적지 3~5개 · 좁은 폭에 쓴다(Android Developers 「Navigation bar」). 「옆으로 넘기기」와 함께 쓰는 것을 다룬 공식 지침은 **찾지 못했다** — 지금처럼 탭이 페이지를 따라간다.
+  ④ 예측 뒤로가기: targetSdk 36 앱은 Android 16에서 시스템 뒤로가기 애니메이션이 기본으로 켜지고 `onBackPressed`가 불리지 않는다(「Behavior changes: Android 16」). 앱은 Compose `BackHandler`를 쓴다 —
+     `activity-compose` 1.10.1에 `PredictiveBackHandler`가 있다(캐시의 jar로 확인) → 옆 페이지 → 가운데 돌아가기를 손가락에 따라 움직이게 할 수 있다.
+  ⑤ 가장자리까지 그리기: targetSdk 36이면 Android 16에서 끌 수 없다(같은 문서) — 앱은 이미 시스템 바 여백을 쓴다(`statusBarsPadding` · `navigationBarsPadding`).
+  ⑥ 큰 화면: targetSdk 36이면 sw≥600dp에서 세로 고정이 무시된다(Android Developers Blog 2025-01 「Orientation and resizability changes in Android 16」, 함정 41) — 앱은 이미 큰 화면에서 돌린다(#147). 홈은 큰 화면에서 카드가 끝까지 늘어난다 → 최대 폭 · 레일이 후보.
 - ⚠️ **「서 있는 답」을 뒤집지 않는다** — 캐릭터 대국이 첫 카드 · 홈 메뉴에 초록 바탕 없음 · 내 정보의 순서 · 설정 다섯 절. 뒤집어야 하면 묻는다.
 - ⚠️ 색 리터럴은 `ui.designsystem` 안에만(`DesignTokenLiteralRatchetTest`) · 아이콘은 코어 세트만(확장 세트는 싣지 않는다 — `materialIcon`/`materialPath`로 그린다) ·
   셸(`GoCoachApp`)에 상태를 더하지 않는다(함정 3) · 새 문구는 `UiStrings` 생성자가 아니라 곁표로(함정 61) · 폭은 360dp · 4개 언어(함정 21).
 - ⚠️ 화면 지시가 두 가지로 읽히면 **시안 스크린샷 두 안**(에뮬레이터 `wm density 480` = 360dp)으로 고르게 한다. 라이브러리(Compose BOM · Material3) 판을 올려야 하는 안이면 먼저 묻는다.
 - **진행**: 조사 요약(출처) → 적용 후보를 3페이지 위의 시안 둘로 → 사용자가 고르면 구현 → 에뮬레이터 · 폰 확인.
+- **진행**(2026-10-23, 클라우드 세션 — 에뮬레이터가 없다): 조사 요약 ✔ · 시안 둘은 360dp 움직이는 목업(claude.ai 캔버스 「포켓 바둑 홈 시안 #281」 — 지금 · A안 · B안)으로 → ⏳ 사용자가 고르기.
 
 ---
 
