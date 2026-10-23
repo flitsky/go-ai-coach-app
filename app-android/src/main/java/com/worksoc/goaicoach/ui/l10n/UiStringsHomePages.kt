@@ -36,10 +36,10 @@ private val QuoteBookTitles: Map<UiLanguage, String> = mapOf(
 
 internal fun labQuoteBookTitleFor(language: UiLanguage): String = QuoteBookTitles.getValue(language)
 
-/** 아직 없는 실험(#280 — 「준비 중」 배지와 함께 눌리지 않는다, U-16과 같은 결). */
+/** 명언록 제목 줄의 예고 「+ 나만의 명언 추가 (준비 중)」의 가운데 말(#281, 사용자 2026-10-23). 영 · 일 · 중은 스레드가 정한 표기. */
 private val AddMyQuoteTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "나만의 명언 추가하기",
-    UiLanguage.English to "Add your own quote",
+    UiLanguage.Korean to "나만의 명언 추가",
+    UiLanguage.English to "Add your own",
     UiLanguage.Japanese to "自分の名言を追加",
     UiLanguage.ChineseSimplified to "添加我的名言",
 )

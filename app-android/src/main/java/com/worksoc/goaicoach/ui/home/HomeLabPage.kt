@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,11 +20,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -64,9 +59,10 @@ import kotlin.random.Random
 
 /**
  * 셋째 페이지 「실험실」(#280, 사용자 2026-10-22 — 처음에는 「학습 하기」였고, 학습은 대국 페이지의 타일로 갔다).
- * 맨 위 명언록 → 반 폭 칸 넷: 나만의 명언 추가하기(준비 중) · 오늘의 운세(준비 중, #276) / 준비 중 · **바둑판 사진 분석**(오른쪽 아래, 사용자).
+ * **섹션 둘 + 타일 하나**(#281, 사용자 2026-10-23): 명언록(제목 줄 오른쪽에 「+ 나만의 명언 추가 (준비 중)」) → 오늘의 운세(#276 — 카드 안 가운데에 「준비 중」)
+ * → **바둑판 사진 분석** 타일(오른쪽 아래, 사용자 2026-10-22). 「준비 중」 칸 둘(나만의 명언 추가하기 · 이름 없는 빈자리)은 없앴다.
  *
- * ⚠️ 아직 없는 실험은 회색 + 「준비 중」 배지이고 눌리지 않는다(학습 허브의 U-16과 같은 결). 스토어 글에는 적지 않는다(함정 51).
+ * ⚠️ 아직 없는 실험은 눌리지 않는다 — 누를 것처럼 보이는 모양(타일 · 단추)으로 두지 않는다(학습 허브의 U-16과 같은 결). 스토어 글에는 적지 않는다(함정 51).
  */
 @Composable
 internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -82,12 +78,31 @@ internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modi
         verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
         QuoteBookCarousel()
-        Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-            LabPlaceholderTile(title = labAddMyQuoteTitleFor(language), icon = Icons.Filled.Edit, modifier = Modifier.weight(1f))
-            LabPlaceholderTile(title = labFortuneTitleFor(language), icon = Icons.Filled.Star, modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(AppSpacing.Space4))
+        // 오늘의 운세(#276) — 명언록과 같은 섹션 모양. 아직 없으니 카드 안 가운데에 「준비 중」뿐이고 눌리지 않는다.
+        LabSectionHeader(title = labFortuneTitleFor(language))
+        Box(
+            modifier = Modifier
+                .padding(horizontal = AppSpacing.Space16)
+                .fillMaxWidth()
+                .heightIn(min = LabComingSoonCardMinHeight)
+                .clip(RoundedCornerShape(AppRadius.Corner24))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = studyComingSoonFor(language),
+                fontSize = AppTextSize.Text14,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(AppSpacing.Space16),
+            )
         }
+        Spacer(modifier = Modifier.height(AppSpacing.Space4))
+        // 바둑판 사진 분석은 오른쪽 아래의 반 폭 타일 그대로다(사용자 2026-10-22) — 왼쪽은 비운다.
         Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-            LabPlaceholderTile(title = null, icon = Icons.Filled.Add, modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
             MenuTile(
                 tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() },
                 modifier = Modifier.weight(1f),
@@ -155,12 +170,10 @@ private fun QuoteBookCarousel() {
         if (cardMinHeight.value == 0f) cardMinHeight.snapTo(target) else cardMinHeight.animateTo(target, AppMotion.defaultSpatial())
     }
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
-        Text(
-            text = labQuoteBookTitleFor(language),
-            fontSize = AppTextSize.Text16,
-            fontWeight = FontWeight.Bold,
-            color = colors.onBackground,
-            modifier = Modifier.padding(horizontal = AppSpacing.Space16),
+        // 「나만의 명언 추가」(사용자 2026-10-23)는 아직 없어 제목 줄의 흐린 글자뿐이고 눌리지 않는다.
+        LabSectionHeader(
+            title = labQuoteBookTitleFor(language),
+            trailing = "+ " + labAddMyQuoteTitleFor(language) + " (" + studyComingSoonFor(language) + ")",
         )
         HorizontalPager(
             state = pagerState,
@@ -208,42 +221,30 @@ private fun QuoteBookCarousel() {
 private val QuoteBookSideInset = 32.dp
 
 /**
- * 아직 없는 실험의 칸 — [MenuTile]과 같은 크기 · 같은 자리의 그림이지만 흐리고 눌리지 않는다. [title]이 없으면 이름 없는 빈자리다(사용자의 「(예정)」).
- * ⚠️ `clickable`을 달고 끄지 않는다 — 아예 달지 않는다(학습 허브의 줄과 같은 이유: 리플 잔상 · 접근성이 「누를 수 있는 것」으로 읽는다).
+ * 실험실 섹션의 제목 줄(#281) — 왼쪽에 이름, 오른쪽 끝에 흐린 덧말([trailing], 아직 없는 기능의 예고). 덧말은 눌리지 않는다.
+ * 덧말이 길면(영어 · 큰 글꼴) 두 줄까지 접히고 이름은 줄지 않는다.
  */
 @Composable
-private fun LabPlaceholderTile(title: String?, icon: ImageVector, modifier: Modifier = Modifier) {
+private fun LabSectionHeader(title: String, trailing: String? = null) {
     val colors = MaterialTheme.colorScheme
-    val language = LocalUiStrings.current.language
     Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(MenuTileCorner))
-            .background(colors.surfaceVariant.copy(alpha = 0.5f))
-            .heightIn(min = LabTileMinHeight)
-            .padding(start = AppSpacing.Space8, top = AppSpacing.Space10, end = AppSpacing.Space12, bottom = AppSpacing.Space10),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = AppSpacing.Space16),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.size(LabTileIconBoxSize), contentAlignment = Alignment.Center) {
-            Icon(imageVector = icon, contentDescription = null, tint = colors.onSurfaceVariant.copy(alpha = 0.45f), modifier = Modifier.size(28.dp))
-        }
-        Spacer(modifier = Modifier.width(AppSpacing.Space10))
-        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4)) {
-            if (title != null) {
-                Text(text = title, fontSize = AppTextSize.Text14, fontWeight = FontWeight.Bold, color = colors.onSurfaceVariant.copy(alpha = 0.55f), maxLines = 2)
-            }
+        Text(text = title, fontSize = AppTextSize.Text16, fontWeight = FontWeight.Bold, color = colors.onBackground)
+        if (trailing != null) {
+            Spacer(modifier = Modifier.width(AppSpacing.Space12))
             Text(
-                text = studyComingSoonFor(language),
+                text = trailing,
                 fontSize = AppTextSize.Text12,
-                fontWeight = FontWeight.Bold,
                 color = colors.secondary,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(AppRadius.Corner6))
-                    .background(colors.surface)
-                    .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space2),
+                textAlign = TextAlign.End,
+                maxLines = 2,
+                modifier = Modifier.weight(1f),
             )
         }
     }
 }
 
-private val LabTileMinHeight = 72.dp
-private val LabTileIconBoxSize = 52.dp
+/** 「준비 중」 섹션 카드의 최소 키 — 스레드가 정한 값(#281). */
+private val LabComingSoonCardMinHeight = 96.dp
