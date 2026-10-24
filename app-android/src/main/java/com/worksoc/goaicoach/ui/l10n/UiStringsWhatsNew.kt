@@ -19,7 +19,28 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
-        // 1.8.3 — #288 대국 페이지(2열 대국 카드 · 2열 메뉴 칸 · 카드를 밀면 도는 손맛) · #289 뽑기에 출석 캐릭터 · 가진 캐릭터는 7일 단위 보상으로(사용자 2026-10-24 — 1.8.2를 내지 않고 1.8.3으로 낸다).
+        // 1.8.4 — #290 학습 메뉴 나누기(사용자 2026-10-24 — 1.8.3 뒤에 더해 1.8.4로 낸다). 1.7.0에서 오는 사람에게는 1.8.0 ~ 1.8.3 묶음과 함께 뜬다.
+        WhatsNewRelease(versionCode = 10804, versionName = "1.8.4") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "「기초 학습」이 「바둑 배우기」가 되고, 기본 · 중급 · 고급 사활(「사활 풀기」)이 그 안으로 들어갔어요.",
+                    "대국 페이지의 「고전 사활」에서는 『기경중묘』 · 『발양론』의 옛 사활을 풀어요.",
+                )
+                UiLanguage.English -> listOf(
+                    "Basics is now Learn Go, and the basic, intermediate and advanced life & death problems moved inside it.",
+                    "Classic Life & Death on the Play page holds the old problem books, Gokyo Shumyo and Hatsuyoron.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "「基礎学習」が「囲碁を学ぶ」になり、基本・中級・上級の詰碁(「詰碁を解く」)がその中に入りました。",
+                    "対局ページの「古典詰碁」では『碁経衆妙』『発陽論』の古典詰碁を解けます。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "「基础学习」更名为「学围棋」，基础、中级、高级死活题(「死活练习」)移到了其中。",
+                    "对弈页面的「古典死活」收录《碁经众妙》《发阳论》的古典死活题。",
+                )
+            }
+        },
+        // 1.8.3 —#288 대국 페이지(2열 대국 카드 · 2열 메뉴 칸 · 카드를 밀면 도는 손맛) · #289 뽑기에 출석 캐릭터 · 가진 캐릭터는 7일 단위 보상으로(사용자 2026-10-24 — 1.8.2를 내지 않고 1.8.3으로 낸다).
         // 1.7.0에서 오는 사람에게는 1.8.0 · 1.8.1 · 1.8.2 묶음과 함께 뜬다.
         WhatsNewRelease(versionCode = 10803, versionName = "1.8.3") { language ->
             when (language) {
