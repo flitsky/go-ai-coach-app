@@ -339,8 +339,8 @@ class FirstDolGuideContractTest {
         //   "0개여야 한다"는 뜻이 되어 다음에 되살릴 때 엉뚱하게 빨개진다.
         mapOf(
             "MenuCard(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
-            // 대국 페이지의 메뉴 줄(#288 — 옛 반 폭 타일)도 다시보기가 빌린다(#261 — 대국 기록 · 기초 학습).
-            "HomeMenuList(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
+            // 대국 페이지의 메뉴 칸(#288 — 옛 반 폭 타일)도 다시보기가 빌린다(#261 — 대국 기록 · 기초 학습).
+            "HomeMenuGrid(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
             // 반 폭 타일(#237)은 이제 실험실의 사진 분석 카드만 쓴다(#280 — 홈의 셋째 페이지도 홈이다).
             "MenuTile(" to setOf("GoCoachHomeScreen.kt", "HomeLabPage.kt"),
         ).forEach { (call, allowed) ->

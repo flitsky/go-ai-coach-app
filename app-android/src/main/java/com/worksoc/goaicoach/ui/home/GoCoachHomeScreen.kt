@@ -54,7 +54,6 @@ import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -600,10 +599,10 @@ private fun HomePlayPage(
             }
         }
 
-        // 두는 것이 아닌 메뉴는 **가는 줄**이다(#288, 사용자 2026-10-24 — #237의 반 폭 타일을 갈아 끼웠다). 그림 없이 이름과 › 하나 — 위의 키 큰 대국 카드와 크기로 갈린다.
-        // 줄 넷(#280): 대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습(바둑 규칙 · 기초 행마 · 유튜브 강좌를 모은 목록).
+        // 두는 것이 아닌 메뉴는 **2열의 작은 칸**이다(#288, 사용자 2026-10-24 — #237의 그림 타일 → 가는 줄 → 이것). 그림 없이 이름과 › 하나 — 위의 키 큰 대국 카드와 크기로 갈린다.
+        // 칸 넷(#280): 대국 기록 · 명국 기보 / 사활 풀기 · 기초 학습(바둑 규칙 · 기초 행마 · 유튜브 강좌를 모은 목록).
         Spacer(modifier = Modifier.height(AppSpacing.Space12))
-        HomeMenuList(
+        HomeMenuGrid(
             rows = listOf(
                 HomeMenuRow(strings.gameHistoryTitle, onGameHistoryClick),
                 HomeMenuRow(gameRecordsTitleFor(strings.language), onGameRecordsClick),
@@ -893,7 +892,7 @@ private val GoStoneLogoBaseSize = 125.dp
  * 전에는 「캐릭터 대국」만 브랜드 초록을 칠했다. 「승급 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
  * 위쪽이 초록 벽이 되고 **구간의 테두리(`RankTierBadge`)가 초록에 묻힌다**(플래티넘의 청록이 특히). 그래서 바탕은 흰색으로
  * 두고 살짝 띄운다. 오른쪽의 초록 ▶는 반 폭에 설 자리가 없어 #288에서 뺐다(사용자의 카드 구성에 없다). 아래 메뉴와의 위계는 색이 아니라
- * **크기**가 만든다([HomeMenuList]).
+ * **크기**가 만든다([HomeMenuGrid]).
  *
  * ⚠️ **`private`이 아니라 `internal`인 이유는 가이드 다시보기 하나뿐이다**(백로그 #128).
  * 그 화면이 ③을 설명할 때 **정적 삽화나 캡처가 아니라 이 진짜 카드**를 같은 문구로 그린다 —
@@ -1019,55 +1018,88 @@ private const val MenuTilePressedScale = 0.95f
 private const val ResumeBreathScale = 1.02f
 private const val ResumeBreathMillis = 1200
 
-/** 대국 페이지의 가는 메뉴 줄 하나 — 이름과 누르면 갈 곳. */
+/** 대국 페이지의 메뉴 칸 하나 — 이름과 누르면 갈 곳. */
 internal class HomeMenuRow(val title: String, val onClick: () -> Unit)
 
 /**
- * 대국 페이지의 **가는 메뉴 줄**(#288, 사용자 2026-10-24) — 두는 것이 아닌 메뉴(대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습)가 쓴다.
- * 그림 · 부제 없이 이름과 › 하나, 줄 사이에 가는 선. 카드가 아니라 페이지 바탕 위에 바로 선다 — 위의 키 큰 대국 카드와 크기로 갈린다(「서 있는 답」 #237).
- * 줄 하나가 통째로 누르는 표적이고, 키는 최소 높이만 준다 — 큰 글꼴 · 긴 언어에서 이름이 두 줄이 돼도 잘리지 않게(함정 9).
+ * 대국 페이지의 **2열 메뉴 칸**(#288, 사용자 2026-10-24) — 두는 것이 아닌 메뉴(대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습)가 두 줄 두 칸으로 선다.
+ * 그림 · 부제 없이 이름과 › 하나. 위의 대국 카드보다 **작고 납작하며 그림자가 없는 톤 바탕**이다 — 크기와 바탕으로 한 단계 아래임이 읽힌다(「서 있는 답」 #237).
+ * 처음은 전폭의 가는 줄이었다 — 줄이 길고 위아래로 붙어 있어 터치가 빗나갔다(사용자 2026-10-24). 칸 사이의 12dp 틈이 이웃 칸을 잘못 누르는 일을 막는다.
+ * 키는 최소 높이만 준다 — 큰 글꼴 · 긴 언어에서 이름이 두 줄이 돼도 잘리지 않고, 한 줄의 두 칸은 키가 같다(함정 9).
  *
- * ⚠️ 다시보기(`FirstDolGuideReplay`)가 이 줄을 빌려 그린다 — 홈이 바뀌면 다시보기도 함께 바뀐다(그 파일의 KDoc).
+ * ⚠️ 다시보기(`FirstDolGuideReplay`)가 이 칸을 빌려 그린다 — 홈이 바뀌면 다시보기도 함께 바뀐다(그 파일의 KDoc). 칸이 하나면 왼쪽 반 폭에 선다.
  */
 @Composable
-internal fun HomeMenuList(rows: List<HomeMenuRow>, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        rows.forEachIndexed { index, row ->
-            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+internal fun HomeMenuGrid(rows: List<HomeMenuRow>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+        rows.chunked(2).forEach { pair ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = HomeMenuRowMinHeight)
-                    .clip(RoundedCornerShape(AppRadius.Corner10))
-                    .clickable(onClick = row.onClick)
-                    .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space10),
-                verticalAlignment = Alignment.CenterVertically,
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
             ) {
-                Text(
-                    text = row.title,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = AppTextSize.Text16,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f),
-                )
-                // 장식이다 — 누르는 표적은 줄 전체라 따로 읽어 줄 이름이 없다.
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                pair.forEach { row -> HomeMenuTextTile(row = row, modifier = Modifier.weight(1f).fillMaxHeight()) }
+                if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
 }
 
-private val HomeMenuRowMinHeight = 52.dp
+/** [HomeMenuGrid]의 칸 하나 — 누르면 살짝 줄고 모서리가 덜 둥글어진다([MenuCard] · [MenuTile]과 같은 움직임, 크기는 그리기 단계에서만). */
+@Composable
+private fun HomeMenuTextTile(row: HomeMenuRow, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val corner by animateDpAsState(if (pressed) HomePressedCorner else HomeMenuTextTileCorner, AppMotion.fastSpatial(), label = "menuTextTileCorner")
+    val scale by animateFloatAsState(if (pressed) MenuTilePressedScale else 1f, AppMotion.fastSpatial(), label = "menuTextTileScale")
+    Card(
+        onClick = row.onClick,
+        interactionSource = interaction,
+        shape = RoundedCornerShape(corner),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .heightIn(min = HomeMenuTextTileMinHeight)
+                .padding(start = AppSpacing.Space16, end = AppSpacing.Space8, top = AppSpacing.Space12, bottom = AppSpacing.Space12),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = row.title,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = AppTextSize.Text16,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                modifier = Modifier.weight(1f),
+            )
+            // 장식이다 — 누르는 표적은 칸 전체라 따로 읽어 줄 이름이 없다.
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(HomeMenuTextTileChevronSize),
+            )
+        }
+    }
+}
+
+/** 칸의 최소 키 — 대국 카드(156dp)의 반이 안 되고, 손가락 표적(48dp)보다 넉넉하다. 스레드가 정했다. */
+private val HomeMenuTextTileMinHeight = 64.dp
+private val HomeMenuTextTileCorner = 18.dp
+private val HomeMenuTextTileChevronSize = 20.dp
 
 /** 홈의 반 폭 타일 하나 — 제목과 그림, 누르면 갈 곳. */
 internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
 
 /**
- * 홈의 **반 폭 타일** — 실험실 페이지의 「바둑판 사진 분석」이 쓴다(백로그 #237 — 대국 페이지의 타일 넷은 #288에서 가는 줄([HomeMenuList])이 됐다).
+ * 홈의 **반 폭 타일** — 실험실 페이지의 「바둑판 사진 분석」이 쓴다(백로그 #237 — 대국 페이지의 타일 넷은 #288에서 그림 없는 칸([HomeMenuGrid])이 됐다).
  * [MenuCard]보다 작고 납작하며(그림자 없음) **부제가 없다** — 제목만으로 무엇인지 읽히는 메뉴들이고, 반 폭에는 부제가 설 자리가 없다.
  */
 @Composable

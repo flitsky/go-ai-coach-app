@@ -40,7 +40,7 @@ import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
-import com.worksoc.goaicoach.ui.home.HomeMenuList
+import com.worksoc.goaicoach.ui.home.HomeMenuGrid
 import com.worksoc.goaicoach.ui.home.HomeMenuRow
 import com.worksoc.goaicoach.ui.home.MenuCard
 import com.worksoc.goaicoach.ui.home.RankMeasureIcon
@@ -208,7 +208,7 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                             )
                         }
                     }
-                    // #261 — 홈의 나머지 메뉴. 카드와 메뉴 줄은 홈이 그리는 **그 컴포저블**이다. 기력은 저장소를 열지 않고 예시(20급)로 —
+                    // #261 — 홈의 나머지 메뉴. 카드와 메뉴 칸은 홈이 그리는 **그 컴포저블**이다. 기력은 저장소를 열지 않고 예시(20급)로 —
                     // 이 다이얼로그는 진행도 저장소를 열지 않는다는 계약이 있고, 보여 주는 것은 "이 카드가 무엇인가"다(캐릭터 대국 카드와 같은 이유).
                     ReplaySection(title = rankMeasureTitleFor(strings.language)) {
                         ReplayLine(UiStringsGuideReplay.rankMeasure(strings.language))
@@ -222,12 +222,12 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     }
                     ReplaySection(title = strings.gameHistoryTitle) {
                         ReplayLine(UiStringsGuideReplay.gameHistory(strings.language))
-                        HomeMenuList(rows = listOf(HomeMenuRow(strings.gameHistoryTitle, onClick = {})))
+                        HomeMenuGrid(rows = listOf(HomeMenuRow(strings.gameHistoryTitle, onClick = {})))
                     }
                     ReplaySection(title = studyBasicsTitleFor(strings.language)) {
                         ReplayLine(UiStringsGuideReplay.study(strings.language))
-                        // #280 — 학습은 대국 페이지의 메뉴 줄이다(사활 풀기 · 명국 기보 · 기초 학습, #288에서 타일 → 줄). 기초 학습 줄을 **진짜로** 그린다(누르면 아무 일 없음).
-                        HomeMenuList(rows = listOf(HomeMenuRow(studyBasicsTitleFor(strings.language), onClick = {})))
+                        // #280 — 학습은 대국 페이지의 메뉴 칸이다(사활 풀기 · 명국 기보 · 기초 학습, #288에서 그림 타일 → 그림 없는 칸). 기초 학습 칸을 **진짜로** 그린다(누르면 아무 일 없음).
+                        HomeMenuGrid(rows = listOf(HomeMenuRow(studyBasicsTitleFor(strings.language), onClick = {})))
                     }
                     // #261 — 바둑판 조작법(#249·#258)으로 가는 길. 이름은 설정이 쓰는 그 글자다.
                     ReplaySection(title = settingsHelpSectionFor(strings.language)) {
