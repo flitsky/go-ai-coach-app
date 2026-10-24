@@ -19,7 +19,33 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
-        // 1.8.2 — #287 「이전 대국 이어하기」의 둘째 줄(사용자 2026-10-24 — 1.8.1 뒤에 더해 1.8.2로 낸다). 1.7.0에서 오는 사람에게는 1.8.0 · 1.8.1 묶음과 함께 뜬다.
+        // 1.8.3 — #288 대국 페이지(2열 대국 카드 · 2열 메뉴 칸 · 카드를 밀면 도는 손맛) · #289 뽑기에 출석 캐릭터 · 가진 캐릭터는 7일 단위 보상으로(사용자 2026-10-24 — 1.8.2를 내지 않고 1.8.3으로 낸다).
+        // 1.7.0에서 오는 사람에게는 1.8.0 · 1.8.1 · 1.8.2 묶음과 함께 뜬다.
+        WhatsNewRelease(versionCode = 10803, versionName = "1.8.3") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "대국 페이지가 새로워졌어요. 「일반 대국」 · 「승급 대국」 카드가 나란히 서고, 아래 메뉴는 두 줄 칸으로 모였어요. 카드를 옆으로 밀어 보세요.",
+                    "1일 1회 뽑기에서 출석 캐릭터 「수제자 반상」 · 「관장 천원」도 나와요. 상품은 그림으로 보여요.",
+                    "이미 가진 캐릭터가 출석이나 뽑기에서 나오면 7일 단위 보상으로 대신 받아요.",
+                )
+                UiLanguage.English -> listOf(
+                    "A new Play page: Normal Match and Rank Match side by side, and the menus below in a two-column grid. Try swiping a card.",
+                    "The Daily draw can now give the attendance characters too, and shows its prizes as pictures.",
+                    "If attendance or the draw gives a character you already have, you get the weekly reward instead.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "対局ページが新しくなりました。「通常対局」と「昇級対局」のカードが並び、下のメニューは2列のマスにまとまりました。カードを横にスワイプしてみてください。",
+                    "「1日1回くじ」で出席キャラクターも出るようになりました。景品は絵で表示されます。",
+                    "出席やくじですでにお持ちのキャラクターが出たときは、7日ごとの報酬に代えてお渡しします。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "对弈页面焕然一新：「普通对局」和「升级对局」卡片并排显示，下方菜单改为两列方格。试着横向滑动卡片吧。",
+                    "「每日一抽」现在也能抽到签到角色，奖品以图片显示。",
+                    "签到或抽奖得到已拥有的角色时，将改为发放7日奖励。",
+                )
+            }
+        },
+        // 1.8.2 —#287 「이전 대국 이어하기」의 둘째 줄(사용자 2026-10-24 — 1.8.1 뒤에 더해 1.8.2로 낸다). 1.7.0에서 오는 사람에게는 1.8.0 · 1.8.1 묶음과 함께 뜬다.
         WhatsNewRelease(versionCode = 10802, versionName = "1.8.2") { language ->
             when (language) {
                 UiLanguage.Korean -> listOf(
