@@ -61,6 +61,24 @@ internal fun dailyDrawShardLabelFor(language: UiLanguage, characterName: String)
         UiLanguage.ChineseSimplified -> "${characterName}碎片"
     }
 
+/** 확률 줄의 「광고 캐릭터」 — 아직 없는 광고 캐릭터가 남지 않아 이름을 달 수 없을 때(#289). */
+internal fun dailyDrawAdCharacterLabelFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "광고 캐릭터"
+        UiLanguage.English -> "Ad character"
+        UiLanguage.Japanese -> "広告キャラクター"
+        UiLanguage.ChineseSimplified -> "广告角色"
+    }
+
+/** 확률 줄에서 이미 가진 캐릭터 뒤에 붙는 말 — 뽑히면 7일 단위 보상으로 대체된다(#289). */
+internal fun dailyDrawSubstituteSuffixFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean -> "→ 7일 단위 보상"
+        UiLanguage.English -> "→ weekly reward"
+        UiLanguage.Japanese -> "→ 7日ごとの報酬"
+        UiLanguage.ChineseSimplified -> "→ 7日奖励"
+    }
+
 internal fun dailyDrawTicketsLabelFor(language: UiLanguage, each: Int): String =
     when (language) {
         UiLanguage.Korean -> "형세 · 추천 수 1회권 ${each}장씩"

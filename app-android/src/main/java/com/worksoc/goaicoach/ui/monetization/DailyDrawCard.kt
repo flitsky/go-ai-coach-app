@@ -44,8 +44,10 @@ import com.worksoc.goaicoach.application.dailydraw.DailyDrawPrizeKind
 import com.worksoc.goaicoach.application.dailydraw.DailyDrawResult
 import com.worksoc.goaicoach.application.dailydraw.DailyDrawTicketsEach
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawAvailability
+import com.worksoc.goaicoach.application.dailydraw.dailyDrawCharacterGrantable
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawCharacterTarget
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawOdds
+import com.worksoc.goaicoach.application.dailydraw.dailyDrawPrizeCharacter
 import com.worksoc.goaicoach.application.dailydraw.runDailyDraw
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
 import com.worksoc.goaicoach.persistence.BotCollectionStore
@@ -58,6 +60,8 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.attendanceAtStockCapNoticeFor
+import com.worksoc.goaicoach.ui.l10n.dailyDrawAdCharacterLabelFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawAdFailedFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawButtonFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawComeBackFor
@@ -65,7 +69,9 @@ import com.worksoc.goaicoach.ui.l10n.dailyDrawCooldownDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawNextInFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawResultTitleFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawShardLabelFor
+import com.worksoc.goaicoach.ui.l10n.dailyDrawSubstituteSuffixFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawTicketsLabelFor
+import com.worksoc.goaicoach.ui.l10n.ownedCharacterSubstituteNoticeFor
 import java.util.Locale
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -77,9 +83,10 @@ import kotlinx.coroutines.launch
  * - 뽑을 수 있음: 초록 테두리 알약 「▶ 광고 보고 뽑기」(구독자는 「▶ 뽑기」 — 광고 없이). 광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99).
  * - 광고 · 뽑는 중: 도는 표시(두 번 누를 수 없다).
  * - **쿨타임**: 뽑은 때부터 24시간 — 지나간 만큼 차오르는 고리와 남은 시간(시:분:초, 1초마다). 눌리지 않는다.
- * - 카드 아래에 **지금의 확률**을 상품마다 한 줄씩 늘 적는다(「(30%) 광고 스킵권」, 사용자 2026-10-23) — 줄 수 없는 상품이 빠지면 나머지의 비율이 바뀌므로 지금 판정(`dailyDrawOdds`)에서 센다.
- *   조각 · 캐릭터에는 지금 대상의 이름을 단다. 확률을 감추지 않는 것은 스레드가 정했다(무작위 보상의 확률 공개 관행).
- * - 결과: 캐릭터를 얻었으면 기존 획득 축하 창(`BotCharacterUiState.enqueueAcquired`), 아니면 「뽑기 결과」 창.
+ * - 카드 아래에 **지금의 확률**을 상품마다 한 줄씩 늘 적는다(「(30%) 광고 스킵권」, 사용자 2026-10-23) — 90% 묶음은 줄 수 없는 상품이 빠지면 나머지의 비율이 바뀌므로
+ *   지금 판정(`dailyDrawOdds`, 합 100)을 그대로 적는다. 조각 · 캐릭터에는 대상의 이름을 달고, 이미 가진 캐릭터에는 「→ 7일 단위 보상」을 붙인다(#289).
+ *   확률을 감추지 않는 것은 스레드가 정했다(무작위 보상의 확률 공개 관행).
+ * - 결과: 캐릭터를 얻었으면 기존 획득 축하 창(`BotCharacterUiState.enqueueAcquired`), 아니면 「뽑기 결과」 창 — 대체 지급이면 그 안내가 맨 위에 선다.
  *
  * ⚠️ 재고 · 수집은 저장소에 직접 쓰므로 뽑은 뒤 두 화면 상태를 다시 읽는다(함정 13) — 부르지 않으면 내 정보의 숫자 · 캐릭터 목록이 그대로다.
  * ⚠️ 시계는 `System.currentTimeMillis`를 직접 읽는다 — 출석과 같다(함정 12).
@@ -182,6 +189,10 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
             title = { Text(dailyDrawResultTitleFor(language), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
+                    if (result.substituted) {
+                        val name = result.character?.let(strings::botCharacterName)
+                        Text(ownedCharacterSubstituteNoticeFor(language, name), fontSize = AppTextSize.Text14, color = colors.onSurfaceVariant)
+                    }
                     Text(resultLine(strings, result), fontSize = AppTextSize.Text18, fontWeight = FontWeight.SemiBold)
                     Text(dailyDrawComeBackFor(language), fontSize = AppTextSize.Text13, color = colors.secondary)
                 }
@@ -223,8 +234,8 @@ private fun CooldownLine(remainingMillis: Long) {
 }
 
 /**
- * 지금의 확률 — 상품마다 (확률, 이름) 한 줄. 줄 수 없는 상품을 뺀 나머지의 비율(합 100%)이다.
- * 차례는 사용자가 적은 대로 1회권 → 광고 스킵권 → 조각 → 캐릭터(2026-10-23) — 뽑기의 칸 순서(`DailyDrawPrizeKind`)와는 따로다.
+ * 지금의 확률 — 상품마다 (확률, 이름) 한 줄. `dailyDrawOdds`가 이미 합 100으로 주므로 그대로 적는다.
+ * 차례는 사용자가 적은 대로 1회권 → 광고 스킵권 → 조각 → 광고 캐릭터 → 반상 → 천원(2026-10-23 · 10-24) — 뽑기의 칸 순서(`DailyDrawPrizeKind`)와는 따로다.
  */
 private fun oddsRows(
     strings: UiStrings,
@@ -233,17 +244,19 @@ private fun oddsRows(
 ): List<Pair<Int, String>> {
     val language = strings.language
     val odds = dailyDrawOdds(consumables.inventory, collection)
-    val total = odds.values.sum()
     val targetName = dailyDrawCharacterTarget(collection)?.let(strings::botCharacterName).orEmpty()
     return OddsDisplayOrder.mapNotNull { kind ->
-        val weight = odds[kind] ?: return@mapNotNull null
+        val percent = odds[kind] ?: return@mapNotNull null
         val label = when (kind) {
             DailyDrawPrizeKind.Tickets -> dailyDrawTicketsLabelFor(language, DailyDrawTicketsEach)
             DailyDrawPrizeKind.AdSkipTicket -> strings.consumableRewardName(ConsumableCatalog.PremiumOnce)
             DailyDrawPrizeKind.CharacterShard -> dailyDrawShardLabelFor(language, targetName)
-            DailyDrawPrizeKind.Character -> targetName
+            DailyDrawPrizeKind.Character, DailyDrawPrizeKind.Day7Character, DailyDrawPrizeKind.Day28Character -> {
+                val name = dailyDrawPrizeCharacter(kind, collection)?.let(strings::botCharacterName) ?: dailyDrawAdCharacterLabelFor(language)
+                if (dailyDrawCharacterGrantable(kind, collection)) name else name + " " + dailyDrawSubstituteSuffixFor(language)
+            }
         }
-        (weight * 100 + total / 2) / total to label
+        percent to label
     }
 }
 
@@ -252,20 +265,30 @@ private val OddsDisplayOrder = listOf(
     DailyDrawPrizeKind.AdSkipTicket,
     DailyDrawPrizeKind.CharacterShard,
     DailyDrawPrizeKind.Character,
+    DailyDrawPrizeKind.Day7Character,
+    DailyDrawPrizeKind.Day28Character,
 )
 
-/** 결과 창의 본문 한 줄. 캐릭터를 얻은 경우는 이 창이 아니라 획득 축하 창이 뜬다. */
-private fun resultLine(strings: UiStrings, result: DailyDrawResult): String =
-    when (result.kind) {
+/** 결과 창의 본문. 캐릭터를 얻은 경우는 이 창이 아니라 획득 축하 창이 뜬다. */
+private fun resultLine(strings: UiStrings, result: DailyDrawResult): String {
+    // 대체 지급(#289) — 실제로 들어간 수를 적고, 상한에 걸려 0장이면 출석 팝업처럼 「보유 상한」을 밝힌다.
+    if (result.substituted) {
+        return result.substituteGrants.joinToString("\n") { grant ->
+            strings.consumableRewardName(grant.item) + " " +
+                if (grant.amount > 0) strings.consumableRewardAmount(grant.amount) else "(" + attendanceAtStockCapNoticeFor(strings.language) + ")"
+        }
+    }
+    return when (result.kind) {
         DailyDrawPrizeKind.Tickets -> listOf(ConsumableCatalog.EvalOnce, ConsumableCatalog.TopMovesOnce)
             .joinToString("\n") { item -> strings.consumableRewardName(item) + " " + strings.consumableRewardAmount(DailyDrawTicketsEach) }
         DailyDrawPrizeKind.AdSkipTicket -> strings.consumableRewardName(ConsumableCatalog.PremiumOnce) + " " + strings.consumableRewardAmount(1)
-        DailyDrawPrizeKind.CharacterShard, DailyDrawPrizeKind.Character -> {
+        DailyDrawPrizeKind.CharacterShard, DailyDrawPrizeKind.Character, DailyDrawPrizeKind.Day7Character, DailyDrawPrizeKind.Day28Character -> {
             val character = requireNotNull(result.character) { "조각 · 캐릭터 결과에는 캐릭터가 실린다(runDailyDraw)." }
             val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: 0
             strings.botShardEarnedToast(character, result.shards, required)
         }
     }
+}
 
 private val DailyDrawCardMinHeight = 96.dp
 private val DrawButtonMinHeight = 48.dp
