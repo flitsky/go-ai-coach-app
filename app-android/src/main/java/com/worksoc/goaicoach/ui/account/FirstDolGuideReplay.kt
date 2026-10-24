@@ -226,7 +226,7 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                     }
                     ReplaySection(title = studyBasicsTitleFor(strings.language)) {
                         ReplayLine(UiStringsGuideReplay.study(strings.language))
-                        // #280 — 학습은 대국 페이지의 메뉴 칸이다(사활 풀기 · 명국 기보 · 기초 학습, #288에서 그림 타일 → 그림 없는 칸). 기초 학습 칸을 **진짜로** 그린다(누르면 아무 일 없음).
+                        // #280 — 학습은 대국 페이지의 메뉴 칸이다(고전 사활 · 명국 기보 · 바둑 배우기 — #288에서 그림 타일 → 그림 없는 칸, #290에서 이름). 바둑 배우기 칸을 **진짜로** 그린다(누르면 아무 일 없음).
                         HomeMenuGrid(rows = listOf(HomeMenuRow(studyBasicsTitleFor(strings.language), onClick = {})))
                     }
                     // #261 — 바둑판 조작법(#249·#258)으로 가는 길. 이름은 설정이 쓰는 그 글자다.

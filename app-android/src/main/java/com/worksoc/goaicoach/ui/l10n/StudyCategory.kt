@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.ui.l10n
 /**
  * 학습 허브의 하위 분류(백로그 #163, U-16 — 2026-09-20 사용자 결정).
  *
- * ⚠️ **화면의 자리는 선언 순서가 아니다**(#280, 사용자 2026-10-23) — 「사활 풀기」는 대국 페이지의 타일, 나머지 셋은 「기초 학습」 목록(`StudyBasicsCategories` 한 곳)이다.
+ * ⚠️ **화면의 자리는 선언 순서가 아니다**(#280 → #290, 사용자 2026-10-24) — 「고전 사활」은 대국 페이지의 칸, 나머지 넷은 「바둑 배우기」 목록(`StudyBasicsCategories` 한 곳)이다.
  * 새 분류를 열면 둘 중 한 곳에 자리를 준다(빠지면 `HomePagesContractTest`가 빨개진다). 아직 없는 분류는 **자리를 먼저 보여 준다**(회색 + 「준비 중」 배지, 비활성).
  * 사용자 결정으로 *"누르면 토스트"* 가 아니라 **눌리지 않는** 쪽을 골랐다 — 앞으로 무엇이
  * 올지 알리되, 누를 수 있는 것처럼 보여 헛손질을 만들지는 않는다.
@@ -16,6 +16,9 @@ internal enum class StudyCategory(val available: Boolean) {
     YoutubeLessons(available = true),
     Rules(available = true),
     Fundamentals(available = true),
-    /** 푸는 학습(백로그 #184, U-51) — 다른 분류와 달리 판에 직접 둔다. */
+    /** 푸는 학습(백로그 #184, U-51) — 다른 분류와 달리 판에 직접 둔다. 기본 · 중급 · 고급 사활(#290부터 고전은 따로). */
     LifeAndDeath(available = true),
+
+    /** 고전 사활(#290, 사용자 2026-10-24) — 『기경중묘』 · 『발양론』. 같은 풀이 화면이 고전 단원만 보인다(`lifeAndDeathUnitsFor`). */
+    ClassicLifeAndDeath(available = true),
 }

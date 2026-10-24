@@ -45,6 +45,12 @@ private val StudyCategoryTitles: Map<StudyCategory, Map<UiLanguage, String>> = m
         UiLanguage.Japanese to "詰碁を解く",
         UiLanguage.ChineseSimplified to "死活练习",
     ),
+    StudyCategory.ClassicLifeAndDeath to mapOf(
+        UiLanguage.Korean to "고전 사활",
+        UiLanguage.English to "Classic Life & Death",
+        UiLanguage.Japanese to "古典詰碁",
+        UiLanguage.ChineseSimplified to "古典死活",
+    ),
 )
 
 private val StudyCategorySubtitles: Map<StudyCategory, Map<UiLanguage, String>> = mapOf(
@@ -72,6 +78,12 @@ private val StudyCategorySubtitles: Map<StudyCategory, Map<UiLanguage, String>> 
         UiLanguage.Japanese to "生きる形と殺す急所を練習します。",
         UiLanguage.ChineseSimplified to "练习做活的形状与破眼的要点。",
     ),
+    StudyCategory.ClassicLifeAndDeath to mapOf(
+        UiLanguage.Korean to "『기경중묘』 · 『발양론』의 옛 사활을 원전의 수순으로 풉니다.",
+        UiLanguage.English to "Classic problems from Gokyo Shumyo and Hatsuyoron, answered as the books do.",
+        UiLanguage.Japanese to "『碁経衆妙』『発陽論』の古典詰碁を原典の手順で解きます。",
+        UiLanguage.ChineseSimplified to "按原典手顺解答《碁经众妙》《发阳论》的古典死活题。",
+    ),
 )
 
 private val StudyComingSoonBadge: Map<UiLanguage, String> = mapOf(
@@ -94,15 +106,22 @@ internal fun studyCategorySubtitleFor(language: UiLanguage, category: StudyCateg
 internal fun studyComingSoonFor(language: UiLanguage): String =
     StudyComingSoonBadge[language] ?: StudyComingSoonBadge.getValue(UiLanguage.Korean)
 
-/** 「기초 학습」(#280, 사용자 2026-10-23) — 대국 페이지의 타일이 여는 목록: 바둑 규칙 · 기초 행마 · 유튜브 강좌. 영 · 일 · 중은 스레드가 정한 표기. */
+/**
+ * 「바둑 배우기」(#280 「기초 학습」 → #290, 사용자 2026-10-24: *"'바둑 배우기' 또는 '학습 하기'"* — 스레드가 「바둑 배우기」를 골랐다) — 대국 페이지의 칸이 여는 목록.
+ * 영 · 일 · 중은 스레드가 정한 표기.
+ */
 private val StudyBasicsTitles: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "기초 학습",
-    UiLanguage.English to "Basics",
-    UiLanguage.Japanese to "基礎学習",
-    UiLanguage.ChineseSimplified to "基础学习",
+    UiLanguage.Korean to "바둑 배우기",
+    UiLanguage.English to "Learn Go",
+    UiLanguage.Japanese to "囲碁を学ぶ",
+    UiLanguage.ChineseSimplified to "学围棋",
 )
 
 internal fun studyBasicsTitleFor(language: UiLanguage): String = StudyBasicsTitles.getValue(language)
 
-/** 「기초 학습」이 모으는 분류 — 이 차례로 선다(사용자 2026-10-23). 「사활 풀기」는 여기 없다 — 대국 페이지의 타일이 곧바로 연다. */
-internal val StudyBasicsCategories: List<StudyCategory> = listOf(StudyCategory.Rules, StudyCategory.Fundamentals, StudyCategory.YoutubeLessons)
+/**
+ * 「바둑 배우기」가 모으는 분류 — 이 차례로 선다(사용자 2026-10-23 · #290 2026-10-24: 기본 · 중고급 사활이 이 목록으로 왔다 — 행마 다음 자리는 스레드가 정했다).
+ * 「고전 사활」은 여기 없다 — 대국 페이지의 칸이 곧바로 연다.
+ */
+internal val StudyBasicsCategories: List<StudyCategory> =
+    listOf(StudyCategory.Rules, StudyCategory.Fundamentals, StudyCategory.LifeAndDeath, StudyCategory.YoutubeLessons)

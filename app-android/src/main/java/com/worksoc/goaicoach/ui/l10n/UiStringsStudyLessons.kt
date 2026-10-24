@@ -62,7 +62,7 @@ internal fun studyLessonTrackFor(category: StudyCategory): StudyLessonTrack? =
     when (category) {
         StudyCategory.Rules -> StudyLessonTrack.Rules
         StudyCategory.Fundamentals -> StudyLessonTrack.Shapes
-        StudyCategory.YoutubeLessons, StudyCategory.LifeAndDeath -> null
+        StudyCategory.YoutubeLessons, StudyCategory.LifeAndDeath, StudyCategory.ClassicLifeAndDeath -> null
     }
 
 /**

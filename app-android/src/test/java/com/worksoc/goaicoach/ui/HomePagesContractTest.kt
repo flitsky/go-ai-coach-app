@@ -75,22 +75,25 @@ class HomePagesContractTest {
         assertTrue("「승급 대국」이 「일반 대국」보다 위에 있다(서 있는 답 #239).", character < rank)
     }
 
-    /** 학습은 대국 페이지의 메뉴 줄이다(#288 — 처음은 타일) — 「사활 풀기」는 곧바로, 나머지 셋은 「기초 학습」 목록으로(사용자 2026-10-23). 분류는 빠짐없이 한 곳에 선다. */
+    /**
+     * 학습은 대국 페이지의 메뉴 칸이다(#288 — 처음은 타일) — 「고전 사활」은 곧바로, 나머지 넷은 「바둑 배우기」 목록으로(#280 → #290, 사용자 2026-10-24).
+     * 분류는 빠짐없이 한 곳에 선다.
+     */
     @Test
     fun everyStudyCategoryHasExactlyOnePlace() {
         assertEquals(
-            "「기초 학습」 목록의 차례가 사용자가 정한 것과 다르다(#280).",
-            listOf(StudyCategory.Rules, StudyCategory.Fundamentals, StudyCategory.YoutubeLessons),
+            "「바둑 배우기」 목록의 차례가 정한 것과 다르다(#280 · #290).",
+            listOf(StudyCategory.Rules, StudyCategory.Fundamentals, StudyCategory.LifeAndDeath, StudyCategory.YoutubeLessons),
             StudyBasicsCategories,
         )
-        assertFalse("「사활 풀기」가 「기초 학습」 목록에도 있다 — 대국 페이지의 타일이 곧바로 연다.", StudyCategory.LifeAndDeath in StudyBasicsCategories)
+        assertFalse("「고전 사활」이 「바둑 배우기」 목록에도 있다 — 대국 페이지의 칸이 곧바로 연다.", StudyCategory.ClassicLifeAndDeath in StudyBasicsCategories)
         assertEquals(
-            "자리가 없는 분류가 있다 — 새 분류를 열면 「기초 학습」 목록이나 대국 페이지의 타일에 자리를 줄 것.",
+            "자리가 없는 분류가 있다 — 새 분류를 열면 「바둑 배우기」 목록이나 대국 페이지의 칸에 자리를 줄 것.",
             StudyCategory.entries.toSet(),
-            StudyBasicsCategories.toSet() + StudyCategory.LifeAndDeath,
+            StudyBasicsCategories.toSet() + StudyCategory.ClassicLifeAndDeath,
         )
-        listOf("onGameRecordsClick", "onLifeAndDeathClick", "onBasicsClick").forEach { row ->
-            assertTrue("대국 페이지에 `$row` 메뉴 줄이 없다(#280 · #288).", home.contains("$row),"))
+        listOf("onGameRecordsClick", "onClassicLifeAndDeathClick", "onBasicsClick").forEach { row ->
+            assertTrue("대국 페이지에 `$row` 메뉴 칸이 없다(#280 · #288 · #290).", home.contains("$row),"))
         }
     }
 

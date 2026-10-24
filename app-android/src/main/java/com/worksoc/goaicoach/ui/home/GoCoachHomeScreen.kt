@@ -186,7 +186,7 @@ internal fun GoCoachHomeScreen(
     onBoardScanClick: () -> Unit,
     /** 대국 페이지의 타일 셋(#280, 사용자 2026-10-23) — 「명국 기보」 · 「사활 풀기」 · 「기초 학습」. 셸이 그 목적지로 보낸다. */
     onGameRecordsClick: () -> Unit,
-    onLifeAndDeathClick: () -> Unit,
+    onClassicLifeAndDeathClick: () -> Unit,
     onBasicsClick: () -> Unit,
     hasResumableSession: Boolean,
     /** 이어 둘 판의 한 줄 요약(#287 — `resumeSummaryFor`) — 이어하기 알약의 둘째 줄. 없으면 첫 줄만. */
@@ -300,7 +300,7 @@ internal fun GoCoachHomeScreen(
                                 onRankMeasureClick = { if (hasResumableSession) showRankMeasureOverwriteWarning = true else showRankMeasureDialog = true },
                                 onGameHistoryClick = onGameHistoryClick,
                                 onGameRecordsClick = onGameRecordsClick,
-                                onLifeAndDeathClick = onLifeAndDeathClick,
+                                onClassicLifeAndDeathClick = onClassicLifeAndDeathClick,
                                 onBasicsClick = onBasicsClick,
                                 onBoardScanClick = onBoardScanClick,
                                 playerSetup = playerSetup,
@@ -485,7 +485,7 @@ private fun HomePlayPage(
     onRankMeasureClick: () -> Unit,
     onGameHistoryClick: () -> Unit,
     onGameRecordsClick: () -> Unit,
-    onLifeAndDeathClick: () -> Unit,
+    onClassicLifeAndDeathClick: () -> Unit,
     onBasicsClick: () -> Unit,
     onBoardScanClick: () -> Unit,
     playerSetup: PlayerSetup,
@@ -627,13 +627,13 @@ private fun HomePlayPage(
         }
 
         // 두는 것이 아닌 메뉴는 **2열의 작은 칸**이다(#288, 사용자 2026-10-24 — #237의 그림 타일 → 가는 줄 → 이것). 그림 없이 이름과 › 하나 — 위의 키 큰 대국 카드와 크기로 갈린다.
-        // 칸 넷(#280): 대국 기록 · 명국 기보 / 사활 풀기 · 기초 학습(바둑 규칙 · 기초 행마 · 유튜브 강좌를 모은 목록).
+        // 칸 넷(#280 → #290): 대국 기록 · 명국 기보 / 고전 사활 · 바둑 배우기(바둑 규칙 · 기초 행마 · 사활 풀기 · 유튜브 강좌를 모은 목록).
         Spacer(modifier = Modifier.height(AppSpacing.Space12))
         HomeMenuGrid(
             rows = listOf(
                 HomeMenuRow(strings.gameHistoryTitle, onGameHistoryClick),
                 HomeMenuRow(gameRecordsTitleFor(strings.language), onGameRecordsClick),
-                HomeMenuRow(strings.studyCategoryTitle(StudyCategory.LifeAndDeath), onLifeAndDeathClick),
+                HomeMenuRow(strings.studyCategoryTitle(StudyCategory.ClassicLifeAndDeath), onClassicLifeAndDeathClick),
                 HomeMenuRow(studyBasicsTitleFor(strings.language), onBasicsClick),
             ),
         )

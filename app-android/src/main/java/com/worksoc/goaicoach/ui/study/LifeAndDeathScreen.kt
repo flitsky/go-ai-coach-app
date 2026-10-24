@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.persistence.LifeAndDeathProgressStore
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.content.LifeAndDeathPhase
+import com.worksoc.goaicoach.shared.content.LifeAndDeathSection
 import com.worksoc.goaicoach.shared.content.LifeAndDeathSession
 import com.worksoc.goaicoach.shared.content.LifeAndDeathUnit
 import com.worksoc.goaicoach.shared.content.lifeAndDeathProblemsOf
@@ -67,6 +68,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * 3 Depth: 「사활」(백로그 #184 · #277) — 단원 목록과, 고른 단원의 문제를 **풀어 보는** 화면.
+ * 「사활 풀기」(기본 · 중급 · 고급 — 「바둑 배우기」 목록)와 「고전 사활」(대국 페이지의 칸)이 이 화면 하나를 쓰고, 보이는 단원만 다르다(#290, [lifeAndDeathUnitsFor]).
  *
  * 학습 단원(`StudyLessonTrackScreen`)과 형식이 다르다 — 거기는 도해를 넘겨 읽고, 여기는 판에 직접 둔다(U-51 「푸는 학습」).
  * 그래서 화면을 따로 두되 **머리말 · 목록 줄 · 판과 글의 비율 · 아래 조작부의 모양**은 학습 단원과 같은 것을 쓴다 —
@@ -77,6 +79,7 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 internal fun LifeAndDeathTrackScreen(
+    category: StudyCategory,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -86,9 +89,11 @@ internal fun LifeAndDeathTrackScreen(
     // 푼 기록은 이 화면이 들고, 문제 화면은 풀 때마다 저장소가 돌려준 집합으로 갈아 끼운다(함정 13 — 저장소만 고치면 목록의 숫자가 낡는다).
     var solved by remember { mutableStateOf(store.solved()) }
     var opened by remember { mutableStateOf<OpenedProblem?>(null) }
+    val units = remember(category) { lifeAndDeathUnitsFor(category) }
 
     opened?.let { problem ->
         LifeAndDeathProblemScreen(
+            units = units,
             unit = problem.unit,
             index = problem.index,
             solved = solved,
@@ -108,7 +113,7 @@ internal fun LifeAndDeathTrackScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         StudyScreenHeader(
-            title = studyCategoryTitleFor(strings.language, StudyCategory.LifeAndDeath),
+            title = studyCategoryTitleFor(strings.language, category),
             onBackClick = onBackClick,
         )
 
@@ -120,9 +125,11 @@ internal fun LifeAndDeathTrackScreen(
                 .padding(horizontal = AppSpacing.Space16),
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
         ) {
-            LifeAndDeathUnit.entries.forEach { unit ->
+            // 묶음이 둘 이상일 때만 칸 이름을 단다 — 「고전 사활」은 묶음 하나라 머리 제목과 같은 말이 겹친다.
+            val showsSections = units.map { it.section }.distinct().size > 1
+            units.forEach { unit ->
                 // 묶음이 바뀌는 자리에 칸 이름(#277) — 기본 다섯 단원 · 중급과 고급. 단원 순서가 곧 묶음 순서다(enum 순서).
-                if (unit == LifeAndDeathUnit.entries.first { it.section == unit.section }) {
+                if (showsSections && unit == units.first { it.section == unit.section }) {
                     Text(
                         text = lifeAndDeathSectionTitleFor(strings.language, unit.section),
                         fontSize = AppTextSize.Text14,
@@ -151,6 +158,19 @@ internal fun LifeAndDeathTrackScreen(
 
 private data class OpenedProblem(val unit: LifeAndDeathUnit, val index: Int)
 
+/**
+ * 분류가 보이는 단원 — **사활을 메뉴에 나누는 유일한 자리**(#290, 사용자 2026-10-24): 「사활 풀기」는 기본 · 중급 · 고급, 「고전 사활」은 고전 사활집.
+ * 문제 화면의 「다음 단원」도 이 목록 안에서만 넘어간다(중고급 끝에서 고전으로 건너가지 않는다).
+ */
+internal fun lifeAndDeathUnitsFor(category: StudyCategory): List<LifeAndDeathUnit> {
+    val sections = when (category) {
+        StudyCategory.LifeAndDeath -> setOf(LifeAndDeathSection.Basics, LifeAndDeathSection.Practice)
+        StudyCategory.ClassicLifeAndDeath -> setOf(LifeAndDeathSection.Classics)
+        else -> emptySet()
+    }
+    return LifeAndDeathUnit.entries.filter { it.section in sections }
+}
+
 /** 단원의 진행 — 다 풀면 앞에 ✓를 단다. */
 private fun progressLabel(solved: Int, total: Int): String =
     if (solved >= total) "✓ $solved / $total" else "$solved / $total"
@@ -165,6 +185,7 @@ private fun progressLabel(solved: Int, total: Int): String =
  */
 @Composable
 private fun LifeAndDeathProblemScreen(
+    units: List<LifeAndDeathUnit>,
     unit: LifeAndDeathUnit,
     index: Int,
     solved: Set<String>,
@@ -225,7 +246,7 @@ private fun LifeAndDeathProblemScreen(
         else -> null
     }
     val pristine = !showingAnswer && state.board.moves.isEmpty()
-    val nextUnit = LifeAndDeathUnit.entries.getOrNull(unit.ordinal + 1)
+    val nextUnit = units.getOrNull(units.indexOf(unit) + 1)
     val isLastProblem = index == problems.lastIndex
 
     val bodyScroll = rememberScrollState()

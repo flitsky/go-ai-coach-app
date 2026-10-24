@@ -38,7 +38,7 @@ import com.worksoc.goaicoach.ui.l10n.studyBasicsTitleFor
 import com.worksoc.goaicoach.ui.l10n.studyLessonTrackFor
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 
-/** 셸의 「학습」 목적지가 화면 전체로 여는 것 — 분류 하나, 또는 「기초 학습」 목록(#280, 대국 페이지의 타일). */
+/** 셸의 「학습」 목적지가 화면 전체로 여는 것 — 분류 하나, 또는 「바둑 배우기」 목록(#280 → #290, 대국 페이지의 칸). */
 internal sealed interface StudyTarget {
     data class Category(val category: StudyCategory) : StudyTarget
 
@@ -46,20 +46,20 @@ internal sealed interface StudyTarget {
 }
 
 /**
- * 대국 페이지의 타일(「사활 풀기」 · 「기초 학습」)이 고른 것을 셸의 「학습」 목적지에 넘기는 **한 번짜리 요청**(백로그 #280) — `FinishedGameFlow`(대국 기록의 「복기 하기」)와 같은 틀이다.
+ * 대국 페이지의 칸(「고전 사활」 · 「바둑 배우기」)이 고른 것을 셸의 「학습」 목적지에 넘기는 **한 번짜리 요청**(백로그 #280) — `FinishedGameFlow`(대국 기록의 「복기 하기」)와 같은 틀이다.
  *
  * ⚠️ 셸에 들게 하지 않는다 — 셸이 학습의 하위 분류를 알게 되고(`StudyHubContractTest`) 셸 상태 원장에 한 칸이 는다(함정 3).
- * 대국 페이지(홈)는 이 패키지를 import하지 못해(같은 층) 셸이 [requestLifeAndDeath] · [requestBasics]를 부른다 — 분류의 이름은 여기에만 있다.
+ * 대국 페이지(홈)는 이 패키지를 import하지 못해(같은 층) 셸이 [requestClassicLifeAndDeath] · [requestBasics]를 부른다 — 분류의 이름은 여기에만 있다.
  */
 internal object StudyEntry {
     private var pending: StudyTarget? = null
 
-    /** 대국 페이지의 「사활 풀기」 타일. */
-    fun requestLifeAndDeath() {
-        pending = StudyTarget.Category(StudyCategory.LifeAndDeath)
+    /** 대국 페이지의 「고전 사활」 칸(#290 — 그전에는 「사활 풀기」 전부). */
+    fun requestClassicLifeAndDeath() {
+        pending = StudyTarget.Category(StudyCategory.ClassicLifeAndDeath)
     }
 
-    /** 대국 페이지의 「기초 학습」 타일. */
+    /** 대국 페이지의 「바둑 배우기」 칸. */
     fun requestBasics() {
         pending = StudyTarget.Basics
     }
@@ -69,7 +69,7 @@ internal object StudyEntry {
 }
 
 /**
- * 학습 하기의 **하위 화면**(영상 · 규칙 · 행마 · 사활 · 기초 학습 목록) — 셸의 「학습」 목적지가 화면 전체로 그린다(백로그 #280).
+ * 학습 하기의 **하위 화면**(영상 · 규칙 · 행마 · 사활 · 고전 사활 · 바둑 배우기 목록) — 셸의 「학습」 목적지가 화면 전체로 그린다(백로그 #280).
  *
  * ⚠️ **뒤로가기 경로가 둘이다.** 시스템 뒤로가기는 셸의 `BackHandler`가 잡아 `exitToHome()`으로 보내고, 상단 화살표는 그 길을 타지 않는다.
  * 하위 화면은 **자기 `BackHandler`를 갖고** 안쪽 단계(단원 → 문제)를 제 손으로 닫는다 — 맨 위 단계의 둘은 [onBackClick](홈)으로 모인다.
@@ -104,13 +104,14 @@ private fun StudyCategoryScreen(category: StudyCategory, onBackClick: () -> Unit
                 LeaveAtOnce(onBackClick)
             }
         }
-        // 「사활 풀기」는 형식이 달라(판에 직접 두는 문제 풀이 — U-51) 화면이 따로다(백로그 #184).
-        StudyCategory.LifeAndDeath -> LifeAndDeathTrackScreen(onBackClick = onBackClick, modifier = modifier)
+        // 사활은 형식이 달라(판에 직접 두는 문제 풀이 — U-51) 화면이 따로다(백로그 #184). 「사활 풀기」와 「고전 사활」은 같은 화면이 단원만 갈라 보인다(#290).
+        StudyCategory.LifeAndDeath, StudyCategory.ClassicLifeAndDeath ->
+            LifeAndDeathTrackScreen(category = category, onBackClick = onBackClick, modifier = modifier)
     }
 }
 
 /**
- * 「기초 학습」 목록(#280, 사용자 2026-10-23) — 대국 페이지의 타일이 연다. 바둑 규칙 · 기초 행마 · 유튜브 강좌([StudyBasicsCategories]).
+ * 「바둑 배우기」 목록(#280 「기초 학습」 → #290, 사용자 2026-10-24) — 대국 페이지의 칸이 연다. 바둑 규칙 · 기초 행마 · 사활 풀기 · 유튜브 강좌([StudyBasicsCategories]).
  * 고른 분류는 이 화면의 상태다 — 그 화면에서 뒤로 가면 이 목록으로, 여기서 뒤로 가면 홈으로(셸의 뒤로가기 · 화살표 둘 다).
  */
 @Composable

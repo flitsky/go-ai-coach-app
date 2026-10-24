@@ -965,7 +965,7 @@ private fun GoCoachScreen(
                 onGameHistoryClick = { currentDestination = ScreenDestination.GameHistory },
                 onBoardScanClick = { currentDestination = ScreenDestination.BoardScan },
                 onGameRecordsClick = { currentDestination = ScreenDestination.GameRecords },
-                onLifeAndDeathClick = { StudyEntry.requestLifeAndDeath(); currentDestination = ScreenDestination.Study },
+                onClassicLifeAndDeathClick = { StudyEntry.requestClassicLifeAndDeath(); currentDestination = ScreenDestination.Study },
                 onBasicsClick = { StudyEntry.requestBasics(); currentDestination = ScreenDestination.Study },
                 hasResumableSession = savedSessionToPrompt != null,
                 resumeSummary = savedSessionToPrompt?.let { resumeSummaryFor(LocalUiStrings.current, it, screenState.engine.name) },

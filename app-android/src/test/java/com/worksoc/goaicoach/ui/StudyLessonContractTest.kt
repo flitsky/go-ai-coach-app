@@ -204,7 +204,7 @@ class StudyLessonContractTest {
     fun everyOpenLessonCategoryHasATrackWithLessons() {
         // 유튜브 강좌와 「기본 사활」(#184 — 푸는 학습)은 갈래가 아니라 화면이 따로다. 사활 쪽 배선은 `LifeAndDeathCopyContractTest`가 본다.
         StudyCategory.entries
-            .filter { it.available && it != StudyCategory.YoutubeLessons && it != StudyCategory.LifeAndDeath }
+            .filter { it.available && it != StudyCategory.YoutubeLessons && it != StudyCategory.LifeAndDeath && it != StudyCategory.ClassicLifeAndDeath }
             .forEach { category ->
                 val track = studyLessonTrackFor(category)
                 assertTrue("$category 가 열려 있는데 갈래가 없다 — 눌러도 아무 일도 안 일어난다.", track != null)
