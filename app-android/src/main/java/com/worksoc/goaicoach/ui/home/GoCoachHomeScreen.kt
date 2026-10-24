@@ -159,8 +159,10 @@ import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -1077,7 +1079,13 @@ private val MenuCardSwipeThreshold = 24.dp
  *
  * ## 다시 밀면 더 돈다
  * 도는 중에 다시 밀면 그 사슬의 n번째 밀기가 **n × 반 바퀴**를 더한다(1: 반 바퀴 · 2: +1 · 3: +1.5 · 4: +2 …, 사용자의 예시).
- * 멈추면 사슬이 끊겨 다음 밀기는 다시 반 바퀴다. 사슬 안의 방향은 첫 밀기의 방향을 따른다.
+ * 멈추면 사슬이 끊겨 다음 밀기는 다시 반 바퀴다.
+ *
+ * ## 너무 오래 돌지 않는다 · 반대로 밀면 선다(사용자 2026-10-24 — *"너무 오래 돌아간다"*)
+ * 쌓인 바퀴는 **민 순간부터 [StopWithinSeconds]초 안에 설 수 있는 만큼**으로 자른다 — 그 이상 밀어도 더 돌지 않는다(지금 속도에서
+ * 최고 속도로 돌다 감속해 설 수 있는 거리 → 그 안의 마지막 반 바퀴 자리). 밀기는 손을 떼기 전에 세므로 손을 뗀 뒤로는 3초가 안 된다.
+ * 도는 방향의 **반대로 밀면 세운다** — 바로 앞의 반 바퀴 자리에서 [BrakeDeceleration]으로 급히 선다(최고 속도에서도 0.5초 안).
+ * 세우는 중에 같은 방향으로 밀면 다시 사슬을 잇는다.
  *
  * ## 속도
  * 가속 · 감속이 같은 사다리꼴이다 — [Acceleration]은 반 바퀴 한 번이 **1초**에 끝나게 정했고(밀자마자 빨라졌다 서서히 선다),
@@ -1092,21 +1100,41 @@ private class MenuCardSpin {
     private var direction = 1
     private var chain = 0
     private var running = false
+    /** 반대로 밀어 세우는 중 — 감속이 [BrakeDeceleration]으로 세진다. */
+    private var braking = false
 
     /** 그림의 앞뒤 깊이(-1 뒤 … 1 앞) — 이름은 그 반대편이다. */
     val iconDepth: Float get() = sin(turns * 2f * PI.toFloat())
 
     fun swipe(direction: Int, scope: CoroutineScope) {
+        if (running && direction != this.direction) {
+            brake()
+            return
+        }
         if (!running) {
             this.direction = direction
             chain = 0
         }
+        braking = false
         chain += 1
-        target += this.direction * chain * 0.5f
+        // 도는 방향으로 잰 거리(바퀴)에서 계산한다 — 반 바퀴 자리는 방향과 상관없이 같다.
+        val now = turns * this.direction
+        val wanted = target * this.direction + chain * 0.5f
+        val latest = floorToHalfTurn(now + reachableWithin(StopWithinSeconds, velocity))
+        // 지금 속도로는 이보다 앞에서 서지 못한다(보통 감속으로) — 자르더라도 이 자리보다 앞으로 당기지 않는다.
+        val earliest = ceilToHalfTurn(now + velocity * velocity / (2f * Acceleration))
+        target = this.direction * max(earliest, min(wanted, latest))
         if (!running) {
             running = true
             scope.launch { run() }
         }
+    }
+
+    private fun brake() {
+        braking = true
+        val now = turns * direction
+        val stop = ceilToHalfTurn(now + velocity * velocity / (2f * BrakeDeceleration))
+        target = direction * min(target * direction, stop)
     }
 
     private suspend fun run() {
@@ -1118,8 +1146,9 @@ private class MenuCardSpin {
                 val dt = if (last < 0) 0f else min((now - last) / 1_000_000_000f, MaxFrameSeconds)
                 last = now
                 val remaining = (target - turns) * direction
-                // 지금 남은 거리에서 [Acceleration]으로 멈출 수 있는 속도까지만 — 그 아래면 가속, 위면 그 속도로 감속.
-                val stoppable = min(MaxTurnsPerSecond, sqrt(2f * Acceleration * remaining.coerceAtLeast(0f)))
+                // 지금 남은 거리에서 감속해 멈출 수 있는 속도까지만 — 그 아래면 가속, 위면 그 속도로 감속.
+                val deceleration = if (braking) BrakeDeceleration else Acceleration
+                val stoppable = min(MaxTurnsPerSecond, sqrt(2f * deceleration * remaining.coerceAtLeast(0f)))
                 velocity = if (velocity < stoppable) min(stoppable, velocity + Acceleration * dt) else stoppable
                 val step = velocity * dt
                 if (remaining <= 0f || (dt > 0f && step >= remaining)) {
@@ -1134,9 +1163,21 @@ private class MenuCardSpin {
         } finally {
             velocity = 0f
             chain = 0
+            braking = false
             running = false
         }
     }
+
+    /** [velocity]에서 시작해 [seconds]초 안에 (최고 속도 · 가속 한도를 지키며) 돌고 설 수 있는 가장 먼 거리(바퀴). */
+    private fun reachableWithin(seconds: Float, velocity: Float): Float {
+        val peak = min(MaxTurnsPerSecond, (Acceleration * seconds + velocity) / 2f)
+        val cruise = (seconds - (peak - velocity) / Acceleration - peak / Acceleration).coerceAtLeast(0f)
+        return (peak * peak - velocity * velocity) / (2f * Acceleration) + peak * cruise + peak * peak / (2f * Acceleration)
+    }
+
+    // 반 바퀴 자리로 맞춘다. 실수 오차로 자리 하나를 넘어가지 않게 조금 봐준다.
+    private fun floorToHalfTurn(turns: Float): Float = floor(turns * 2f + HalfTurnSlack) / 2f
+    private fun ceilToHalfTurn(turns: Float): Float = ceil(turns * 2f - HalfTurnSlack) / 2f
 
     /** [side]가 -1이면 쉴 때 왼쪽에 서는 그림, 1이면 오른쪽의 이름이다. 둘은 반 폭씩이라 원의 반지름은 제 폭의 반이다. */
     fun applyOrbit(layer: GraphicsLayerScope, side: Int) {
@@ -1154,6 +1195,11 @@ private class MenuCardSpin {
         const val MaxTurnsPerSecond = 2f
         /** 바퀴/초². 반 바퀴를 가속 반 · 감속 반으로 1초에 돈다: 0.5 = 2 × ½ × a × 0.5². */
         const val Acceleration = 2f
+        /** 밀기 하나가 쌓을 수 있는 바퀴의 한도 — 민 순간부터 이 안에 선다(사용자 2026-10-24). */
+        const val StopWithinSeconds = 3f
+        /** 반대로 밀어 세울 때의 감속(바퀴/초²) — 최고 속도에서 0.25바퀴 · 0.25초에 선다. */
+        const val BrakeDeceleration = 8f
+        const val HalfTurnSlack = 0.001f
         const val MaxFrameSeconds = 1f / 30f
         /** 가장 앞에서 18% 크고 가장 뒤에서 18% 작다. */
         const val DepthScale = 0.18f
