@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -940,20 +941,30 @@ internal fun MenuCard(
                 .heightIn(min = MenuCardMinHeight)
                 .padding(AppSpacing.Space16),
         ) {
+            // 윗줄은 **그림 반 · 이름 반**으로 나누고 각자 그 반의 가운데에 선다(사용자 2026-10-24, #288).
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정). 그림 모두 스스로 또렷하다 —
                 // 캐릭터는 제 그림이, 흑백 돌은 제 테두리가, 구간의 테두리는 어두운 판을 두른다.
-                Box(modifier = Modifier.size(MenuCardIconSize), contentAlignment = Alignment.Center) {
-                    icon()
+                // 그림은 [MenuCardIconSize]까지 — 좁은 폰에서 반 폭이 그보다 좁으면 그 폭에 맞춰 줄어든다(정사각형 그대로).
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .widthIn(max = MenuCardIconSize)
+                            .fillMaxWidth()
+                            .aspectRatio(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        icon()
+                    }
                 }
-                Spacer(modifier = Modifier.width(AppSpacing.Space10))
-                // 이름은 두 줄로 접는다(「일반 / 대국」 — 사용자의 카드 구성). 큰 글꼴 배율 · 긴 언어에서 한 줄이 그림 옆 폭을 넘으면 글자를 줄인다(20 → 14sp).
+                // 이름은 두 줄로 접는다(「일반 / 대국」 — 사용자의 카드 구성). 큰 글꼴 배율 · 긴 언어에서 한 줄이 반 폭을 넘으면 글자를 줄인다(20 → 14sp).
                 BasicText(
                     text = twoLineCardTitle(title),
                     style = TextStyle(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
                         lineHeight = MenuCardTitleLineHeight,
+                        textAlign = TextAlign.Center,
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
