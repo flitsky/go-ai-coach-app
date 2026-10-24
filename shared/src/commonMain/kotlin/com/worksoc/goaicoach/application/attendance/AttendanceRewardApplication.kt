@@ -84,7 +84,10 @@ fun runAttendanceRewardGrant(
 
     val granted = mutableListOf<AttendanceRewardTier>()
     val acquired = mutableListOf<BotCharacter>()
-    for (tier in pending) {
+    for (pendingTier in pending) {
+        // 회차마다 **수집의 지금 상태**로 고친다(팝업 미리보기와 같은 `resolve`) — 밀린 회차를 지나며 앞 회차가 캐릭터를 열었을 수 있다.
+        // 이미 가진 캐릭터의 해금은 여기서 7일 단위 보상으로 바뀐다(#289).
+        val tier = AttendanceRewardPolicy.resolve(pendingTier, botStore.load())
         // 흘려보낸 것과 **알릴 것**은 다르다 — 조각은 7일차마다 영원히 반복되므로, 이미 다 모은
         // 캐릭터의 조각까지 팝업에 적으면 그 사용자는 매주 의미 없는 줄을 보게 된다.
         val announced = tier.rewards.filter { reward ->
@@ -148,11 +151,8 @@ private fun grant(
             runConsumableGrant(reward.item, reward.amount, consumableStore)
             RewardGrantOutcome(announce = true)
         }
-        // ⚠️ **이미 보유하면 알리지 않는다**(#68에서 고친 유령 보상). 오늘은 도달할 수 없지만
-        // (출석 해금 캐릭터는 출석 외 획득 경로가 없다) **구매(#74)나 개발자 도구(#70)가 캐릭터를
-        // 심을 수 있게 되는 순간 도달 가능해진다.**
-        // ⚠️ 그때 **7·28일차는 캐릭터가 유일한 보상이라 그 회차가 통째로 빈손이 된다** — 대체 보상
-        // ("동등 가치 소모품으로 대체")은 별도 사용자 결정이다(`GOOGLE_PLAY_LAUNCH_PLAN.md` C-2 상세).
+        // 이미 가진 캐릭터의 해금은 위 `resolve`가 7일 단위 보상으로 바꿔 여기 오지 않는다(#289 — 실험실 뽑기로 반상 · 천원을 먼저 얻는다).
+        // 그래도 **이미 보유하면 알리지 않는다**(#68에서 고친 유령 보상) — `resolve`와 지급 사이에 다른 경로가 열었을 때의 안전장치다.
         is AttendanceReward.BotCharacterUnlock -> {
             val unlockedNow = runBotCharacterUnlock(reward.character.id, botStore) != null
             RewardGrantOutcome(

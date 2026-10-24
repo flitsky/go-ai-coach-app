@@ -19,9 +19,9 @@ import com.worksoc.goaicoach.application.premium.state.FeatureId
  * | 4 | 광고 스킵권 3 |
  * | 5 | 조각 1 (연습생 돌뫼) |
  * | 6 | 조각 1 (사범 묘수) |
- * | 7 | 캐릭터: 도장생 반상 — **소모품 없음** |
+ * | 7 | 캐릭터: 도장생 반상 — **소모품 없음**(이미 가졌으면 7일 단위 보상으로 대체, #289) |
  * | 14·21 | 형세 50 · 추천 50 · 스킵 3 |
- * | 28 | 캐릭터: 관장 천원 — **소모품 없음** |
+ * | 28 | 캐릭터: 관장 천원 — **소모품 없음**(이미 가졌으면 7일 단위 보상으로 대체, #289) |
  * | 35~ (7의 배수) | 형세 50 · 추천 50 · 스킵 3 |
  *
  * ## 설계 의도(사용자)
@@ -83,6 +83,11 @@ sealed class AttendanceReward {
 data class AttendanceRewardTier(
     val tier: Int,
     val rewards: List<AttendanceReward>,
+    /**
+     * 이미 가진 캐릭터라 [rewards]에서 **7일 단위 보상으로 바꿔 넣은** 캐릭터들(백로그 #289) — 팝업이
+     * 「이미 '반상' 캐릭터를 보유중이시군요」를 알리는 근거다. [AttendanceRewardPolicy.resolve]만 채운다.
+     */
+    val substitutedCharacters: List<BotCharacter> = emptyList(),
 )
 
 /**
@@ -123,13 +128,19 @@ object AttendanceRewardPolicy {
             tier == 1 -> add(consumable(ConsumableCatalog.EvalOnce, AnalysisTicketAmount))
             tier == 2 -> add(consumable(ConsumableCatalog.TopMovesOnce, AnalysisTicketAmount))
             tier == 4 -> add(consumable(ConsumableCatalog.PremiumOnce, EarlySkipTicketAmount))
-            isWeeklyRepeatTier(tier) -> {
-                add(consumable(ConsumableCatalog.EvalOnce, WeeklyAnalysisTicketAmount))
-                add(consumable(ConsumableCatalog.TopMovesOnce, WeeklyAnalysisTicketAmount))
-                add(consumable(ConsumableCatalog.PremiumOnce, WeeklySkipTicketAmount))
-            }
+            isWeeklyRepeatTier(tier) -> addAll(weeklyRepeatBundle)
         }
     }
+
+    /**
+     * **7일 단위 보상** — 14 · 21 · 35…일차의 형세 50 · 추천 50 · 스킵 3 묶음. 이미 가진 캐릭터 보상의 대체품이기도 해서([resolve])
+     * 바깥(실험실 뽑기의 대체 지급, `application/dailydraw/`)도 이것을 읽는다 — 묶음을 두 곳에 적어 두면 한쪽만 바뀐다.
+     */
+    val weeklyRepeatBundle: List<AttendanceReward.Consumable> = listOf(
+        consumable(ConsumableCatalog.EvalOnce, WeeklyAnalysisTicketAmount),
+        consumable(ConsumableCatalog.TopMovesOnce, WeeklyAnalysisTicketAmount),
+        consumable(ConsumableCatalog.PremiumOnce, WeeklySkipTicketAmount),
+    )
 
     /**
      * 5·6일차에 조각 경로 캐릭터를 **카탈로그 순서대로** 하나씩 맛보게 한다. 순서에 기대므로
@@ -169,13 +180,32 @@ object AttendanceRewardPolicy {
      */
     fun pendingTiers(state: AttendanceState, collection: BotCollectionState): List<AttendanceRewardTier> =
         pendingTiers(state)
-            .map { tier -> tier.copy(rewards = tier.rewards.filterNot { it.isAlreadySatisfied(collection) }) }
+            .map { tier -> resolve(tier, collection) }
             .filter { it.rewards.isNotEmpty() }
 
-    /** 지금 상태에서 지급해 봐야 아무것도 바뀌지 않는 보상인가. 조각만 판정한다. */
-    private fun AttendanceReward.isAlreadySatisfied(collection: BotCollectionState): Boolean =
-        this is AttendanceReward.BotCharacterShards && collection.isClaimed(character.id)
+    /**
+     * 한 회차의 보상을 **지금 가진 것에 맞춰** 고친다 — 팝업의 미리보기와 지급(`runAttendanceRewardGrant`)이 같은 이 판정을 쓴다.
+     *
+     * - 이미 다 모은 캐릭터의 **조각**은 뺀다(위 [pendingTiers]의 이유).
+     * - 이미 가진 캐릭터의 **해금**은 [weeklyRepeatBundle]로 바꾸고 [AttendanceRewardTier.substitutedCharacters]에 적는다
+     *   (백로그 #289, 사용자 2026-10-24 — 실험실 뽑기로 반상 · 천원을 먼저 얻을 수 있게 되어서). `FEATURE_ACCESS_PRINCIPLES.md` §8.4의
+     *   「이미 보유한 캐릭터 보상은 동등 가치 소모품으로 대체한다」는 **일반 규칙**이 이것이다 — 7 · 28일차 특례가 아니라 캐릭터 보상 전체에 걸린다.
+     */
+    fun resolve(tier: AttendanceRewardTier, collection: BotCollectionState): AttendanceRewardTier {
+        val substituted = mutableListOf<BotCharacter>()
+        val rewards = tier.rewards.flatMap { reward ->
+            when {
+                reward is AttendanceReward.BotCharacterShards && collection.isClaimed(reward.character.id) -> emptyList()
+                reward is AttendanceReward.BotCharacterUnlock && collection.isClaimed(reward.character.id) -> {
+                    substituted += reward.character
+                    weeklyRepeatBundle
+                }
+                else -> listOf(reward)
+            }
+        }
+        return tier.copy(rewards = rewards, substitutedCharacters = tier.substitutedCharacters + substituted)
+    }
 
-    private fun consumable(item: ConsumableItem, amount: Int): AttendanceReward =
+    private fun consumable(item: ConsumableItem, amount: Int): AttendanceReward.Consumable =
         AttendanceReward.Consumable(item = item, amount = amount)
 }

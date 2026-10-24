@@ -69,3 +69,24 @@ internal fun attendanceUpcomingNoticeFor(language: UiLanguage): String =
 
 internal fun attendanceStampedNoticeFor(language: UiLanguage): String =
     StampedNotices.getValue(language)
+
+/**
+ * 이미 가진 캐릭터 보상을 **7일 단위 보상**으로 바꿔 줄 때의 안내(백로그 #289) — 출석 팝업과 실험실 뽑기 결과가 같이 쓴다.
+ * 한국어 문장은 사용자의 말 그대로(2026-10-24). [characterName]이 `null`이면 광고 캐릭터를 다 가진 뽑기 — 그 문장과 영 · 일 · 중은 스레드가 정한 표기.
+ */
+internal fun ownedCharacterSubstituteNoticeFor(language: UiLanguage, characterName: String?): String =
+    if (characterName != null) {
+        when (language) {
+            UiLanguage.Korean -> "이미 '$characterName' 캐릭터를 보유중이시군요. 7일 단위 보상으로 대체 지급해드립니다."
+            UiLanguage.English -> "You already have '$characterName', so you get the weekly reward instead."
+            UiLanguage.Japanese -> "「$characterName」はすでにお持ちですね。7日ごとの報酬に代えてお渡しします。"
+            UiLanguage.ChineseSimplified -> "您已拥有「$characterName」，将改为发放7日奖励。"
+        }
+    } else {
+        when (language) {
+            UiLanguage.Korean -> "광고 캐릭터를 모두 보유중이시군요. 7일 단위 보상으로 대체 지급해드립니다."
+            UiLanguage.English -> "You already have every ad character, so you get the weekly reward instead."
+            UiLanguage.Japanese -> "広告キャラクターはすべてお持ちですね。7日ごとの報酬に代えてお渡しします。"
+            UiLanguage.ChineseSimplified -> "您已拥有全部广告角色，将改为发放7日奖励。"
+        }
+    }

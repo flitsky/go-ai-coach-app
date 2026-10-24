@@ -202,33 +202,49 @@ class AttendanceRewardPolicyTest {
     }
 
     /**
-     * ⚠️ **유령 보상**(#68에서 닫았다). 이미 보유한 캐릭터 회차는 축전도, Claim 목록의 줄도
-     * 남기지 않아야 한다 — 예전에는 `grant`가 무조건 `true`를 돌려줘 **팝업만 뜨고 아무 일도
-     * 일어나지 않았다.**
+     * ⚠️ **유령 보상**(#68에서 닫았다)과 그 대체 지급(#289, 사용자 2026-10-24). 이미 보유한 캐릭터 회차는 축전을 띄우지 않고,
+     * 캐릭터 대신 **7일 단위 보상**(형세 50 · 추천 50 · 스킵 3)을 주며 그 캐릭터를 「대체했다」고 적는다 — 팝업의 안내 근거다.
      *
-     * ⚠️ **오늘 이 상태는 도달 불가다**(출석 해금 캐릭터는 출석 외 획득 경로가 없다). 그래서
-     * 이 테스트는 **미래를 위한 그물**이다 — 구매(#74)나 개발자 도구(#70)가 캐릭터를 심을 수
-     * 있게 되는 순간 도달 가능해진다.
-     * ⚠️ 그때 **7·28일차는 캐릭터가 유일한 보상이라 그 회차가 통째로 빈손이 된다** — 대체 보상은
-     * 별도 사용자 결정이므로(`GOOGLE_PLAY_LAUNCH_PLAN.md` C-2 상세) 여기서 정하지 않는다.
+     * 이 상태는 실험실 뽑기(#283 · #289)가 반상 · 천원을 출석보다 먼저 줄 수 있게 되면서 **도달 가능해졌다.**
      */
     @Test
-    fun aCharacterTierAlreadyOwnedAnnouncesNothingAndCelebratesNothing() {
-        val stores = RewardStores()
-        stores.bots.seed(BotCollectionState().withClaimed(attendanceCharacter.id))
+    fun aCharacterTierAlreadyOwnedIsReplacedByTheWeeklyBundle() {
+        for (characterTier in listOf(WeeklyRewardCycleTier, TopCharacterAttendanceTier)) {
+            val character = BotCharacterCatalog.forAttendanceTier(characterTier).single()
+            val stores = RewardStores()
+            stores.bots.seed(BotCollectionState().withClaimed(character.id))
 
-        val result = stores.grant(
-            AttendanceState(
-                attendanceCount = WeeklyRewardCycleTier,
-                claimedTiers = (1 until WeeklyRewardCycleTier).toSet(),
-            ),
+            val result = stores.grant(
+                AttendanceState(attendanceCount = characterTier, claimedTiers = (1 until characterTier).toSet()),
+            )
+
+            assertEquals(emptyList(), result.acquiredCharacters, "이미 가진 캐릭터를 축하하고 있다(유령 보상).")
+            val tier = result.granted.single { it.tier == characterTier }
+            assertEquals(listOf(character), tier.substitutedCharacters)
+            assertEquals(AttendanceRewardPolicy.weeklyRepeatBundle, tier.rewards)
+            assertEquals(50, stores.consumables.stored.countOf(ConsumableCatalog.EvalOnce.id))
+            assertEquals(50, stores.consumables.stored.countOf(ConsumableCatalog.TopMovesOnce.id))
+            assertTrue(stores.attendance.stored.isTierClaimed(characterTier))
+        }
+    }
+
+    /** 팝업 미리보기도 같은 판정을 쓴다 — 받기 전에 「대체 지급」을 알린다(#289). */
+    @Test
+    fun thePreviewAnnouncesTheSubstituteBeforeTheClaim() {
+        val owned = BotCollectionState().withClaimed(attendanceCharacter.id)
+        val state = AttendanceState(
+            attendanceCount = WeeklyRewardCycleTier,
+            claimedTiers = (1 until WeeklyRewardCycleTier).toSet(),
         )
 
-        assertEquals(emptyList(), result.acquiredCharacters, "이미 가진 캐릭터를 축하하고 있다(유령 보상).")
-        assertTrue(
-            result.grantedRewards.none { it is AttendanceReward.BotCharacterUnlock },
-            "이미 가진 캐릭터가 Claim 목록에 남아 있다 — 팝업만 뜨고 아무 일도 일어나지 않는 줄이다.",
-        )
+        val tier = AttendanceRewardPolicy.pendingTiers(state, owned).single()
+
+        assertEquals(listOf(attendanceCharacter), tier.substitutedCharacters)
+        assertEquals(AttendanceRewardPolicy.weeklyRepeatBundle, tier.rewards)
+        // 갖지 않았으면 그대로 캐릭터다.
+        val fresh = AttendanceRewardPolicy.pendingTiers(state, BotCollectionState()).single()
+        assertEquals(emptyList(), fresh.substitutedCharacters)
+        assertEquals(listOf(AttendanceReward.BotCharacterUnlock(attendanceCharacter)), fresh.rewards)
     }
 
     /**

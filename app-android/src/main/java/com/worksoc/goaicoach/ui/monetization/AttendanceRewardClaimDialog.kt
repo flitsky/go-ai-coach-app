@@ -42,6 +42,7 @@ import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceAtStockCapNoticeFor
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
+import com.worksoc.goaicoach.ui.l10n.ownedCharacterSubstituteNoticeFor
 
 /**
  * 출석 체크인을 실행하고, **아직 받아 가지 않은 보상이 있으면** Claim 다이얼로그를 띄운다
@@ -281,6 +282,14 @@ private fun ClaimDetail(tiers: List<AttendanceRewardTier>, inventory: Consumable
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
+            // 이미 가진 캐릭터의 회차 — 캐릭터 대신 7일 단위 보상이 아래 줄들로 들어온다(#289).
+            tier.substitutedCharacters.forEach { character ->
+                Text(
+                    text = ownedCharacterSubstituteNoticeFor(strings.language, strings.botCharacterName(character)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
             tier.rewards.forEach { reward ->
                 val granted = grantedAmountOf(reward, inventory)
                 val atCap = granted == 0
