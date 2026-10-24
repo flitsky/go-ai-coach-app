@@ -948,7 +948,7 @@ internal fun MenuCard(
                     icon()
                 }
                 Spacer(modifier = Modifier.width(AppSpacing.Space10))
-                // 이름은 두 줄로 접는다(「일반 / 대국」 — 사용자의 카드 구성). 영어 「Standard」처럼 한 줄이 그림 옆 폭을 넘으면 글자를 줄인다(20 → 14sp).
+                // 이름은 두 줄로 접는다(「일반 / 대국」 — 사용자의 카드 구성). 큰 글꼴 배율 · 긴 언어에서 한 줄이 그림 옆 폭을 넘으면 글자를 줄인다(20 → 14sp).
                 BasicText(
                     text = twoLineCardTitle(title),
                     style = TextStyle(
@@ -979,7 +979,7 @@ internal fun MenuCard(
 }
 
 /**
- * 대국 카드의 이름을 두 줄로 접는다(#288) — 첫 띄어쓰기에서(「일반 대국」 → 「일반 / 대국」 · 「Rank Match」 → 「Rank / Match」),
+ * 대국 카드의 이름을 두 줄로 접는다(#288) — 첫 띄어쓰기에서(「일반 대국」 → 「일반 / 대국」 · 「Normal Match」 → 「Normal / Match」),
  * 띄어쓰기가 없는 일본어 · 중국어는 가운데에서(「通常対局」 → 「通常 / 対局」 · 「升级对局」 → 「升级 / 对局」). 한 글자 이름은 그대로 둔다.
  */
 internal fun twoLineCardTitle(title: String): String {
@@ -1148,11 +1148,11 @@ internal fun lastPlayedCharacterOrNull(
     if (!playerSetup.isRankMeasure() && (hasResumableSession || playerSetup != DefaultPlayerSetup)) {
         return aiSeatCharacterOrNull(playerSetup)
     }
-    val lastStandardGame = history()
+    val lastNormalGame = history()
         .filter { entry -> entry.id != ReferenceGameHistoryId && !entry.playerSetup.isRankMeasure() }
         .maxByOrNull { entry -> entry.playedAtMillis }
         ?: return null
-    return aiSeatCharacterOrNull(lastStandardGame.playerSetup)
+    return aiSeatCharacterOrNull(lastNormalGame.playerSetup)
 }
 
 /**

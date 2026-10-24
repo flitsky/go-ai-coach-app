@@ -85,7 +85,7 @@ AI와 대국하며 실수를 색으로 짚어주는 무료 바둑 학습 앱, �
 Pocket Go Coach is a Go (Baduk / Weiqi) learning app built around KataGo, the open-source engine, running on your device instead of a server. Play a genuinely strong AI with no connection, and see how many points each move gave away, in colour, as you play it.
 
 [WHAT'S INSIDE]
-- Standard Match: five characters from 15 kyu to 7 dan, each playing like a person of that strength; choosing your opponent is choosing the difficulty (ranks follow the AI model, not a certified rating)
+- Normal Match: five characters from 15 kyu to 7 dan, each playing like a person of that strength; choosing your opponent is choosing the difficulty (ranks follow the AI model, not a certified rating)
 - Rank Match: play an AI at your own rank; win to move up, lose three in a row to move down (20 kyu to 9 dan)
 - The AI offers to resign when the game has swung far against it; accept and end it, or keep playing
 - Collect opponents: two with shards from short ads, two by daily check-in (day 7 and day 28). Every opponent is reachable without paying
@@ -176,7 +176,7 @@ New: a three-page home, and Today's fortune, a Daily draw and a Quote book in th
 · New home: My info ‹ Play › Lab; swipe or tap the tabs. Smoother motion
 · Today's fortune: tap to draw; an ad changes your luck, up to 3 times a day (Premium: no ads)
 · Daily draw: one ad a day for tickets, a shard or a character (odds on screen)
-· Character Match is now Standard Match; new menu icons
+· Character Match is now Normal Match; new menu icons
 · Resume names the game
 · Rank Match remembers your side and board size
 · A darker board in dark mode

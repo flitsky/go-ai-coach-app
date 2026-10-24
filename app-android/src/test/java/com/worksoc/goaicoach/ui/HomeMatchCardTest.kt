@@ -90,7 +90,7 @@ class HomeMatchCardTest {
     fun cardTitlesFoldIntoTwoLinesInEveryLanguage() {
         assertEquals("일반\n대국", twoLineCardTitle("일반 대국"))
         assertEquals("승급\n대국", twoLineCardTitle("승급 대국"))
-        assertEquals("Standard\nMatch", twoLineCardTitle("Standard Match"))
+        assertEquals("Normal\nMatch", twoLineCardTitle("Normal Match"))
         assertEquals("Rank\nMatch", twoLineCardTitle("Rank Match"))
         assertEquals("通常\n対局", twoLineCardTitle("通常対局"))
         assertEquals("升级\n对局", twoLineCardTitle("升级对局"))

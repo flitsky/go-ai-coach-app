@@ -40,7 +40,7 @@ private val AttendanceClaimBody: Map<UiLanguage, String> = mapOf(
  */
 private val HomeStartMatchBody: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "일반 대국으로 바둑을 즐길 수 있어요",
-    UiLanguage.English to "Tap Standard Match to start a game with me",
+    UiLanguage.English to "Tap Normal Match to start a game with me",
     UiLanguage.Japanese to "「通常対局」から囲碁を楽しめます",
     UiLanguage.ChineseSimplified to "点击「普通对局」就能下棋了",
 )

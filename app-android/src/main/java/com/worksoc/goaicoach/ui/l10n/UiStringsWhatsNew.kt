@@ -38,6 +38,8 @@ internal object WhatsNewCatalog {
         },
         // 1.8.1 — #286 「일반 대국」 · 승급 대국이 지난 설정을 기억 · 대국 페이지 타일 아이콘(사용자 2026-10-23 — 1.8.0을 내지 않고 1.8.1로 낸다).
         // 1.7.0에서 오는 사람에게는 1.8.0 묶음과 함께 뜬다(`whatsNewPending`) — 여기에는 1.8.0 뒤의 것만 적는다.
+        // ⚠️ 영어 이름은 #288(사용자 2026-10-24)에 Standard Match → Normal Match로 바꿔 적었다 — 「옛 묶음은 기록」의 예외다: 1.8.1은 프로덕션에 나가지 않았고,
+        //   이 묶음을 처음 보는 사람(1.7.0 → 1.8.3)의 앱에는 Normal Match만 있다.
         WhatsNewRelease(versionCode = 10801, versionName = "1.8.1") { language ->
             when (language) {
                 UiLanguage.Korean -> listOf(
@@ -46,7 +48,7 @@ internal object WhatsNewCatalog {
                     "대국 페이지의 메뉴 아이콘이 새로워졌어요.",
                 )
                 UiLanguage.English -> listOf(
-                    "Character Match is now called Standard Match.",
+                    "Character Match is now called Normal Match.",
                     "Rank Match remembers the side and board size you chose last time.",
                     "New icons for the menus on the Play page.",
                 )
