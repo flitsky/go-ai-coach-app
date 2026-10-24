@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -63,12 +64,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,9 +82,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -93,6 +99,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
@@ -150,6 +157,14 @@ import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.min
+import kotlin.math.sin
+import kotlin.math.sqrt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -263,6 +278,7 @@ internal fun GoCoachHomeScreen(
                 onSettingsClick = onSettingsClick,
             )
             // ⚠️ 페이지 안에 가로로 끄는 것을 두지 않는다 — 넘기기와 부딪친다. 학습의 하위 화면(판 · 도해)이 페이지 밖, 화면 전체로 열리는 이유다.
+            //   예외 하나: 대국 카드 둘의 회전 손맛(사용자 2026-10-24, [MenuCard]) — 카드 위에서 시작한 가로 끌기는 카드가 갖고, 카드 밖에서는 넘어간다.
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
@@ -927,6 +943,10 @@ internal fun MenuCard(
     val pressed by interaction.collectIsPressedAsState()
     val corner by animateDpAsState(if (pressed) HomePressedCorner else MenuCardCorner, AppMotion.fastSpatial(), label = "menuCardCorner")
     val scale by animateFloatAsState(if (pressed) MenuCardPressedScale else 1f, AppMotion.fastSpatial(), label = "menuCardScale")
+    val spin = remember { MenuCardSpin() }
+    val spinScope = rememberCoroutineScope()
+    // 앞에 선 쪽이 위에 그려진다 — 그리기 순서만은 `graphicsLayer`가 못 바꿔 여기서 읽는다. 앞뒤가 바뀔 때만 다시 짠다.
+    val iconInFront by remember { derivedStateOf { spin.iconDepth > 0f } }
     Card(
         onClick = onClick,
         interactionSource = interaction,
@@ -938,6 +958,27 @@ internal fun MenuCard(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
+            }
+            // 손맛(사용자 2026-10-24): 카드 위를 옆으로 밀면 그림과 이름이 회전판에 올라탄 듯 반 바퀴 돌아 자리를 바꾼다([MenuCardSpin]).
+            // ⚠️ 끌기가 넘기기보다 먼저 판정돼 **카드 위에서 시작한 가로 끌기는 페이지를 넘기지 않는다** — 카드 밖에서는 그대로 넘어간다.
+            //   끌기가 시작되면 누르기는 취소되므로 카드가 눌리지도 않는다.
+            .pointerInput(spin) {
+                val threshold = MenuCardSwipeThreshold.toPx()
+                var dragged = 0f
+                var fired = false
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        dragged = 0f
+                        fired = false
+                    },
+                ) { change, dragAmount ->
+                    change.consume()
+                    dragged += dragAmount
+                    if (!fired && abs(dragged) >= threshold) {
+                        fired = true
+                        spin.swipe(direction = if (dragged > 0f) 1 else -1, scope = spinScope)
+                    }
+                }
             },
     ) {
         Column(
@@ -954,7 +995,13 @@ internal fun MenuCard(
                 // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정). 그림 모두 스스로 또렷하다 —
                 // 캐릭터는 제 그림이, 흑백 돌은 제 테두리가, 구간의 테두리는 어두운 판을 두른다.
                 // 그림은 [MenuCardIconSize]까지 — 좁은 폰에서 반 폭이 그보다 좁으면 그 폭에 맞춰 줄어든다(정사각형 그대로).
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .zIndex(if (iconInFront) 1f else 0f)
+                        .graphicsLayer { spin.applyOrbit(this, side = -1) },
+                    contentAlignment = Alignment.Center,
+                ) {
                     Box(
                         modifier = Modifier
                             .widthIn(max = MenuCardIconSize)
@@ -977,7 +1024,9 @@ internal fun MenuCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     autoSize = TextAutoSize.StepBased(minFontSize = AppTextSize.Text14, maxFontSize = AppTextSize.Text20),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .graphicsLayer { spin.applyOrbit(this, side = 1) },
                 )
             }
 
@@ -1016,6 +1065,102 @@ private val MenuCardMinHeight = 156.dp
 private val MenuCardElevation = 3.dp
 /** 글자 크기의 배수다 — 영어 이름이 14sp까지 줄어도 두 줄 사이가 벌어지지 않게. */
 private val MenuCardTitleLineHeight = 1.2.em
+
+/** [MenuCard]의 회전 기믹을 일으키는 가로 끌기 거리 — 손가락이 이만큼 옆으로 가면 한 번 민 것으로 센다(끌기 하나에 한 번). */
+private val MenuCardSwipeThreshold = 24.dp
+
+/**
+ * 대국 카드의 **손맛**(사용자 2026-10-24) — 카드 위를 옆으로 밀면 그림과 이름이 한 회전판에 올라탄 듯 **반 바퀴** 돌아 자리를 바꾼다.
+ *
+ * 위에서 내려다본 회전판이다 — 둘은 카드 윗줄 가운데를 축으로 수평 원을 돌고, 앞으로 나오는 쪽은 커지고 뒤로 가는 쪽은 작고 흐려진다.
+ * 글자는 늘 정면을 본다(뒤집히지 않는다). 오른쪽으로 밀면 그림이 앞으로 지나가고, 왼쪽으로 밀면 이름이 앞으로 지나간다 — 앞에 선 쪽이 손가락을 따라간다.
+ *
+ * ## 다시 밀면 더 돈다
+ * 도는 중에 다시 밀면 그 사슬의 n번째 밀기가 **n × 반 바퀴**를 더한다(1: 반 바퀴 · 2: +1 · 3: +1.5 · 4: +2 …, 사용자의 예시).
+ * 멈추면 사슬이 끊겨 다음 밀기는 다시 반 바퀴다. 사슬 안의 방향은 첫 밀기의 방향을 따른다.
+ *
+ * ## 속도
+ * 가속 · 감속이 같은 사다리꼴이다 — [Acceleration]은 반 바퀴 한 번이 **1초**에 끝나게 정했고(밀자마자 빨라졌다 서서히 선다),
+ * 남은 바퀴가 많을수록 높은 속도까지 올라가 **점점 빨라지다가** 초당 [MaxTurnsPerSecond]바퀴에서 멈춘다(사용자: 초당 최대 2바퀴).
+ * 쌓인 바퀴를 다 돌 때 감속도 같은 기울기라 갑자기 서지 않는다. 끝나면 늘 반 바퀴의 배수에 선다 — 둘이 바뀌었거나 제자리다.
+ */
+private class MenuCardSpin {
+    /** 지금 각도(바퀴 단위, 0 = 그림 왼쪽 · 이름 오른쪽). */
+    private var turns by mutableFloatStateOf(0f)
+    private var target = 0f
+    private var velocity = 0f
+    private var direction = 1
+    private var chain = 0
+    private var running = false
+
+    /** 그림의 앞뒤 깊이(-1 뒤 … 1 앞) — 이름은 그 반대편이다. */
+    val iconDepth: Float get() = sin(turns * 2f * PI.toFloat())
+
+    fun swipe(direction: Int, scope: CoroutineScope) {
+        if (!running) {
+            this.direction = direction
+            chain = 0
+        }
+        chain += 1
+        target += this.direction * chain * 0.5f
+        if (!running) {
+            running = true
+            scope.launch { run() }
+        }
+    }
+
+    private suspend fun run() {
+        try {
+            var last = -1L
+            while (true) {
+                val now = withFrameNanos { it }
+                // 첫 프레임은 시각만 잡는다 · 화면이 멈췄다 돌아오면 한 프레임에 크게 건너뛰지 않게 1/30초로 자른다.
+                val dt = if (last < 0) 0f else min((now - last) / 1_000_000_000f, MaxFrameSeconds)
+                last = now
+                val remaining = (target - turns) * direction
+                // 지금 남은 거리에서 [Acceleration]으로 멈출 수 있는 속도까지만 — 그 아래면 가속, 위면 그 속도로 감속.
+                val stoppable = min(MaxTurnsPerSecond, sqrt(2f * Acceleration * remaining.coerceAtLeast(0f)))
+                velocity = if (velocity < stoppable) min(stoppable, velocity + Acceleration * dt) else stoppable
+                val step = velocity * dt
+                if (remaining <= 0f || (dt > 0f && step >= remaining)) {
+                    // 반 바퀴의 배수에 정확히 세우고, 각도가 끝없이 커지지 않게 한 바퀴 안으로 접는다(보이는 모습은 같다).
+                    val rest = target - floor(target)
+                    target = rest
+                    turns = rest
+                    break
+                }
+                turns += direction * step
+            }
+        } finally {
+            velocity = 0f
+            chain = 0
+            running = false
+        }
+    }
+
+    /** [side]가 -1이면 쉴 때 왼쪽에 서는 그림, 1이면 오른쪽의 이름이다. 둘은 반 폭씩이라 원의 반지름은 제 폭의 반이다. */
+    fun applyOrbit(layer: GraphicsLayerScope, side: Int) {
+        val angle = turns * 2f * PI.toFloat()
+        val radius = layer.size.width / 2f
+        val depth = -side * sin(angle)
+        layer.translationX = side * radius * (cos(angle) - 1f)
+        val depthScale = 1f + DepthScale * depth
+        layer.scaleX = depthScale
+        layer.scaleY = depthScale
+        layer.alpha = 1f - BackFade * (-depth).coerceAtLeast(0f)
+    }
+
+    private companion object {
+        const val MaxTurnsPerSecond = 2f
+        /** 바퀴/초². 반 바퀴를 가속 반 · 감속 반으로 1초에 돈다: 0.5 = 2 × ½ × a × 0.5². */
+        const val Acceleration = 2f
+        const val MaxFrameSeconds = 1f / 30f
+        /** 가장 앞에서 18% 크고 가장 뒤에서 18% 작다. */
+        const val DepthScale = 0.18f
+        /** 가장 뒤에서 투명도가 이만큼 빠진다. */
+        const val BackFade = 0.45f
+    }
+}
 
 /*
  * #281 A안의 모양 — 값은 사용자가 고른 시안(2026-10-23)을 옮긴 것이고 스레드가 정했다.
