@@ -27,7 +27,6 @@ import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.GuideTarget
 import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
-import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameActionButtonState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -41,14 +40,11 @@ import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.guide.FirstDolAvatar
-import com.worksoc.goaicoach.ui.home.GameHistoryBoardIcon
-import com.worksoc.goaicoach.ui.home.GamePlayPreviewIcon
-import com.worksoc.goaicoach.ui.home.HomeMenuTile
+import com.worksoc.goaicoach.ui.home.HomeMenuList
+import com.worksoc.goaicoach.ui.home.HomeMenuRow
 import com.worksoc.goaicoach.ui.home.MenuCard
-import com.worksoc.goaicoach.ui.home.MenuTile
 import com.worksoc.goaicoach.ui.home.RankMeasureIcon
-import com.worksoc.goaicoach.ui.home.StudyPreviewIcon
-import com.worksoc.goaicoach.ui.home.currentAiCharacterOrDefault
+import com.worksoc.goaicoach.ui.home.StartMatchCardIcon
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
@@ -153,16 +149,17 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                         // ③이 가리키는 그 카드를 **진짜로** 그린다(위 KDoc). 누르면 다시보기를
                         // 닫는 편이 자연스러울 수도 있지만, 여기서는 **보여주는 것**이 목적이라
                         // 아무 일도 하지 않는다.
+                        // 홈에서는 「승급 대국」과 반 폭씩 나란히 선다(#288) — 여기서도 같은 반 폭으로 그린다.
                         MenuCard(
                             title = strings.startMatch,
                             subtitle = strings.homeStartMatchSubtitle,
                             onClick = {},
-                            // ⚠️ **마지막 선택이 아니라 항상 기본값이다**(백로그 #181). 이 다시보기는
+                            // ⚠️ **마지막 선택이 아니라 늘 「고른 캐릭터 없음」의 그림(흑백 돌)이다**(백로그 #181 → #288). 이 다시보기는
                             // 진행도 저장소를 열지 않는다는 계약이 있는데(위 KDoc), 실제 선택을 보여
                             // 주려면 `playerSetup`을 이 다이얼로그까지 새로 꿰어야 한다 — 여기서 보여
-                            // 주는 것은 "이 카드가 무엇인가"이지 "지금 무엇이 골라져 있나"가 아니므로
-                            // 기본 캐릭터(수제자 반상)로 충분하다.
-                            icon = { GamePlayPreviewIcon(character = currentAiCharacterOrDefault(PlayerSetup())) },
+                            // 주는 것은 "이 카드가 무엇인가"이지 "지금 무엇이 골라져 있나"가 아니다.
+                            icon = { StartMatchCardIcon(character = null) },
+                            modifier = Modifier.fillMaxWidth(ReplayHalfWidth),
                         )
                     }
                     ReplaySection(title = strings.matchSetup) {
@@ -211,7 +208,7 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                             )
                         }
                     }
-                    // #261 — 홈의 나머지 메뉴. 카드와 타일은 홈이 그리는 **그 컴포저블**이다. 기력은 저장소를 열지 않고 예시(20급)로 —
+                    // #261 — 홈의 나머지 메뉴. 카드와 메뉴 줄은 홈이 그리는 **그 컴포저블**이다. 기력은 저장소를 열지 않고 예시(20급)로 —
                     // 이 다이얼로그는 진행도 저장소를 열지 않는다는 계약이 있고, 보여 주는 것은 "이 카드가 무엇인가"다(캐릭터 대국 카드와 같은 이유).
                     ReplaySection(title = rankMeasureTitleFor(strings.language)) {
                         ReplayLine(UiStringsGuideReplay.rankMeasure(strings.language))
@@ -220,16 +217,17 @@ internal fun FirstDolGuideReplayDialog(onClose: () -> Unit) {
                             subtitle = rankMeasureSubtitleFor(strings.language),
                             onClick = {},
                             icon = { RankMeasureIcon(rank = ReplaySampleRank, rankLabel = kgsRankLabelFor(strings.language, ReplaySampleRank)) },
+                            modifier = Modifier.fillMaxWidth(ReplayHalfWidth),
                         )
                     }
                     ReplaySection(title = strings.gameHistoryTitle) {
                         ReplayLine(UiStringsGuideReplay.gameHistory(strings.language))
-                        MenuTile(HomeMenuTile(strings.gameHistoryTitle, onClick = {}) { GameHistoryBoardIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
+                        HomeMenuList(rows = listOf(HomeMenuRow(strings.gameHistoryTitle, onClick = {})))
                     }
                     ReplaySection(title = studyBasicsTitleFor(strings.language)) {
                         ReplayLine(UiStringsGuideReplay.study(strings.language))
-                        // #280 — 학습은 대국 페이지의 타일이다(사활 풀기 · 명국 기보 · 기초 학습). 기초 학습 타일을 **진짜로** 그린다(누르면 아무 일 없음).
-                        MenuTile(HomeMenuTile(studyBasicsTitleFor(strings.language), onClick = {}) { StudyPreviewIcon() }, modifier = Modifier.fillMaxWidth(0.5f))
+                        // #280 — 학습은 대국 페이지의 메뉴 줄이다(사활 풀기 · 명국 기보 · 기초 학습, #288에서 타일 → 줄). 기초 학습 줄을 **진짜로** 그린다(누르면 아무 일 없음).
+                        HomeMenuList(rows = listOf(HomeMenuRow(studyBasicsTitleFor(strings.language), onClick = {})))
                     }
                     // #261 — 바둑판 조작법(#249·#258)으로 가는 길. 이름은 설정이 쓰는 그 글자다.
                     ReplaySection(title = settingsHelpSectionFor(strings.language)) {
@@ -360,5 +358,8 @@ private fun ReplayLine(text: String) {
 
 /** 승급 대국 카드에 보이는 예시 기력(#261) — 처음 시작하는 자리. 진행도 저장소를 열지 않으므로 지금 기력이 아니다. */
 private val ReplaySampleRank = KgsRank.kyu(20)
+
+/** 대국 카드 둘의 폭 — 홈에서 한 줄에 반 폭씩 서는 그 모습(#288). */
+private const val ReplayHalfWidth = 0.5f
 
 private val ReplayStoneButtonSize = 56.dp

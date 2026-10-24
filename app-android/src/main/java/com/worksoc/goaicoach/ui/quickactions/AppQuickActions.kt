@@ -77,7 +77,7 @@ private fun BackgroundMusicQuickToggle(tint: Color, modifier: Modifier) {
 private const val OffAlpha = 0.55f
 
 /**
- * 음표 · 사선 그은 음표. ⚠️ 이 앱은 아이콘 **코어 세트만** 의존해(확장 세트는 APK를 크게 불린다 — 홈 `GameHistoryBoardIcon`의 KDoc)
+ * 음표 · 사선 그은 음표. ⚠️ 이 앱은 아이콘 **코어 세트만** 의존해(확장 세트는 APK를 크게 불린다)
  * 확장 세트의 `MusicNote`·`MusicOff`를 쓸 수 없다 — 그 두 모양의 경로(Material Icons, Apache 2.0 — 코어 세트와 같은 출처)를
  * 확장 세트가 쓰는 **같은 빌더**(`materialIcon` · `materialPath`)로 옮겨 그린다. 채움색은 빌더가 정하고 `Icon`의 `tint`가 덮는다.
  * 이모지가 아닌 이유는 홈 카드 아이콘과 같다(#181: 기기·글꼴마다 크기·모양이 갈린다).

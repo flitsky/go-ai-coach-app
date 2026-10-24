@@ -75,7 +75,7 @@ class HomePagesContractTest {
         assertTrue("「승급 대국」이 「일반 대국」보다 위에 있다(서 있는 답 #239).", character < rank)
     }
 
-    /** 학습은 대국 페이지의 타일이다 — 「사활 풀기」는 곧바로, 나머지 셋은 「기초 학습」 목록으로(사용자 2026-10-23). 분류는 빠짐없이 한 곳에 선다. */
+    /** 학습은 대국 페이지의 메뉴 줄이다(#288 — 처음은 타일) — 「사활 풀기」는 곧바로, 나머지 셋은 「기초 학습」 목록으로(사용자 2026-10-23). 분류는 빠짐없이 한 곳에 선다. */
     @Test
     fun everyStudyCategoryHasExactlyOnePlace() {
         assertEquals(
@@ -89,8 +89,8 @@ class HomePagesContractTest {
             StudyCategory.entries.toSet(),
             StudyBasicsCategories.toSet() + StudyCategory.LifeAndDeath,
         )
-        listOf("onGameRecordsClick", "onLifeAndDeathClick", "onBasicsClick").forEach { tile ->
-            assertTrue("대국 페이지에 `$tile` 타일이 없다(#280).", home.contains("$tile) {"))
+        listOf("onGameRecordsClick", "onLifeAndDeathClick", "onBasicsClick").forEach { row ->
+            assertTrue("대국 페이지에 `$row` 메뉴 줄이 없다(#280 · #288).", home.contains("$row),"))
         }
     }
 

@@ -221,7 +221,7 @@ private val GreyscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setT
  * 정사각형으로 그대로 둬도 잘린 티가 나지 않는다.
  * 2026-09-22 사용자 요청: 불투명도 90%(alpha = 0.9f)를 적용해 카드 배경과 부드럽게 어우러지도록 한다.
  *
- * ⚠️ **홈 카드(`ui.home`의 `currentAiCharacterOrDefault`·`GamePlayPreviewIcon`, #192)에서 여기로 내려왔다**(백로그 #200) —
+ * ⚠️ **홈 카드(`ui.home`의 옛 `currentAiCharacterOrDefault`(지금 `aiSeatCharacterOrNull`)·옛 `GamePlayPreviewIcon`, #192)에서 여기로 내려왔다**(백로그 #200) —
  * 대국 화면(`ui.play`)의 「복기 하기」 추천 말풍선도 같은 원화를 쓰는데, 대국 화면이 홈 화면 파일을 부르게 두지 않으려고
  * 그림 해석([botAvatarRes])이 있는 이 층으로 옮겼다. 코드는 한 줄도 바꾸지 않았다.
  */
@@ -234,7 +234,7 @@ internal fun BotCharacterSquareIcon(character: BotCharacter, modifier: Modifier 
         contentScale = ContentScale.Fit,
         alpha = 0.9f,
         // ⚠️ **기본값이 `fillMaxSize()`인 것은 이 자리가 원래 슬롯을 꽉 채우던 자리라서다.**
-        // 홈의 `GamePlayPreviewIcon`은 판 위에 70%로 얹으려고 이 구멍을 쓴다(백로그 #192).
+        // 홈 「일반 대국」 카드의 `StartMatchCardIcon`은 그림 자리를 그대로 채운다(#288 — 그전에는 판 위에 70%로 얹으려고 이 구멍을 썼다, #192).
         modifier = modifier.then(Modifier.fillMaxSize()),
     )
 }

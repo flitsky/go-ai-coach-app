@@ -51,12 +51,16 @@ internal fun rankMeasureTitleFor(language: UiLanguage): String =
         UiLanguage.ChineseSimplified -> "升级对局"
     }
 
+/**
+ * 홈의 두 번째 카드 부제(#288). 「이기면 오른다」고 쓰지 않는다 — 15집 미만 차로 이기면 그대로이고, 내려가는 것은 연패 뒤다(`adjustRankAfterResult`).
+ * 「오르내린다」까지만 말하고 자세한 규칙은 가이드 다시보기와 설정 창이 맡는다.
+ */
 internal fun rankMeasureSubtitleFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "같은 기력의 AI와 두고, 결과가 기력에 반영됩니다."
-        UiLanguage.English -> "Play an AI at your rank. The result moves your rank up or down."
-        UiLanguage.Japanese -> "同じ棋力のAIと打ち、結果が棋力に反映されます。"
-        UiLanguage.ChineseSimplified -> "与同等棋力的 AI 对弈，结果会反映到棋力上。"
+        UiLanguage.Korean -> "결과에 따라 급수가 오르내리며 내 기력을 잽니다."
+        UiLanguage.English -> "Results move your rank up or down to find your real strength."
+        UiLanguage.Japanese -> "結果に応じて級が上下し、自分の棋力を測れます。"
+        UiLanguage.ChineseSimplified -> "级位随对局结果升降，测出你的真实棋力。"
     }
 
 /** 설정 창의 「현재 기력」 줄. */

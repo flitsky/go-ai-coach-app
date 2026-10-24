@@ -110,7 +110,7 @@ internal val UiStringsJapanese = UiStringsKorean.copy(
     notImplementedMessage = "この機能は現在準備中です。",
     // 신규 로컬라이징 필드
     showScoreGraph = "スコアグラフ表示",
-    homeStartMatchSubtitle = "キャラクターと対局。二人で一台でも打てます。",
+    homeStartMatchSubtitle = "黒と白をキャラクターか人に決めて打ちます。",
     gameHistoryTitle = "対局記録",
     gameHistoryEmptyMessage = "まだ終了した対局がありません。",
     cacheOptTitle = "この対局の最適化",

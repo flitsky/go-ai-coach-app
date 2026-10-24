@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -41,16 +42,19 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,27 +84,32 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
+import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.GuideTarget
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
+import com.worksoc.goaicoach.match.isRankMeasure
+import com.worksoc.goaicoach.persistence.GameHistoryStore
+import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
-import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.KgsRank
@@ -131,6 +140,7 @@ import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
 import com.worksoc.goaicoach.ui.l10n.homePageLabTabFor
 import com.worksoc.goaicoach.ui.l10n.homePagePlayTabFor
+import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.kgsRankLabelFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureOverwriteWarningFor
 import com.worksoc.goaicoach.ui.l10n.rankMeasureSubtitleFor
@@ -444,8 +454,9 @@ private fun HomeTopBarLogo(
 private val HomeTopBarLogoSize = 38.dp
 
 /**
- * 가운데 페이지 「대국」(#280, 사용자 2026-10-23) — 한 줄 안내(오늘의 명언) → 이어하기 → 캐릭터 대국 → 승급 대국
- * → 반 폭 타일 넷(대국 기록 · 명국 기보 / 사활 풀기 · 기초 학습) → 오른쪽 아래 카메라 단추(바둑판 사진 분석).
+ * 가운데 페이지 「대국」(#280 → #288, 사용자 2026-10-24) — 한 줄 안내(오늘의 명언) → 이어하기 → **2열 대국 카드**(일반 대국 · 승급 대국)
+ * → **가는 메뉴 줄 넷**(대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습) → 오른쪽 아래 카메라 단추(바둑판 사진 분석).
+ * 두는 메뉴와 아닌 메뉴의 위계는 색이 아니라 **크기**다(「서 있는 답」 #237) — 2열 카드는 키가 크고, 나머지는 글자 한 줄이다.
  */
 @Composable
 private fun HomePlayPage(
@@ -464,7 +475,11 @@ private fun HomePlayPage(
 ) {
     val strings = LocalUiStrings.current
     val rankMeasure = LocalRankMeasureUiState.current
-    val lastSelectedAiCharacter = remember(playerSetup) { currentAiCharacterOrDefault(playerSetup) }
+    val context = LocalContext.current
+    // 기록은 지금의 좌석 배치로 정해지지 않을 때만 읽는다(`lastPlayedCharacterOrNull`) — 내 정보의 승률 머리말처럼 그 자리에서 한 번.
+    val lastPlayedCharacter = remember(playerSetup, hasResumableSession) {
+        lastPlayedCharacterOrNull(playerSetup, hasResumableSession) { GameHistoryStore(context).loadAll() }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -472,7 +487,8 @@ private fun HomePlayPage(
             // 깎아내 제목이 잘린다(#28). ⚠️ 아래 가중치 Spacer와 **반드시 함께** 간다 — 페이지가 높이를 정해 주므로(최소 = 최대) 내용이 들어가면
             // 가중치 여백이 남는 공간을 나누고, 넘치면 0으로 줄어 스크롤이 된다.
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = AppSpacing.Space24, vertical = AppSpacing.Space8),
+            // 좌우 16dp — 2열 카드가 반 폭이라 360dp에서 부제가 설 폭을 남긴다(#288, 옛 24dp는 전폭 카드 시절의 값).
+            .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space8),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255) · 오늘의 한 줄 명언(#273). 차례는 `homeTopNoticeOf` 한 곳이 정한다.
@@ -495,9 +511,11 @@ private fun HomePlayPage(
                 label = "resumeBreathScale",
             )
 
+            // 폭은 아래 2열 카드와 같은 전폭이다(#288) — 가운데 뜬 알약보다 왼쪽 · 오른쪽 끝이 카드와 맞아 한 덩어리로 읽힌다. 글 두 줄(#287)은 그대로.
             Box(
                 modifier = Modifier
                     .padding(bottom = AppSpacing.Space16)
+                    .fillMaxWidth()
                     .graphicsLayer {
                         scaleX = breath
                         scaleY = breath
@@ -532,62 +550,67 @@ private fun HomePlayPage(
             }
         }
 
-        // "캐릭터 대국" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기(그 팝업은 홈이 든다)
-        //
-        // ⚠️ **첫돌이 말풍선을 이 열의 새 자식으로 넣지 말 것**(백로그 #128 ③). 자식을 더하면
-        // 카드가 아래로 밀려 **사용자가 눌러야 할 표적이 움직이고**, #28이 만졌던 가중치·스크롤
-        // 산수에 다시 손대는 셈이 된다. 그래서 **호출부만 `Box`로 감싸고** 말풍선은 그 안에서
-        // 겹친다 — `MenuCard`의 본문과 시그니처는 한 글자도 바뀌지 않았다.
-        // ⚠️ 말풍선은 `ZeroSizeOverlay`가 **0×0으로 보고**하므로 배율이 올라 말풍선이 커져도
-        //   Box는 카드 높이 그대로다(그 이유는 그 함수의 KDoc — 설계안 셋이 여기서 틀렸다).
-        // 말풍선은 카드에 붙어 있어 이 페이지에서만 보인다(#280 ⑧).
-        Box(modifier = Modifier.fillMaxWidth()) {
-            MenuCard(
-                title = strings.startMatch,
-                subtitle = strings.homeStartMatchSubtitle,
-                onClick = onStartMatchClick,
-                icon = { GamePlayPreviewIcon(character = lastSelectedAiCharacter) },
-            )
-            // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
-            // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
-            // (다음 단계 ④는 이 카드를 눌러 대국 설정에 도착해야 열린다).
-            // ⚠️ **팝업이 떠 있으면 억제한다** — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
-            //   2026-09-09까지 출석 팝업 **하나**만 셌는데, 엔진 안내·초기화 안내가 뜬 동안에는
-            //   출석 팝업이 억제돼 게이트가 `false`였다 → ③이 그 뒤에 깔린 채 소진됐다
-            //   (그 사유는 `GuideBlockingOverlays`의 KDoc).
-            GuideAnchor(
-                surface = GuideSurface.Home,
-                blocked = GuideBlockingOverlays.isShowing,
-                modifier = Modifier.align(Alignment.TopEnd),
-            )
-        }
-
-        // 「승급 대국」 — **두 번째 카드**(백로그 #219). 첫 카드는 「캐릭터 대국」이다(「서 있는 답」 #239 — 2026-10-22 시안에서 위로 올렸다가 사용자가 되돌렸다).
-        // ⚠️ 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
-        if (rankMeasure.isAvailable) {
-            Spacer(modifier = Modifier.height(AppSpacing.Space12))
-            MenuCard(
-                title = rankMeasureTitleFor(strings.language),
-                subtitle = rankMeasureSubtitleFor(strings.language),
-                onClick = onRankMeasureClick,
-                icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
-            )
-        }
-
-        // 두는 것이 아닌 메뉴는 **반 폭 타일**이다(백로그 #237) — 위의 대국 카드 둘보다 작고 납작해서, 색이 아니라 크기로 한 단계 아래임이 읽힌다.
-        // 타일 넷(#280, 사용자 2026-10-22): 대국 기록 · 명국 기보 / 사활 풀기 · 기초 학습(바둑 규칙 · 기초 행마 · 유튜브 강좌를 모은 목록).
-        val tiles = listOf(
-            HomeMenuTile(strings.gameHistoryTitle, onGameHistoryClick) { GameHistoryBoardIcon() },
-            HomeMenuTile(gameRecordsTitleFor(strings.language), onGameRecordsClick) { GameRecordsPreviewIcon() },
-            HomeMenuTile(strings.studyCategoryTitle(StudyCategory.LifeAndDeath), onLifeAndDeathClick) { LifeAndDeathPreviewIcon() },
-            HomeMenuTile(studyBasicsTitleFor(strings.language), onBasicsClick) { StudyPreviewIcon() },
-        )
-        tiles.chunked(2).forEach { row ->
-            Spacer(modifier = Modifier.height(AppSpacing.Space12))
-            Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-                row.forEach { tile -> MenuTile(tile = tile, modifier = Modifier.weight(1f)) }
+        // 대국 카드 둘은 **한 줄에 나란히** 선다(#288, 사용자 2026-10-24) — 왼쪽이 「일반 대국」(「서 있는 답」 #239 — 첫 카드), 오른쪽이 「승급 대국」.
+        // 키는 둘이 같다 — 줄의 키를 큰 쪽의 내용에 맞추고(`IntrinsicSize.Min`) 두 카드가 그 키를 채운다. 부제가 긴 언어 · 큰 글꼴에서도 둘이 함께 자란다.
+        // ⚠️ 「승급 대국」은 사람 모델이 있는 기기에서만 보인다(`RankMeasureUiState.isAvailable`) — 없으면 상대가 그 급수처럼 두지 못해 잰 기력이 뜻을 잃는다.
+        //   그때는 「일반 대국」이 줄을 혼자 채운다.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
+        ) {
+            // "일반 대국" (Start Match) 카드 — 이전 대국 존재 시 확인 팝업 분기(그 팝업은 홈이 든다)
+            //
+            // ⚠️ **첫돌이 말풍선을 이 열의 새 자식으로 넣지 말 것**(백로그 #128 ③). 자식을 더하면
+            // 카드가 아래로 밀려 **사용자가 눌러야 할 표적이 움직이고**, #28이 만졌던 가중치·스크롤
+            // 산수에 다시 손대는 셈이 된다. 그래서 **호출부만 `Box`로 감싸고** 말풍선은 그 안에서 겹친다.
+            // ⚠️ 말풍선은 `ZeroSizeOverlay`가 **0×0으로 보고**하므로 배율이 올라 말풍선이 커져도
+            //   Box는 카드 높이 그대로다(그 이유는 그 함수의 KDoc — 설계안 셋이 여기서 틀렸다).
+            // 말풍선은 카드에 붙어 있어 이 페이지에서만 보인다(#280 ⑧).
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                MenuCard(
+                    title = strings.startMatch,
+                    subtitle = strings.homeStartMatchSubtitle,
+                    onClick = onStartMatchClick,
+                    icon = { StartMatchCardIcon(character = lastPlayedCharacter) },
+                    modifier = Modifier.fillMaxHeight(),
+                )
+                // ⚠️ **스크림을 두지 않는다.** #125 스플래시가 터치를 일부러 먹는 것과 **반대**다 —
+                // 여기서 터치를 먹으면 사용자가 이 카드를 누를 수 없어 자동 재생이 막다른 길이 된다
+                // (다음 단계 ④는 이 카드를 눌러 대국 설정에 도착해야 열린다).
+                // ⚠️ **팝업이 떠 있으면 억제한다** — 뒤에 깔린 채 "봤음"으로 기록되지 않게.
+                //   2026-09-09까지 출석 팝업 **하나**만 셌는데, 엔진 안내·초기화 안내가 뜬 동안에는
+                //   출석 팝업이 억제돼 게이트가 `false`였다 → ③이 그 뒤에 깔린 채 소진됐다
+                //   (그 사유는 `GuideBlockingOverlays`의 KDoc).
+                GuideAnchor(
+                    surface = GuideSurface.Home,
+                    blocked = GuideBlockingOverlays.isShowing,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
+            if (rankMeasure.isAvailable) {
+                MenuCard(
+                    title = rankMeasureTitleFor(strings.language),
+                    subtitle = rankMeasureSubtitleFor(strings.language),
+                    onClick = onRankMeasureClick,
+                    icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                )
             }
         }
+
+        // 두는 것이 아닌 메뉴는 **가는 줄**이다(#288, 사용자 2026-10-24 — #237의 반 폭 타일을 갈아 끼웠다). 그림 없이 이름과 › 하나 — 위의 키 큰 대국 카드와 크기로 갈린다.
+        // 줄 넷(#280): 대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습(바둑 규칙 · 기초 행마 · 유튜브 강좌를 모은 목록).
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
+        HomeMenuList(
+            rows = listOf(
+                HomeMenuRow(strings.gameHistoryTitle, onGameHistoryClick),
+                HomeMenuRow(gameRecordsTitleFor(strings.language), onGameRecordsClick),
+                HomeMenuRow(strings.studyCategoryTitle(StudyCategory.LifeAndDeath), onLifeAndDeathClick),
+                HomeMenuRow(studyBasicsTitleFor(strings.language), onBasicsClick),
+            ),
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -863,13 +886,14 @@ private fun GoStoneLogoBadge(subscribed: Boolean, showsPremiumPrompt: Boolean, b
 private val GoStoneLogoBaseSize = 125.dp
 
 /**
- * 홈의 **대국 카드** — 「캐릭터 대국」과 「승급 대국」, 두는 메뉴 둘이 같은 모습으로 쓴다(백로그 #237, 2026-10-09 사용자).
+ * 홈의 **대국 카드** — 「일반 대국」과 「승급 대국」, 두는 메뉴 둘이 같은 모습으로 **한 줄에 반 폭씩** 선다(백로그 #237 → #288, 2026-10-24 사용자).
+ * 위쪽은 그림(정사각형) 옆에 두 줄로 접은 이름(「일반 / 대국」), 아래쪽은 카드 폭 전체를 쓰는 부제다.
  *
  * ## 초록 바탕을 버린 이유
  * 전에는 「캐릭터 대국」만 브랜드 초록을 칠했다. 「승급 대국」도 두는 메뉴라 같은 대접을 해야 했는데, 둘 다 칠하면 화면
  * 위쪽이 초록 벽이 되고 **구간의 테두리(`RankTierBadge`)가 초록에 묻힌다**(플래티넘의 청록이 특히). 그래서 바탕은 흰색으로
- * 두고 살짝 띄우며, 초록은 오른쪽의 ▶ 하나로만 남긴다 — "누르면 둔다"는 표시다. 아래 메뉴와의 위계는 색이 아니라
- * **크기**가 만든다([MenuTile]).
+ * 두고 살짝 띄운다. 오른쪽의 초록 ▶는 반 폭에 설 자리가 없어 #288에서 뺐다(사용자의 카드 구성에 없다). 아래 메뉴와의 위계는 색이 아니라
+ * **크기**가 만든다([HomeMenuList]).
  *
  * ⚠️ **`private`이 아니라 `internal`인 이유는 가이드 다시보기 하나뿐이다**(백로그 #128).
  * 그 화면이 ③을 설명할 때 **정적 삽화나 캡처가 아니라 이 진짜 카드**를 같은 문구로 그린다 —
@@ -883,104 +907,97 @@ internal fun MenuCard(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    /** 카드 좌측의 정사각형 그림(백로그 #181) — 상대 캐릭터가 앉은 판, 또는 구간의 테두리에 담긴 내 기력. */
+    /** 카드 왼쪽 위의 정사각형 그림(백로그 #181 → #288) — 마지막으로 둔 캐릭터(없으면 흑백 돌), 또는 구간의 테두리에 담긴 내 기력. */
     icon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    val language = LocalUiStrings.current.language
     // ⚠️ 누르기는 `Card(onClick)`에 맡긴다 — 바깥 modifier에 `clip` + `clickable`을 걸면 그림자까지 잘려 카드가 떠 보이지 않는다.
-    // #281 A안(사용자 2026-10-23): 누르면 카드가 살짝 줄고 모서리가 덜 둥글어진다(Expressive의 「누를 때 모양이 바뀐다」). ▶ 단추도 함께 바뀐다.
-    // 크기는 그리기 단계(`graphicsLayer`)에서만 바꾼다 — 자리와 키가 그대로라 아래 타일이 움직이지 않는다(#128 ③의 표적 원칙).
+    // #281 A안(사용자 2026-10-23): 누르면 카드가 살짝 줄고 모서리가 덜 둥글어진다(Expressive의 「누를 때 모양이 바뀐다」).
+    // 크기는 그리기 단계(`graphicsLayer`)에서만 바꾼다 — 자리와 키가 그대로라 아래 메뉴가 움직이지 않는다(#128 ③의 표적 원칙).
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val corner by animateDpAsState(if (pressed) HomePressedCorner else MenuCardCorner, AppMotion.fastSpatial(), label = "menuCardCorner")
     val scale by animateFloatAsState(if (pressed) MenuCardPressedScale else 1f, AppMotion.fastSpatial(), label = "menuCardScale")
-    val goCorner by animateDpAsState(if (pressed) HomePressedCorner else MenuCardPlayButtonSize / 2, AppMotion.fastSpatial(), label = "menuCardGoCorner")
-    val goTurn by animateFloatAsState(if (pressed) MenuCardPressedGoTurn else 0f, AppMotion.fastSpatial(), label = "menuCardGoTurn")
     Card(
         onClick = onClick,
         interactionSource = interaction,
         shape = RoundedCornerShape(corner),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = MenuCardElevation),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             },
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // 고정 높이가 아니라 **최소** 높이다(#29) — 부제가 석 줄이 되는 언어·글꼴 배율에서도 썰리지 않고 카드가 자란다.
-                // 평소(부제 두 줄까지)에는 내용이 이 높이 안에 들어 카드 둘의 키가 같다. 홈은 #28에서 스크롤을 얻었으므로
-                // 카드가 커져도 화면이 깨지지 않는다.
-                // ⚠️ 하한은 `Card`가 아니라 이 줄에 건다 — M3 `Card`는 내용을 modifier 없는 `Column`으로 감싼다.
+                // 고정 높이가 아니라 **최소** 높이다(#29) — 부제가 넉 줄이 되는 언어·글꼴 배율에서도 썰리지 않고 카드가 자란다.
+                // 홈은 #28에서 스크롤을 얻었으므로 카드가 커져도 화면이 깨지지 않는다.
+                // ⚠️ 하한은 `Card`가 아니라 이 열에 건다 — M3 `Card`는 내용을 modifier 없는 `Column`으로 감싼다.
                 .heightIn(min = MenuCardMinHeight)
-                .padding(
-                    start = AppSpacing.Space8,
-                    top = AppSpacing.Space16,
-                    end = AppSpacing.Space16,
-                    bottom = AppSpacing.Space16,
-                ),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(AppSpacing.Space16),
         ) {
-            // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정). 그림 둘 다 스스로 또렷하다 —
-            // 판은 제 나무 바탕을 그리고, 구간의 테두리는 어두운 판을 두른다.
-            Box(
-                modifier = Modifier
-                    .size(MenuCardIconSize)
-                    .padding(AppSpacing.Space4),
-                contentAlignment = Alignment.Center,
-            ) {
-                icon()
-            }
-            Spacer(modifier = Modifier.width(AppSpacing.Space10))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = AppTextSize.Text20,
-                    fontWeight = FontWeight.ExtraBold,
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // ⚠️ **배경 없이 카드 색 위에 그대로 얹는다**(2026-09-21 사용자 결정). 그림 모두 스스로 또렷하다 —
+                // 캐릭터는 제 그림이, 흑백 돌은 제 테두리가, 구간의 테두리는 어두운 판을 두른다.
+                Box(modifier = Modifier.size(MenuCardIconSize), contentAlignment = Alignment.Center) {
+                    icon()
+                }
+                Spacer(modifier = Modifier.width(AppSpacing.Space10))
+                // 이름은 두 줄로 접는다(「일반 / 대국」 — 사용자의 카드 구성). 영어 「Standard」처럼 한 줄이 그림 옆 폭을 넘으면 글자를 줄인다(20 → 14sp).
+                BasicText(
+                    text = twoLineCardTitle(title),
+                    style = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.ExtraBold,
+                        lineHeight = MenuCardTitleLineHeight,
+                    ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    autoSize = TextAutoSize.StepBased(minFontSize = AppTextSize.Text14, maxFontSize = AppTextSize.Text20),
+                    modifier = Modifier.weight(1f),
                 )
+            }
 
-                Spacer(modifier = Modifier.height(AppSpacing.Space4))
+            Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
-                Text(
-                    text = subtitle,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontSize = AppTextSize.Text13,
-                    // 줄 높이를 상속(24sp)에 맡기지 않는다 — 두 줄 부제가 평소 높이 안에 들어야 카드 둘의 키가 같다.
-                    lineHeight = AppTextSize.Text18,
-                    fontWeight = FontWeight.Normal,
-                )
-            }
-            Spacer(modifier = Modifier.width(AppSpacing.Space10))
-            // 장식이다 — 누르는 표적은 카드 전체라 따로 읽어 줄 이름이 없다. 누르면 동그라미가 둥근 네모로 바뀌며 살짝 돈다(#281 A안).
-            Box(
-                modifier = Modifier
-                    .size(MenuCardPlayButtonSize)
-                    .graphicsLayer { rotationZ = goTurn }
-                    .clip(RoundedCornerShape(goCorner))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(MenuCardPlayGlyphSize),
-                )
-            }
+            Text(
+                // 한국어는 어절 안에서 줄을 바꾸지 않는다 — 반 폭이라 줄이 짧아 「오르내리 / 며」처럼 끊기기 쉽다(`keepWordsWhole`).
+                text = keepWordsWhole(subtitle, language),
+                color = MaterialTheme.colorScheme.secondary,
+                fontSize = AppTextSize.Text13,
+                // 줄 높이를 상속(24sp)에 맡기지 않는다 — 반 폭의 서너 줄 부제가 카드를 지나치게 키우지 않게.
+                lineHeight = AppTextSize.Text18,
+                fontWeight = FontWeight.Normal,
+            )
         }
     }
 }
 
-/** [MenuCard] 그림 자리(바깥 정사각형)의 한 변 — 안쪽 그림은 사방 4dp씩 작은 60dp다. */
-private val MenuCardIconSize = 68.dp
-private val MenuCardMinHeight = 104.dp
+/**
+ * 대국 카드의 이름을 두 줄로 접는다(#288) — 첫 띄어쓰기에서(「일반 대국」 → 「일반 / 대국」 · 「Rank Match」 → 「Rank / Match」),
+ * 띄어쓰기가 없는 일본어 · 중국어는 가운데에서(「通常対局」 → 「通常 / 対局」 · 「升级对局」 → 「升级 / 对局」). 한 글자 이름은 그대로 둔다.
+ */
+internal fun twoLineCardTitle(title: String): String {
+    val space = title.indexOf(' ')
+    return when {
+        space > 0 -> title.substring(0, space) + "\n" + title.substring(space + 1)
+        title.length >= 2 -> title.substring(0, title.length / 2) + "\n" + title.substring(title.length / 2)
+        else -> title
+    }
+}
+
+/** [MenuCard] 그림 자리(정사각형)의 한 변. */
+private val MenuCardIconSize = 56.dp
+/** 2열 카드의 최소 키(#288 — 사용자: *"세로로도 좀 더 크게"*) — 그림 · 두 줄 부제 · 위아래 여백이 들어가는 키. 옛 전폭 카드는 104dp였다. */
+private val MenuCardMinHeight = 156.dp
 private val MenuCardElevation = 3.dp
-private val MenuCardPlayButtonSize = 40.dp
-private val MenuCardPlayGlyphSize = 22.dp
+/** 글자 크기의 배수다 — 영어 이름이 14sp까지 줄어도 두 줄 사이가 벌어지지 않게. */
+private val MenuCardTitleLineHeight = 1.2.em
 
 /*
  * #281 A안의 모양 — 값은 사용자가 고른 시안(2026-10-23)을 옮긴 것이고 스레드가 정했다.
@@ -995,18 +1012,62 @@ private val HomePressedCorner = 12.dp
 private const val MenuCardPressedScale = 0.965f
 private const val MenuTilePressedScale = 0.95f
 
-/** 누를 때 ▶ 단추가 도는 각(도) — 왼쪽으로 조금. */
-private const val MenuCardPressedGoTurn = -8f
-
-/** 「이전 대국 이어하기」의 숨쉬기 — 1.0 ↔ 1.04를 한 번에 1.2초씩. */
-private const val ResumeBreathScale = 1.04f
+/**
+ * 「이전 대국 이어하기」의 숨쉬기 — 1.0 ↔ 1.02를 한 번에 1.2초씩. #281의 1.04는 가운데 뜬 짧은 알약의 값이었다 — 전폭(#288)에서는
+ * 360dp에서 양옆으로 7dp씩 카드 끝을 넘어 나가 1.02로 줄였다(한쪽 3dp, 페이지 여백 16dp 안). 스레드가 정했다.
+ */
+private const val ResumeBreathScale = 1.02f
 private const val ResumeBreathMillis = 1200
+
+/** 대국 페이지의 가는 메뉴 줄 하나 — 이름과 누르면 갈 곳. */
+internal class HomeMenuRow(val title: String, val onClick: () -> Unit)
+
+/**
+ * 대국 페이지의 **가는 메뉴 줄**(#288, 사용자 2026-10-24) — 두는 것이 아닌 메뉴(대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습)가 쓴다.
+ * 그림 · 부제 없이 이름과 › 하나, 줄 사이에 가는 선. 카드가 아니라 페이지 바탕 위에 바로 선다 — 위의 키 큰 대국 카드와 크기로 갈린다(「서 있는 답」 #237).
+ * 줄 하나가 통째로 누르는 표적이고, 키는 최소 높이만 준다 — 큰 글꼴 · 긴 언어에서 이름이 두 줄이 돼도 잘리지 않게(함정 9).
+ *
+ * ⚠️ 다시보기(`FirstDolGuideReplay`)가 이 줄을 빌려 그린다 — 홈이 바뀌면 다시보기도 함께 바뀐다(그 파일의 KDoc).
+ */
+@Composable
+internal fun HomeMenuList(rows: List<HomeMenuRow>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        rows.forEachIndexed { index, row ->
+            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = HomeMenuRowMinHeight)
+                    .clip(RoundedCornerShape(AppRadius.Corner10))
+                    .clickable(onClick = row.onClick)
+                    .padding(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space10),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = row.title,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = AppTextSize.Text16,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                )
+                // 장식이다 — 누르는 표적은 줄 전체라 따로 읽어 줄 이름이 없다.
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+private val HomeMenuRowMinHeight = 52.dp
 
 /** 홈의 반 폭 타일 하나 — 제목과 그림, 누르면 갈 곳. */
 internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
 
 /**
- * 홈의 **반 폭 타일** — 두는 것이 아닌 메뉴(대국 기록 · 학습 하기 · 사진 분석)가 쓴다(백로그 #237).
+ * 홈의 **반 폭 타일** — 실험실 페이지의 「바둑판 사진 분석」이 쓴다(백로그 #237 — 대국 페이지의 타일 넷은 #288에서 가는 줄([HomeMenuList])이 됐다).
  * [MenuCard]보다 작고 납작하며(그림자 없음) **부제가 없다** — 제목만으로 무엇인지 읽히는 메뉴들이고, 반 폭에는 부제가 설 자리가 없다.
  */
 @Composable
@@ -1050,178 +1111,90 @@ internal fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
 private val MenuTileIconSize = 52.dp
 
 /**
- * "캐릭터 대국" 카드 아이콘 — 마지막으로 고른 AI 캐릭터, 없거나 기본 설정이면 기본값(레벨3, "수제자 반상")을
- * 돌려준다(백로그 #181, 2026-09-21 사용자 요청으로 기본값을 판다에서 수제자 반상으로 변경).
- * [PlayerSetup]이 기본값(흑 사람, 백 AI 1단계)인 초기 상태이거나, 두 좌석 중 AI가 없거나
- * `FastBeginner` 그룹이 아니면 기본값인 레벨 3("수제자 반상")을 돌려준다.
+ * 이 좌석 배치의 AI가 쓰는 캐릭터 — AI 좌석이 없으면 `null`. 둘 다 AI면 백을 먼저 본다.
+ * 캐릭터 그룹(`FastBeginner`)이 아니면 급수를 직접 정한 상대(백로그 #217 — 지금은 일반 설정에 남지 않지만, 남아 있어도)는 그 급수가 속한 구간의
+ * 캐릭터 얼굴을 빌리고, 숨긴 옛 그룹(초급/중급/고급)은 레벨 3(「수제자 반상」)으로 떨어진다 — 없는 캐릭터를 가리키지 않게.
+ * (#181의 `currentAiCharacterOrDefault`가 #288에서 이것이 됐다 — 「기본 설정이면 수제자 반상」은 흑백 돌 그림이 대신한다.)
  */
-internal fun currentAiCharacterOrDefault(playerSetup: PlayerSetup): BotCharacter {
-    if (playerSetup == DefaultPlayerSetup) {
-        return defaultAiCharacter()
-    }
+internal fun aiSeatCharacterOrNull(playerSetup: PlayerSetup): BotCharacter? {
     val aiPlayLevel = listOf(playerSetup.white, playerSetup.black)
         .firstOrNull { side -> side.controller == SeatController.Ai }
         ?.playLevel
-    val fastBeginnerLevel = if (aiPlayLevel?.group == PlayLevelGroup.FastBeginner) {
+        ?: return null
+    val fastBeginnerLevel = if (aiPlayLevel.group == PlayLevelGroup.FastBeginner) {
         aiPlayLevel.safeLevel
     } else {
-        // 급수를 직접 정한 상대(백로그 #217 — 지금은 일반 설정에 남지 않지만, 남아 있어도)는 그 급수가 속한 구간의 캐릭터 얼굴을 빌린다.
-        aiPlayLevel?.customRank()?.let(::customRankFallbackTier) ?: DefaultAiCharacterLevel
+        aiPlayLevel.customRank()?.let(::customRankFallbackTier) ?: FallbackAiCharacterLevel
     }
-    return BotCharacterCatalog.forPlayLevel(
-        PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel),
-    ) ?: defaultAiCharacter()
+    return BotCharacterCatalog.forPlayLevel(PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = fastBeginnerLevel))
 }
 
 private val DefaultPlayerSetup = PlayerSetup()
-private const val DefaultAiCharacterLevel = 3
-private fun defaultAiCharacter(): BotCharacter =
-    BotCharacterCatalog.forPlayLevel(
-        PlayLevelSetting(group = PlayLevelGroup.FastBeginner, level = DefaultAiCharacterLevel),
-    ) ?: BotCharacterCatalog.fastBeginnerRoster.getOrNull(2)
-        ?: BotCharacterCatalog.fastBeginnerRoster.first()
+private const val FallbackAiCharacterLevel = 3
 
 /**
- * "캐릭터 대국" 카드의 정적 국면 — **두 점**만 놓는다(2026-09-22 사용자 지시). 「학습 하기」가
- * 세 점인 것과 일부러 다르다: 이쪽은 *"이제 두기 시작한다"* 이고 저쪽은 *"공부할 모양이 있다"* 다.
- * `BoardRules.play`를 거치지 않고 바로 앉히는 것은 [StudyPreviewGameState]와 같은 이유다(장식용).
+ * 「일반 대국」 카드 그림의 캐릭터(#288, 사용자 2026-10-24: *"마지막 플레이한 캐릭터 보여주기. 선택되었던 캐릭터가 없을 경우 아이콘"*) — **마지막으로 둔 일반 대국**의 상대.
+ * 1. 지금의 좌석 배치가 일반 대국이고 쓰이고 있으면(이어 둘 판이 있거나 첫 설정에서 바꿨으면) 그 상대.
+ * 2. 아니면(첫 설정 그대로 · 승급 대국의 좌석) 대국 기록에서 가장 최근의 일반 대국의 상대. 기록은 이때만 읽는다([history]는 그래서 함수다).
+ * 3. 일반 대국을 둔 적이 없으면 `null` — 카드는 흑백 돌을 그린다. 마지막 판이 둘이서였으면 역시 `null`이다(상대가 캐릭터가 아니다).
+ * ⚠️ 첫 설정(흑 사람 · 백 판다)만으로는 「한 번도 안 뒀다」와 「기본 판다와 뒀다」를 가를 수 없다 — 그래서 2가 기록을 본다.
+ * 승급 대국의 상대는 급수로 정한 AI라 캐릭터가 아니다 — 그 판의 좌석은 건너뛴다.
  */
-private val GamePlayPreviewGameState: GameState = GameState.empty(
-    boardSize = BoardSize.Nine,
-    ruleset = Ruleset.Japanese,
-).copy(
-    stones = mapOf(
-        BoardCoordinate(row = 2, column = 6) to StoneColor.Black,
-        BoardCoordinate(row = 6, column = 2) to StoneColor.White,
-    ),
-)
+internal fun lastPlayedCharacterOrNull(
+    playerSetup: PlayerSetup,
+    hasResumableSession: Boolean,
+    history: () -> List<GameHistoryEntry>,
+): BotCharacter? {
+    if (!playerSetup.isRankMeasure() && (hasResumableSession || playerSetup != DefaultPlayerSetup)) {
+        return aiSeatCharacterOrNull(playerSetup)
+    }
+    val lastStandardGame = history()
+        .filter { entry -> entry.id != ReferenceGameHistoryId && !entry.playerSetup.isRankMeasure() }
+        .maxByOrNull { entry -> entry.playedAtMillis }
+        ?: return null
+    return aiSeatCharacterOrNull(lastStandardGame.playerSetup)
+}
 
 /**
- * "캐릭터 대국" 카드 아이콘 — 바둑판(두 점) 위 **좌상단**에 상대 캐릭터를 70%로 얹는다
- * (2026-09-22 사용자 지시, 백로그 #192).
+ * 「일반 대국」 카드의 그림(#288) — 마지막으로 둔 캐릭터의 얼굴, 고른 캐릭터가 없으면([lastPlayedCharacterOrNull]가 `null`) 흑백 돌 한 쌍.
+ * (옛 그림은 판 위에 캐릭터를 70%로 얹은 것이었다 — #192. 반 폭 카드의 56dp에서는 판과 얼굴이 함께 읽히지 않아 얼굴만 둔다.)
  *
- * ## ⚠️ 전에는 캐릭터가 슬롯을 통째로 채웠다
- * 그래서 카드 넷 중 이것만 판이 없었다 — 「대국 기록」·「학습 하기」·「사진 분석」은 전부 판 위에
- * 무언가를 얹은 모양이다. 판을 깔면서 **넷이 한 식구로 읽힌다.**
- *
- * ## ⚠️ 배지 자리가 다른 것은 일부러다
- * 「학습 하기」의 돋보기는 **우하단**이고 이쪽 캐릭터는 **좌상단**이다(사용자 지시). 캐릭터는
- * 원형 배지가 아니라 **그림 그대로**라, 우하단에 두면 판의 초반 포석과 겹쳐 지저분해진다.
- *
- * ⚠️ **[FirstDolGuideReplay]가 이 컴포저블을 함께 쓴다** — 다시보기 ③이 홈의 **진짜 카드**를
- * 조립하기 때문이다. 여기만 바꾸고 그쪽을 두면 **다시보기가 없는 화면을 보여 준다**(그 파일이
- * 네 번 겪었다고 적어 둔 바로 그 사고). `internal`인 이유가 그것이다.
+ * ⚠️ 다시보기(`FirstDolGuideReplay`)가 이 컴포저블을 함께 쓴다 — 다시보기 ③이 홈의 **진짜 카드**를 조립한다.
  */
 @Composable
-internal fun GamePlayPreviewIcon(character: BotCharacter) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = GamePlayPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = false,
-            isEngineBusy = false,
-        )
-        BotCharacterSquareIcon(
-            character = character,
+internal fun StartMatchCardIcon(character: BotCharacter?) {
+    if (character != null) BotCharacterSquareIcon(character = character) else StonePair()
+}
+
+/** 흑돌이 백돌에 살짝 겹친 한 쌍 — 윗줄 로고와 같은 돌 그림(광택 그라데이션 · 백돌의 가는 테두리)을 배경 없이. */
+@Composable
+private fun StonePair() {
+    val stoneSize = MenuCardIconSize * StonePairStoneFraction
+    val stoneSizePx = with(LocalDensity.current) { stoneSize.toPx() }
+    val highlightCenter = Offset(stoneSizePx * 0.32f, stoneSizePx * 0.28f)
+    val highlightRadius = stoneSizePx * 0.85f
+    // 겹침은 offset()이 아니라 spacedBy(음수)다 — 로고([GoStoneLogoBadge])와 같은 이유(가운데 정렬이 겹친 만큼을 반영한다).
+    Row(horizontalArrangement = Arrangement.spacedBy(-stoneSize * StonePairOverlapFraction)) {
+        Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .fillMaxSize(GamePlayPreviewCharacterFraction),
+                .size(stoneSize)
+                .background(Brush.radialGradient(HomeLogoPalette.BlackStoneGradient, highlightCenter, highlightRadius), CircleShape),
+        )
+        Box(
+            modifier = Modifier
+                .size(stoneSize)
+                .border(AppBorderWidth.Hairline, HomeLogoPalette.WhiteStoneBorder, CircleShape)
+                .background(Brush.radialGradient(HomeLogoPalette.WhiteStoneGradient, highlightCenter, highlightRadius), CircleShape),
         )
     }
 }
 
-/** 판 한 변 대비 캐릭터 크기 — 슬롯을 꽉 채우던 것의 **70%**(2026-09-22 사용자 지시). */
-private const val GamePlayPreviewCharacterFraction = 0.7f
+/** 그림 자리 한 변 대비 돌 하나의 지름 · 두 돌이 겹치는 비율 — 둘을 합쳐 그림 자리 폭 안에 든다(0.56 × 2 − 0.56 × 0.25 = 0.98). 스레드가 정했다. */
+private const val StonePairStoneFraction = 0.56f
+private const val StonePairOverlapFraction = 0.25f
 
 /**
- * "대국 기록" 카드 아이콘이 그릴 9x9 종국 국면(백로그 #181, 2026-09-21 사용자 요청으로
- * 13x13 137수 참고 기보에서 교체). 13x13은 아이콘 크기(84dp)에서 169칸이 너무 촘촘해
- * 돌인지 격자선인지 구분이 안 됐다 — 9x9(81칸)가 그 크기에서 읽힌다.
- *
- * ⚠️ **가짜로 지어낸 배치가 아니다.** 에뮬레이터에서 실제로 둔 9x9 대국(문하생 판다 대
- * 관장 천원, 105수, 흑 6.5집승, `game_history/replay/1789951644440-318459.json`)을
- * `GameReplayCodec.decode` + `buildGameReplayTimeline`으로 그대로 재생해 얻은 **종국 결과**를
- * 옮겼다 — 따낸 돌까지 규칙대로 반영된 진짜 종국 모양이다(원본 파일은 이 기기에만 있는 테스트
- * 데이터라 에셋으로 묶지 않고, 그 결과만 고정값으로 옮겨 왔다).
- */
-private val GameHistoryPreviewGameState: GameState = GameState.empty(
-    boardSize = BoardSize.Nine,
-    ruleset = Ruleset.Japanese,
-).copy(
-    stones = mapOf(
-        BoardCoordinate(row = 0, column = 1) to StoneColor.White,
-        BoardCoordinate(row = 0, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 0, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 0, column = 4) to StoneColor.White,
-        BoardCoordinate(row = 0, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 0, column = 7) to StoneColor.White,
-        BoardCoordinate(row = 1, column = 0) to StoneColor.White,
-        BoardCoordinate(row = 1, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 1, column = 3) to StoneColor.White,
-        BoardCoordinate(row = 1, column = 4) to StoneColor.White,
-        BoardCoordinate(row = 1, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 1, column = 8) to StoneColor.White,
-        BoardCoordinate(row = 2, column = 0) to StoneColor.Black,
-        BoardCoordinate(row = 2, column = 1) to StoneColor.Black,
-        BoardCoordinate(row = 2, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 2, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 2, column = 4) to StoneColor.White,
-        BoardCoordinate(row = 2, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 2, column = 6) to StoneColor.White,
-        BoardCoordinate(row = 2, column = 7) to StoneColor.White,
-        BoardCoordinate(row = 2, column = 8) to StoneColor.White,
-        BoardCoordinate(row = 3, column = 0) to StoneColor.Black,
-        BoardCoordinate(row = 3, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 3, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 3, column = 4) to StoneColor.Black,
-        BoardCoordinate(row = 3, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 3, column = 6) to StoneColor.Black,
-        BoardCoordinate(row = 3, column = 7) to StoneColor.Black,
-        BoardCoordinate(row = 3, column = 8) to StoneColor.Black,
-        BoardCoordinate(row = 4, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 4, column = 4) to StoneColor.Black,
-        BoardCoordinate(row = 4, column = 5) to StoneColor.Black,
-        BoardCoordinate(row = 4, column = 6) to StoneColor.Black,
-        BoardCoordinate(row = 4, column = 7) to StoneColor.White,
-        BoardCoordinate(row = 4, column = 8) to StoneColor.White,
-        BoardCoordinate(row = 5, column = 0) to StoneColor.Black,
-        BoardCoordinate(row = 5, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 5, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 5, column = 4) to StoneColor.Black,
-        BoardCoordinate(row = 5, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 5, column = 6) to StoneColor.Black,
-        BoardCoordinate(row = 5, column = 7) to StoneColor.White,
-        BoardCoordinate(row = 5, column = 8) to StoneColor.White,
-        BoardCoordinate(row = 6, column = 4) to StoneColor.Black,
-        BoardCoordinate(row = 6, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 6, column = 6) to StoneColor.White,
-        BoardCoordinate(row = 7, column = 0) to StoneColor.Black,
-        BoardCoordinate(row = 7, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 7, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 7, column = 4) to StoneColor.Black,
-        BoardCoordinate(row = 7, column = 5) to StoneColor.Black,
-        BoardCoordinate(row = 7, column = 6) to StoneColor.White,
-        BoardCoordinate(row = 7, column = 7) to StoneColor.White,
-        BoardCoordinate(row = 7, column = 8) to StoneColor.White,
-        BoardCoordinate(row = 8, column = 1) to StoneColor.Black,
-        BoardCoordinate(row = 8, column = 2) to StoneColor.Black,
-        BoardCoordinate(row = 8, column = 3) to StoneColor.Black,
-        BoardCoordinate(row = 8, column = 4) to StoneColor.Black,
-        BoardCoordinate(row = 8, column = 5) to StoneColor.White,
-        BoardCoordinate(row = 8, column = 6) to StoneColor.White,
-    ),
-)
-
-/**
- * 「승급 대국」 카드의 아이콘 — **지금의 내 기력**을 글자로 보인다(`20급`). 다른 카드의 판 그림과 같은 자리·같은 크기다.
+ * 「승급 대국」 카드의 아이콘 — **지금의 내 기력**을 글자로 보인다(`20급`). 「일반 대국」 카드의 그림과 같은 자리·같은 크기다.
  * 카드를 열지 않아도 기력이 보이고, 그 기력이 속한 **구간의 테두리**가 둘러선다(백로그 #236 — 브론즈부터 그랜드 마스터까지 일곱,
  * 구간의 경계는 `KgsRankTier`, 테두리의 모양과 색은 [RankTierBadge]).
  */
@@ -1231,45 +1204,8 @@ internal fun RankMeasureIcon(rank: KgsRank, rankLabel: String) {
 }
 
 /**
- * 「대국 기록」 타일 그림 — 「보드 미리보기」(`GameSetupLobby.kt`)와 같은 `GoBoard`를 아이콘 크기로 그린 뒤 **「기록」을 뜻하는 배지**(📝)를 얹는다
- * (백로그 #192 → #286). `isGameEnded = true`로 둬 끝난 대국다운 톤을 준다 — 실제로 끝난 판이다.
- * 배지가 #192의 목록 벡터에서 그림 문자로 바뀐 사연은 [GameHistoryBadgeEmoji].
- */
-@Composable
-internal fun GameHistoryBoardIcon() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = GameHistoryPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = true,
-            isEngineBusy = false,
-        )
-        // ⚠️ **자리·크기·바탕을 옆 타일([BoardScanPreviewIcon])과 똑같이 맞춘다** — 두 타일이 나란히 서므로
-        // 하나만 어긋나면 그것이 먼저 눈에 띈다. 상수도 그쪽 것을 그대로 쓴다.
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            TileBadgeEmoji(GameHistoryBadgeEmoji)
-        }
-    }
-}
-
-/**
  * 타일 그림의 정적 국면 — 실제 대국 규칙(`BoardRules.play`)을 거치지 않고 초반 포석
- * 몇 수를 바로 앉힌다(백로그 #181, 합법성 검사가 필요 없는 순수 장식용). 처음은 「학습 하기」 타일의 것이었고, 그 타일이 페이지가 된 뒤(#280)로는 「사진 분석」 타일만 쓴다. `object`가 아니라
+ * 몇 수를 바로 앉힌다(백로그 #181, 합법성 검사가 필요 없는 순수 장식용). 처음은 「학습 하기」 타일의 것이었고, 지금은 실험실의 「사진 분석」 타일만 쓴다. `object`가 아니라
  * `private val`인 이유는 컴포지션마다 새로 만들 이유가 없어서다 — 상태가 없는 상수 데이터다.
  */
 private val StudyPreviewGameState: GameState = GameState.empty(
@@ -1283,152 +1219,8 @@ private val StudyPreviewGameState: GameState = GameState.empty(
     ),
 )
 
-/**
- * 「기초 학습」 타일 그림(#280 — 옛 「학습 하기」 타일의 그림을 되살렸다) — 바둑판(초반 포석 세 점) 위에 책 배지(📖)를 판 한 변의 60% 크기로
- * 겹친다(백로그 #181 돋보기 벡터 → #286 📖, [StudyBasicsBadgeEmoji]).
- */
-@Composable
-internal fun StudyPreviewIcon() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = StudyPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = false,
-            isEngineBusy = false,
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
-                .clip(CircleShape)
-                // 2026-09-22 사용자 요청 — 흰 배경 불투명도를 75%로 낮춰 뒤판이 살짝 비친다.
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            TileBadgeEmoji(StudyBasicsBadgeEmoji)
-        }
-    }
-}
-
-/**
- * 「명국 기보」 타일의 정적 국면 — 수순 번호가 붙은 초반 네 수(백로그 #269). 기보는 「번호 붙은 돌」로 알아보므로 배지 없이 번호를 보인다.
- * 실제 규칙(`play`)으로 두어 번호가 수순을 따른다.
- */
-private val GameRecordsPreviewGameState: GameState = listOf(
-    Move.Play(StoneColor.Black, BoardCoordinate(row = 2, column = 6)),
-    Move.Play(StoneColor.White, BoardCoordinate(row = 6, column = 2)),
-    Move.Play(StoneColor.Black, BoardCoordinate(row = 6, column = 6)),
-    Move.Play(StoneColor.White, BoardCoordinate(row = 2, column = 2)),
-).fold(GameState.empty(boardSize = BoardSize.Nine, ruleset = Ruleset.Japanese)) { state, move -> state.play(move) }
-
-/**
- * 「명국 기보」 타일 그림 — 수순 번호가 붙은 9줄 판 위에 두루마리 배지(📜 — #269의 📖를 #286에 기초 학습으로 넘겼다, 다른 타일과 같은 자리·같은 모양).
- * 번호만으로는 타일 크기에서 읽히지 않아(에뮬레이터 2026-10-19) 배지로 알아보게 한다.
- */
-@Composable
-private fun GameRecordsPreviewIcon() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = GameRecordsPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(showMoveNumbers = true, showLastMoveRing = false),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = false,
-            isEngineBusy = false,
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            TileBadgeEmoji(GameRecordsBadgeEmoji)
-        }
-    }
-}
-
-/**
- * 「사활 풀기」 타일의 정적 국면(#280) — 귀의 백 한 무리를 흑이 둘러쌌다. 사는가 죽는가를 묻는 모양이다(장식용 — 규칙을 거치지 않고 앉힌다).
- */
-private val LifeAndDeathPreviewGameState: GameState = GameState.empty(
-    boardSize = BoardSize.Nine,
-    ruleset = Ruleset.Japanese,
-).copy(
-    stones = buildMap {
-        listOf(BoardCoordinate(row = 7, column = 0), BoardCoordinate(row = 7, column = 1), BoardCoordinate(row = 7, column = 2), BoardCoordinate(row = 8, column = 3))
-            .forEach { put(it, StoneColor.White) }
-        listOf(
-            BoardCoordinate(row = 6, column = 0), BoardCoordinate(row = 6, column = 1), BoardCoordinate(row = 6, column = 2),
-            BoardCoordinate(row = 6, column = 3), BoardCoordinate(row = 7, column = 3), BoardCoordinate(row = 7, column = 4), BoardCoordinate(row = 8, column = 4),
-        ).forEach { put(it, StoneColor.Black) }
-    },
-)
-
-/** 「사활 풀기」 타일 그림(#280) — 귀의 사활 모양 위에 돋보기 배지(🔍 — #280의 「?」를 #286에 바꿨다, 다른 타일과 같은 자리 · 같은 모양). 수를 읽는다는 뜻이다. */
-@Composable
-private fun LifeAndDeathPreviewIcon() {
-    Box(modifier = Modifier.fillMaxSize()) {
-        GoBoard(
-            gameState = LifeAndDeathPreviewGameState,
-            candidateMoves = emptyList(),
-            moveReviews = emptyList(),
-            ownershipEstimate = null,
-            uxOptions = KaTrainUxOptions(),
-            inputEnabled = false,
-            engineActivityIndicator = null,
-            modifier = Modifier.fillMaxSize(),
-            tentativeMove = null,
-            onCoordinateTap = {},
-            isGameEnded = false,
-            isEngineBusy = false,
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            TileBadgeEmoji(LifeAndDeathBadgeEmoji)
-        }
-    }
-}
-
-/** 판 한 변 대비 돋보기·카메라 배지의 비율(기존 50%에서 120% 확대한 60%). */
-private const val StudyPreviewMagnifierSizeFraction = 0.6f
-
-/**
- * 대국 페이지 타일 넷의 배지 그림(백로그 #286, 사용자 2026-10-23) — 넷 다 「명국 기보」의 📖처럼 **그림 문자**다(사용자: *"명국 기보 아이콘 스타일이 좀 더 좋음"*).
- * 기초 학습이 그 📖를 물려받고, 명국 기보는 옛 기록의 두루마리, 대국 기록은 적어 둔 메모, 사활 풀기는 돋보기 — 고른 그림은 스레드가 정했다.
- * ⚠️ 그림 문자는 기기 글꼴마다 모양이 다르다(#181이 벡터를 쓴 이유) — 사용자가 그 모양을 골랐다. 카메라 타일의 📷와 같은 크기로 그린다([TileBadgeEmoji]).
- */
-private const val GameHistoryBadgeEmoji = "📝"
-private const val GameRecordsBadgeEmoji = "📜"
-private const val LifeAndDeathBadgeEmoji = "🔍"
-private const val StudyBasicsBadgeEmoji = "📖"
-
-/** 타일 배지 안의 그림 문자 한 자 — 카메라 타일(📷)과 같은 글자 크기. */
-@Composable
-private fun TileBadgeEmoji(emoji: String) {
-    Text(text = emoji, fontSize = AppTextSize.Text20, textAlign = TextAlign.Center)
-}
+/** 판 한 변 대비 카메라 배지의 비율(기존 50%에서 120% 확대한 60%). */
+private const val BoardScanBadgeSizeFraction = 0.6f
 
 /**
  * "바둑판 사진 분석" 카드 아이콘 — 바둑판 위에 카메라 심볼을 겹친 프리뷰 배지.
@@ -1453,7 +1245,7 @@ internal fun BoardScanPreviewIcon() {
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .fillMaxSize(StudyPreviewMagnifierSizeFraction)
+                .fillMaxSize(BoardScanBadgeSizeFraction)
                 .clip(CircleShape)
                 // 2026-09-22 사용자 요청 — 흰 배경 불투명도를 75%로 낮춰 뒤판이 살짝 비친다.
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)),
