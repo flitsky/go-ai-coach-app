@@ -52,15 +52,16 @@ internal fun rankMeasureTitleFor(language: UiLanguage): String =
     }
 
 /**
- * 홈의 두 번째 카드 부제(#288). 「이기면 오른다」고 쓰지 않는다 — 15집 미만 차로 이기면 그대로이고, 내려가는 것은 연패 뒤다(`adjustRankAfterResult`).
- * 「오르내린다」까지만 말하고 자세한 규칙은 가이드 다시보기와 설정 창이 맡는다.
+ * 홈의 두 번째 카드 부제(#288) — 반 폭 카드에서 **두 줄**에 들게 짧게(사용자 2026-10-24: *"대국을 통해 기력을 측정해보세요"* — 한국어는 사용자의 글 그대로).
+ * 오르내리는 규칙은 말하지 않는다 — 「이기면 오른다」는 틀린 말이고(15집 미만 차로 이기면 그대로, 내려가는 것은 연패 뒤 — `adjustRankAfterResult`),
+ * 자세한 규칙은 가이드 다시보기와 설정 창이 맡는다.
  */
 internal fun rankMeasureSubtitleFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "결과에 따라 급수가 오르내리며 내 기력을 잽니다."
-        UiLanguage.English -> "Results move your rank up or down to find your real strength."
-        UiLanguage.Japanese -> "結果に応じて級が上下し、自分の棋力を測れます。"
-        UiLanguage.ChineseSimplified -> "级位随对局结果升降，测出你的真实棋力。"
+        UiLanguage.Korean -> "대국을 통해 기력을 측정해보세요."
+        UiLanguage.English -> "Play to measure your strength."
+        UiLanguage.Japanese -> "対局で棋力を測ってみましょう。"
+        UiLanguage.ChineseSimplified -> "通过对局测一测你的棋力。"
     }
 
 /** 설정 창의 「현재 기력」 줄. */

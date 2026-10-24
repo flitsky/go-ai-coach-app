@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveLabelFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveTaglineFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionAdFreeFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionAutoRenewNoticeFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionBenefitFeatureNamesFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionBenefitFeaturesFor
@@ -221,6 +222,8 @@ internal fun PremiumSubscriptionCard(modifier: Modifier = Modifier) {
         } else {
             premiumSubscriptionInactiveTaglineFor(strings.language)
         },
+        // 광고 없음은 구독하기 전에 보여 줄 장점이다(#288) — 구독 중 카드에는 두지 않는다.
+        highlight = if (subscribed) null else premiumSubscriptionAdFreeFor(strings.language),
     ) {
         if (subscribed) {
             TextButton(
@@ -261,8 +264,9 @@ internal fun PremiumSubscriptionCard(modifier: Modifier = Modifier) {
  * 카드의 껍데기 — `GameSetupLobby`의 프리미엄 카드와 **같은 금색 처리**를 쓴다
  * (배경 18% + 그라디언트 테두리 1.5dp). 톤이 갈리지 않도록 `PremiumTheme.kt`만 참조한다.
  *
- * ⚠️ **`maxLines = 1`은 1.5줄을 지키기 위한 것이다** — 네 언어 중 영어 부제가 가장 길어
- * 그대로 두면 좁은 폭에서 두 줄로 접히고 카드가 3줄이 된다. 문구를 늘릴 때 이 제약을 볼 것.
+ * ⚠️ **`maxLines = 1`은 카드 키를 지키기 위한 것이다** — 네 언어 중 영어 부제가 가장 길어
+ * 그대로 두면 좁은 폭에서 두 줄로 접힌다. 문구를 늘릴 때 이 제약을 볼 것.
+ * [highlight](#288 — 미구독 카드의 「광고 없이 이용」)는 부제에 덧붙이지 않고 **제 줄**을 갖는다 — 덧붙이면 그 말부터 잘린다. 그 한 줄만큼 카드가 자란다.
  */
 @Composable
 private fun PremiumSubscriptionCardFrame(
@@ -270,6 +274,7 @@ private fun PremiumSubscriptionCardFrame(
     tagline: String,
     onCardClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    highlight: String? = null,
     trailing: @Composable () -> Unit,
 ) {
     Row(
@@ -303,6 +308,16 @@ private fun PremiumSubscriptionCardFrame(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            highlight?.let { text ->
+                Text(
+                    text = "✓ $text",
+                    fontSize = AppTextSize.Text12,
+                    fontWeight = FontWeight.Bold,
+                    color = PremiumGoldDeep,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Spacer(modifier = Modifier.width(AppSpacing.Space8))
         trailing()
@@ -362,6 +377,8 @@ private fun PremiumBenefitsList(language: UiLanguage) {
             color = PremiumGoldDeep,
         )
         PremiumBenefitRow(premiumSubscriptionBenefitRosterFor(language))
+        // 광고 없음(#288) — 미구독 카드의 둘째 줄과 같은 말.
+        PremiumBenefitRow(premiumSubscriptionAdFreeFor(language))
         Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2)) {
             PremiumBenefitRow(premiumSubscriptionBenefitFeaturesFor(language))
             Text(

@@ -492,63 +492,18 @@ private fun HomePlayPage(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255) · 오늘의 한 줄 명언(#273). 차례는 `homeTopNoticeOf` 한 곳이 정한다.
-        // 맨 위에 두는 이유: 아래 가중치 여백이 이 높이를 흡수해 **메뉴 카드는 움직이지 않는다**(#128 ③의 표적 원칙).
-        topNotice(Modifier.padding(top = AppSpacing.Space4))
-
-        // 메뉴는 남는 세로의 가운데에 선다 — 위아래 가중치 여백이 나눠 갖는다(로고는 윗줄로 갔다, #280 ③ B안).
-        Spacer(modifier = Modifier.weight(1f))
-
-        // 저장된 대국이 있을 때 노출되는 "이전 대국 이어하기" 버튼 — 눈길을 끄는 움직임은 깜빡임이 아니라 **숨쉬기**다(#281 A안, 사용자 2026-10-23):
-        // 글자가 흐려지지 않아 읽기 쉽고(옛 깜빡임은 투명도 0.35까지 내려갔다), 알약 전체가 천천히 커졌다 작아진다.
-        if (hasResumableSession) {
-            val breath by rememberInfiniteTransition(label = "resumeBreath").animateFloat(
-                initialValue = 1f,
-                targetValue = ResumeBreathScale,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = ResumeBreathMillis, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "resumeBreathScale",
-            )
-
-            // 폭은 아래 2열 카드와 같은 전폭이다(#288) — 가운데 뜬 알약보다 왼쪽 · 오른쪽 끝이 카드와 맞아 한 덩어리로 읽힌다. 글 두 줄(#287)은 그대로.
-            Box(
-                modifier = Modifier
-                    .padding(bottom = AppSpacing.Space16)
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        scaleX = breath
-                        scaleY = breath
-                    }
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                    .clickable(onClick = onResumeClick)
-                    .padding(horizontal = AppSpacing.Space20, vertical = AppSpacing.Space10),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "▶ " + strings.resumeTitle,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = AppTextSize.Text18,
-                        fontWeight = FontWeight.ExtraBold,
-                        textAlign = TextAlign.Center,
-                    )
-                    // 어떤 판을 이어 두는지(#287, 사용자 2026-10-24) — 대국 · 상대 · 내 돌 · 판 크기와 수. 큰 글꼴 · 긴 언어에서는 두 줄까지.
-                    resumeSummary?.let { summary ->
-                        Text(
-                            text = summary,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.SemiBold,
-                            textAlign = TextAlign.Center,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
+        // **자리를 늘 비워 둔다**(#288, 사용자 2026-10-24: *"위에 한두줄이 항상 존재한다는 가정하에 여백을 두고 계산된 위치에서 시작"*) — 안내가 무엇이든,
+        // 없든 대국 카드는 같은 자리에서 시작한다(#128 ③의 표적 원칙). 높이는 [homeTopNoticeSlotHeight]. 그보다 큰 안내(큰 글꼴의 세 줄 등)만 카드를 민다.
+        // (전에는 메뉴가 남는 세로의 가운데에 서서, 안내 높이의 반만큼 카드가 오르내렸다.)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = homeTopNoticeSlotHeight()),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            topNotice(Modifier.padding(top = AppSpacing.Space4))
         }
+        Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
         // 대국 카드 둘은 **한 줄에 나란히** 선다(#288, 사용자 2026-10-24) — 왼쪽이 「일반 대국」(「서 있는 답」 #239 — 첫 카드), 오른쪽이 「승급 대국」.
         // 키는 둘이 같다 — 줄의 키를 큰 쪽의 내용에 맞추고(`IntrinsicSize.Min`) 두 카드가 그 키를 채운다. 부제가 긴 언어 · 큰 글꼴에서도 둘이 함께 자란다.
@@ -597,6 +552,59 @@ private fun HomePlayPage(
                     icon = { RankMeasureIcon(rank = rankMeasure.state.rank, rankLabel = kgsRankLabelFor(strings.language, rankMeasure.state.rank)) },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
+            }
+        }
+
+        // 저장된 대국이 있을 때 노출되는 "이전 대국 이어하기" 버튼 — 눈길을 끄는 움직임은 깜빡임이 아니라 **숨쉬기**다(#281 A안, 사용자 2026-10-23):
+        // 글자가 흐려지지 않아 읽기 쉽고(옛 깜빡임은 투명도 0.35까지 내려갔다), 알약 전체가 천천히 커졌다 작아진다.
+        // 자리는 대국 카드 **아래**다(#288, 사용자 2026-10-24) — 판이 생기고 없어져도 대국 카드는 움직이지 않는다. 밀리는 것은 아래 메뉴 칸이다.
+        if (hasResumableSession) {
+            val breath by rememberInfiniteTransition(label = "resumeBreath").animateFloat(
+                initialValue = 1f,
+                targetValue = ResumeBreathScale,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = ResumeBreathMillis, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "resumeBreathScale",
+            )
+
+            // 폭은 위 2열 카드와 같은 전폭이다(#288) — 가운데 뜬 알약보다 왼쪽 · 오른쪽 끝이 카드와 맞아 한 덩어리로 읽힌다. 글 두 줄(#287)은 그대로.
+            Box(
+                modifier = Modifier
+                    .padding(top = AppSpacing.Space12)
+                    .fillMaxWidth()
+                    .graphicsLayer {
+                        scaleX = breath
+                        scaleY = breath
+                    }
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                    .clickable(onClick = onResumeClick)
+                    .padding(horizontal = AppSpacing.Space20, vertical = AppSpacing.Space10),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "▶ " + strings.resumeTitle,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = AppTextSize.Text18,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                    )
+                    // 어떤 판을 이어 두는지(#287, 사용자 2026-10-24) — 대국 · 상대 · 내 돌 · 판 크기와 수. 큰 글꼴 · 긴 언어에서는 두 줄까지.
+                    resumeSummary?.let { summary ->
+                        Text(
+                            text = summary,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
         }
 
@@ -1028,6 +1036,15 @@ private const val MenuTilePressedScale = 0.95f
  */
 private const val ResumeBreathScale = 1.02f
 private const val ResumeBreathMillis = 1200
+
+/**
+ * 대국 페이지 맨 위 안내 자리의 높이(#288) — **두 줄짜리 오늘의 명언**이 들어가는 높이: 위 여백 4dp + 위아래 안쪽 여백 6dp씩 + 글 두 줄(줄 높이 24sp — 명언 줄이 물려받는 본문 줄 높이).
+ * 줄 높이를 sp로 더하므로 글꼴을 키운 사람에게도 두 줄이 들어간다. 한 줄 알림(44dp) · 엔진 받기(진행 막대 포함 50dp) · 명언 한 줄(48dp)은 모두 이 안에 든다. 스레드가 정했다.
+ */
+@Composable
+private fun homeTopNoticeSlotHeight(): Dp = with(LocalDensity.current) { AppSpacing.Space4 + AppSpacing.Space6 * 2 + (HomeTopNoticeLineHeight * 2).toDp() }
+
+private val HomeTopNoticeLineHeight = 24.sp
 
 /** 대국 페이지의 메뉴 칸 하나 — 이름과 누르면 갈 곳. */
 internal class HomeMenuRow(val title: String, val onClick: () -> Unit)

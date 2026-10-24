@@ -62,6 +62,21 @@ private val InactiveTaglines: Map<UiLanguage, String> = mapOf(
 )
 
 /**
+ * 미구독 카드의 둘째 줄 — **광고 없음**을 따로 세운다(#288, 사용자 2026-10-24: *"다양한 기능들을 추가중인데 광고 없이 이용가능하다는 장점이 부각되길"*).
+ * 위 [InactiveTaglines]에 덧붙이면 한 줄 칸에서 이 말부터 잘려(360dp) 줄을 나눴다. 구독 다이얼로그의 특전 목록도 같은 말을 쓴다.
+ * 사실 확인(2026-10-24): 구독자에게는 다시보기 배너가 뜨지 않고(`SubscriptionAwareBannerAd`), 오늘의 운세 · 1일 1회 뽑기는 광고 없이 되며,
+ * 캐릭터 조각 · 기능 1시간 광고는 구독으로 이미 열려 있어 볼 일이 없다 — 광고를 하나 더 붙이면 이 문구부터 다시 볼 것(함정 51).
+ */
+private val AdFreeLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "광고 없이 이용",
+    UiLanguage.English to "No ads",
+    UiLanguage.Japanese to "広告なし",
+    UiLanguage.ChineseSimplified to "无广告",
+)
+
+internal fun premiumSubscriptionAdFreeFor(language: UiLanguage): String = AdFreeLabels.getValue(language)
+
+/**
  * 구독 다이얼로그의 특전 목록 제목(2026-09-20 사용자 요청) — 고지(가격·주기·자동갱신·해지)
  * 앞에 붙는 **마케팅 문구**다. 위 [InactiveTaglines]의 KDoc이 "상세는 업셀 팝업의 몫"이라고
  * 적어 뒀지만, 실제로 구독을 누르는 자리(마이페이지 → [PremiumSubscribeDialog])에는 그 상세가
