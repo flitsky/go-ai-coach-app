@@ -70,21 +70,21 @@ internal fun dailyDrawAdCharacterLabelFor(language: UiLanguage): String =
         UiLanguage.ChineseSimplified -> "广告角色"
     }
 
-/** 확률 줄에서 이미 가진 캐릭터 뒤에 붙는 말 — 뽑히면 7일 단위 보상으로 대체된다(#289). */
-internal fun dailyDrawSubstituteSuffixFor(language: UiLanguage): String =
+/** 확률 줄 아래의 한 줄 — 캐릭터 상품을 이미 가졌으면 대체 지급(#289). 한국어는 사용자의 말 그대로(2026-10-24), 영 · 일 · 중은 스레드가 정한 표기. */
+internal fun dailyDrawSubstituteFootnoteFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "→ 7일 단위 보상"
-        UiLanguage.English -> "→ weekly reward"
-        UiLanguage.Japanese -> "→ 7日ごとの報酬"
-        UiLanguage.ChineseSimplified -> "→ 7日奖励"
+        UiLanguage.Korean -> "*이미 보유중일 경우 7일 단위 보상으로 대체 지급합니다."
+        UiLanguage.English -> "*If you already have it, you get the weekly reward instead."
+        UiLanguage.Japanese -> "*すでにお持ちの場合は7日ごとの報酬に代えてお渡しします。"
+        UiLanguage.ChineseSimplified -> "*如已拥有，将改为发放7日奖励。"
     }
 
 internal fun dailyDrawTicketsLabelFor(language: UiLanguage, each: Int): String =
     when (language) {
-        UiLanguage.Korean -> "형세 · 추천 수 1회권 ${each}장씩"
+        UiLanguage.Korean -> "형세 · 추천 수 ${each}장씩"
         UiLanguage.English -> "$each eval + $each top-move tickets"
-        UiLanguage.Japanese -> "形勢・推奨手チケット各${each}枚"
-        UiLanguage.ChineseSimplified -> "形势·推荐券各${each}张"
+        UiLanguage.Japanese -> "形勢・推奨手 各${each}枚"
+        UiLanguage.ChineseSimplified -> "形势·推荐 各${each}张"
     }
 
 /** 뽑은 결과 창의 제목. */

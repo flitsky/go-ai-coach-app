@@ -35,8 +35,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
@@ -52,7 +56,6 @@ import com.worksoc.goaicoach.application.dailydraw.DailyDrawPrizeKind
 import com.worksoc.goaicoach.application.dailydraw.DailyDrawResult
 import com.worksoc.goaicoach.application.dailydraw.DailyDrawTicketsEach
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawAvailability
-import com.worksoc.goaicoach.application.dailydraw.dailyDrawCharacterGrantable
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawCharacterTarget
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawOdds
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawPrizeCharacter
@@ -79,10 +82,11 @@ import com.worksoc.goaicoach.ui.l10n.dailyDrawCooldownDescriptionFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawNextInFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawResultTitleFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawShardLabelFor
-import com.worksoc.goaicoach.ui.l10n.dailyDrawSubstituteSuffixFor
+import com.worksoc.goaicoach.ui.l10n.dailyDrawSubstituteFootnoteFor
 import com.worksoc.goaicoach.ui.l10n.dailyDrawTicketsLabelFor
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.ownedCharacterSubstituteNoticeFor
+import com.worksoc.goaicoach.ui.l10n.unbreakable
 import java.util.Locale
 import kotlin.random.Random
 import kotlinx.coroutines.delay
@@ -96,7 +100,7 @@ import kotlinx.coroutines.launch
  * - **쿨타임**: 뽑은 때부터 24시간 — 지나간 만큼 차오르는 고리와 남은 시간(시:분:초, 1초마다). 눌리지 않는다.
  * - 차례(#289, 사용자 2026-10-24): 위에 **상품 그림 30% · 확률 70%**, 그 **아래에 뽑기 단추** · 쿨타임.
  * - **지금의 확률**을 상품마다 한 줄씩 늘 적는다(「(30%) 광고 스킵권」, 사용자 2026-10-23) — 90% 묶음은 줄 수 없는 상품이 빠지면 나머지의 비율이 바뀌므로
- *   지금 판정(`dailyDrawOdds`, 합 100)을 그대로 적는다. 조각 · 캐릭터에는 대상의 이름을 달고, 이미 가진 캐릭터에는 「→ 7일 단위 보상」을 붙인다(#289).
+ *   지금 판정(`dailyDrawOdds`, 합 100)을 그대로 적는다. 조각 · 캐릭터에는 대상의 이름을 달고, 줄 아래 한 줄로 「*이미 보유중일 경우 7일 단위 보상으로 대체 지급합니다.」(#289).
  *   확률을 감추지 않는 것은 스레드가 정했다(무작위 보상의 확률 공개 관행).
  * - 결과: 캐릭터를 얻었으면 기존 획득 축하 창(`BotCharacterUiState.enqueueAcquired`), 아니면 「뽑기 결과」 창 — 대체 지급이면 그 안내가 맨 위에 선다.
  *
@@ -142,8 +146,12 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
         // 위: 상품 그림 30% · 확률 70%(#289 — 사용자 2026-10-24), 아래: 뽑기 단추(사용자 2026-10-24: 아래로).
         val lines = oddsRows(strings, bots.collection, consumables)
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            PrizePile(lines.map { it.kind }, bots.collection, modifier = Modifier.weight(PileWidthShare))
-            OddsLines(lines, modifier = Modifier.weight(1f - PileWidthShare).padding(start = AppSpacing.Space8))
+            PrizePile(lines.flatten().map { it.kind }, bots.collection, modifier = Modifier.weight(PileWidthShare))
+            Column(modifier = Modifier.weight(1f - PileWidthShare).padding(start = AppSpacing.Space8), verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
+                OddsLines(lines)
+                // 가진 캐릭터를 줄마다 표시하지 않고 한 줄로 알린다(사용자 2026-10-24 — 그 전에는 줄마다 「→ 7일 단위 보상」).
+                Text(text = keepWordsWhole(dailyDrawSubstituteFootnoteFor(language), language), fontSize = AppTextSize.Text12, color = colors.secondary)
+            }
         }
         Box(modifier = Modifier.heightIn(min = DrawButtonMinHeight), contentAlignment = Alignment.Center) {
             when {
@@ -244,50 +252,66 @@ private fun CooldownLine(remainingMillis: Long) {
 
 /**
  * 지금의 확률 — 상품마다 (확률, 이름) 한 줄. `dailyDrawOdds`가 이미 합 100으로 주므로 그대로 적는다.
- * 차례는 사용자가 적은 대로 1회권 → 광고 스킵권 → 조각 → 광고 캐릭터 → 반상 → 천원(2026-10-23 · 10-24) — 뽑기의 칸 순서(`DailyDrawPrizeKind`)와는 따로다.
+ * 차례는 그림과 같다([OddsDisplayRows]) — 뽑기의 칸 순서(`DailyDrawPrizeKind`)와는 따로다.
  */
 private fun oddsRows(
     strings: UiStrings,
     collection: BotCollectionState,
     consumables: ConsumableUiState,
-): List<OddsLine> {
+): List<List<OddsLine>> {
     val language = strings.language
     val odds = dailyDrawOdds(consumables.inventory, collection)
     val targetName = dailyDrawCharacterTarget(collection)?.let(strings::botCharacterName).orEmpty()
-    return OddsDisplayOrder.mapNotNull { kind ->
-        val percent = odds[kind] ?: return@mapNotNull null
+    fun line(kind: DailyDrawPrizeKind): OddsLine? {
+        val percent = odds[kind] ?: return null
         val label = when (kind) {
             DailyDrawPrizeKind.Tickets -> dailyDrawTicketsLabelFor(language, DailyDrawTicketsEach)
             DailyDrawPrizeKind.AdSkipTicket -> strings.consumableRewardName(ConsumableCatalog.PremiumOnce)
             DailyDrawPrizeKind.CharacterShard -> dailyDrawShardLabelFor(language, targetName)
             DailyDrawPrizeKind.Character, DailyDrawPrizeKind.Day7Character, DailyDrawPrizeKind.Day28Character -> {
                 val name = dailyDrawPrizeCharacter(kind, collection)?.let(strings::botCharacterName) ?: dailyDrawAdCharacterLabelFor(language)
-                if (dailyDrawCharacterGrantable(kind, collection)) name else name + " " + dailyDrawSubstituteSuffixFor(language)
+                name
             }
         }
         // 반 폭이라 이름이 줄을 바꾼다 — 한국어는 어절 안에서 끊기지 않게(「1 / 회권」이 됐다).
-        OddsLine(kind, percent, keepWordsWhole(label, language))
+        return OddsLine(kind, percent, keepWordsWhole(label, language))
     }
+    return OddsDisplayRows.map { row -> row.mapNotNull(::line) }.filter { it.isNotEmpty() }
 }
 
 /** 확률 한 줄 — 어느 상품인지([kind])를 같이 들어 그림 층과 짝을 짓는다. */
 private data class OddsLine(val kind: DailyDrawPrizeKind, val percent: Int, val label: String)
 
 /**
- * 확률 줄들. 확률 칸은 두 자리 폭으로 고정한다 — 「(7%)」가 「(30%)」보다 좁아 이름이 줄마다 어긋났다(#289).
- * 숫자는 폭이 같아 「(00%)」를 투명하게 깔아 잰다. 이름이 길면 칸 안에서 줄을 바꾼다(반 폭).
+ * 확률 줄들 — 한 줄에 상품이 둘이면 「(2%) 수제자 반상, (1%) 관장 천원」처럼 잇는다(칸이 좁으면 두 줄).
+ * 확률 칸은 두 자리 폭으로 고정한다 — 「(7%)」가 「(30%)」보다 좁아 이름이 줄마다 어긋났다(#289). 숫자는 폭이 같아 「(00%)」를 투명하게 깔아 잰다.
  */
 @Composable
-private fun OddsLines(lines: List<OddsLine>, modifier: Modifier = Modifier) {
+private fun OddsLines(rows: List<List<OddsLine>>, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
+    val percentStyle = SpanStyle(fontWeight = FontWeight.SemiBold, color = colors.primary)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4)) {
-        lines.forEach { line ->
+        rows.forEach { row ->
+            val first = row.first()
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
                 Box(contentAlignment = Alignment.CenterEnd) {
                     Text(text = "(00%)", fontSize = AppTextSize.Text13, fontWeight = FontWeight.SemiBold, color = Color.Transparent)
-                    Text(text = "(${line.percent}%)", fontSize = AppTextSize.Text13, fontWeight = FontWeight.SemiBold, color = colors.primary)
+                    Text(text = "(${first.percent}%)", fontSize = AppTextSize.Text13, fontWeight = FontWeight.SemiBold, color = colors.primary)
                 }
-                Text(text = line.label, fontSize = AppTextSize.Text13, color = colors.onSurfaceVariant)
+                // 둘을 잇는 줄은 상품 하나를 통째로 묶어 「, 」 뒤에서만 줄을 바꾼다 — 「관장 / 천원」처럼 이름이 갈렸다.
+                val label = if (row.size == 1) {
+                    AnnotatedString(first.label)
+                } else {
+                    buildAnnotatedString {
+                        append(unbreakable(first.label))
+                        row.drop(1).forEach { line ->
+                            append(", ")
+                            withStyle(percentStyle) { append("(${line.percent}%)") }
+                            append("\u00A0" + unbreakable(line.label))
+                        }
+                    }
+                }
+                Text(text = label, fontSize = AppTextSize.Text13, color = colors.onSurfaceVariant)
             }
         }
     }
@@ -344,13 +368,13 @@ private const val PileWidthShare = 0.3f
 private val PileAvatarSize = 36.dp
 private val PileGlyphSize = 24.dp
 
-private val OddsDisplayOrder = listOf(
-    DailyDrawPrizeKind.Tickets,
-    DailyDrawPrizeKind.AdSkipTicket,
-    DailyDrawPrizeKind.CharacterShard,
-    DailyDrawPrizeKind.Character,
-    DailyDrawPrizeKind.Day7Character,
-    DailyDrawPrizeKind.Day28Character,
+/** 확률 줄의 차례 — 그림의 차례와 같다(사용자 2026-10-24): 출석 캐릭터 둘(한 줄) → 광고 캐릭터 → 조각 → 광고 스킵권 → 1회권. */
+private val OddsDisplayRows: List<List<DailyDrawPrizeKind>> = listOf(
+    listOf(DailyDrawPrizeKind.Day7Character, DailyDrawPrizeKind.Day28Character),
+    listOf(DailyDrawPrizeKind.Character),
+    listOf(DailyDrawPrizeKind.CharacterShard),
+    listOf(DailyDrawPrizeKind.AdSkipTicket),
+    listOf(DailyDrawPrizeKind.Tickets),
 )
 
 /** 결과 창의 본문. 캐릭터를 얻은 경우는 이 창이 아니라 획득 축하 창이 뜬다. */
