@@ -477,7 +477,8 @@ internal fun ReplayControls(
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space6),
         ) {
             ActionButton(
-                label = "⏮",
+                // `\uFE0E`(글자 모양 선택자) — iOS는 이 둘을 컬러 이모지로 그린다. 안드로이드는 원래 글자 모양이라 그대로다(#294).
+                label = "⏮\uFE0E",
                 enabled = moveNumber > 0,
                 onClick = { onMoveNumberChange(0) },
                 modifier = Modifier.weight(1f),
@@ -508,7 +509,7 @@ internal fun ReplayControls(
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
-                label = "⏭",
+                label = "⏭\uFE0E",
                 enabled = moveNumber < lastMoveNumber,
                 onClick = { onMoveNumberChange(lastMoveNumber) },
                 modifier = Modifier.weight(1f),

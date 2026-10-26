@@ -49,6 +49,9 @@ import platform.posix.write
 object IosEngineCoreApiFactory {
     fun inProcess(config: KataGoProcessConfig, workDirectory: String): EngineCoreApi =
         KataGoProcessEngineAdapter(runtime = InProcessKataGoRuntime(config, workDirectory))
+
+    /** 모델이 없을 때의 엔진 — 안드로이드 `EngineCoreApiFactory.stub()`과 같은 스텁(「엔진 아직」 흐름을 탄다). */
+    fun stub(): EngineCoreApi = StubEngineAdapter()
 }
 
 /**

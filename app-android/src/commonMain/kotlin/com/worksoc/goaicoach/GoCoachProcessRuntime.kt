@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach
 
-import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,19 +9,14 @@ import com.worksoc.goaicoach.application.engine.EngineSessionBackend
 import com.worksoc.goaicoach.application.engine.EngineSessionCapabilities
 import com.worksoc.goaicoach.application.engine.EngineSessionClient
 import com.worksoc.goaicoach.application.engine.LocalEngineSessionClient
-import com.worksoc.goaicoach.application.engine.RemoteEngineCandidate
 import com.worksoc.goaicoach.engine.DeferredEngineCoreApi
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
-import com.worksoc.goaicoach.engine.createEngineBootstrap
-import com.worksoc.goaicoach.engine.createRemoteEngineSessionClient
 import com.worksoc.goaicoach.engine.identity
-import com.worksoc.goaicoach.persistence.DiagnosticEventLog
-import com.worksoc.goaicoach.persistence.JsonPositionAnalysisCacheStore
+import com.worksoc.goaicoach.platform.appIoDispatcher
 import com.worksoc.goaicoach.shared.enginecontract.EngineCoreApi
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
-import java.io.File
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
@@ -51,7 +45,8 @@ import kotlinx.coroutines.withContext
  * 액티비티가 끝날 때 멈추는 안은 뒤로 미뤘다(틈 없는 종료에 shared 인터페이스 변경과 참조 계수가 필요하다 — #111과 함께).
  *
  * ## 생성자가 이음새다
- * JVM 테스트가 Application 없이 만들 수 있게 파일·BuildConfig·디스패처를 받는다. 앱은 [forApplication]으로 만든다.
+ * JVM 테스트가 Application 없이 만들 수 있게 파일·BuildConfig·디스패처를 받는다. 앱은 `forApplication`(안드로이드 —
+ * `GoCoachProcessRuntimeAndroid.kt`) · `iosProcessRuntime()`(iOS — `IosProcessRuntime.kt`)으로 만든다. 본체가 공용인 것은 백로그 #294다.
  * 생성자에는 부수효과가 없다 — 부트스트랩은 [startEngineBootstrap]이 시작한다.
  */
 internal class GoCoachProcessRuntime(
@@ -59,10 +54,15 @@ internal class GoCoachProcessRuntime(
     positionAnalysisCacheStore: PositionAnalysisCacheStore,
     /** 블로킹 IO 또는 PAD 에셋 팩 다운로드 대기 — [ioDispatcher]에서 부른다. */
     private val createBootstrap: suspend () -> EngineBootstrap,
-    /** 원격 엔진 주소. `null`이면 원격을 쓰지 않는다 — 값은 debug 빌드에 주소가 있을 때만 온다([forApplication]). */
+    /** 원격 엔진 주소. `null`이면 원격을 쓰지 않는다 — 값은 debug 빌드에 주소가 있을 때만 온다(`forApplication`). */
     private val remoteEngineUrl: String?,
+    /**
+     * [remoteEngineUrl]로 원격 세션 클라이언트를 만드는 길 — 원격 HTTP 어댑터는 안드로이드 쪽에만 있다(#294). 후보를 못 고르면 `null`이고
+     * 그때는 로컬로 폴백한다. 주소가 `null`이면 부르지 않는다.
+     */
+    private val createRemoteClient: (url: String, currentSessionGeneration: () -> Long) -> EngineSessionClient? = { _, _ -> null },
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val ioDispatcher: CoroutineDispatcher = appIoDispatcher,
 ) {
     // 엔진 호출은 이 `Deferred`가 완성될 때까지 `DeferredEngineCoreApi` 안에서 기다린다.
     private val coreApiDeferred = CompletableDeferred<EngineCoreApi>()
@@ -81,12 +81,7 @@ internal class GoCoachProcessRuntime(
     // 꺼내 **평범한 값**으로 만들었다.
     private val remoteClient: EngineSessionClient? =
         if (remoteEngineUrl != null) {
-            createRemoteEngineSessionClient(
-                candidates = listOf(RemoteEngineCandidate(endpointUrl = remoteEngineUrl, enabled = true)),
-                currentSessionGeneration = sessionGenerationRelay::current,
-                positionAnalysisCacheStore = positionAnalysisCacheStore,
-                diagnosticEventLog = diagnosticEventLog,
-            )
+            createRemoteClient(remoteEngineUrl, sessionGenerationRelay::current)
         } else {
             null
         }
@@ -155,25 +150,6 @@ internal class GoCoachProcessRuntime(
         }
     }
 
-    companion object {
-        fun forApplication(app: Application): GoCoachProcessRuntime {
-            // 개발용 원격 엔진 스파이크(`REMOTE_ENGINE_AND_LAYERING.md` Stage E-3).
-            // BuildConfig.REMOTE_ENGINE_URL은 debug 빌드에서만, local.properties의
-            // debug.remoteEngineUrl 키가 있을 때만 비어있지 않다(app-android/build.gradle.kts 참고)
-            // — playInternal/release는 항상 빈 문자열로 고정돼 있어 이 분기를 절대 타지 않는다.
-            val remoteEngineUrl = BuildConfig.REMOTE_ENGINE_URL
-            val remoteEngineRequested = BuildConfig.DEBUG && remoteEngineUrl.isNotBlank()
-            return GoCoachProcessRuntime(
-                diagnosticEventLog = DiagnosticEventLog(File(app.filesDir, DiagnosticEventLog.FileName)),
-                positionAnalysisCacheStore = JsonPositionAnalysisCacheStore(app),
-                createBootstrap = {
-                    createEngineBootstrap(
-                        context = app,
-                        nativeLibraryDir = app.applicationInfo.nativeLibraryDir,
-                    )
-                },
-                remoteEngineUrl = remoteEngineUrl.takeIf { remoteEngineRequested },
-            )
-        }
-    }
+    /** 앱이 만드는 길은 플랫폼 쪽 확장이다 — 안드로이드 `forApplication`(`GoCoachProcessRuntimeAndroid.kt`). */
+    companion object
 }

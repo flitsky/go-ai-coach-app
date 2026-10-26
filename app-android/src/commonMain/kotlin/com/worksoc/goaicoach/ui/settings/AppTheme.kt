@@ -51,7 +51,7 @@ private fun rememberLocalHour(): State<Int> = produceState(localTimeOfDay().hour
 
 /**
  * 상태 표시줄 · 내비게이션 바의 아이콘 색과 창 바탕을 화면 모드에 맞춘다(백로그 #294 — S23). 안드로이드는 `WindowCompat` 코드 그대로,
- * iOS는 아직 아무 일도 하지 않는다(상태 표시줄 모양은 호스트 화면 컨트롤러의 몫 — W23).
+ * iOS는 상태 표시줄 글자 색만 맞춘다(창의 루트 화면 컨트롤러가 정한다 — `SystemBarsIos.kt`).
  */
 @Composable
 internal expect fun ApplySystemBarsAppearance(dark: Boolean, windowBackground: Color)

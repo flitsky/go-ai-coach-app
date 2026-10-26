@@ -407,6 +407,8 @@ class LayeringContractTest {
             "ReleaseResetCoordinator.kt",
             // #110: 엔진 묶음의 프로세스 수명 소유자 — MainActivity의 엔진 조립을 옮겨 왔다. 조립만 한다.
             "GoCoachProcessRuntime.kt",
+            // #294: 위 런타임의 안드로이드 재료(파일 로그 · 캐시 · PAD 부트스트랩 · 원격 엔진)를 꽂는 자리.
+            "GoCoachProcessRuntimeAndroid.kt",
             // #294 S1: 화면이 쓰는 플랫폼 묶음 — 이미 있던 어댑터를 만들어 묶기만 한다(공용 화면은 LocalAppPlatform으로 읽는다).
             "AndroidAppPlatform.kt",
             // #294 S12: 화면의 결제 · 광고 묶음 — 옛 전역 함수(`PremiumPurchaseGlue.kt`)에 화면의 문맥을 넘기기만 한다.

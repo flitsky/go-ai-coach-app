@@ -75,6 +75,17 @@ class BackgroundMusicContractTest {
         assertEquals("res/raw에 실은 곡과 크레딧(bgm-*.json)이 다르다 — CC BY 4.0은 저작자 표시가 조건이다", shipped, credited)
     }
 
+    /** iOS(백로그 #294)는 같은 곡을 이름으로 튼다 — 곡을 더할 때 iOS 목록이 빠지면 iOS만 조용히 한 곡 적게 튼다. */
+    @Test
+    fun iosPlaysTheSameTracksInTheSameOrder() {
+        val android = Regex("""R\.raw\.(bgm_\w+)""").findAll(RepoPaths.platformFile("BackgroundMusicPlayer.kt").readContractSource())
+            .map { it.groupValues[1] }.toList()
+        val ios = Regex(""""(bgm_\w+)"""").findAll(
+            RepoPaths.root.resolve("app-android/src/iosMain/kotlin/com/worksoc/goaicoach/ios/IosBackgroundMusic.kt").readContractSource(),
+        ).map { it.groupValues[1] }.toList()
+        assertEquals("iOS 배경음악 목록이 안드로이드와 다르다(곡 · 차례)", android, ios)
+    }
+
     @Test
     fun theSoundSectionIsFilledInEveryLanguage() {
         UiLanguage.entries.forEach { language ->

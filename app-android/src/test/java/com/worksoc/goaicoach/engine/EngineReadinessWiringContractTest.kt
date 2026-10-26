@@ -22,7 +22,7 @@ class EngineReadinessWiringContractTest {
     private val mainActivity = codeOnly("src/main/java/com/worksoc/goaicoach/MainActivity.kt")
 
     // 엔진 조립은 MainActivity에서 프로세스 수명 소유자로 옮겨 갔다(refactor backlog #110) — 조립 계약은 그 파일을 잰다.
-    private val processRuntime = codeOnly("src/main/java/com/worksoc/goaicoach/GoCoachProcessRuntime.kt")
+    private val processRuntime = codeOnly("src/commonMain/kotlin/com/worksoc/goaicoach/GoCoachProcessRuntime.kt")
     private val goCoachApp = codeOnly(RepoPaths.uiFile("GoCoachApp.kt").path)
     private val failureNotice =
         codeOnly(RepoPaths.uiFile("EngineUnavailableNoticeDialog.kt").path)

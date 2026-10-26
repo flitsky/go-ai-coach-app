@@ -211,9 +211,15 @@ ios-ensure-engine:
 ios-build: ios-ensure-engine
 	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Debug -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath $(IOS_DERIVED) build
 
+# 앱 전체(#294). 엔진 모델 · 설정은 ios-engine-probe와 같은 맥의 파일을 환경 변수로 넘긴다(모델을 앱에 싣는 방식은 #293 남은 일 —
+# 넘기지 않으면 앱은 스텁 엔진으로 뜬다: `IosProcessRuntime.kt`).
 ios-run: ios-build
 	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
 	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
+	SIMCTL_CHILD_GOCOACH_KATAGO_MODEL="$(FRIEND_MODEL_PATH)" \
+	SIMCTL_CHILD_GOCOACH_KATAGO_HUMAN_MODEL="$(FRIEND_HUMAN_MODEL_PATH)" \
+	SIMCTL_CHILD_GOCOACH_KATAGO_CONFIG="$(FRIEND_CONFIG_PATH)" \
+	SIMCTL_CHILD_GOCOACH_KATAGO_ANALYSIS_CONFIG="$(FRIEND_ANALYSIS_CONFIG_PATH)" \
 	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
 # 이식 카탈로그의 한 페이지를 곧바로 연다(백로그 #294 — `app-android/.../ios/PortCatalog.kt`) — `make ios-catalog PAGE=<id>`.
