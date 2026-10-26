@@ -134,8 +134,8 @@ Seam IDs (Sn) refer to section 3.
     - Add `app-android/src/commonMain/kotlin` to `KMP_COMMON_MAIN_KOTLIN` and `iosCompiledCommonMainKotlinRoots`, so the JVM-API ban now covers it.
     - Add the new roots to `productionSourceRoots`.
   - Register `com.worksoc.goaicoach.ios` in ContractSymbols as the iOS composition root (allowed to import `ui.*`, outside `UI_LAYERS`).
-  - Add `scripts/android-class-list.sh`.
-  - Add the iOS port catalog: `ios/catalog/PortCatalog.kt` (iosMain), started with `SIMCTL_CHILD_GOCOACH_PORT_CATALOG=1` through a `make ios-catalog` target. Delete `SkeletonApp`.
+  - Add scripts/android-class-list.sh(새 파일).
+  - Add the iOS port catalog: ios/catalog/PortCatalog.kt(새 파일) (iosMain), started with `SIMCTL_CHILD_GOCOACH_PORT_CATALOG=1` through a `make ios-catalog` target. Delete `SkeletonApp`.
   - Android: `make test`.
   - iOS: the catalog opens (empty list).
 
@@ -157,8 +157,8 @@ Seam IDs (Sn) refer to section 3.
   - `DeferredEngineCoreApi` and `SessionGenerationRelay`: change to `kotlin.concurrent.Volatile`.
   - `EngineDownloadTracker`: the Android PAD source records a classified store-install failure. Today's tracker calls `isStoreInstallationErrorCode`, which depends on Play Core.
   - `UpdateBeforeEngineDownload`: use S15 `engineSetupLog`.
-  - Split `platform/PlayAppUpdate.kt` into a common `platform/AppUpdateCheck.kt` (holding `AppUpdateStatus` and `AppUpdateCheck`, same FQNs) and an Android-only remainder.
-  - Split `BackgroundMusicPlayer.kt` into a common `platform/BackgroundMusicDecision.kt` (inputs, command, next track). The `R.raw` list stays in the original file.
+  - Split `platform/PlayAppUpdate.kt` into a common platform/AppUpdateCheck.kt(새 파일) (holding `AppUpdateStatus` and `AppUpdateCheck`, same FQNs) and an Android-only remainder.
+  - Split `BackgroundMusicPlayer.kt` into a common platform/BackgroundMusicDecision.kt(새 파일) (inputs, command, next track). The `R.raw` list stays in the original file.
   - Seams: S15 (`engineSetupLog`).
   - Android:
     - Gate.
@@ -490,7 +490,7 @@ No seam is needed for: URLs (`LocalUriHandler`), clipboard (the existing `Clipbo
 ## 4. Resources and Gradle
 
 **Resources.** Android packaging stays identical, so composeResources are not adopted yet.
-- **16 images:** `res/drawable*` stay where they are and Android keeps `R.drawable` (S9). A new Xcode run-script phase calls `scripts/ios-bundle-resources.sh`, which keeps one explicit list. It copies:
+- **16 images:** `res/drawable*` stay where they are and Android keeps `R.drawable` (S9). A new Xcode run-script phase calls scripts/ios-bundle-resources.sh(새 파일), which keeps one explicit list. It copies:
   - the 8 webp, 3 jpg and 5 vector XML images from `app-android/src/main/res/drawable{,-nodpi}` into `GoCoach.app/appres/`;
   - `assets/game-records/*` (66 files, 2.86 MB) and `assets/reference_games/*.json` into `appassets/`;
   - `src/friend/assets/katago/*.cfg` when present (gitignored; `make prepare-friend-assets`).
