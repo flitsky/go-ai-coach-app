@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.preferences.migrateSettingsSchema
 import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.PremiumState
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureLastSetup
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
@@ -96,6 +97,11 @@ internal class KvRankMeasureStore(factory: KeyValueStoreFactory) : RankMeasureSt
     override fun load(): RankMeasureState = kv.getString("rank_measure_state")?.let(RankMeasureCodec::decode) ?: RankMeasureState()
 
     override fun save(state: RankMeasureState) = kv.putString("rank_measure_state", RankMeasureCodec.encode(state))
+
+    override fun loadLastSetup(): RankMeasureLastSetup =
+        kv.getString("rank_measure_last_setup")?.let(RankMeasureLastSetupCodec::decode) ?: RankMeasureLastSetup()
+
+    override fun saveLastSetup(setup: RankMeasureLastSetup) = kv.putString("rank_measure_last_setup", RankMeasureLastSetupCodec.encode(setup))
 }
 
 internal class KvUserPreferencesStore(factory: KeyValueStoreFactory) : UserPreferencesStorePort {

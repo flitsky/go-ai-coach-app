@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.home
 
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.DialogProperties
@@ -38,6 +35,7 @@ import com.worksoc.goaicoach.application.orchestration.GameSettingsController
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureAdjustment
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureChange
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureLastSetup
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankPromotionCap
 import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
@@ -54,9 +52,7 @@ import com.worksoc.goaicoach.application.rankmeasure.started
 import com.worksoc.goaicoach.application.rankmeasure.withRankForNextMeasureGame
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
-import com.worksoc.goaicoach.persistence.GameHistoryStore
-import com.worksoc.goaicoach.persistence.RankMeasureLastSetup
-import com.worksoc.goaicoach.persistence.RankMeasureStore
+import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.DefaultKomi
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -65,6 +61,7 @@ import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonMinHeight
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
@@ -147,10 +144,10 @@ internal val LocalRankMeasureUiState = staticCompositionLocalOf { RankMeasureUiS
 
 @Composable
 internal fun buildRankMeasureUiState(
-    context: Context,
     isAvailable: Boolean,
 ): RankMeasureUiState {
-    val store = remember(context) { RankMeasureStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.rankMeasure }
     var state by remember(store) { mutableStateOf(store.load()) }
     var pendingChange by remember { mutableStateOf<RankMeasureChange?>(null) }
     var lastSetup by remember(store) { mutableStateOf(store.loadLastSetup()) }
@@ -169,13 +166,13 @@ internal fun buildRankMeasureUiState(
             state = next
         },
         countRecordedGame = { gameState ->
-            val recorded = runEngineIo { GameHistoryStore(context).findRecordedGame(gameState.moves) }
+            val recorded = runEngineIo { platform.stores.gameHistory.findRecordedGame(gameState.moves) }
             recorded?.let { (entry, replay) ->
                 runRankMeasureAdjustment(entry, store, replay)?.let(::adopt)
             }
         },
         countLatestRecordedGame = {
-            val history = GameHistoryStore(context)
+            val history = platform.stores.gameHistory
             history.loadAll().lastOrNull()?.let { entry -> runRankMeasureAdjustment(entry, store, history.loadReplay(entry.id))?.let(::adopt) }
         },
         pendingChange = pendingChange,
@@ -235,7 +232,7 @@ internal fun beginRankMeasureGame(
  * 한다 — 화면을 그릴 때 잡아 둔 값을 넘기면, 방금 설정 창에서 고른 진영·판 크기·시작 기력을 옛 값으로 되돌린다.
  */
 internal fun prepareNextRankMeasureGame(
-    context: Context,
+    notice: AppNotice,
     language: UiLanguage,
     playerSetup: PlayerSetup,
     boardSize: BoardSize,
@@ -246,7 +243,7 @@ internal fun prepareNextRankMeasureGame(
     val nextBoardSize = rankMeasureBoardSizeFor(state.rank, boardSize)
     if (nextBoardSize != boardSize) {
         settings.changeBoardSize(nextBoardSize)
-        Toast.makeText(context, rankMeasureBoardChangedFor(language, state.rank, nextBoardSize), Toast.LENGTH_LONG).show()
+        notice.show(rankMeasureBoardChangedFor(language, state.rank, nextBoardSize), long = true)
     }
     playerSetup.withRankForNextMeasureGame(state).takeIf { it != playerSetup }?.let(settings::changePlayerSetup)
 }

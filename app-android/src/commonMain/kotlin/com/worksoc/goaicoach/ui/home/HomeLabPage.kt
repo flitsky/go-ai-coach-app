@@ -31,20 +31,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.utcDayIndex
+import com.worksoc.goaicoach.application.dailyquote.DailyQuoteStorePort
 import com.worksoc.goaicoach.application.dailyquote.pickDailyQuote
 import com.worksoc.goaicoach.application.premium.state.FeatureId
-import com.worksoc.goaicoach.persistence.DailyQuoteStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.ui.designsystem.AppMotion
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.DailyQuote
 import com.worksoc.goaicoach.ui.l10n.DailyQuoteCatalog
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -90,7 +91,8 @@ internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modi
         DailyDrawCard(modifier = Modifier.padding(horizontal = AppSpacing.Space16))
         Spacer(modifier = Modifier.height(AppSpacing.Space4))
         // 바둑판 사진 분석은 오른쪽 아래의 반 폭 타일 그대로다(사용자 2026-10-22) — 왼쪽은 비운다.
-        Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+        // 사진 분석이 없는 플랫폼(iOS 첫 판 — U-84)에서는 타일을 그리지 않는다.
+        if (LocalAppPlatform.current.boardScan != null) Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
             Spacer(modifier = Modifier.weight(1f))
             MenuTile(
                 tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() },
@@ -110,7 +112,7 @@ private class QuoteBookEntry(val quote: DailyQuote, val isToday: Boolean)
  * ⚠️ **날짜를 붙이지 않는다**(사용자 2026-10-22) — 진행도는 본 명언만 적고 본 날은 적지 않아, 앱을 열지 않은 날이 있으면 지난 명언의 날짜를 맞출 수 없다.
  *   차례(지난 것 · 오늘 · 다음 것)는 언제나 맞다. 오늘의 것에만 「오늘」을 단다.
  */
-private fun quoteBookOf(store: DailyQuoteStore, today: Long): List<QuoteBookEntry> {
+private fun quoteBookOf(store: DailyQuoteStorePort, today: Long): List<QuoteBookEntry> {
     val pick = pickDailyQuote(DailyQuoteCatalog.quotes.map { it.id }, store.load(), today, Random.Default)
     if (pick.changed) store.save(pick.progress)
     val todayId = pick.quoteId ?: return emptyList()
@@ -141,11 +143,11 @@ private fun quoteBookOf(store: DailyQuoteStore, today: Long): List<QuoteBookEntr
  */
 @Composable
 private fun QuoteBookCarousel() {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val language = LocalUiStrings.current.language
     val colors = MaterialTheme.colorScheme
     val density = LocalDensity.current
-    val entries = remember(context) { quoteBookOf(DailyQuoteStore(context), utcDayIndex(System.currentTimeMillis())) }
+    val entries = remember(platform) { quoteBookOf(platform.stores.dailyQuote, utcDayIndex(currentEpochMillis())) }
     if (entries.isEmpty()) return
     val todayIndex = entries.indexOfFirst { it.isToday }.coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = todayIndex) { entries.size }

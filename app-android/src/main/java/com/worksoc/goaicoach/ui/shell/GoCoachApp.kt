@@ -626,7 +626,7 @@ private fun GoCoachScreen(
     )
     cancelUndoSync = controllers.undoController::cancelPendingSync
     // 승급 대국(백로그 #219) — 내 기력과 연승·연패. 본체는 ui/home/RankMeasureUiState.kt에 있다(상태 훅 예산).
-    val rankMeasureUiState = buildRankMeasureUiState(context, isAvailable = engineClient.capabilities.supportsHumanNetwork)
+    val rankMeasureUiState = buildRankMeasureUiState(isAvailable = engineClient.capabilities.supportsHumanNetwork)
     exitToHome = {
         controllers.autoAiTurnController.cancelInFlightTurn() // 나가면 AI 차례는 물음 없이 멈춘다(#74)
         isGameEnded = true
@@ -649,7 +649,7 @@ private fun GoCoachScreen(
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = {
                     // 승급 대국의 「재 대국」은 상대를 지금의 내 기력으로, 판 크기를 그 기력이 둘 수 있는 것으로 맞추고 시작한다(#219).
-                    prepareNextRankMeasureGame(context, selectedLanguage, settingsState.playerSetup, settingsState.boardSize, rankMeasureUiState.latestState(), controllers.settingsController)
+                    prepareNextRankMeasureGame(AndroidUserNoticePort(context), selectedLanguage, settingsState.playerSetup, settingsState.boardSize, rankMeasureUiState.latestState(), controllers.settingsController)
                     sessionStore.clear()
                     savedSessionUiState = savedSessionUiState.dismiss()
                     controllers.newGameController::startConfiguredGame.invoke()

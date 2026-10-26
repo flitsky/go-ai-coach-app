@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureLastSetup
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup

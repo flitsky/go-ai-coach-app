@@ -22,14 +22,24 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.kv.iosAppStores
 import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.AppUpdateCheck
+import com.worksoc.goaicoach.platform.AppUpdateStatus
+import com.worksoc.goaicoach.platform.BoardScanEntry
+import com.worksoc.goaicoach.platform.DebugArmFiles
 import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
+import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSSearchPathForDirectoriesInDomains
+import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 import platform.UIKit.UINotificationFeedbackGenerator
@@ -42,6 +52,23 @@ internal class IosAppPlatform : AppPlatform {
     override val clipboard: ClipboardPort = IosClipboard()
     override val stores: AppStores = iosAppStores
     override val haptics: PlayHapticFeedback = IosPlayHaptics
+
+    // App Store의 새 버전 조회는 등록 뒤(#298) — 그때까지 「모른다」로 답한다(설정은 스토어 링크로 폴백, 엔진 받기는 기다리지 않는다).
+    override val appUpdate = AppUpdateCheck { AppUpdateStatus.Unknown }
+
+    // 사진 분석은 iOS 첫 판에 싣지 않는다(U-84) — 홈의 카메라 단추 · 실험실 타일이 감춰진다.
+    override val boardScan: BoardScanEntry? = null
+
+    override val debugArmFiles = DebugArmFiles { name -> isDebugBuild && consumeDocumentsFile(name) }
+}
+
+/** 개발 빌드의 무장 파일 — 앱의 Documents 폴더(`xcrun simctl get_app_container booted <번들> data`/Documents)에 둔다. */
+@OptIn(ExperimentalForeignApi::class)
+private fun consumeDocumentsFile(name: String): Boolean {
+    val documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true).firstOrNull() as? String ?: return false
+    val path = "$documents/$name"
+    val manager = NSFileManager.defaultManager
+    return manager.fileExistsAtPath(path) && manager.removeItemAtPath(path, error = null)
 }
 
 /** 착수 진동(S10) — 돌을 놓으면 묵직한 한 번, 놓을 수 없으면 경고 알림(짧게 두 번 떨린다). */

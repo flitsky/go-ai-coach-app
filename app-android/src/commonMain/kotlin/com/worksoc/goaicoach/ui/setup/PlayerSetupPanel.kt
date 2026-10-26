@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.setup
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,6 +49,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.SetupDropdown
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.botCharacterStrengthFor
@@ -248,7 +247,7 @@ private fun PlayerSetupSideRow(
             // 살아남는 것이 계측으로 확인됐다(`panel-dispose`가 한 번도 찍히지 않는다).
             var showPicker by remember { mutableStateOf(false) }
             val bots = LocalBotCharacterUiState.current
-            val context = LocalContext.current
+            val platform = LocalAppPlatform.current
 
             // 저장된 레벨이 획득하지 않은 캐릭터를 가리키면 여기서 낮춘다(#22). 획득 여부는
             // 그동안 픽커에서 **새로 고를 때만** 강제돼서, 저장된 값이 잠긴 캐릭터를 가리키면
@@ -280,11 +279,7 @@ private fun PlayerSetupSideRow(
                 repeat(BotLevelClampRetryCount) {
                     val target = latestClamp
                     if (target == null) {
-                        Toast.makeText(
-                            context,
-                            strings.botLevelClampedMessage(initial.from, initial.to),
-                            Toast.LENGTH_LONG,
-                        ).show()
+                        platform.notice.show(strings.botLevelClampedMessage(initial.from, initial.to), long = true)
                         return@LaunchedEffect
                     }
                     onSideChange(latestSide.copy(playLevel = target.playLevel))

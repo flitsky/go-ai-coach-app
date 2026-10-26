@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.study
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +33,7 @@ import com.worksoc.goaicoach.shared.content.studyLessonsFor
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.studyCategoryTitleFor
@@ -82,7 +82,7 @@ internal fun StudyLessonTrackScreen(
         return
     }
 
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     Column(
         modifier = modifier
@@ -141,7 +141,7 @@ private fun StudyLessonScreen(
     // 살아 있으므로, 키가 없으면 새 단원이 **이전 단원의 마지막 장**에서 열린다.
     var stepIndex by remember(lessonId) { mutableIntStateOf(0) }
 
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     val step = lesson.steps[stepIndex]
     val state = states[stepIndex]

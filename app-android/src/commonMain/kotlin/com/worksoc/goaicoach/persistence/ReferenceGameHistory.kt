@@ -1,8 +1,6 @@
 package com.worksoc.goaicoach.persistence
 
-import android.content.Context
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
-import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
@@ -27,8 +25,8 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
  */
 const val ReferenceGameHistoryId = "reference-handicap2-top-tier-ai"
 
-private const val ReferenceGameAssetPath = "reference_games/handicap2_top_tier_ai.json"
-private val ReferenceGameBoardSize = BoardSize(13)
+internal const val ReferenceGameAssetPath = "reference_games/handicap2_top_tier_ai.json"
+internal val ReferenceGameBoardSize = BoardSize(13)
 
 fun referenceGameHistoryEntry(): GameHistoryEntry =
     GameHistoryEntry(
@@ -59,8 +57,3 @@ fun referenceGameHistoryEntry(): GameHistoryEntry =
         // 이 판별은 `GameHistoryScreen.kt`가 `entry.id == ReferenceGameHistoryId`로 한다.
         note = "사범 꼬북이 관장과 2점 접바둑을 두었으나 0.5집 석패한 기록입니다.",
     )
-
-fun loadReferenceGameReplay(context: Context): GameReplayData? =
-    runCatching {
-        context.assets.open(ReferenceGameAssetPath).bufferedReader().use { it.readText() }
-    }.getOrNull()?.let { raw -> GameReplayCodec.decode(raw, ReferenceGameBoardSize) }

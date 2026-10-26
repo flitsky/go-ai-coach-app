@@ -26,10 +26,16 @@ import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.persistence.WhatsNewStore
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
+import com.worksoc.goaicoach.platform.AppUpdateCheck
+import com.worksoc.goaicoach.platform.BoardScanEntry
+import com.worksoc.goaicoach.platform.DebugArmFiles
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.platform.PlayHaptics
+import com.worksoc.goaicoach.platform.processAppUpdateCheck
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
+import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
+import java.io.File
 
 /**
  * 안드로이드의 [AppPlatform](백로그 #294 — 이식 계획 S1) — 프로세스에 하나(`GoAiCoachApplication.appPlatform`), `MainActivity`가
@@ -45,6 +51,14 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
 
     // 판이 오늘처럼 `remember`로 하나 만든다 — 읽을 때마다 새로(진동기 서비스를 잡는 일은 생성자에서 한 번).
     override val haptics: PlayHapticFeedback get() = PlayHaptics(appContext)
+
+    override val appUpdate: AppUpdateCheck get() = processAppUpdateCheck(appContext)
+
+    override val boardScan: BoardScanEntry = object : BoardScanEntry {
+        override fun hasPendingSharedPhoto(): Boolean = SharedBoardPhotoInbox.hasPhoto(appContext)
+    }
+
+    override val debugArmFiles = DebugArmFiles { name -> BuildConfig.DEBUG && File(appContext.filesDir, name).let { it.isFile && it.delete() } }
 }
 
 /**

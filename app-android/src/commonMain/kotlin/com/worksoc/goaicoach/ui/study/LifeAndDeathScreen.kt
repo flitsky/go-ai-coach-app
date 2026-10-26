@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.study
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,11 +25,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import com.worksoc.goaicoach.persistence.LifeAndDeathProgressStore
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.content.LifeAndDeathPhase
 import com.worksoc.goaicoach.shared.content.LifeAndDeathSection
@@ -42,6 +39,8 @@ import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
@@ -84,8 +83,8 @@ internal fun LifeAndDeathTrackScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
-    val store = remember(context) { LifeAndDeathProgressStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.lifeAndDeathProgress }
     // 푼 기록은 이 화면이 들고, 문제 화면은 풀 때마다 저장소가 돌려준 집합으로 갈아 끼운다(함정 13 — 저장소만 고치면 목록의 숫자가 낡는다).
     var solved by remember { mutableStateOf(store.solved()) }
     var opened by remember { mutableStateOf<OpenedProblem?>(null) }
@@ -105,7 +104,7 @@ internal fun LifeAndDeathTrackScreen(
         return
     }
 
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     Column(
         modifier = modifier
@@ -207,7 +206,7 @@ private fun LifeAndDeathProblemScreen(
     var answerStep by remember(problem.id) { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     LaunchedEffect(problem.id) {
         withContext(Dispatchers.Default) { session.answerLine() }

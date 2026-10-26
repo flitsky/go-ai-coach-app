@@ -26,21 +26,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.guide.whatsNewPending
+import com.worksoc.goaicoach.application.preferences.WhatsNewStorePort
 import com.worksoc.goaicoach.engine.EngineDownloadStatus
 import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
-import com.worksoc.goaicoach.persistence.WhatsNewStore
 import com.worksoc.goaicoach.platform.AppUpdateStatus
-import com.worksoc.goaicoach.platform.openStoreListing
-import com.worksoc.goaicoach.platform.processAppUpdateCheck
+import com.worksoc.goaicoach.platform.appBuildInfo
+import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.rememberStoreListingLauncher
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
 import com.worksoc.goaicoach.ui.l10n.WhatsNewCatalog
@@ -49,7 +49,6 @@ import com.worksoc.goaicoach.ui.l10n.appUpdateAvailableLabelFor
 import com.worksoc.goaicoach.ui.l10n.appUpdateShortActionLabelFor
 import com.worksoc.goaicoach.ui.l10n.whatsNewHomeLineFor
 import com.worksoc.goaicoach.ui.l10n.whatsNewOpenFor
-import java.io.File
 
 /** 홈 칩 줄 아래 한 줄 슬롯에 무엇을 그릴지(#248 → #255 → #257 → #273). */
 internal enum class HomeTopNoticeKind { None, EngineDownload, WhatsNew, AppUpdate, DailyQuote }
@@ -85,18 +84,17 @@ internal fun homeTopNoticeOf(
  * (다음 업데이트부터 그 사이의 묶음이 뜬다). 디버그 빌드는 `files/debug-whats-new-preview`가 있으면 한 번(지우고) 가장 새 묶음을 띄운다 —
  * 개발 빌드의 versionCode는 아직 그 묶음보다 낮아 에뮬레이터로 볼 길이 이것뿐이다.
  */
-internal fun initialWhatsNewPending(store: WhatsNewStore, filesDir: File): List<WhatsNewRelease> {
-    if (BuildConfig.DEBUG) {
-        val arm = File(filesDir, DebugWhatsNewPreviewFile)
-        if (arm.isFile && arm.delete()) return WhatsNewCatalog.releases.sortedByDescending { it.versionCode }.take(1)
+internal fun initialWhatsNewPending(store: WhatsNewStorePort, consumeArm: (String) -> Boolean): List<WhatsNewRelease> {
+    if (isDebugBuild) {
+        if (consumeArm(DebugWhatsNewPreviewFile)) return WhatsNewCatalog.releases.sortedByDescending { it.versionCode }.take(1)
     }
     val lastSeen = store.lastSeenVersionCode()
     val fresh = lastSeen == null && store.isFreshInstall()
-    if (fresh) store.markSeen(BuildConfig.VERSION_CODE)
+    if (fresh) store.markSeen(appBuildInfo.versionCode)
     return whatsNewPending(
         available = WhatsNewCatalog.releases.map { it.versionCode },
         lastSeenVersionCode = lastSeen,
-        currentVersionCode = BuildConfig.VERSION_CODE,
+        currentVersionCode = appBuildInfo.versionCode,
         isFreshInstall = fresh,
     ).mapNotNull(WhatsNewCatalog::release)
 }
@@ -111,18 +109,19 @@ private const val DebugWhatsNewPreviewFile = "debug-whats-new-preview"
 @Composable
 internal fun HomeTopNotice(modifier: Modifier = Modifier) {
     RegisterCellularConfirmationHandler()
-    val context = LocalContext.current
-    val updateCheck = remember(context) { processAppUpdateCheck(context) }
+    val platform = LocalAppPlatform.current
+    val openStoreListing = rememberStoreListingLauncher()
+    val updateCheck = remember(platform) { platform.appUpdate }
     LaunchedEffect(updateCheck) { updateCheck.ensureChecked() }
     val engine by currentEngineDownloadTracker().status.collectAsState()
     val update by updateCheck.status.collectAsState()
     val dismissed by updateCheck.noticeDismissed.collectAsState()
     // 「새로워진 점」(#257) — 열어 보거나 ✕로 닫으면 지금 버전을 본 것으로 적는다(그 버전에서는 다시 안 뜬다, 사용자 2026-10-13).
-    val whatsNewStore = remember(context) { WhatsNewStore(context) }
-    var whatsNew by remember(whatsNewStore) { mutableStateOf(initialWhatsNewPending(whatsNewStore, context.filesDir)) }
+    val whatsNewStore = remember(platform) { platform.stores.whatsNew }
+    var whatsNew by remember(whatsNewStore) { mutableStateOf(initialWhatsNewPending(whatsNewStore, platform.debugArmFiles::consume)) }
     var showWhatsNew by remember { mutableStateOf<List<WhatsNewRelease>>(emptyList()) }
     fun markWhatsNewSeen() {
-        whatsNewStore.markSeen(BuildConfig.VERSION_CODE)
+        whatsNewStore.markSeen(appBuildInfo.versionCode)
         whatsNew = emptyList()
     }
     if (showWhatsNew.isNotEmpty()) WhatsNewDialog(releases = showWhatsNew, onClose = { showWhatsNew = emptyList() })
@@ -143,7 +142,7 @@ internal fun HomeTopNotice(modifier: Modifier = Modifier) {
         HomeTopNoticeKind.AppUpdate -> HomeLineBanner(
             message = appUpdateAvailableLabelFor(language),
             action = appUpdateShortActionLabelFor(language),
-            onClick = { openStoreListing(context) },
+            onClick = { openStoreListing() },
             onDismiss = updateCheck::dismissNotice,
             modifier = modifier,
         )

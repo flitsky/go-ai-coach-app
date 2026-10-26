@@ -3,6 +3,9 @@ package com.worksoc.goaicoach.ui.foundation
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.AppUpdateCheck
+import com.worksoc.goaicoach.platform.BoardScanEntry
+import com.worksoc.goaicoach.platform.DebugArmFiles
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 
 /**
@@ -17,6 +20,15 @@ interface AppPlatform {
 
     /** 착수 진동 — 판마다 한 번 꺼내 쓴다(`remember`). */
     val haptics: PlayHapticFeedback
+
+    /** 「새 버전이 있는가」 — 프로세스에 한 번 묻는다(`AppUpdateCheck`). */
+    val appUpdate: AppUpdateCheck
+
+    /** 개발 빌드의 무장 파일(미리보기 · 점검 장치를 한 번 켠다). */
+    val debugArmFiles: DebugArmFiles
+
+    /** 바둑판 사진 분석의 입구 — 없으면(`null`, iOS) 그 입구를 그리지 않는다. */
+    val boardScan: BoardScanEntry?
 }
 
 /** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). */

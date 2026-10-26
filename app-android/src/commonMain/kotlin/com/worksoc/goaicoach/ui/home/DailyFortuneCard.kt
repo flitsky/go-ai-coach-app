@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.home
 
-import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -32,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextAlign
@@ -42,12 +40,12 @@ import com.worksoc.goaicoach.application.attendance.utcDayIndex
 import com.worksoc.goaicoach.application.dailyfortune.drawDailyFortune
 import com.worksoc.goaicoach.application.dailyfortune.refreshDailyFortune
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
-import com.worksoc.goaicoach.persistence.DailyFortuneStore
-import com.worksoc.goaicoach.showRewardedAdOnce
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.DailyFortuneCatalog
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.QuoteLineBreak
@@ -68,6 +66,7 @@ import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.quoteLocaleTag
 import com.worksoc.goaicoach.ui.l10n.studyComingSoonFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
+import com.worksoc.goaicoach.ui.monetization.rememberAppMonetization
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -87,21 +86,22 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
+    val monetization = rememberAppMonetization()
     val language = LocalUiStrings.current.language
     val colors = MaterialTheme.colorScheme
     val withAd = !LocalPremiumUiState.current.isPurchased
-    val store = remember(context) { DailyFortuneStore(context) }
+    val store = remember(platform) { platform.stores.dailyFortune }
     val poolSize = DailyFortuneCatalog.fortunes.size
     var progress by remember(store) { mutableStateOf(store.load()) }
-    var today by remember { mutableLongStateOf(utcDayIndex(System.currentTimeMillis())) }
+    var today by remember { mutableLongStateOf(utcDayIndex(currentEpochMillis())) }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(today) {
-        val untilNextDay = (today + 1) * MillisPerUtcDay - System.currentTimeMillis()
+        val untilNextDay = (today + 1) * MillisPerUtcDay - currentEpochMillis()
         delay(untilNextDay.coerceAtLeast(1_000))
-        today = utcDayIndex(System.currentTimeMillis())
+        today = utcDayIndex(currentEpochMillis())
     }
 
     Column(
@@ -127,7 +127,7 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
                     text = "▶ " + fortuneDrawButtonFor(language),
                     onClick = {
                         // 누른 순간 — 이 타임스탬프가 오늘의 운세를 정한다(사용자 2026-10-23).
-                        val now = System.currentTimeMillis()
+                        val now = currentEpochMillis()
                         val day = utcDayIndex(now)
                         drawDailyFortune(store.load(), day, now, poolSize)?.let { drawn ->
                             store.save(drawn)
@@ -165,12 +165,12 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
                             onClick = {
                                 busy = true
                                 scope.launch {
-                                    val outcome = if (withAd) showRewardedAdOnce(context) else null
+                                    val outcome = if (withAd) monetization.showRewardedAdOnce() else null
                                     if (outcome is AdRewardOutcome.NotRewarded) {
-                                        Toast.makeText(context, fortuneAdFailedFor(language, outcome.reason), Toast.LENGTH_SHORT).show()
+                                        platform.notice.show(fortuneAdFailedFor(language, outcome.reason))
                                     } else {
                                         // 광고를 본 뒤의 순간으로 다시 뽑는다 — 광고를 보는 사이 날이 바뀌었으면 갱신이 아니라 새 날의 뽑기가 남는다.
-                                        val now = System.currentTimeMillis()
+                                        val now = currentEpochMillis()
                                         val day = utcDayIndex(now)
                                         refreshDailyFortune(store.load(), day, now, poolSize)?.let { refreshed ->
                                             store.save(refreshed)

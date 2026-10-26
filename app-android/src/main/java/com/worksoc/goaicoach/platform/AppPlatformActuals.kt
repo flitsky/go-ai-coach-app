@@ -19,3 +19,7 @@ actual fun localTimeOfDay(): LocalTimeOfDay = LocalTime.now().let { now -> Local
 actual fun formatDeviceLocale(format: String, vararg args: Any?): String = String.format(format, *args)
 
 actual fun formatRootLocale(format: String, vararg args: Any?): String = String.format(Locale.ROOT, format, *args)
+
+actual fun debugLog(tag: String, message: String) {
+    android.util.Log.i(tag, message)
+}

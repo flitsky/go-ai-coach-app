@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.kv
 
 // 같은 이름의 안드로이드 시험(`persistence/`)을 공용 사본(`kv`)에 그대로 돌린다(백로그 #294 — P2 짝 시험). import만 바꿨다.
 
+import com.worksoc.goaicoach.application.rankmeasure.RankMeasureLastSetup
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureState
 import com.worksoc.goaicoach.application.rankmeasure.RankPromotionOffer
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup

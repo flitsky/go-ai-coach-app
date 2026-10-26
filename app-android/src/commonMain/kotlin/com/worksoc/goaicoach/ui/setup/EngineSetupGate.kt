@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.setup
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,6 +32,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
@@ -70,7 +70,7 @@ internal fun EngineSetupGateScreen(
     // 홈의 첫돌이 말풍선(③)이 이 화면 아래에서 「봤음」으로 소진되지 않게 한다(함정 40 — 팝업 게이트는 GuideBlockingOverlays).
     GuideBlockingOverlays.TrackWhileShown()
     RegisterCellularConfirmationHandler()
-    BackHandler(onBack = onClose)
+    PlatformBackHandler(onBack = onClose)
 
     EngineSetupGateContent(
         status = status,

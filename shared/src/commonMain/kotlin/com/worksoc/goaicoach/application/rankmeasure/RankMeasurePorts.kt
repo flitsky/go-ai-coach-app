@@ -10,4 +10,9 @@ interface RankMeasureStorePort {
     fun load(): RankMeasureState
 
     fun save(state: RankMeasureState)
+
+    /** 승급 대국 설정 창이 마지막으로 고른 진영 · 판 크기(#219) — 화면이 이 포트로 읽고 쓴다(#294). 없으면 기본값. */
+    fun loadLastSetup(): RankMeasureLastSetup = RankMeasureLastSetup()
+
+    fun saveLastSetup(setup: RankMeasureLastSetup) {}
 }

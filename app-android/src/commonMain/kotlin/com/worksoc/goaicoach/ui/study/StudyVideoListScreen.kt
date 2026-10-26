@@ -1,8 +1,5 @@
 package com.worksoc.goaicoach.ui.study
 
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,13 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.R
+import com.worksoc.goaicoach.ui.designsystem.AppImage
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.painterFor
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.StudyVideoEntry
@@ -48,18 +46,25 @@ internal val studyVideoEntries: List<StudyVideoEntry> = listOf(
     StudyVideoEntry(
         id = "rules",
         youtubeUrl = "https://www.youtube.com/watch?v=TEp_hxTHbV0",
-        thumbnailRes = R.drawable.study_thumb_baduk_intro_1,
     ),
     StudyVideoEntry(
         id = "shapes",
         youtubeUrl = "https://www.youtube.com/watch?v=XOX0gOQ3FCg",
-        thumbnailRes = R.drawable.study_thumb_baduk_intro_3,
     ),
     StudyVideoEntry(
         id = "life_and_death",
         youtubeUrl = "https://www.youtube.com/watch?v=tvmo7P1v9nc",
-        thumbnailRes = R.drawable.study_thumb_baduk_intro_2,
     ),
+)
+
+/**
+ * 강좌마다의 썸네일(앱에 실은 그림). ⚠️ 강좌 표([studyVideoEntries])는 문구 쪽(`ui.l10n`)이 소개 문구를 찾는 데도 쓰므로, 그림은 여기서
+ * id로 붙인다 — `ui.l10n`은 ui 맨 아래층이라 그림 목록(`ui.designsystem`, 같은 층)을 모른다(#294).
+ */
+internal val studyVideoThumbnails: Map<String, AppImage> = mapOf(
+    "rules" to AppImage.study_thumb_baduk_intro_1,
+    "shapes" to AppImage.study_thumb_baduk_intro_3,
+    "life_and_death" to AppImage.study_thumb_baduk_intro_2,
 )
 
 /**
@@ -76,14 +81,14 @@ internal fun StudyVideoListScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
     // ⚠️ **중첩 `BackHandler`다**(선례: `GameReplayScreen`, 백로그 #156). 셸의 핸들러는
     // 목적지가 Home이 아니면 무조건 `exitToHome()`을 불러 **허브를 건너뛰고 홈으로 튄다.**
     // 디스패처는 나중에 등록된 콜백부터 부르고 이 화면은 허브 안에서 **뒤에** 컴포즈되므로
     // 여기가 먼저 잡는다. 상단 화살표(`onBackClick`)와 **같은 곳**으로 보내는 것이 이 조각의
     // 핵심이다 — 경로가 둘이면 하나는 반드시 잊힌다.
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     Column(
         modifier = modifier
@@ -114,7 +119,7 @@ internal fun StudyVideoListScreen(
                 studyVideoEntries.forEach { entry ->
                     StudyVideoRow(
                         entry = entry,
-                        onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(entry.youtubeUrl))) },
+                        onClick = { uriHandler.openUri(entry.youtubeUrl) },
                     )
                 }
             }
@@ -138,7 +143,7 @@ private fun StudyVideoRow(entry: StudyVideoEntry, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
         Image(
-            painter = painterResource(entry.thumbnailRes),
+            painter = painterFor(studyVideoThumbnails.getValue(entry.id)),
             contentDescription = description,
             contentScale = ContentScale.Crop,
             modifier = Modifier

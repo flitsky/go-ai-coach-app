@@ -79,6 +79,7 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsBoardControlsGuide
 import com.worksoc.goaicoach.ui.l10n.boardSizeSubjectFor
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /** 조작법 가이드의 단계(백로그 #249 ③). */
@@ -611,8 +612,8 @@ private fun BoardGeometry.pointAt(cells: Offset): Offset = Offset(origin.x + cel
 private fun ghostCellUnder(finger: Offset): BoardCoordinate {
     val last = DemoBoardSize.value - 1
     return BoardCoordinate(
-        row = Math.round(finger.y - PlayDragLiftCells).coerceIn(0, last),
-        column = Math.round(finger.x).coerceIn(0, last),
+        row = (finger.y - PlayDragLiftCells).roundToInt().coerceIn(0, last),
+        column = finger.x.roundToInt().coerceIn(0, last),
     )
 }
 

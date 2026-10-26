@@ -22,7 +22,7 @@ import kotlinx.coroutines.sync.withLock
  * 이 API는 **Play로 설치된 앱에서만** 동작한다. `adb install`한 빌드에서는 조회가 실패하고 [AppUpdateStatus.Unknown]으로
  * 떨어진다 — 에뮬레이터에서는 **폴백 경로만** 볼 수 있다. 그래서 판정을 순수 함수로 떼어 테스트로 고정했다.
  */
-internal enum class AppUpdateStatus {
+enum class AppUpdateStatus {
     /** 아직 묻지 않았거나 묻는 중. 화면에는 아무것도 그리지 않는다 — 들어올 때마다 깜빡이면 소음이다. */
     Checking,
 
@@ -46,7 +46,7 @@ internal enum class AppUpdateStatus {
  * 물으면 답이 갈릴 수 있다. 실패한 조회(취소 포함)는 [AppUpdateStatus.Checking]으로 남지 않게 [AppUpdateStatus.Unknown]으로
  * 적는다 — 단, 바깥의 시간 제한이 조회를 **취소**하면 아무것도 적지 않아 다음 호출이 다시 묻는다.
  */
-internal class AppUpdateCheck(private val request: suspend () -> AppUpdateStatus) {
+class AppUpdateCheck(private val request: suspend () -> AppUpdateStatus) {
     private val _status = MutableStateFlow(AppUpdateStatus.Checking)
     val status: StateFlow<AppUpdateStatus> = _status.asStateFlow()
     private val mutex = Mutex()

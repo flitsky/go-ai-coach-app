@@ -40,7 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.guide.GuideSurface
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.MatchMode
+import com.worksoc.goaicoach.platform.formatDeviceLocale
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -99,11 +101,11 @@ internal fun GameSetupLobby(
     // 광고 시청 기반 활성화의 남은 시간을 "대국 시작하기" 버튼에 실시간으로 보여주기 위한
     // 1초 tick. `GoCoachApp.kt`는 상태 훅 예산이 빠듯해 만료 시각만 넘겨주고, 실제 카운트
     // 다운 계산/갱신은 여기(예산 제약이 없는 화면)에서 자체적으로 돈다.
-    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var nowMillis by remember { mutableStateOf(currentEpochMillis()) }
     LaunchedEffect(premium.adGrantExpiresAtMillis) {
         val expiresAt = premium.adGrantExpiresAtMillis ?: return@LaunchedEffect
         while (true) {
-            nowMillis = System.currentTimeMillis()
+            nowMillis = currentEpochMillis()
             if (nowMillis >= expiresAt) break
             delay(1000)
         }
@@ -333,7 +335,7 @@ private fun formatRemainingTime(remainingMillis: Long): String {
     val totalSeconds = remainingMillis / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
-    return "%d:%02d".format(minutes, seconds)
+    return formatDeviceLocale("%d:%02d", minutes, seconds)
 }
 
 /**

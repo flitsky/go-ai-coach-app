@@ -128,3 +128,7 @@ private fun fixedPoint(value: Double, precision: Int): String {
     val text = if (precision == 0) whole else "$whole.$fraction"
     return if (negative) "-$text" else text
 }
+
+actual fun debugLog(tag: String, message: String) {
+    println("$tag: $message")
+}

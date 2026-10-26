@@ -1,8 +1,5 @@
 package com.worksoc.goaicoach.ui.setup
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,23 +18,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.worksoc.goaicoach.engine.EngineDownloadStatus
 import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
-import com.worksoc.goaicoach.platform.openStoreListing
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.rememberStoreListingLauncher
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDownloadGuide
 import com.worksoc.goaicoach.ui.l10n.appDownloadWithoutUpdateLabelFor
@@ -57,7 +50,7 @@ internal fun EngineDownloadStatusBanner(
 ) {
     val strings = LocalUiStrings.current
     val language = strings.language
-    val context = LocalContext.current
+    val openStoreListing = rememberStoreListingLauncher()
     val isFailed = status is EngineDownloadStatus.Failed
     val isConfirmationRequired = status is EngineDownloadStatus.WaitingForWifi && status.isConfirmationRequired
     val accent = if (isFailed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -94,7 +87,7 @@ internal fun EngineDownloadStatusBanner(
                         tracker.reopen()
                         tracker.requestCellularConfirmation()
                     }
-                    EngineDownloadStatus.UpdateFirst -> openStoreListing(context)
+                    EngineDownloadStatus.UpdateFirst -> openStoreListing()
                     else -> Unit
                 }
             }
@@ -149,7 +142,7 @@ internal fun EngineDownloadStatusBanner(
  */
 @Composable
 internal fun EngineUpdateFirstCard(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val openStoreListing = rememberStoreListingLauncher()
     val language = LocalUiStrings.current.language
     Surface(
         modifier = modifier
@@ -175,7 +168,7 @@ internal fun EngineUpdateFirstCard(modifier: Modifier = Modifier) {
                     Text(appDownloadWithoutUpdateLabelFor(language), fontSize = AppTextSize.Text13)
                 }
                 Spacer(modifier = Modifier.width(AppSpacing.Space8))
-                Button(onClick = { openStoreListing(context) }, shape = RoundedCornerShape(AppRadius.Corner8)) {
+                Button(onClick = { openStoreListing() }, shape = RoundedCornerShape(AppRadius.Corner8)) {
                     Text(appUpdateShortActionLabelFor(language), fontWeight = FontWeight.Bold)
                 }
             }
@@ -184,42 +177,8 @@ internal fun EngineUpdateFirstCard(modifier: Modifier = Modifier) {
 }
 
 /**
- * 「모바일 데이터로 계속」이 띄울 Play 공식 승인창(`showConfirmationDialog`)을 이 화면이 떠 있는 동안 등록한다.
- * 그 창은 Activity가 있어야 열리므로 트래커가 아니라 화면이 등록한다 — 배너가 있는 화면마다 부른다.
+ * 「모바일 데이터로 계속」이 띄울 스토어 공식 승인창을 이 화면이 떠 있는 동안 등록한다(백로그 #294 — S16). 안드로이드는 Play 에셋 팩의
+ * `showConfirmationDialog`(액티비티가 있어야 열린다 — `EngineDownloadStatusBannerAndroid.kt`), iOS는 그런 창이 없다.
  */
 @Composable
-internal fun RegisterCellularConfirmationHandler() {
-    val context = LocalContext.current
-    val activity = remember(context) { context.findActivity() }
-
-    DisposableEffect(activity) {
-        val handler: () -> Unit = {
-            if (activity != null) {
-                try {
-                    val manager = AssetPackManagerFactory.getInstance(activity)
-                    val task = manager.showConfirmationDialog(activity)
-                    task.addOnSuccessListener { resultCode ->
-                        android.util.Log.d("EngineDownloadGuide", "Cellular confirmation result: $resultCode")
-                    }.addOnFailureListener { exception ->
-                        android.util.Log.w("EngineDownloadGuide", "Cellular confirmation dialog failed", exception)
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.w("EngineDownloadGuide", "Cannot show cellular confirmation dialog", e)
-                }
-            }
-        }
-        currentEngineDownloadTracker().registerCellularConfirmationHandler(handler)
-        onDispose {
-            currentEngineDownloadTracker().unregisterCellularConfirmationHandler(handler)
-        }
-    }
-}
-
-private fun Context.findActivity(): Activity? {
-    var current = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return null
-}
+internal expect fun RegisterCellularConfirmationHandler()

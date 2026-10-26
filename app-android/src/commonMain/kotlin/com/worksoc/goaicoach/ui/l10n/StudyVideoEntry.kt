@@ -1,7 +1,7 @@
 package com.worksoc.goaicoach.ui.l10n
 
 /**
- * 유튜브 기초 강좌 한 편 — 썸네일은 네트워크 로딩 없이 앱에 번들된 drawable을 쓴다(사용자
+ * 유튜브 기초 강좌 한 편 — 썸네일은 네트워크 로딩 없이 앱에 번들된 그림을 쓴다(`ui.study`의 `studyVideoThumbnails`, 사용자
  * 결정, 2026-08-12: 새 이미지 로딩 라이브러리를 추가하지 않고 고정 목록으로 운영 — 영상이
  * 바뀔 때만 코드와 함께 썸네일 이미지도 같이 교체한다).
  */
@@ -13,5 +13,4 @@ internal data class StudyVideoEntry(
      */
     val id: String,
     val youtubeUrl: String,
-    val thumbnailRes: Int,
 )

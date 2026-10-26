@@ -23,19 +23,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
-import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.screenWidthDp
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.MenuSection
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
@@ -69,7 +68,7 @@ internal fun KaTrainUxMenuPanel(
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
-    val columnGap = (LocalConfiguration.current.screenWidthDp * 0.05f).dp
+    val columnGap = (screenWidthDp() * 0.05f).dp
 
     PremiumUpsellDialogHost(
         visible = showPremiumUpsellDialog,
@@ -87,8 +86,8 @@ internal fun KaTrainUxMenuPanel(
             // `MenuOptionOrderContractTest`가 지킨다. ⚠️ 이 패널은 **☰ 대국 메뉴와 설정 화면이 공유**한다.
             //
             // **판 위에 있던 토글 둘이 여기로 내려왔다**(백로그 #143) — 둘 다 기본값이 이미 그 값이라 대부분 한 번도 누르지 않는다.
-            val hapticContext = LocalContext.current
-            val hapticPreview = remember(hapticContext) { PlayHaptics(hapticContext) }
+            val platform = LocalAppPlatform.current
+            val hapticPreview = remember(platform) { platform.haptics }
             // 프리미엄 셋의 판정은 FeatureAccessPolicy(6계층)에 위임한다. ⚠️ **라벨을 프리미엄 색으로 적는다**(2026-09-12) —
             // 흐리게(alpha)만 두면 "지금 못 쓴다"로는 읽혀도 **"프리미엄 기능이다"로는 읽히지 않는다.**
             val evalAllowed = premium.resolve(FeatureId.Eval) is FeatureAccess.Allowed

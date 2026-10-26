@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.home
 
-import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
@@ -87,7 +86,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -111,7 +109,6 @@ import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.isRankMeasure
-import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
@@ -138,6 +135,8 @@ import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
 import com.worksoc.goaicoach.ui.designsystem.RankTierBadge
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.PlatformPredictiveBackHandler
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.guide.guideTarget
@@ -156,7 +155,6 @@ import com.worksoc.goaicoach.ui.l10n.studyBasicsTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumSubscribeDialog
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
-import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -230,11 +228,11 @@ internal fun GoCoachHomeScreen(
     val subscribed = LocalPremiumUiState.current.isPurchased
     val showsPremiumPrompt = !subscribed && FeatureFlags.isPurchaseEnabled
     var showSubscribeDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // 다른 앱에서 「공유」로 받은 바둑판 사진이 있으면 사진 분석으로 간다(백로그 #263) — 사진은 그 화면이 꺼낸다.
     // 셸이 아니라 여기서 하는 것은 셸의 상태 훅 여유가 0이라서다(함정 3). 다른 화면에 있으면 홈으로 돌아올 때 열린다. 어느 페이지에 있든 같다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (SharedBoardPhotoInbox.hasPhoto(context)) onBoardScanClick()
+        if (platform.boardScan?.hasPendingSharedPhoto() == true) onBoardScanClick()
     }
 
     // 지금 페이지는 이 화면이 든다 — 셸에 두면 셸 상태 원장에 한 칸이 는다(함정 3). 홈을 떠날 때 잃지 않게 [HomePageMemory]에 적어 둔다.
@@ -251,12 +249,12 @@ internal fun GoCoachHomeScreen(
     // ⚠️ 마지막 넘김은 이 처리기의 코루틴이 아니라 **화면의 스코프**에서 돌린다 — 넘어가는 도중 가운데가 되면 처리기가 꺼지고, 꺼질 때
     //   `PredictiveBackHandlerCallback.setIsEnabled(false)`가 그 코루틴을 취소한다(activity-compose 1.10.1 바이트코드로 확인). 처리기 안에서 넘기면
     //   반쯤 가다 멈추고, 취소를 「거둔 제스처」로 읽으면 옆 페이지로 되돌아간다.
-    PredictiveBackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal) { progress ->
+    PlatformPredictiveBackHandler(enabled = pagerState.currentPage != HomePage.Play.ordinal) { progress ->
         val from = pagerState.currentPage
         val toward = if (from < HomePage.Play.ordinal) 1f else -1f
         var committed = false
         try {
-            progress.collect { event -> pagerState.scrollToPage(from, toward * event.progress * PredictiveBackPeek) }
+            progress.collect { fraction -> pagerState.scrollToPage(from, toward * fraction * PredictiveBackPeek) }
             committed = true
         } finally {
             // 놓았으면 가운데로, 거뒀으면(취소) 제자리로.
@@ -493,10 +491,10 @@ private fun HomePlayPage(
 ) {
     val strings = LocalUiStrings.current
     val rankMeasure = LocalRankMeasureUiState.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // 기록은 지금의 좌석 배치로 정해지지 않을 때만 읽는다(`lastPlayedCharacterOrNull`) — 내 정보의 승률 머리말처럼 그 자리에서 한 번.
     val lastPlayedCharacter = remember(playerSetup, hasResumableSession) {
-        lastPlayedCharacterOrNull(playerSetup, hasResumableSession) { GameHistoryStore(context).loadAll() }
+        lastPlayedCharacterOrNull(playerSetup, hasResumableSession) { platform.stores.gameHistory.loadAll() }
     }
     Column(
         modifier = Modifier
@@ -642,7 +640,8 @@ private fun HomePlayPage(
 
         // 「바둑판 사진 분석」은 페이지 오른쪽 아래의 **카메라 단추 하나**다(#280, 사용자 2026-10-22 — 아는 사람은 여기로, 이름 붙은 입구는 실험실 페이지).
         // #281 A안: 맨 아이콘이 아니라 타일과 같은 바탕의 둥근 네모에 담는다 — 누를 수 있는 것으로 읽히고, 누르면 타일처럼 모양이 바뀐다.
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        // 사진 분석이 없는 플랫폼(iOS 첫 판 — U-84)에서는 단추를 그리지 않는다.
+        if (platform.boardScan != null) Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             val interaction = remember { MutableInteractionSource() }
             val pressed by interaction.collectIsPressedAsState()
             val corner by animateDpAsState(if (pressed) HomePressedCorner else BoardScanButtonCorner, AppMotion.fastSpatial(), label = "boardScanCorner")

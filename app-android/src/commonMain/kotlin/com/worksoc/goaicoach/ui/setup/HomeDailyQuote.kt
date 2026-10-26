@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.setup
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
@@ -30,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
@@ -38,13 +36,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.attendance.utcDayIndex
+import com.worksoc.goaicoach.application.dailyquote.DailyQuoteStorePort
 import com.worksoc.goaicoach.application.dailyquote.pickDailyQuote
-import com.worksoc.goaicoach.persistence.DailyQuoteStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
+import com.worksoc.goaicoach.platform.debugLog
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.DailyQuote
 import com.worksoc.goaicoach.ui.l10n.DailyQuoteCatalog
@@ -55,7 +55,6 @@ import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.quoteLocaleTag
 import com.worksoc.goaicoach.ui.l10n.unbreakable
 import com.worksoc.goaicoach.ui.monetization.AttendanceClaimReplaySignal
-import java.io.File
 import kotlin.random.Random
 
 /**
@@ -66,7 +65,7 @@ import kotlin.random.Random
  * 날짜는 이 홈이 컴포즈될 때 한 번 읽는다 — 홈을 떠났다 돌아오면 다시 읽는다.
  */
 @Stable
-internal class DailyQuoteLineState(private val store: DailyQuoteStore, private val today: Long) {
+internal class DailyQuoteLineState(private val store: DailyQuoteStorePort, private val today: Long) {
     var dismissedToday by mutableStateOf(store.load().isDismissedOn(today))
         private set
 
@@ -100,8 +99,8 @@ internal class DailyQuoteLineState(private val store: DailyQuoteStore, private v
 
 @Composable
 internal fun rememberDailyQuoteLineState(): DailyQuoteLineState {
-    val context = LocalContext.current
-    return remember(context) { DailyQuoteLineState(DailyQuoteStore(context), utcDayIndex(System.currentTimeMillis())) }
+    val platform = LocalAppPlatform.current
+    return remember(platform) { DailyQuoteLineState(platform.stores.dailyQuote, utcDayIndex(currentEpochMillis())) }
 }
 
 
@@ -113,8 +112,8 @@ internal fun rememberDailyQuoteLineState(): DailyQuoteLineState {
  */
 @Composable
 internal fun DailyQuoteLine(state: DailyQuoteLineState, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    if (remember(context) { debugQuoteSweepArmed(context.filesDir) }) {
+    val platform = LocalAppPlatform.current
+    if (remember(platform) { platform.debugArmFiles.consume(DebugQuoteSweepFile) }) {
         DebugQuoteSweep(modifier)
         return
     }
@@ -169,19 +168,17 @@ private fun QuoteRow(quote: DailyQuote, onDismiss: () -> Unit, onTextLayout: (Te
 }
 
 /**
- * 디버그 빌드: `files/debug-quote-sweep`이 있으면(한 번 쓰고 지운다) 지금 언어의 명언을 **전부** 이 자리 모양으로 깔고 줄 수를 로그로 낸다
+ * 디버그 빌드: 무장 파일 `debug-quote-sweep`이 있으면(한 번 쓰고 지운다 — 안드로이드 `files/`) 지금 언어의 명언을 **전부** 이 자리 모양으로 깔고 줄 수를 로그로 낸다
  * (`adb logcat -s DailyQuoteSweep`). 명언을 더하거나 고칠 때 두 줄을 넘는 것을 실제 배치로 찾는 길이다 — 단위 테스트의 폭 어림은 낱말 길이에 따른
  * 줄바꿈 낭비를 못 본다(2026-10-21: 어림 80칸인데 세 줄이 된 영어가 있었다). 「새로워진 점」 미리보기 파일(`HomeTopNotice.kt`)과 같은 방식.
  */
-private fun debugQuoteSweepArmed(filesDir: File): Boolean = BuildConfig.DEBUG && File(filesDir, DebugQuoteSweepFile).let { it.isFile && it.delete() }
-
 @Composable
 private fun DebugQuoteSweep(modifier: Modifier) {
     val language = LocalUiStrings.current.language
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4)) {
         DailyQuoteCatalog.quotes.forEach { quote ->
             QuoteRow(quote = quote, onDismiss = {}, onTextLayout = { layout ->
-                Log.i(DebugQuoteSweepTag, "$language ${quote.id} lines=${layout.lineCount}")
+                debugLog(DebugQuoteSweepTag, "$language ${quote.id} lines=${layout.lineCount}")
             })
         }
     }
