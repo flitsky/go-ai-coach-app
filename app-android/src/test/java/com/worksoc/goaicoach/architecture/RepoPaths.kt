@@ -34,7 +34,12 @@ internal object RepoPaths {
     private const val APP_ANDROID = "app-android/src/main/java/com/worksoc/goaicoach"
     private const val SHARED_COMMON_SOURCE_SET = "shared/src/commonMain"
     private const val SHARED_COMMON = "$SHARED_COMMON_SOURCE_SET/kotlin/com/worksoc/goaicoach"
-    private const val ENGINE_ANDROID = "engine-android/src/main/java/com/worksoc/goaicoach/engine/android"
+    /**
+     * :engine-android의 소스셋 루트 — KMP 모듈이다(백로그 #293). 파일은 소스셋 사이를 옮겨 다닐 수 있으므로(공용으로 옮기기 ·
+     * 플랫폼으로 되돌리기) 파일 하나는 [engineAndroid]가 **이름으로** 셋 중에서 찾는다.
+     */
+    private val ENGINE_ANDROID_SOURCE_SETS = listOf("commonMain", "androidMain", "iosMain")
+        .map { sourceSet -> "engine-android/src/$sourceSet/kotlin/com/worksoc/goaicoach/engine/android" }
 
     /**
      * KMP 모듈의 commonMain **코틀린 소스 루트** 전부(refactor backlog #49). `:shared`에서 하위 패키지를
@@ -92,7 +97,7 @@ internal object RepoPaths {
                 listOf(
                     "shared/src/androidMain",
                     "shared/src/iosMain",
-                    "engine-android/src/main",
+                    "engine-android/src/androidMain",
                 ),
         )
 
@@ -142,8 +147,17 @@ internal object RepoPaths {
     /** :shared commonMain의 `com.worksoc.goaicoach` 패키지 루트(또는 그 아래 경로). */
     fun shared(relativePath: String = ""): File = resolveUnder(SHARED_COMMON, relativePath)
 
-    /** :engine-android의 `com.worksoc.goaicoach.engine.android` 패키지 루트(또는 그 아래 경로). */
-    fun engineAndroid(relativePath: String = ""): File = resolveUnder(ENGINE_ANDROID, relativePath)
+    /**
+     * :engine-android의 `com.worksoc.goaicoach.engine.android` 패키지 아래 파일 하나 — 소스셋(commonMain · androidMain · iosMain)
+     * 어디에 있든 찾는다. 없으면 androidMain의 그 자리를 돌려준다(호출자의 `exists()` 검사가 「없다」로 읽도록).
+     * ⚠️ 두 소스셋에 같은 이름이 있으면 터뜨린다 — 어느 쪽을 검사하는지 모르게 되면 그물이 조용히 엉뚱한 파일을 본다.
+     */
+    fun engineAndroid(relativePath: String): File {
+        val candidates = ENGINE_ANDROID_SOURCE_SETS.map { packageRoot -> resolveUnder(packageRoot, relativePath) }
+        val found = candidates.filter { file -> file.exists() }
+        check(found.size <= 1) { "engine-android에 같은 파일이 둘 이상이다: $found" }
+        return found.singleOrNull() ?: candidates[1]
+    }
 
     /**
      * `ui` 패키지 트리의 루트 디렉터리 — 하위 패키지(`ui.l10n`·`ui.shell`·`ui.vision` …)의 디렉터리가

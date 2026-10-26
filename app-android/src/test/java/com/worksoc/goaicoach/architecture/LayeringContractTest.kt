@@ -1243,10 +1243,9 @@ class LayeringContractTest {
         // 타임에 강제하지만, 이 테스트는 그 modifier가 실수로 지워지지 않았는지 소스 레벨에서도
         // 확인하고, app-android가 실제로 EngineCoreApiFactory(공개 생성 지점)만 쓰는지 본다.
         val repoRoot = RepoPaths.root
-        val engineAndroidRoot = RepoPaths.engineAndroid()
         val concreteAdapters = mapOf(
-            engineAndroidRoot.resolve("KataGoProcessEngineAdapter.kt") to "internal class KataGoProcessEngineAdapter(",
-            engineAndroidRoot.resolve("StubEngineAdapter.kt") to "internal class StubEngineAdapter",
+            RepoPaths.engineAndroid("KataGoProcessEngineAdapter.kt") to "internal class KataGoProcessEngineAdapter(",
+            RepoPaths.engineAndroid("StubEngineAdapter.kt") to "internal class StubEngineAdapter",
         )
 
         val notInternal = concreteAdapters.filterNot { (file, marker) -> codeOnly(file.readContractSource()).contains(marker) }
@@ -1256,7 +1255,7 @@ class LayeringContractTest {
             notInternal.isEmpty(),
         )
 
-        val factoryText = codeOnly(engineAndroidRoot.resolve("EngineCoreApiFactory.kt").readContractSource())
+        val factoryText = codeOnly(RepoPaths.engineAndroid("EngineCoreApiFactory.kt").readContractSource())
         assertTrue(
             "engine-android must expose EngineCoreApiFactory as the only public construction seam.",
             factoryText.contains("object EngineCoreApiFactory") && !factoryText.trimStart().startsWith("internal"),

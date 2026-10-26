@@ -547,7 +547,7 @@ tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle
 //    목록의 폴더는 실재해야 한다 — 없는 폴더의 fileTree는 조용히 비어 입력에서 빠지기 때문이다.
 val architectureContractScannedTrees = listOf(
     "app-android/src/main/java",
-    "engine-android/src/main/java",
+    "engine-android/src",
     "core/domain/src",
     "core/enginecontract/src",
     "shared/src",
