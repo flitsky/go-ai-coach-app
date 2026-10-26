@@ -1,8 +1,13 @@
+// `KataGoBridge.h`(약속 — `engine-android/src/nativeInterop/cinterop/`)의 구현. 헤더를 읽는 쪽은 Kotlin 엔진 코드다(백로그 #293).
 #include "KataGoBridge.h"
 
 #include <atomic>
+#include <csignal>
 #include <exception>
 #include <iostream>
+#include <istream>
+#include <mutex>
+#include <ostream>
 #include <streambuf>
 #include <string>
 #include <thread>
@@ -68,37 +73,63 @@ class FdOutBuf : public std::streambuf {
   char buf_[4096];
 };
 
-std::atomic<bool> running{false};
+constexpr int kKinds = 2;
+
+// 종류마다 지금 KataGo가 쓰는 스트림 — 엔진이 돌지 않을 때는 표준 입출력(아무도 쓰지 않는다).
+std::istream* streamIn[kKinds] = {&std::cin, &std::cin};
+std::ostream* streamOut[kKinds] = {&std::cout, &std::cout};
+
+std::atomic<bool> running[kKinds] = {{false}, {false}};
+// 세션 번호 = (일련번호 << 1) | 종류 — 끝난 세션의 번호는 다시 쓰이지 않는다.
+std::atomic<int> currentSession[kKinds] = {{0}, {0}};
+std::atomic<int> sessionSequence{0};
+std::once_flag ignoreSigpipe;
 
 }  // namespace
 
-int katago_bridge_start(int argc, const char* const* argv, int* toEngineFd, int* fromEngineFd) {
+// `scripts/build-katago-ios.sh`가 KataGo의 gtp.cpp · analysis.cpp의 `cin` · `cout`을 이 함수들로 바꾼다.
+namespace KataGoStreams {
+std::istream& gtpIn() { return *streamIn[KATAGO_BRIDGE_GTP]; }
+std::ostream& gtpOut() { return *streamOut[KATAGO_BRIDGE_GTP]; }
+std::istream& analysisIn() { return *streamIn[KATAGO_BRIDGE_ANALYSIS]; }
+std::ostream& analysisOut() { return *streamOut[KATAGO_BRIDGE_ANALYSIS]; }
+}  // namespace KataGoStreams
+
+int katago_bridge_start(int kind, int argc, const char* const* argv, int* toEngineFd, int* fromEngineFd) {
+  if(kind < 0 || kind >= kKinds)
+    return -3;
+  std::call_once(ignoreSigpipe, [] { std::signal(SIGPIPE, SIG_IGN); });
+
   bool expected = false;
-  if(!running.compare_exchange_strong(expected, true))
+  if(!running[kind].compare_exchange_strong(expected, true))
     return -1;
 
-  int commandPipe[2];  // 호출자가 쓴다 → KataGo가 std::cin으로 읽는다
-  int responsePipe[2];  // KataGo가 std::cout으로 쓴다 → 호출자가 읽는다
+  int commandPipe[2];  // 호출자가 쓴다 → KataGo가 읽는다
+  int responsePipe[2];  // KataGo가 쓴다 → 호출자가 읽는다
   if(::pipe(commandPipe) != 0) {
-    running = false;
+    running[kind] = false;
     return -2;
   }
   if(::pipe(responsePipe) != 0) {
     ::close(commandPipe[0]);
     ::close(commandPipe[1]);
-    running = false;
+    running[kind] = false;
     return -2;
   }
+
+  int session = ((sessionSequence.fetch_add(1) + 1) << 1) | kind;
+  currentSession[kind] = session;
 
   std::vector<std::string> args(argv, argv + argc);
   int engineIn = commandPipe[0];
   int engineOut = responsePipe[1];
-  std::thread([args, engineIn, engineOut]() {
+  std::thread([kind, args, engineIn, engineOut]() {
     FdInBuf inBuf(engineIn);
     FdOutBuf outBuf(engineOut);
-    std::streambuf* oldIn = std::cin.rdbuf(&inBuf);
-    std::streambuf* oldOut = std::cout.rdbuf(&outBuf);
-    std::cin.clear();
+    std::istream in(&inBuf);
+    std::ostream out(&outBuf);
+    streamIn[kind] = &in;
+    streamOut[kind] = &out;
 
     std::vector<const char*> cArgs;
     for(const std::string& arg : args)
@@ -109,21 +140,29 @@ int katago_bridge_start(int argc, const char* const* argv, int* toEngineFd, int*
       katago_main(static_cast<int>(cArgs.size()), cArgs.data());
     }
     catch(const std::exception& e) {
-      std::cerr << "KataGo stopped with an exception: " << e.what() << std::endl;
+      std::cerr << "KataGo " << args[1] << " stopped with an exception: " << e.what() << std::endl;
     }
     catch(...) {
-      std::cerr << "KataGo stopped with an unknown exception" << std::endl;
+      std::cerr << "KataGo " << args[1] << " stopped with an unknown exception" << std::endl;
     }
 
-    std::cout.flush();
-    std::cin.rdbuf(oldIn);
-    std::cout.rdbuf(oldOut);
+    out.flush();
+    streamIn[kind] = &std::cin;
+    streamOut[kind] = &std::cout;
     ::close(engineIn);
     ::close(engineOut);  // 호출자는 EOF를 읽는다
-    running = false;
+    currentSession[kind] = 0;  // 다음 세션이 번호를 받기 전에 이 세션을 「끝남」으로 — katago_bridge_session_running이 낡은 번호에 1을 주지 않게
+    running[kind] = false;
   }).detach();
 
   *toEngineFd = commandPipe[1];
   *fromEngineFd = responsePipe[0];
-  return 0;
+  return session;
+}
+
+int katago_bridge_session_running(int sessionId) {
+  if(sessionId <= 0)
+    return 0;
+  int kind = sessionId & 1;
+  return (running[kind] && currentSession[kind] == sessionId) ? 1 : 0;
 }

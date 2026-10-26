@@ -38,6 +38,12 @@ kotlin {
     jvmToolchain(17)
 
     sourceSets {
+        if (enableIosTargets) {
+            // 엔진(백로그 #293) — iOS는 앱 안 KataGo(`IosEngineCoreApiFactory`). 안드로이드 화면은 아직 이 모듈을 쓰지 않는다(#294).
+            iosMain.dependencies {
+                implementation(project(":engine-android"))
+            }
+        }
         commonMain.dependencies {
             implementation(project(":shared"))
             implementation(libs.compose.mp.runtime)

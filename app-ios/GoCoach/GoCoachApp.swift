@@ -5,12 +5,6 @@ import SharedUI
 // 여기서는 그 화면을 SwiftUI 창에 올리기만 한다.
 @main
 struct GoCoachApp: App {
-    init() {
-        #if DEBUG
-        KataGoProbe.runIfRequested()
-        #endif
-    }
-
     var body: some Scene {
         WindowGroup {
             ComposeView()

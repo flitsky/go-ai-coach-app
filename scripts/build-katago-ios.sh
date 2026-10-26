@@ -4,8 +4,8 @@
 # 안드로이드(`build-katago-android-spike.sh`)는 같은 KataGo · 같은 Eigen으로 **실행 파일**을 지어 앱이 프로세스로 띄운다.
 # iOS 앱은 자식 프로세스를 띄울 수 없다(Apple DTS 답변 — 백로그 #293 카드) — 그래서 여기서는:
 #   ① KataGo의 `main()`을 `katago_main()`으로 이름만 바꾸고 ② 실행 파일 대신 정적 라이브러리(`libkatago.a`)로 묶는다.
-# 앱은 `app-ios/GoCoach/Engine/KataGoBridge.cpp`가 앱 안 스레드에서 `katago_main(gtp …)`을 부르고, 표준 입출력을 파이프로 돌린다 —
-# 명령줄 · 설정 · GTP 대화는 안드로이드와 같다.
+# 앱은 `app-ios/GoCoach/Engine/KataGoBridge.cpp`가 앱 안 스레드에서 `katago_main(gtp …)` · `katago_main(analysis …)`를 부르고, 두 루프의
+# 입출력을 파이프로 돌린다(③) — 명령줄 · 설정 · GTP · JSON 대화는 안드로이드와 같다.
 #
 # 쓰는 법: scripts/build-katago-ios.sh [iphonesimulator|iphoneos]   (기본 iphonesimulator)
 # 결과:   app-ios/build/katago/<SDK>/libkatago.a   (gitignore의 build/ — Xcode의 LIBRARY_SEARCH_PATHS가 이 자리를 본다)
@@ -59,6 +59,21 @@ if grep -q '^add_executable(katago$' "$KATAGO_SRC/CMakeLists.txt"; then
   sed -i '' 's/^add_executable(katago$/add_library(katago STATIC/' "$KATAGO_SRC/CMakeLists.txt"
 fi
 grep -q '^add_library(katago STATIC$' "$KATAGO_SRC/CMakeLists.txt" || { echo "CMakeLists.txt: could not switch katago to a static library" >&2; exit 1; }
+
+# ③ GTP 루프(gtp.cpp)와 분석 루프(analysis.cpp)가 각자의 스트림을 쓴다 — 앱 안에서 두 엔진이 **함께** 돈다(사용자 2026-10-26:
+#    「KataGo 고쳐 둘 다」 — 안드로이드처럼 대국용 · 분석용). 두 파일의 `cin` · `cout`만 다리(`KataGoBridge.cpp`)의 함수로 바꾼다 —
+#    표준 입출력에 쓰는 곳은 이 두 루프뿐이고(로거는 기본이 표준 출력에 쓰지 않는다), 다른 명령(benchmark 등)은 앱이 부르지 않는다.
+#    `using namespace std;` 바로 뒤에 넣는다 — 그 위의 #include(표준 헤더)는 바뀌지 않는다. `std::cout`처럼 이름공간을 붙여 쓴 곳은 없다.
+patch_streams() {
+  local file="$1" in_fn="$2" out_fn="$3"
+  if ! grep -q "KataGoStreams::$in_fn" "$file"; then
+    perl -0pi -e "s/^using namespace std;\n/using namespace std;\n\/\/ go-ai-coach(iOS, 백로그 #293): 이 루프는 앱 안 스레드에서 자기 스트림을 쓴다 — 구현은 app-ios\/GoCoach\/Engine\/KataGoBridge.cpp.\nnamespace KataGoStreams { std::istream\& $in_fn(); std::ostream\& $out_fn(); }\n#define cin KataGoStreams::$in_fn()\n#define cout KataGoStreams::$out_fn()\n/m" "$file"
+  fi
+  grep -q "^#define cout KataGoStreams::$out_fn()$" "$file" || { echo "$file: could not redirect cin/cout" >&2; exit 1; }
+  if grep -q "std::cin\|std::cout" "$file"; then echo "$file: uses std::cin/std::cout directly — the redirect would miss it" >&2; exit 1; fi
+}
+patch_streams "$KATAGO_SRC/command/gtp.cpp" gtpIn gtpOut
+patch_streams "$KATAGO_SRC/command/analysis.cpp" analysisIn analysisOut
 
 # ⚠️ CMAKE_SYSTEM_PROCESSOR=aarch64: iOS 크로스 빌드에서는 비어 있어 KataGo의 CMake가 인텔 분기를 타고 `-mfpmath=sse`를 붙인다
 #    (arm64 컴파일러가 모른다). aarch64면 안드로이드(NDK arm64)와 같은 ARM 분기 — `char`를 부호 있게 — 를 탄다.

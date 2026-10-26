@@ -215,8 +215,8 @@ ios-run: ios-build
 	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
 	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
-# KataGo가 앱 안에서 도는지 시뮬레이터에서 본다(백로그 #293 — `app-ios/GoCoach/Engine/KataGoProbe.swift`, 디버그 빌드에만 있다).
-# 주 모델로 GTP 몇 마디 → quit → 같은 앱 안에서 사람 모델로 다시 띄운다. 모델 · 설정은 안드로이드 번들과 같은 맥의 파일을 읽는다
+# Kotlin 엔진 코드(안드로이드와 같은 어댑터)가 앱 안 KataGo로 도는지 시뮬레이터에서 본다(백로그 #293 — `shared-ui/.../EngineProbe.kt`).
+# GTP 착수 → JSON 분석 엔진을 함께 → 사람 모델로 갈아 올리기 → forceReset 뒤 다시 → stop. 모델 · 설정은 안드로이드 번들과 같은 맥의 파일을 읽는다
 # (시뮬레이터 앱은 맥의 경로를 읽을 수 있다 — 실기기에서는 안 된다). 끝나면 앱이 스스로 닫히고 기록이 이 터미널에 찍힌다.
 ios-engine-probe: ios-build
 	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
@@ -224,6 +224,7 @@ ios-engine-probe: ios-build
 	SIMCTL_CHILD_KATAGO_PROBE_MODEL="$(FRIEND_MODEL_PATH)" \
 	SIMCTL_CHILD_KATAGO_PROBE_HUMAN_MODEL="$(FRIEND_HUMAN_MODEL_PATH)" \
 	SIMCTL_CHILD_KATAGO_PROBE_CONFIG="$(FRIEND_CONFIG_PATH)" \
+	SIMCTL_CHILD_KATAGO_PROBE_ANALYSIS_CONFIG="$(FRIEND_ANALYSIS_CONFIG_PATH)" \
 	SIMCTL_CHILD_KATAGO_PROBE_EXIT=1 \
 	xcrun simctl launch --console-pty --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 

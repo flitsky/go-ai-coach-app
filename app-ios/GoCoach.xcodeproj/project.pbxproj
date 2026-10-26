@@ -210,6 +210,10 @@
 					"$(SRCROOT)/../shared-ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../engine-android/src/nativeInterop/cinterop",
+				);
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "포켓 바둑 코치";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.board-games";
@@ -234,7 +238,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "GoCoach/GoCoach-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -253,6 +256,10 @@
 					"$(SRCROOT)/../shared-ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../engine-android/src/nativeInterop/cinterop",
+				);
 				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "포켓 바둑 코치";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.board-games";
@@ -277,7 +284,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "GoCoach/GoCoach-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};

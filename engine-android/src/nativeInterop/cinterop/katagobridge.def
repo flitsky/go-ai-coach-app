@@ -1,0 +1,4 @@
+# KataGo 앱 안 엔진의 다리(백로그 #293) — 헤더만 읽는다. 함수의 구현(`app-ios/GoCoach/Engine/KataGoBridge.cpp`)과
+# KataGo(`libkatago.a`)는 iOS 앱을 링크할 때 들어온다(정적 프레임워크라 여기서는 링크하지 않는다).
+headers = KataGoBridge.h
+package = com.worksoc.goaicoach.engine.android.bridge

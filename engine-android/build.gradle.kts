@@ -21,9 +21,13 @@ kotlin {
     }
 
     if (enableIosTargets) {
-        iosX64()
-        iosArm64()
-        iosSimulatorArm64()
+        listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+            // 앱 안 KataGo의 다리(`src/nativeInterop/cinterop/KataGoBridge.h`) — iosMain의 InProcessKataGoRuntime이 부른다.
+            target.compilations.getByName("main").cinterops.create("katagobridge") {
+                definitionFile.set(project.file("src/nativeInterop/cinterop/katagobridge.def"))
+                includeDirs(project.file("src/nativeInterop/cinterop"))
+            }
+        }
     }
 
     jvmToolchain(17)
