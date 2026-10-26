@@ -23,12 +23,17 @@ import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.kv.iosAppStores
 import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.platform.NoticeHandle
+import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import platform.UIKit.UIImpactFeedbackGenerator
+import platform.UIKit.UIImpactFeedbackStyle
+import platform.UIKit.UINotificationFeedbackGenerator
+import platform.UIKit.UINotificationFeedbackType
 import platform.UIKit.UIPasteboard
 
 /** iOS의 [AppPlatform](백로그 #294 — S1). 루트(`MainViewController`)가 하나 만들어 넣는다. 기능은 웨이브마다 는다. */
@@ -36,6 +41,18 @@ internal class IosAppPlatform : AppPlatform {
     override val notice = IosNotice()
     override val clipboard: ClipboardPort = IosClipboard()
     override val stores: AppStores = iosAppStores
+    override val haptics: PlayHapticFeedback = IosPlayHaptics
+}
+
+/** 착수 진동(S10) — 돌을 놓으면 묵직한 한 번, 놓을 수 없으면 경고 알림(짧게 두 번 떨린다). */
+private object IosPlayHaptics : PlayHapticFeedback {
+    override fun play() {
+        UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy).impactOccurred()
+    }
+
+    override fun playInvalid() {
+        UINotificationFeedbackGenerator().notificationOccurred(UINotificationFeedbackType.UINotificationFeedbackTypeError)
+    }
 }
 
 /**

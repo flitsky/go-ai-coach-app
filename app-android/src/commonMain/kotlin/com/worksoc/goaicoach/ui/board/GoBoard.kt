@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.board
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -43,13 +41,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
@@ -60,7 +54,6 @@ import com.worksoc.goaicoach.application.movereview.MoveReviewTone
 import com.worksoc.goaicoach.application.movereview.topMoveDisplayToneFor
 import com.worksoc.goaicoach.application.preferences.PlayEffectMillis
 import com.worksoc.goaicoach.application.preferences.PlayEffectPeakScale
-import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.presentation.KaTrainUxOptions
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -79,6 +72,8 @@ import com.worksoc.goaicoach.ui.designsystem.GoBoardPalette
 import com.worksoc.goaicoach.ui.designsystem.MoveReviewPalette
 import com.worksoc.goaicoach.ui.designsystem.StudyBoardPalette
 import com.worksoc.goaicoach.ui.designsystem.VisionPalette
+import com.worksoc.goaicoach.ui.designsystem.drawBoldCanvasText
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
@@ -225,8 +220,8 @@ internal fun GoBoard(
         label = "lastMovePulse"
     )
 
-    val hapticContext = LocalContext.current
-    val haptics = remember(hapticContext) { PlayHaptics(hapticContext) }
+    val platform = LocalAppPlatform.current
+    val haptics = remember(platform) { platform.haptics }
 
     BoxWithConstraints(
         modifier = modifier,
@@ -434,7 +429,7 @@ internal fun GoBoard(
                 val geometry = BoardGeometry.from(size, gameState.boardSize, uxOptions.showCoordinates, shownLines)
                 drawBoardGrid(geometry, gameState.boardSize, colors.gridLine, shownLines)
                 if (uxOptions.showCoordinates) {
-                    drawBoardCoordinates(geometry, gameState.boardSize, colors.coordinateLabel.toArgb())
+                    drawBoardCoordinates(geometry, gameState.boardSize, colors.coordinateLabel)
                 }
                 // 그릴지 말지의 권한 판정은 호출부(GamePlaySection)가 한다 — 여기서 premium.isActive를
                 // 다시 보면 1회권으로 켠 표시가 걸러진다(1회권 사용자는 정의상 프리미엄이 비활성이라
@@ -713,7 +708,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawOwnershipOverla
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinates(
     geometry: BoardGeometry,
     boardSize: BoardSize,
-    labelArgb: Int,
+    labelColor: Color,
 ) {
     val textSize = geometry.spacing * 0.24f
     val columnLabels = boardColumnLabels(boardSize)
@@ -723,7 +718,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
             label = columnLabels[index].toString(),
             center = Offset(bottomPoint.x, bottomPoint.y + geometry.boardPadding / 2f),
             textSize = textSize,
-            labelArgb = labelArgb,
+            labelColor = labelColor,
         )
 
         val rowLabel = (boardSize.value - index).toString()
@@ -732,7 +727,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardCoordinate
             label = rowLabel,
             center = Offset(rightPoint.x + geometry.boardPadding / 2f, rightPoint.y),
             textSize = textSize,
-            labelArgb = labelArgb,
+            labelColor = labelColor,
         )
     }
 }
@@ -823,42 +818,16 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSpotLabel(
     label: String,
     textSize: Float,
 ) {
-    drawIntoCanvas { canvas ->
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = GoBoardPalette.SpotLabelArgb
-            textAlign = Paint.Align.CENTER
-            this.textSize = textSize
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        canvas.nativeCanvas.drawText(
-            label,
-            center.x,
-            center.y - (paint.descent() + paint.ascent()) / 2f,
-            paint,
-        )
-    }
+    drawBoldCanvasText(label, center, textSize, GoBoardPalette.SpotLabel)
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBoardLabel(
     center: Offset,
     label: String,
     textSize: Float,
-    labelArgb: Int,
+    labelColor: Color,
 ) {
-    drawIntoCanvas { canvas ->
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = labelArgb
-            textAlign = Paint.Align.CENTER
-            this.textSize = textSize
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        canvas.nativeCanvas.drawText(
-            label,
-            center.x,
-            center.y - (paint.descent() + paint.ascent()) / 2f,
-            paint,
-        )
-    }
+    drawBoldCanvasText(label, center, textSize, labelColor)
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel(
@@ -867,28 +836,20 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawMoveNumberLabel
     stone: StoneColor,
     textSize: Float,
 ) {
-    drawIntoCanvas { canvas ->
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = when (stone) {
-                StoneColor.Black -> GoBoardPalette.MoveNumberOnBlackArgb
-                StoneColor.White -> GoBoardPalette.MoveNumberOnWhiteArgb
-            }
-            textAlign = Paint.Align.CENTER
-            this.textSize = textSize
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        val outline = Paint(paint).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = textSize * 0.11f
-            color = when (stone) {
-                StoneColor.Black -> GoBoardPalette.MoveNumberOutlineOnBlackArgb
-                StoneColor.White -> GoBoardPalette.MoveNumberOutlineOnWhiteArgb
-            }
-        }
-        val baseline = center.y - (paint.descent() + paint.ascent()) / 2f
-        canvas.nativeCanvas.drawText(label, center.x, baseline, outline)
-        canvas.nativeCanvas.drawText(label, center.x, baseline, paint)
-    }
+    drawBoldCanvasText(
+        label = label,
+        center = center,
+        textSizePx = textSize,
+        color = when (stone) {
+            StoneColor.Black -> GoBoardPalette.MoveNumberOnBlack
+            StoneColor.White -> GoBoardPalette.MoveNumberOnWhite
+        },
+        outlineColor = when (stone) {
+            StoneColor.Black -> GoBoardPalette.MoveNumberOutlineOnBlack
+            StoneColor.White -> GoBoardPalette.MoveNumberOutlineOnWhite
+        },
+        outlineWidthPx = textSize * 0.11f,
+    )
 }
 
 internal fun candidateToneColor(tone: MoveReviewTone): Color =

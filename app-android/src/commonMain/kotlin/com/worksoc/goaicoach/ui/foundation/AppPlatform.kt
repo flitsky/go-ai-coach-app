@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui.foundation
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.PlayHapticFeedback
 
 /**
  * 화면이 쓰는 플랫폼 기능의 묶음(백로그 #294 — 이식 계획 S1). 화면은 `LocalContext` 대신 [LocalAppPlatform]에서 꺼낸다 —
@@ -13,6 +14,9 @@ interface AppPlatform {
     val notice: AppNotice
     val clipboard: ClipboardPort
     val stores: AppStores
+
+    /** 착수 진동 — 판마다 한 번 꺼내 쓴다(`remember`). */
+    val haptics: PlayHapticFeedback
 }
 
 /** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). */

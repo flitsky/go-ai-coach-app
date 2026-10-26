@@ -42,7 +42,7 @@ private const val OneShotAmplitude = 255
 private const val InvalidPulseMillis = 15L
 private const val InvalidPulseGapMillis = 15L
 
-internal class PlayHaptics(context: Context) {
+internal class PlayHaptics(context: Context) : PlayHapticFeedback {
     private val appContext = context.applicationContext
 
     private val vibrator: Vibrator? = runCatching {
@@ -63,7 +63,7 @@ internal class PlayHaptics(context: Context) {
      * `USAGE_ASSISTANCE_SONIFICATION`으로 용도를 밝혀 둔다 — 터치 피드백 계열임을 시스템에
      * 알려, 무음 모드에서 알림 진동처럼 취급돼 엉뚱하게 억제되거나 반대로 튀지 않게 한다.
      */
-    fun play() {
+    override fun play() {
         val vibrator = vibrator ?: run { PlayHapticDiagnostics.record(false, "no vibrator service"); return }
         if (!vibrator.hasVibrator()) {
             PlayHapticDiagnostics.record(false, "device reports no vibrator")
@@ -79,7 +79,7 @@ internal class PlayHaptics(context: Context) {
      * 착수 불가 위치를 짚었을 때(끌기 중 포함) 짧게 두 번 울린다 — [play]의 긴 한 번과
      * 손끝만으로 구분하기 위함이다. `createWaveform`의 timings는 [off, on, off, on] 순서다.
      */
-    fun playInvalid() {
+    override fun playInvalid() {
         val vibrator = vibrator ?: run { PlayHapticDiagnostics.record(false, "no vibrator service"); return }
         if (!vibrator.hasVibrator()) {
             PlayHapticDiagnostics.record(false, "device reports no vibrator")

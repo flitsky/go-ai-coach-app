@@ -97,4 +97,5 @@ internal val PortCatalogPages: List<PortCatalogPage> = listOf(
     PortCatalogPage(id = "strings", title = "문구 — 네 언어 · 명언 줄바꿈", wave = "W6") { CatalogStrings() },
     PortCatalogPage(id = "images", title = "그림 — 캐릭터 · 보상 벡터 · 스플래시 · 썸네일", wave = "W7") { CatalogImages() },
     PortCatalogPage(id = "splash", title = "스플래시 · 빠른 버튼(기동 추첨)", wave = "W8") { CatalogSplashAndQuickActions(variant = null) },
+    PortCatalogPage(id = "board", title = "바둑판 — 착수 · 좌표 · 수순 번호 · 진동", wave = "W11") { CatalogBoard() },
 )

@@ -355,7 +355,7 @@
         errorLine1="    var activityFrame by remember { mutableStateOf(0) }"
         errorLine2="                                    ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/board/GoBoard.kt"
+            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/board/GoBoard.kt"
             line="116"
             column="37"/>
     </issue>

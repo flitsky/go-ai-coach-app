@@ -26,6 +26,8 @@ import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.persistence.WhatsNewStore
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
+import com.worksoc.goaicoach.platform.PlayHapticFeedback
+import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
 
@@ -40,6 +42,9 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
     override val notice = AndroidUserNoticePort(appContext)
     override val clipboard = AndroidClipboardPort(appContext)
     override val stores: AppStores = AndroidAppStores(appContext)
+
+    // 판이 오늘처럼 `remember`로 하나 만든다 — 읽을 때마다 새로(진동기 서비스를 잡는 일은 생성자에서 한 번).
+    override val haptics: PlayHapticFeedback get() = PlayHaptics(appContext)
 }
 
 /**

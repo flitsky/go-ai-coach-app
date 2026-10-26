@@ -8,9 +8,8 @@ import androidx.compose.ui.graphics.Color
  * 하므로 테마를 따라 바뀌지 않는다.
  *
  * 값은 `GoBoard.kt`에 흩어져 있던 리터럴을 **그대로** 옮긴 것이다(전후 스크린샷이 픽셀까지 같다).
- * `…Argb`는 `android.graphics.Paint`에 넣는 정수 색이다(수순 번호·추천 수 글자는 네이티브 캔버스로 그린다).
- * ⚠️ `Color.rgb(…)`는 **게터**로 둔다 — 객체 초기화에서 부르면 JVM 단위 테스트가 이 객체에 닿는 순간
- *   안드로이드 스텁(`not mocked`)으로 터진다. 원래도 그리는 순간에만 불리던 값이다.
+ * 수순 번호 · 추천 수 글자 색은 캔버스 글자([drawBoldCanvasText])에 넣는다 — 예전의 `…Argb` 정수(`android.graphics.Color`)와
+ *   같은 값이다(#294에서 Compose 색으로 바꿨다: `Color(0xFF181818).toArgb()` = `rgb(24, 24, 24)`).
  */
 internal object GoBoardPalette {
     /** 판 위 안내 글자 상자의 바탕(투명도는 부르는 쪽이 준다)과 그 위 글자. */
@@ -60,11 +59,11 @@ internal object GoBoardPalette {
     val WhiteStoneEdge = Color(0xFF8F8A7C)
     val WhiteStoneEndedEdge = Color(0xFF726E63)
 
-    val SpotLabelArgb: Int = android.graphics.Color.BLACK
-    val MoveNumberOnBlackArgb: Int = android.graphics.Color.WHITE
-    val MoveNumberOnWhiteArgb: Int get() = android.graphics.Color.rgb(24, 24, 24)
-    val MoveNumberOutlineOnBlackArgb: Int get() = android.graphics.Color.rgb(18, 18, 18)
-    val MoveNumberOutlineOnWhiteArgb: Int = android.graphics.Color.WHITE
+    val SpotLabel = Color.Black
+    val MoveNumberOnBlack = Color.White
+    val MoveNumberOnWhite = Color(0xFF181818)
+    val MoveNumberOutlineOnBlack = Color(0xFF121212)
+    val MoveNumberOutlineOnWhite = Color.White
 }
 
 /** 사활 문제의 틀린 수 표시(백로그 #184) — 착수한 돌 가운데의 붉은 점. 흑돌 위에서도 묻히지 않게 밝은 빨강이다. */
