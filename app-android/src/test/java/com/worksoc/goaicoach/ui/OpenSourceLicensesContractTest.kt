@@ -161,6 +161,7 @@ class OpenSourceLicensesContractTest {
                 openSourceLicensesTitleFor(language),
                 openSourceLicensesIntroFor(language),
                 openSourceLicensesEngineSectionFor(language),
+                openSourceLicensesEngineSectionFor(language, includesPhotoRecognition = false),
                 openSourceLicensesMusicSectionFor(language),
                 openSourceLicensesLibrarySectionFor(language),
                 openSourceLicensesViewLicenseFor(language),

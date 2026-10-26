@@ -9,5 +9,6 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.aboutlibraries.android) apply false
+    alias(libs.plugins.aboutlibraries) apply false
 }
 

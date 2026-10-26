@@ -3,6 +3,7 @@
 # `appassets/` 아래로 복사한다 — 원본은 안드로이드 쪽 하나뿐이다(두 벌로 두지 않는다).
 #   appassets/drawable/  비트맵(webp · jpg) — `painterFor`가 이름으로 읽는다. 벡터(XML)는 `scripts/ios-vector-drawables.py`가 코드로 옮긴다.
 #   appassets/assets/    안드로이드 `assets/` 그대로(기보 · 참고 대국) — `BundledAssets`가 같은 상대 경로로 읽는다.
+#                        더해 `licenses/aboutlibraries-ios.json` — iOS의 오픈소스 목록(`:ios-licenses`가 앞 단계 Gradle에서 만든다).
 #   appassets/audio/     배경음악(#244) — 안드로이드 `res/raw/bgm_*.ogg`를 AAC(m4a)로 바꿔 싣는다(iOS의 AVAudioPlayer는 Ogg Vorbis를 못 연다).
 #                        바꾼 파일은 DerivedData에 두고 원본이 더 새로울 때만 다시 바꾼다. ffmpeg가 없으면 음악 없이 묶는다(경고 — 앱은 조용할 뿐이다).
 set -euo pipefail
@@ -11,6 +12,8 @@ DST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/appassets"
 mkdir -p "$DST/drawable" "$DST/assets"
 cp -f "$SRC"/res/drawable-nodpi/*.webp "$SRC"/res/drawable/*.jpg "$DST/drawable/"
 rsync -a --delete "$SRC/assets/" "$DST/assets/"
+mkdir -p "$DST/assets/licenses"
+cp -f "${SRCROOT}/../ios-licenses/build/ios-licenses/aboutlibraries-ios.json" "$DST/assets/licenses/"
 
 mkdir -p "$DST/audio"
 FFMPEG="$(command -v ffmpeg || true)"

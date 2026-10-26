@@ -118,7 +118,8 @@ internal fun OpenSourceLicensesScreen(
             val (engine, rest) = entries.partition { it.isBundledEngine }
             val (music, apps) = rest.partition { it.isBackgroundMusic }
             if (engine.isNotEmpty()) {
-                item(key = "section-engine") { SectionTitle(openSourceLicensesEngineSectionFor(language)) }
+                // 사진 인식(OpenCV)이 실린 플랫폼만 제목에 함께 적는다 — iOS에는 없다(`boardScan == null`, U-84).
+                item(key = "section-engine") { SectionTitle(openSourceLicensesEngineSectionFor(language, includesPhotoRecognition = platform.boardScan != null)) }
                 items(engine, key = { it.id }) { entry ->
                     OpenSourceEntryRow(entry, expanded[entry.id] == true, language) { expanded[entry.id] = expanded[entry.id] != true }
                 }
