@@ -76,7 +76,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-prebuild-engine ios-ensure-engine ios-engine-probe
 
 help:
 	@echo "=========================================================================="
@@ -100,6 +100,8 @@ help:
 	@echo "  make test-ios            - Compile-only iOS targets check (see 함정 75; NOT part of make test)"
 	@echo "  make ios-build           - Build the iOS app (app-ios/) for the simulator (Xcode; NOT part of make test)"
 	@echo "  make ios-run             - ios-build, then install & launch on IOS_SIM (default \"iPhone 17\"; name or UDID)"
+	@echo "  make ios-prebuild-engine - Build KataGo as a static library for the iOS simulator (app-ios/build/katago/)"
+	@echo "  make ios-engine-probe    - Run KataGo inside the app on the simulator (GTP, main then human model; prints timings)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
 	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
 	@echo "  make test-remote-analysis-server - Check run-katago-remote-analysis-server.py's query builder"
@@ -192,13 +194,38 @@ IOS_BUNDLE_ID := com.zenit9hub.ai.baduk
 # 시뮬레이터 — 이름이나 UDID(`xcrun simctl list devices available`). 기본은 Xcode 27.1에 들어 있는 iPhone 17.
 IOS_SIM ?= iPhone 17
 
-ios-build:
+# KataGo(백로그 #293) — 앱이 `libkatago.a`를 링크한다. 안드로이드의 prebuild-engine · ensure-debug-engine과 같은 짝이다.
+IOS_ENGINE_LIB := app-ios/build/katago/iphonesimulator/libkatago.a
+
+ios-prebuild-engine:
+	./scripts/build-katago-ios.sh iphonesimulator
+
+ios-ensure-engine:
+	@test -f "$(IOS_ENGINE_LIB)" || ( \
+		echo "Missing iOS engine library: $(IOS_ENGINE_LIB)"; \
+		echo "Run 'make ios-prebuild-engine' first (KataGo as a static library — a few minutes the first time)."; \
+		exit 2; \
+	)
+
+ios-build: ios-ensure-engine
 	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Debug -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath $(IOS_DERIVED) build
 
 ios-run: ios-build
 	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
 	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
 	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
+
+# KataGo가 앱 안에서 도는지 시뮬레이터에서 본다(백로그 #293 — `app-ios/GoCoach/Engine/KataGoProbe.swift`, 디버그 빌드에만 있다).
+# 주 모델로 GTP 몇 마디 → quit → 같은 앱 안에서 사람 모델로 다시 띄운다. 모델 · 설정은 안드로이드 번들과 같은 맥의 파일을 읽는다
+# (시뮬레이터 앱은 맥의 경로를 읽을 수 있다 — 실기기에서는 안 된다). 끝나면 앱이 스스로 닫히고 기록이 이 터미널에 찍힌다.
+ios-engine-probe: ios-build
+	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
+	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
+	SIMCTL_CHILD_KATAGO_PROBE_MODEL="$(FRIEND_MODEL_PATH)" \
+	SIMCTL_CHILD_KATAGO_PROBE_HUMAN_MODEL="$(FRIEND_HUMAN_MODEL_PATH)" \
+	SIMCTL_CHILD_KATAGO_PROBE_CONFIG="$(FRIEND_CONFIG_PATH)" \
+	SIMCTL_CHILD_KATAGO_PROBE_EXIT=1 \
+	xcrun simctl launch --console-pty --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #13ⓑ). `make test`가 지키는 "빠른
 # 루프"(에뮬레이터/실기기 없이 몇 초~몇 분 안에 결과)를 계기 테스트가 깨뜨린다 — 에뮬레이터

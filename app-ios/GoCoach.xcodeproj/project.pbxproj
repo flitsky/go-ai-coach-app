@@ -200,6 +200,7 @@
 		29200000000000000000A00F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 10804;
 				ENABLE_PREVIEWS = NO;
@@ -219,14 +220,21 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/build/katago/$(PLATFORM_NAME)",
+				);
 				MARKETING_VERSION = 1.8.4;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
 					SharedUI,
+					"-lkatago",
+					"-lz",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "GoCoach/GoCoach-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -235,6 +243,7 @@
 		29200000000000000000A010 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 10804;
 				ENABLE_PREVIEWS = NO;
@@ -254,14 +263,21 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/build/katago/$(PLATFORM_NAME)",
+				);
 				MARKETING_VERSION = 1.8.4;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
 					SharedUI,
+					"-lkatago",
+					"-lz",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "GoCoach/GoCoach-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
