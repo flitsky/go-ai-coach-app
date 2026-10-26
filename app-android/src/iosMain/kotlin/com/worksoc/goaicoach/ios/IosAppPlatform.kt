@@ -29,18 +29,28 @@ import com.worksoc.goaicoach.ui.designsystem.toByteArray
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.toKString
+import platform.CoreHaptics.CHHapticEngine
 import platform.Foundation.NSBundle
 import platform.Foundation.NSData
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.dataWithContentsOfFile
+import platform.UIKit.UIDevice
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 import platform.UIKit.UINotificationFeedbackGenerator
 import platform.UIKit.UINotificationFeedbackType
 import platform.UIKit.UIPasteboard
+import platform.posix.exit
+import platform.posix.uname
+import platform.posix.utsname
 
 /** iOS의 [AppPlatform](백로그 #294 — S1). 루트(`MainViewController`)가 하나 만들어 넣는다. 기능은 웨이브마다 는다. */
 internal class IosAppPlatform : AppPlatform {
@@ -72,8 +82,12 @@ internal class IosAppPlatform : AppPlatform {
     override val developer = object : DeveloperTools {
         override fun wipeToFreshInstall() = iosWipeToFreshInstall()
 
-        // iOS는 프로세스를 스스로 다시 띄우지 않는다 — 지우기만 하고, 화면은 다음에 들어올 때 새 값을 읽는다.
-        override fun restartToFreshInstall() = iosWipeToFreshInstall()
+        // 지우고 프로세스를 끝낸다 — 안드로이드의 「지우고 다시 띄우기」와 같은 뜻(메모리의 옛 값이 지운 저장소에 되써지지 않게). iOS는 앱이 스스로
+        // 다시 뜰 수 없으니 개발자가 아이콘을 눌러 콜드 스타트한다. 부르는 곳은 디버그 개발자 메뉴뿐이다(출시 빌드에는 닿지 않는다).
+        override fun restartToFreshInstall() {
+            iosWipeToFreshInstall()
+            exit(0)
+        }
 
         override fun runReleaseResetAgain(): Boolean = false
 
@@ -93,9 +107,18 @@ internal class IosAppPlatform : AppPlatform {
     val diagnosticEventLog: DiagnosticEventLogPort = KvDiagnosticEventLog(IosAppFileStore())
 
     override val debugReportPlatform = object : DebugReportPlatformInfo {
-        override fun hapticDiagnostic(): String = "ios-uikit-feedback"
+        override fun hapticDiagnostic(): String = IosPlayHaptics.diagnosticReport()
 
-        override fun buildStamp(): String = "ios ${appBuildInfo.versionName} (${appBuildInfo.versionCode}) ${appBuildInfo.buildType}"
+        // 안드로이드 `debugReportBuildStamp()`와 같은 두 줄 · 같은 구분자(` · `) — 붙여넣은 리포트를 같은 눈으로 읽는다.
+        override fun buildStamp(): String = buildString {
+            append("build=${appBuildInfo.versionName} (${appBuildInfo.versionCode})")
+            append(" · ${appBuildInfo.buildType}")
+            append(" · ${if (appBuildInfo.useTestAds) "test-ads" else "REAL-ADS"}")
+            append(" · builtAt=${appBuildInfo.buildTime}")
+            appendLine()
+            append("device=Apple ${iosDeviceModel()}")
+            append(" · ios=${UIDevice.currentDevice.systemVersion}")
+        }
     }
 
     // 모델은 앱과 함께 싣는다(시뮬레이터는 맥의 모델 경로) — 받기 화면이 필요 없다.
@@ -113,14 +136,41 @@ private fun consumeDocumentsFile(name: String): Boolean {
     return manager.fileExistsAtPath(path) && manager.removeItemAtPath(path, error = null)
 }
 
-/** 착수 진동(S10) — 돌을 놓으면 묵직한 한 번, 놓을 수 없으면 경고 알림(짧게 두 번 떨린다). */
+/**
+ * 착수 진동(S10) — 돌을 놓으면 묵직한 한 번, 놓을 수 없으면 경고 알림(짧게 두 번 떨린다).
+ * 진단 리포트의 `[Haptics]` 절(안드로이드 `PlayHapticDiagnostics`의 짝): UIKit 피드백은 성공 신호를 돌려주지 않아 「시도」와 기기 능력만 적는다.
+ */
 private object IosPlayHaptics : PlayHapticFeedback {
+    private var attempts = 0
+    private var lastKind: String? = null
+
     override fun play() {
         UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy).impactOccurred()
+        attempts++
+        lastKind = "impact(heavy)"
     }
 
     override fun playInvalid() {
         UINotificationFeedbackGenerator().notificationOccurred(UINotificationFeedbackType.UINotificationFeedbackTypeError)
+        attempts++
+        lastKind = "notification(error)"
+    }
+
+    fun diagnosticReport(): String = buildString {
+        appendLine("path=UIFeedbackGenerator gate=앱 토글(iOS 시스템 햅틱 설정을 따른다)")
+        appendLine("attempts=$attempts last=${lastKind ?: "none"}")
+        append("supportsHaptics=${CHHapticEngine.capabilitiesForHardware().supportsHaptics()}")
+    }
+}
+
+/** 기기 모델 — 시뮬레이터는 흉내 내는 기종(`SIMULATOR_MODEL_IDENTIFIER`)에 표시를 붙이고, 기기는 `utsname.machine`(예: iPhone17,1). */
+@OptIn(ExperimentalForeignApi::class)
+private fun iosDeviceModel(): String {
+    NSProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"]?.let { return "$it (simulator)" }
+    return memScoped {
+        val info = alloc<utsname>()
+        uname(info.ptr)
+        info.machine.toKString()
     }
 }
 

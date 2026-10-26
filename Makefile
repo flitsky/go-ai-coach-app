@@ -76,7 +76,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe ios-prebuild-engine-device ios-ensure-engine-device ios-build-device-release ios-run-release
 
 help:
 	@echo "=========================================================================="
@@ -103,6 +103,9 @@ help:
 	@echo "  make ios-catalog PAGE=x - Open one page of the iOS port catalog on the simulator (empty PAGE = index)"
 	@echo "  make ios-prebuild-engine - Build KataGo as a static library for the iOS simulator (app-ios/build/katago/)"
 	@echo "  make ios-engine-probe    - Run KataGo inside the app on the simulator (GTP, main then human model; prints timings)"
+	@echo "  make ios-prebuild-engine-device - Build KataGo as a static library for iPhones (app-ios/build/katago/iphoneos/)"
+	@echo "  make ios-build-device-release   - Release build for iPhones without signing (checks compile + link; no Apple account)"
+	@echo "  make ios-run-release     - Release build on the simulator, install & launch (debug-only paths off, like the store build)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
 	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
 	@echo "  make test-remote-analysis-server - Check run-katago-remote-analysis-server.py's query builder"
@@ -207,6 +210,36 @@ ios-ensure-engine:
 		echo "Run 'make ios-prebuild-engine' first (KataGo as a static library — a few minutes the first time)."; \
 		exit 2; \
 	)
+
+# 실기기용(백로그 #293 · #294) — 서명 없이(CODE_SIGNING_ALLOWED=NO) Release · iphoneos로 컴파일 · 링크까지 본다. 애플 계정이 필요 없다.
+# 설치 · 실행은 개발자 가입 뒤(#297). 기기용 Kotlin 프레임워크(iosArm64 release)는 처음에 오래 걸린다.
+IOS_ENGINE_LIB_DEVICE := app-ios/build/katago/iphoneos/libkatago.a
+
+ios-prebuild-engine-device:
+	./scripts/build-katago-ios.sh iphoneos
+
+ios-ensure-engine-device:
+	@test -f "$(IOS_ENGINE_LIB_DEVICE)" || ( \
+		echo "Missing iOS device engine library: $(IOS_ENGINE_LIB_DEVICE)"; \
+		echo "Run 'make ios-prebuild-engine-device' first."; \
+		exit 2; \
+	)
+
+ios-build-device-release: ios-ensure-engine-device
+	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Release -destination 'generic/platform=iOS' -derivedDataPath $(IOS_DERIVED) CODE_SIGNING_ALLOWED=NO build
+
+# 출시와 같은 Release 구성을 시뮬레이터에서 — 디버그에서만 도는 길(광고 보상 흉내 · 개발자 메뉴)이 꺼진 채로 본다(#297 「디버그에서 됐다고 릴리스에서 된다고 보지 않는다」).
+IOS_APP_RELEASE := $(IOS_DERIVED)/Build/Products/Release-iphonesimulator/GoCoach.app
+
+ios-run-release: ios-ensure-engine
+	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Release -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath $(IOS_DERIVED) build
+	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
+	xcrun simctl install "$(IOS_SIM)" $(IOS_APP_RELEASE)
+	SIMCTL_CHILD_GOCOACH_KATAGO_MODEL="$(FRIEND_MODEL_PATH)" \
+	SIMCTL_CHILD_GOCOACH_KATAGO_HUMAN_MODEL="$(FRIEND_HUMAN_MODEL_PATH)" \
+	SIMCTL_CHILD_GOCOACH_KATAGO_CONFIG="$(FRIEND_CONFIG_PATH)" \
+	SIMCTL_CHILD_GOCOACH_KATAGO_ANALYSIS_CONFIG="$(FRIEND_ANALYSIS_CONFIG_PATH)" \
+	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
 ios-build: ios-ensure-engine
 	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Debug -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath $(IOS_DERIVED) build

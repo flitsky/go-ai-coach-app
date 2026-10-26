@@ -28,6 +28,9 @@ import platform.UIKit.UIViewController
  * ⚠️ 상태 표시줄 모양은 **창의 루트** 화면 컨트롤러가 정한다 — 그래서 Swift 쪽이 SwiftUI 호스트가 아니라 이 컨트롤러를 루트로 둔다.
  */
 class IosAppRoot {
+    // ⚠️ 첫 필드 — 다른 무엇보다 먼저(안드로이드 `GoAiCoachApplication.onCreate`의 순서, #99). 저장소가 생기기 전에 지워야 한다.
+    @Suppress("unused")
+    private val developerModeReset = applyIosDeveloperModeReset()
     private val probe = EngineProbe.requested()
     private val catalog = NSProcessInfo.processInfo.environment["GOCOACH_PORT_CATALOG_PAGE"] != null
     private val platform = IosAppPlatform()
