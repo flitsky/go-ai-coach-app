@@ -6,17 +6,16 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
-import org.json.JSONObject
 
 internal object KataGoJsonAnalysisParser {
     fun parseRootVisits(response: String): Int? =
-        JSONObject(response)
-            .optJSONObject("rootInfo")
+        parseJsonObject(response)
+            .optJsonObject("rootInfo")
             ?.optNullableInt("visits")
 
     fun parseRootWhiteScoreLead(response: String): Double? =
-        JSONObject(response)
-            .optJSONObject("rootInfo")
+        parseJsonObject(response)
+            .optJsonObject("rootInfo")
             ?.optNullableDouble("scoreLead")
             ?.let { -it }
 
@@ -26,14 +25,14 @@ internal object KataGoJsonAnalysisParser {
         boardSize: BoardSize,
         maxCandidates: Int,
     ): List<CandidateMove> {
-        val root = JSONObject(response)
-        val moveInfos = root.optJSONArray("moveInfos") ?: return emptyList()
-        val rootScoreLead = root.optJSONObject("rootInfo")
+        val root = parseJsonObject(response)
+        val moveInfos = root.optJsonArray("moveInfos") ?: return emptyList()
+        val rootScoreLead = root.optJsonObject("rootInfo")
             ?.optNullableDouble("scoreLead")
             ?.let { -it }
         val parsed = buildList {
-            for (index in 0 until moveInfos.length()) {
-                val moveInfo = moveInfos.optJSONObject(index) ?: continue
+            for (index in 0 until moveInfos.size) {
+                val moveInfo = moveInfos.optJsonObject(index) ?: continue
                 val move = moveInfo.optString("move", "").toGtpMoveOrNull(player, boardSize) ?: continue
                 val blackScoreLead = moveInfo.optNullableDouble("scoreLead")
                 val blackWinRate = moveInfo.optNullableDouble("winrate")
@@ -85,9 +84,9 @@ internal object KataGoJsonAnalysisParser {
         maxCandidates: Int,
         excludedCoordinates: Set<BoardCoordinate> = emptySet(),
     ): List<CandidateMove> {
-        val policy = JSONObject(response).optJSONArray("policy") ?: return emptyList()
+        val policy = parseJsonObject(response).optJsonArray("policy") ?: return emptyList()
         val boardPointCount = boardSize.value * boardSize.value
-        if (policy.length() < boardPointCount) {
+        if (policy.size < boardPointCount) {
             return emptyList()
         }
 
@@ -123,7 +122,7 @@ internal object KataGoJsonAnalysisParser {
         referenceScoreLead: Double,
         policyPrior: Double?,
     ): CandidateMove? {
-        val rootInfo = JSONObject(response).optJSONObject("rootInfo") ?: return null
+        val rootInfo = parseJsonObject(response).optJsonObject("rootInfo") ?: return null
         val blackScoreLead = rootInfo.optNullableDouble("scoreLead") ?: return null
         val scoreLead = -blackScoreLead
         val blackWinRate = rootInfo.optNullableDouble("winrate")
@@ -163,10 +162,4 @@ internal object KataGoJsonAnalysisParser {
             StoneColor.Black -> this
             StoneColor.White -> 1.0 - this
         }.coerceIn(0.0, 1.0)
-
-    private fun JSONObject.optNullableDouble(key: String): Double? =
-        if (has(key) && !isNull(key)) optDouble(key) else null
-
-    private fun JSONObject.optNullableInt(key: String): Int? =
-        if (has(key) && !isNull(key)) optInt(key) else null
 }

@@ -75,7 +75,7 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "kata-raw-nn 0",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"W","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m0","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m0","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"W","initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
         // 차례는 SGF의 PL이 세운다(`set_position`은 늘 흑 차례라 백 차례 국면의 형세를 흑 차례로 쟀을 것이다). 좌표는 SGF의 열·행(a = 왼쪽·맨 위).
@@ -102,7 +102,7 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "kata-set-param maxTime 0.25",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"chinese","initialPlayer":"B","priority":0,"komi":7.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m0","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m0","rules":"chinese","komi":7.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"B","initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
     }
@@ -130,7 +130,7 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "play B G3",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"W","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[["W","C7"],["B","G3"]],"analyzeTurns":[2],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m2","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m2","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"W","initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[["W","C7"],["B","G3"]],"analyzeTurns":[2],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
         // 엔진이 읽는 시작판은 사진의 돌과 첫 차례(백)다 — 둔 두 수는 그 위에 `play`로 둔다.
@@ -161,7 +161,7 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "kata-set-param maxTime 0.25",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"B","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[],"moves":[["B","E5"],["W","C3"],["B","G7"]],"analyzeTurns":[3],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m3","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m3","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"B","initialStones":[],"moves":[["B","E5"],["W","C3"],["B","G7"]],"analyzeTurns":[3],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
     }
@@ -191,7 +191,7 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "kata-set-param maxTime 0.25",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"chinese","initialPlayer":"W","priority":0,"komi":0.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","G7"],["B","C3"]],"moves":[["W","E5"],["B","E4"],["W","D5"]],"analyzeTurns":[3],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m3","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m3","rules":"chinese","komi":0.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"W","initialStones":[["B","G7"],["B","C3"]],"moves":[["W","E5"],["B","E4"],["W","D5"]],"analyzeTurns":[3],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
     }
@@ -223,7 +223,7 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "kata-set-param maxTime 0.25",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"B","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[],"moves":[["B","B1"],["W","A1"],["B","A2"],["W","pass"],["B","E5"]],"analyzeTurns":[5],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m5","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m5","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"B","initialStones":[],"moves":[["B","B1"],["W","A1"],["B","A2"],["W","pass"],["B","E5"]],"analyzeTurns":[5],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
     }
@@ -257,8 +257,8 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "play W C3",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"B","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[],"moves":[["B","E5"],["W","C3"],["B","G7"]],"analyzeTurns":[3],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m3","overrideSettings":{}}""",
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"B","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[],"moves":[["B","E5"],["W","C3"]],"analyzeTurns":[2],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m2","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m3","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"B","initialStones":[],"moves":[["B","E5"],["W","C3"],["B","G7"]],"analyzeTurns":[3],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m2","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"B","initialStones":[],"moves":[["B","E5"],["W","C3"]],"analyzeTurns":[2],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
     }
@@ -295,8 +295,8 @@ class KataGoProcessEngineAdapterSyncToGameStateGoldenTest {
                 "kata-set-param maxTime 0.25",
             ),
             queries = listOf(
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"W","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m0","overrideSettings":{}}""",
-                """{"includeMovesOwnership":false,"boardYSize":9,"rules":"japanese","initialPlayer":"B","priority":0,"komi":6.5,"maxVisits":16,"includeOwnership":false,"boardXSize":9,"initialStones":[],"moves":[["B","E5"],["W","C3"],["B","G7"]],"analyzeTurns":[3],"includePolicy":true,"id":"go-ai-coach-analysis-#-9x9-m3","overrideSettings":{}}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m0","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"W","initialStones":[["B","E5"],["W","D4"],["B","F6"]],"moves":[],"analyzeTurns":[0],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
+                """{"id":"go-ai-coach-analysis-#-9x9-m3","rules":"japanese","komi":6.5,"boardXSize":9,"boardYSize":9,"initialPlayer":"B","initialStones":[],"moves":[["B","E5"],["W","C3"],["B","G7"]],"analyzeTurns":[3],"maxVisits":16,"includeOwnership":false,"includeMovesOwnership":false,"includePolicy":true,"overrideSettings":{},"priority":0}""",
             ),
         )
     }

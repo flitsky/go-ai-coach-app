@@ -73,13 +73,13 @@ SOURCES = {
     "play_level": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/PlayLevel.kt",
     "search_time": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/policy/SearchTimeSettings.kt",
     "engine_bootstrap": "app-android/src/main/java/com/worksoc/goaicoach/engine/EngineBootstrap.kt",
-    "process_runtime": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoProcessRuntime.kt",
+    "process_runtime": "engine-android/src/commonMain/kotlin/com/worksoc/goaicoach/engine/android/KataGoProcessRuntime.kt",
     "preferences": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/application/preferences/UserPreferencesSnapshot.kt",
     "board_models": "core/domain/src/commonMain/kotlin/com/worksoc/goaicoach/shared/domain/BoardModels.kt",
     "selection_policy": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/match/AiMoveSelectionPolicy.kt",
-    "gtp_client": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoGtpAnalysisClient.kt",
-    "parser": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoAnalysisParser.kt",
-    "protocol": "engine-android/src/main/java/com/worksoc/goaicoach/engine/android/KataGoProtocolCommands.kt",
+    "gtp_client": "engine-android/src/commonMain/kotlin/com/worksoc/goaicoach/engine/android/KataGoGtpAnalysisClient.kt",
+    "parser": "engine-android/src/commonMain/kotlin/com/worksoc/goaicoach/engine/android/KataGoAnalysisParser.kt",
+    "protocol": "engine-android/src/commonMain/kotlin/com/worksoc/goaicoach/engine/android/KataGoProtocolCommands.kt",
     "hopeless_position": "shared/src/commonMain/kotlin/com/worksoc/goaicoach/shared/playstyle/HopelessPosition.kt",
 }
 

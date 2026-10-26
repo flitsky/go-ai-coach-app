@@ -10,6 +10,7 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMoveSource
 import com.worksoc.goaicoach.shared.enginecontract.DefaultCommandTimeoutMillis
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
+import kotlin.time.TimeSource
 
 internal class KataGoGtpAnalysisClient(
     private val sendCommand: suspend (command: String, timeoutMillis: Long) -> String,
@@ -86,12 +87,12 @@ internal class KataGoGtpAnalysisClient(
     ): GtpAnalysisResult {
         applySearchLimit(effectiveLimit)
         val context = contextProvider()
-        val startNanos = System.nanoTime()
+        val startedAt = TimeSource.Monotonic.markNow()
         val response = sendCommand(
             KataGoProtocolCommands.searchAnalyze(context.nextPlayer, effectiveLimit),
             searchTimeoutMillisFor(effectiveLimit.timeMillis),
         )
-        val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+        val elapsedMs = startedAt.elapsedNow().inWholeMilliseconds
         val candidates = KataGoAnalysisParser.attachPointLoss(
             candidates = KataGoAnalysisParser.parseCandidates(
                 response = response,

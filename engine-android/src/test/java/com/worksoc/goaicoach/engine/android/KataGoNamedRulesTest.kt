@@ -105,12 +105,15 @@ class KataGoNamedRulesTest {
         ruleset: Ruleset,
         handicapBonusRule: HandicapBonusRule = ruleset.handicapBonusRule,
     ): JSONObject =
-        KataGoJsonAnalysisQueryFactory.build(
-            id = "q",
-            boardSize = BoardSize.Nine,
-            ruleset = ruleset,
-            playedMoves = emptyList(),
-            limit = AnalysisLimit(visits = 8),
-            handicapBonusRule = handicapBonusRule,
+        // 엔진이 받는 그 JSON 글자를 읽어 본다(쿼리 팩토리는 백로그 #293부터 공용 kotlinx JsonObject를 만든다).
+        JSONObject(
+            KataGoJsonAnalysisQueryFactory.build(
+                id = "q",
+                boardSize = BoardSize.Nine,
+                ruleset = ruleset,
+                playedMoves = emptyList(),
+                limit = AnalysisLimit(visits = 8),
+                handicapBonusRule = handicapBonusRule,
+            ).toString(),
         )
 }

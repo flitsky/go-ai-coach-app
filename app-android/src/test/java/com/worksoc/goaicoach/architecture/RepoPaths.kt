@@ -98,6 +98,7 @@ internal object RepoPaths {
                     "shared/src/androidMain",
                     "shared/src/iosMain",
                     "engine-android/src/androidMain",
+                    "engine-android/src/iosMain",
                 ),
         )
 
@@ -112,6 +113,15 @@ internal object RepoPaths {
      */
     val kmpCommonMainKotlinRoots: List<File>
         get() = strictRoots("KMP commonMain 코틀린 루트", KMP_COMMON_MAIN_KOTLIN)
+
+    /**
+     * iOS로도 컴파일되는 commonMain 코틀린 루트 **전부** — [kmpCommonMainKotlinRoots]에 엔진 어댑터 모듈의 commonMain을 더한 것
+     * (백로그 #293 — 안드로이드 · iOS가 함께 쓰는 엔진 코드). 「import 없이 새는 JVM 전용 API」 금지가 본다.
+     * 엔진 패키지는 [kmpCommonMainKotlinRoots]에 넣지 않는다 — 한 패키지에 1계층(프로세스 띄우기)과 2계층(어댑터)이 함께 있어
+     * 계층 목록 밖으로 둔 자리다(`LAYER_2_MIDDLEWARE_BRIDGE.md` 「계층 배정」 — 「지금 위치」가 정본).
+     */
+    val iosCompiledCommonMainKotlinRoots: List<File>
+        get() = kmpCommonMainKotlinRoots + strictRoots("엔진 commonMain 코틀린 루트", listOf("engine-android/src/commonMain/kotlin"))
 
     /** KMP 모듈의 공용 테스트 소스 루트 전부([KMP_COMMON_TEST]). 하나라도 없으면 터뜨린다. */
     val kmpCommonTestRoots: List<File>

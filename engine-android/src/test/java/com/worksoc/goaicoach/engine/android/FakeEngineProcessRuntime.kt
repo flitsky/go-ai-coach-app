@@ -98,10 +98,13 @@ internal class FakeEngineProcessRuntime : EngineProcessRuntime {
 
     override fun startAnalysis(analysisConfigPath: String): EngineProcessPipes = start(Kind.Analysis)
 
-    /** [EngineProcessRuntime.staticPositionFile] — 테스트마다 새 임시 파일. 어댑터가 쓴 SGF를 테스트가 읽어 본다. */
+    /** [EngineProcessRuntime.writeStaticPosition]이 쓰는 파일 — 테스트마다 새 임시 파일. 어댑터가 쓴 SGF를 테스트가 읽어 본다. */
     val staticPositionFile: File by lazy { File.createTempFile("static-position", ".sgf").apply { deleteOnExit() } }
 
-    override fun staticPositionFile(): File = staticPositionFile
+    override fun writeStaticPosition(sgf: String): String {
+        staticPositionFile.writeText(sgf)
+        return staticPositionFile.absolutePath
+    }
 
     fun processes(kind: Kind): List<FakeEngineProcess> = started.filter { it.kind == kind }
 
@@ -171,8 +174,12 @@ internal class FakeEngineProcess(
 
     @Volatile private var alive = true
 
-    override val writer: BufferedWriter = BufferedWriter(OutputStreamWriter(LineSink(::onLine), Charsets.UTF_8))
-    override val reader: BufferedReader = BufferedReader(InputStreamReader(stdout.input, Charsets.UTF_8))
+    // 안은 진짜 BufferedWriter/BufferedReader다 — 막힌 `readLine()`이 그 락을 실제로 쥔다(위 KDoc). 어댑터에는 프로덕션과 같은
+    // 감싸개(`asEngineLineWriter` · `asEngineLineReader`)로 넘긴다.
+    override val writer: EngineLineWriter =
+        BufferedWriter(OutputStreamWriter(LineSink(::onLine), Charsets.UTF_8)).asEngineLineWriter()
+    override val reader: EngineLineReader =
+        BufferedReader(InputStreamReader(stdout.input, Charsets.UTF_8)).asEngineLineReader()
     override val isAlive: Boolean
         get() = alive
 

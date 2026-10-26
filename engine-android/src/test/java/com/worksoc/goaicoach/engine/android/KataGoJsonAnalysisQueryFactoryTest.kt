@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.json.JSONObject
 
 class KataGoJsonAnalysisQueryFactoryTest {
     /**
@@ -65,19 +66,21 @@ class KataGoJsonAnalysisQueryFactoryTest {
 
     @Test
     fun buildsPositionAnalysisQueryForCurrentTurn() {
-        val query = KataGoJsonAnalysisQueryFactory.build(
-            id = "query-1",
-            boardSize = BoardSize.Nine,
-            ruleset = Ruleset.Japanese,
-            playedMoves = listOf(
-                Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
-                Move.Pass(StoneColor.White),
-            ),
-            limit = AnalysisLimit(
-                visits = 32,
-                timeMillis = 2_000,
-                includePolicy = true,
-            ),
+        val query = JSONObject(
+            KataGoJsonAnalysisQueryFactory.build(
+                id = "query-1",
+                boardSize = BoardSize.Nine,
+                ruleset = Ruleset.Japanese,
+                playedMoves = listOf(
+                    Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("E5", BoardSize.Nine)),
+                    Move.Pass(StoneColor.White),
+                ),
+                limit = AnalysisLimit(
+                    visits = 32,
+                    timeMillis = 2_000,
+                    includePolicy = true,
+                ),
+            ).toString(),
         )
 
         assertEquals("query-1", query.getString("id"))
@@ -102,18 +105,20 @@ class KataGoJsonAnalysisQueryFactoryTest {
             BoardCoordinate.fromLabel("D4", BoardSize.Nine),
         )
 
-        val query = KataGoJsonAnalysisQueryFactory.build(
-            id = "query-2",
-            boardSize = BoardSize.Nine,
-            ruleset = Ruleset.Chinese,
-            playedMoves = emptyList(),
-            limit = AnalysisLimit(
-                visits = 8,
-                timeMillis = null,
-                includePolicy = true,
-            ),
-            refineMove = refineMove,
-            includePolicyOverride = false,
+        val query = JSONObject(
+            KataGoJsonAnalysisQueryFactory.build(
+                id = "query-2",
+                boardSize = BoardSize.Nine,
+                ruleset = Ruleset.Chinese,
+                playedMoves = emptyList(),
+                limit = AnalysisLimit(
+                    visits = 8,
+                    timeMillis = null,
+                    includePolicy = true,
+                ),
+                refineMove = refineMove,
+                includePolicyOverride = false,
+            ).toString(),
         )
 
         assertEquals("chinese", query.getString("rules"))
@@ -131,17 +136,19 @@ class KataGoJsonAnalysisQueryFactoryTest {
             StoneColor.White to BoardCoordinate.fromLabel("D4", BoardSize.Nine),
         )
 
-        val query = KataGoJsonAnalysisQueryFactory.build(
-            id = "query-static",
-            boardSize = BoardSize.Nine,
-            ruleset = Ruleset.Japanese,
-            playedMoves = emptyList(),
-            limit = AnalysisLimit(
-                visits = 64,
-                includePolicy = true,
-            ),
-            initialStones = initialStones,
-            initialPlayer = StoneColor.White,
+        val query = JSONObject(
+            KataGoJsonAnalysisQueryFactory.build(
+                id = "query-static",
+                boardSize = BoardSize.Nine,
+                ruleset = Ruleset.Japanese,
+                playedMoves = emptyList(),
+                limit = AnalysisLimit(
+                    visits = 64,
+                    includePolicy = true,
+                ),
+                initialStones = initialStones,
+                initialPlayer = StoneColor.White,
+            ).toString(),
         )
 
         assertEquals("query-static", query.getString("id"))

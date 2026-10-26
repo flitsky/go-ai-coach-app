@@ -9,15 +9,16 @@ import com.worksoc.goaicoach.shared.enginecontract.AnalysisResult
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
-import org.json.JSONObject
+import kotlin.time.TimeSource
+import kotlinx.serialization.json.JsonObject
 
 internal class KataGoJsonPositionAnalysisClient(
-    private val sendAnalysisQuery: suspend (query: JSONObject, timeoutMillis: Long) -> String,
+    private val sendAnalysisQuery: suspend (query: JsonObject, timeoutMillis: Long) -> String,
     private val buildAnalysisQuery: (
         limit: AnalysisLimit,
         refineMove: Move.Play?,
         includePolicyOverride: Boolean?,
-    ) -> JSONObject,
+    ) -> JsonObject,
     private val contextProvider: () -> KataGoAnalysisContext,
 ) {
     suspend fun analyze(
@@ -25,12 +26,12 @@ internal class KataGoJsonPositionAnalysisClient(
         candidateCount: Int,
     ): AnalysisResult {
         val context = contextProvider()
-        val startNanos = System.nanoTime()
+        val startedAt = TimeSource.Monotonic.markNow()
         val response = sendAnalysisQuery(
             buildAnalysisQuery(effectiveLimit, null, null),
             searchTimeoutMillisFor(effectiveLimit.timeMillis),
         )
-        val elapsedMs = (System.nanoTime() - startNanos) / 1_000_000
+        val elapsedMs = startedAt.elapsedNow().inWholeMilliseconds
         val rootVisits = KataGoJsonAnalysisParser.parseRootVisits(response)
         val searchedCandidates = KataGoJsonAnalysisParser.parseCandidates(
             response = response,

@@ -24,15 +24,11 @@ import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.enginecontract.analysisSearchTimeMillis
 import com.worksoc.goaicoach.shared.enginecontract.searchTimeoutMillisFor
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.IOException
-import java.util.concurrent.TimeUnit
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
@@ -41,7 +37,8 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
-import org.json.JSONObject
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * 로컬 KataGo(GTP 프로세스 + JSON analysis 프로세스) 위의 [EngineCoreApi].
@@ -75,7 +72,6 @@ internal class KataGoProcessEngineAdapter(
     private val runtime: EngineProcessRuntime,
     private val deadlineMillis: (Long) -> Long = { timeoutMillis -> timeoutMillis },
 ) : EngineCoreApi {
-    constructor(processConfig: KataGoProcessConfig) : this(runtime = LocalKataGoProcessRuntime(processConfig))
 
     private var profile: EngineProfile = EngineProfile(mode = EngineMode.LocalProcess)
     private var boardSize: BoardSize = BoardSize.Nine
@@ -123,7 +119,7 @@ internal class KataGoProcessEngineAdapter(
      * 기다리지 않고 돌아가고, 그 읽기는 프로세스가 내려가며 EOF로 혼자 끝난다. 거기서 난 예외는 누가 기다리지
      * 않아도 앱을 죽이지 않는다(`async`라서다 — `launch`로 바꾸지 말 것).
      */
-    private val pipeIo = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineName("KataGoPipeIo"))
+    private val pipeIo = CoroutineScope(SupervisorJob() + enginePipeIoDispatcher + CoroutineName("KataGoPipeIo"))
 
     override suspend fun initialize(profile: EngineProfile): EngineStatus {
         this.profile = profile.copy(mode = EngineMode.LocalProcess)
@@ -183,9 +179,8 @@ internal class KataGoProcessEngineAdapter(
         // 규칙과 덤을 먼저 건다 — `loadsgf`는 `RU`가 없으면 지금 규칙을 쓴다. 차례는 SGF의 `PL`이 세운다(기록을 남기지 않는다).
         KataGoProtocolCommands.ruleCommands(state.ruleset).forEach { command -> sendCommand(gtp, command) }
         sendCommand(gtp, KataGoProtocolCommands.komi(state.komi))
-        val file = runtime.staticPositionFile()
-        file.writeText(KataGoProtocolCommands.staticPositionSgf(state))
-        sendCommand(gtp, KataGoProtocolCommands.loadSgf(file.absolutePath))
+        val path = runtime.writeStaticPosition(KataGoProtocolCommands.staticPositionSgf(state))
+        sendCommand(gtp, KataGoProtocolCommands.loadSgf(path))
         state.moves.forEach { move -> sendCommand(gtp, KataGoProtocolCommands.play(move, boardSize)) }
         return EngineStatus.ready("KataGo static position synced: ${state.stones.size} stone(s), ${state.nextPlayer} turn")
     }
@@ -382,16 +377,16 @@ internal class KataGoProcessEngineAdapter(
 
     private suspend fun sendAnalysisQuery(
         analysis: EngineProcessHandle,
-        query: JSONObject,
+        query: JsonObject,
         timeoutMillis: Long = DefaultCommandTimeoutMillis,
     ): String =
         roundTrip(
             slot = analysisSlot,
             handle = analysis,
-            label = query.getString("id"),
+            label = query.queryId(),
             timeoutMillis = timeoutMillis,
             // 호출자가 취소되면 그 쿼리의 탐색을 멈춘다 — 배수가 탐색 끝까지 기다리지 않게(refactor backlog #17).
-            abandon = { writer -> writer.writeLine(KataGoJsonAnalysisQueryFactory.terminate(query.getString("id")).toString()) },
+            abandon = { writer -> writer.writeLine(KataGoJsonAnalysisQueryFactory.terminate(query.queryId()).toString()) },
         ) { writer, reader ->
             exchangeAnalysisQuery(writer, reader, query)
         }
@@ -430,8 +425,8 @@ internal class KataGoProcessEngineAdapter(
         handle: EngineProcessHandle,
         label: String,
         timeoutMillis: Long,
-        abandon: ((BufferedWriter) -> Unit)? = null,
-        exchange: (BufferedWriter, BufferedReader) -> T,
+        abandon: ((EngineLineWriter) -> Unit)? = null,
+        exchange: (EngineLineWriter, EngineLineReader) -> T,
     ): T {
         // 락은 try 밖에서 잡는다 — 기다리다 취소되면 잡지 않은 채 여기서 끝난다(풀 것이 없다).
         handle.roundTripMutex.lock()
@@ -446,7 +441,7 @@ internal class KataGoProcessEngineAdapter(
             // 새 프로세스의 첫 답은 모델 적재를 기다린다 — 기동 예산을 명령 마감 위에 따로 얹는다(refactor backlog #17).
             val budgetMillis = deadlineMillis(timeoutMillis) +
                 handle.startupAllowanceMillis(deadlineMillis(EngineStartupBudgetMillis))
-            val startedAtNanos = System.nanoTime()
+            val startedAt = TimeSource.Monotonic.markNow()
             val work = pipeIo.async { exchangeOrRetire(slot, handle, exchange) }
             try {
                 return withTimeout(budgetMillis) { work.await() }
@@ -455,7 +450,7 @@ internal class KataGoProcessEngineAdapter(
                     // 이 호출의 마감이다 — 막힌 읽기는 프로세스를 내려야만 풀린다. 그 읽기를 기다리지 않는다.
                     slot.retire(handle, EngineProcessRetireReason.Timeout)
                 } else if (!work.isCompleted) {
-                    val elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos)
+                    val elapsedMillis = startedAt.elapsedNow().inWholeMilliseconds
                     unlockHere = false
                     drainThenUnlock(slot, handle, work, remainingMillis = budgetMillis - elapsedMillis, abandon = abandon)
                 }
@@ -469,16 +464,17 @@ internal class KataGoProcessEngineAdapter(
     private fun <T> exchangeOrRetire(
         slot: EngineProcessSlot,
         handle: EngineProcessHandle,
-        exchange: (BufferedWriter, BufferedReader) -> T,
+        exchange: (EngineLineWriter, EngineLineReader) -> T,
     ): T =
         try {
             exchange(handle.writer, handle.reader).also { handle.markReplied() }
         } catch (ended: EngineStreamEnded) {
             slot.retire(handle, EngineProcessRetireReason.Died)
             throw ended
-        } catch (broken: IOException) {
-            slot.retire(handle, EngineProcessRetireReason.Died)
-            throw broken
+        } catch (failure: Exception) {
+            // 파이프가 깨졌으면(안드로이드: IOException) 그 핸들을 내린다. 그 밖의 예외(깨진 응답 등)는 예전처럼 그대로 올린다.
+            if (failure.isEnginePipeBroken()) slot.retire(handle, EngineProcessRetireReason.Died)
+            throw failure
         }
 
     /**
@@ -495,7 +491,7 @@ internal class KataGoProcessEngineAdapter(
         handle: EngineProcessHandle,
         work: Deferred<*>,
         remainingMillis: Long,
-        abandon: ((BufferedWriter) -> Unit)?,
+        abandon: ((EngineLineWriter) -> Unit)?,
     ) {
         // 따로 띄운다 — 블로킹 쓰기가 멈춰도(프로세스가 stdin을 안 읽는다) 아래 마감이 그대로 돌아 프로세스를 내리고,
         // 그러면 그 쓰기도 풀린다. 줄 하나를 한 번에 쓰므로 다음 명령의 줄과 섞이지 않는다([writeLine]).
@@ -511,13 +507,11 @@ internal class KataGoProcessEngineAdapter(
     }
 
     private fun exchangeGtpCommand(
-        writer: BufferedWriter,
-        reader: BufferedReader,
+        writer: EngineLineWriter,
+        reader: EngineLineReader,
         command: String,
     ): String {
-        writer.write(command)
-        writer.newLine()
-        writer.flush()
+        writer.writeLine(command)
 
         val lines = mutableListOf<String>()
         while (true) {
@@ -542,35 +536,35 @@ internal class KataGoProcessEngineAdapter(
     }
 
     private fun exchangeAnalysisQuery(
-        writer: BufferedWriter,
-        reader: BufferedReader,
-        query: JSONObject,
+        writer: EngineLineWriter,
+        reader: EngineLineReader,
+        query: JsonObject,
     ): String {
         writer.writeLine(query.toString())
 
-        val queryId = query.getString("id")
+        val queryId = query.queryId()
         while (true) {
             val line = reader.readLine() ?: throw EngineStreamEnded("KataGo analysis process ended while waiting for: $queryId")
             val trimmed = line.trim()
             if (!trimmed.startsWith("{")) {
                 continue
             }
-            val response = JSONObject(trimmed)
+            val response = parseJsonObject(trimmed)
             if (response.optString("id") != queryId) {
                 continue
             }
-            require(!response.has("error")) {
+            require("error" !in response) {
                 "KataGo JSON analysis failed for `$queryId`: ${response.optString("error")}"
             }
             // `terminate`로 탐색 전에 멈춘 쿼리의 끝 답 — `moveInfos`가 없다(refactor backlog #17). 기다리는 쪽은 이미
             // 취소된 호출자뿐이라, 스트림을 맞추는 데까지만 쓰인다.
-            if (response.optBoolean("noResults", false)) {
+            if (response.optBoolean("noResults")) {
                 return trimmed
             }
-            if (response.has("warning") || !response.has("moveInfos")) {
+            if ("warning" in response || "moveInfos" !in response) {
                 continue
             }
-            if (response.optBoolean("isDuringSearch", false)) {
+            if (response.optBoolean("isDuringSearch")) {
                 continue
             }
             return trimmed
@@ -632,7 +626,7 @@ internal class KataGoProcessEngineAdapter(
     private fun AnalysisLimit.toJsonAnalysisQuery(
         refineMove: Move.Play? = null,
         includePolicyOverride: Boolean? = null,
-    ): JSONObject {
+    ): JsonObject {
         return KataGoJsonAnalysisQueryFactory.build(
             id = KataGoJsonAnalysisQueryFactory.nextQueryId(
                 boardSize = boardSize,
@@ -698,11 +692,5 @@ internal class KataGoProcessEngineAdapter(
 /** 답을 다 받기 전에 파이프가 끝났다(프로세스가 죽었다). 문구는 예전 `error(...)` 그대로다 — 호출자에게는 `IllegalStateException`. */
 private class EngineStreamEnded(message: String) : IllegalStateException(message)
 
-/**
- * 줄 하나를 **한 번의 쓰기로** 보낸다 — `write` 한 번은 writer의 락을 통째로 쥐므로, 배수가 따로 보내는 `terminate`와
- * 다음 명령의 쿼리가 줄 중간에서 섞이지 않는다(refactor backlog #17).
- */
-private fun BufferedWriter.writeLine(line: String) {
-    write(line + "\n")
-    flush()
-}
+/** 쿼리의 `id` — 쿼리 팩토리가 늘 문자열로 싣는다. */
+private fun JsonObject.queryId(): String = getValue("id").jsonPrimitive.content

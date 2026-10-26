@@ -29,12 +29,15 @@ kotlin {
     jvmToolchain(17)
 
     sourceSets {
+        // 공용 원자값(`kotlin.concurrent.atomics`) — 슬롯 · 핸들의 CAS와 쿼리 번호. JVM에서는 java.util.concurrent와 같은 일을 한다.
+        all { languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi") }
         commonMain.dependencies {
             // ⚠️ 본 코드는 **엔진 계약·계가기·도메인만** 본다(refactor backlog #49). 어댑터가 앱 계층(`application.*`·
             //    `match`·`shared.policy` 등 `:shared`의 패키지)을 import하면 이제 컴파일 에러다 — 전에는 `api(":shared")`라
             //    아무것도 그것을 막지 않았다. 앱 계층이 필요해 보이면 그 코드는 어댑터가 아니라 `:shared`에 속한다.
             api(project(":core:enginecontract"))
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
         }
         // 테스트는 예전 자리(`src/test/java`) 그대로 안드로이드 JVM 단위 테스트로 돈다 — 진짜 프로세스(가짜 KataGo)를
         // 띄우는 테스트가 있어 JVM이어야 한다.

@@ -4,11 +4,6 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.enginecontract.EngineNetwork
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.enginecontract.HumanNetworkJudgeProfile
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.File
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
 
 data class KataGoProcessConfig(
     val executablePath: String,
@@ -59,10 +54,24 @@ internal interface EngineProcessRuntime {
     fun startAnalysis(analysisConfigPath: String): EngineProcessPipes
 
     /**
-     * 정적 국면을 KataGo에 넘길 SGF 파일 자리(백로그 #264 — `loadsgf`). 앱이 쓰고 KataGo가 읽는다 — 같은 앱 프로세스의 자식이라
-     * 앱 파일 폴더를 읽을 수 있다. 하나를 덮어 쓴다(GTP 명령은 한 번에 하나다).
+     * 정적 국면 SGF([sgf])를 KataGo가 읽을 파일에 쓰고 그 경로를 돌려준다(백로그 #264 — `loadsgf`). 앱이 쓰고 KataGo가 읽는다 —
+     * 안드로이드는 같은 앱 프로세스의 자식이라, iOS는 같은 앱 안이라 앱 파일 폴더를 읽을 수 있다. 하나를 덮어 쓴다(GTP 명령은 한 번에 하나다).
+     * 파일 쓰기는 플랫폼마다 다르다 — 그래서 경로가 아니라 「쓰고 경로를 받는」 한 함수다(백로그 #293).
      */
-    fun staticPositionFile(): File
+    fun writeStaticPosition(sgf: String): String
+}
+
+/**
+ * 엔진의 stdin 쪽 — 줄 하나를 **한 번의 쓰기로** 보내고 비운다(줄바꿈은 구현이 붙인다). 실패하면 플랫폼의 입출력 예외([isEnginePipeBroken]).
+ * 한 번에 쓰는 이유: 배수가 따로 보내는 `terminate`와 다음 명령의 줄이 줄 중간에서 섞이지 않게(refactor backlog #17).
+ */
+interface EngineLineWriter {
+    fun writeLine(line: String)
+}
+
+/** 엔진의 stdout 쪽 — 줄 하나(줄바꿈 빼고), 스트림이 끝났으면 `null`. 막히면 그대로 기다린다. 실패하면 플랫폼의 입출력 예외([isEnginePipeBroken]). */
+interface EngineLineReader {
+    fun readLine(): String?
 }
 
 /**
@@ -74,8 +83,8 @@ internal interface EngineProcessRuntime {
  * 그것만이 푸는 방법이다(파이프 읽기는 `Thread.interrupt()`를 무시한다).
  */
 internal interface EngineProcessPipes {
-    val writer: BufferedWriter
-    val reader: BufferedReader
+    val writer: EngineLineWriter
+    val reader: EngineLineReader
     val isAlive: Boolean
 
     /** SIGTERM — 정상 종료(`quit` 뒤). */
@@ -85,83 +94,12 @@ internal interface EngineProcessPipes {
     fun destroyForcibly()
 }
 
-/** 이 기기에서 `ProcessBuilder`로 띄운다 — 앱에서 KataGo 프로세스를 만드는 **유일한** 코드다. */
-internal class LocalKataGoProcessRuntime(
-    private val config: KataGoProcessConfig,
-    private val analysisSearchThreads: Int = DefaultAnalysisSearchThreads,
-) : EngineProcessRuntime {
-    override fun startGtp(profile: EngineProfile, network: EngineNetwork, boardSize: BoardSize?): EngineProcessPipes {
-        config.validateGtpFiles(network)
-        return spawn(config.buildGtpCommand(profile, network, boardSize))
-    }
-
-    override val humanNetworkAvailable: Boolean
-        get() = config.humanModelPath?.let { File(it).isFile } == true
-
-    override fun analysisConfigPathOrNull(): String? = config.resolveAnalysisConfigPath()
-
-    // KataGo 설정 파일 옆(앱 파일 폴더) — 엔진 파일을 준비하는 쪽이 이미 만들어 둔 곳이다.
-    override fun staticPositionFile(): File = File(File(config.configPath).absoluteFile.parentFile, "static-position.sgf")
-
-    override fun startAnalysis(analysisConfigPath: String): EngineProcessPipes =
-        spawn(
-            config.buildAnalysisCommand(
-                analysisConfigPath = analysisConfigPath,
-                analysisSearchThreads = analysisSearchThreads,
-            ),
-        )
-
-    private fun spawn(command: KataGoProcessCommand): EngineProcessPipes =
-        LocalProcessPipes(
-            ProcessBuilder(command.commandLine)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start(),
-        )
-
-    private companion object {
-        const val DefaultAnalysisSearchThreads = 4
-    }
-}
-
-private class LocalProcessPipes(
-    private val process: Process,
-) : EngineProcessPipes {
-    override val writer: BufferedWriter = BufferedWriter(OutputStreamWriter(process.outputStream))
-    override val reader: BufferedReader = BufferedReader(InputStreamReader(process.inputStream))
-    override val isAlive: Boolean
-        get() = process.isAlive
-
-    override fun destroy() {
-        process.destroy()
-    }
-
-    override fun destroyForcibly() {
-        process.destroyForcibly()
-    }
-}
-
 /** [network]로 띄울 때 `-model`에 갈 파일 — 주 모델이거나, 사람 모델(없으면 [IllegalArgumentException]). */
 internal fun KataGoProcessConfig.modelPathFor(network: EngineNetwork): String =
     when (network) {
         EngineNetwork.Main -> modelPath
         EngineNetwork.Human -> requireNotNull(humanModelPath) { "KataGo human model is not configured." }
     }
-
-internal fun KataGoProcessConfig.validateGtpFiles(network: EngineNetwork = EngineNetwork.Main) {
-    require(File(executablePath).canExecute()) {
-        "KataGo executable is not executable: $executablePath"
-    }
-    val model = modelPathFor(network)
-    require(File(model).isFile) {
-        "KataGo model not found: $model"
-    }
-    require(File(configPath).isFile) {
-        "KataGo config not found: $configPath"
-    }
-}
-
-internal fun KataGoProcessConfig.resolveAnalysisConfigPath(): String? =
-    analysisConfigPath?.takeIf { File(it).isFile }
 
 /**
  * GTP 프로세스의 명령줄. [network]가 사람 모델이면 그 파일이 **`-model` 자리**에 간다 — `-human-model`로 주 모델 옆에
@@ -200,6 +138,12 @@ internal fun KataGoProcessConfig.buildGtpCommand(
         ),
     )
 }
+
+/**
+ * JSON analysis 엔진의 탐색 스레드 수 — 안드로이드의 프로세스와 iOS의 앱 안 엔진이 같은 값을 쓴다(백로그 #293 — 한 곳).
+ * 실험실 대조(`engine-lab/lab/app_parity.py`)가 이 줄을 읽는다.
+ */
+internal const val DefaultAnalysisSearchThreads = 4
 
 internal fun KataGoProcessConfig.buildAnalysisCommand(
     analysisConfigPath: String,
@@ -250,7 +194,7 @@ private val EngineBehaviorOverrides = mapOf(
     "assumeMultipleStartingBlackMovesAreHandicap" to "false",
 )
 
-private fun Map<String, String>.toOverrideText(): String =
+internal fun Map<String, String>.toOverrideText(): String =
     entries.joinToString(",") { (key, value) -> "$key=$value" }
 
 private val AnalysisStartupOverrideAllowList = setOf(

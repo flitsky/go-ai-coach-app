@@ -1333,7 +1333,8 @@ class LayeringContractTest {
         // application/time/AppClock.kt의 currentEpochMillis(), 경과 시간은
         // kotlin.time.TimeSource.Monotonic, 잠금은 application/concurrency/SharedLock.kt.
         // KMP 모듈 commonMain **전부**(refactor backlog #49) — `:shared`에서 떼어 낸 모듈도 iOS로 컴파일된다.
-        val commonMainRoots = RepoPaths.kmpCommonMainKotlinRoots
+        // 엔진 어댑터 모듈의 commonMain도(백로그 #293 — iOS 앱이 같은 엔진 코드를 쓴다).
+        val commonMainRoots = RepoPaths.iosCompiledCommonMainKotlinRoots
         val forbiddenBareReferences = listOf(
             "System.",
             "System::",

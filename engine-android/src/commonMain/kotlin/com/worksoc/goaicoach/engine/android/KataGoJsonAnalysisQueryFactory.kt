@@ -8,9 +8,15 @@ import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.AnalysisLimit
-import java.util.concurrent.atomic.AtomicLong
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.incrementAndFetch
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.addJsonArray
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 internal object KataGoJsonAnalysisQueryFactory {
     /**
@@ -21,8 +27,8 @@ internal object KataGoJsonAnalysisQueryFactory {
      * 두 분석이 같은 id를 달 수 있었다. 응답은 id로 짝을 찾으므로(`sendAnalysisQueryBlocking`),
      * 같은 id 둘은 **한쪽의 응답을 다른 쪽이 받아 가는** 형태로 조용히 틀린다.
      *
-     * 시계나 난수를 쓰지 않는다 — 이 파일은 `engine-android/src/main`(Android/JVM)이라
-     * [AtomicLong]이 그대로 있고, 프로세스 안에서 단조 증가하는 값이 시각보다 강하다
+     * 시계나 난수를 쓰지 않는다 — 공용 원자값([AtomicLong], 안드로이드 · iOS 공용 — 백로그 #293)으로
+     * 프로세스 안에서 단조 증가하는 값이 시각보다 강하다
      * (같은 밀리초에 두 쿼리가 나가도 갈린다). 오브젝트에 두었으므로 어댑터를 새로 만들어도
      * 이어진다 — 옛 어댑터의 응답이 아직 떠 있는 동안 새 어댑터가 1번부터 다시 시작하지 않는다.
      */
@@ -43,7 +49,7 @@ internal object KataGoJsonAnalysisQueryFactory {
     ): String {
         val turn = playedMoves.size + if (refineMove == null) 0 else 1
         val refineTag = refineMove?.let { move -> "-r${move.toGtpVertex(boardSize)}" }.orEmpty()
-        return "go-ai-coach-analysis-${querySequence.incrementAndGet()}" +
+        return "go-ai-coach-analysis-${querySequence.incrementAndFetch()}" +
             "-${boardSize.value}x${boardSize.value}-m$turn$refineTag"
     }
 
@@ -52,11 +58,12 @@ internal object KataGoJsonAnalysisQueryFactory {
      * 되돌려 확인하고(그래서 id가 쿼리와 달라야 한다 — 같으면 확인 줄을 그 쿼리의 답으로 읽는다), 멈춘 쿼리에는
      * `isDuringSearch=false`인 끝 답을 낸다 — 탐색이 잘린 `moveInfos`, 탐색 전이면 `noResults=true`.
      */
-    fun terminate(queryId: String): JSONObject =
-        JSONObject()
-            .put("id", "$queryId-terminate")
-            .put("action", "terminate")
-            .put("terminateId", queryId)
+    fun terminate(queryId: String): JsonObject =
+        buildJsonObject {
+            put("id", "$queryId-terminate")
+            put("action", "terminate")
+            put("terminateId", queryId)
+        }
 
     /**
      * @param handicapBonusRule 접바둑 보정 방식. 프로덕션은 넘기지 않는다([ruleset]의 값) — 지금 룰셋에 없는
@@ -74,58 +81,57 @@ internal object KataGoJsonAnalysisQueryFactory {
         initialStones: List<Pair<StoneColor, BoardCoordinate>> = emptyList(),
         initialPlayer: StoneColor = StoneColor.Black,
         handicapBonusRule: HandicapBonusRule = ruleset.handicapBonusRule,
-    ): JSONObject {
-        val overrideSettings = JSONObject()
-        limit.timeMillis?.let { overrideSettings.put("maxTime", it / 1_000.0) }
+    ): JsonObject {
         val queryMoves = if (refineMove == null) {
             playedMoves
         } else {
             playedMoves + refineMove
         }
 
-        val query = JSONObject()
-            .put("id", id)
-            .put("rules", ruleset.katagoName)
-            .put("komi", komi)
-            .put("boardXSize", boardSize.value)
-            .put("boardYSize", boardSize.value)
-            .put("initialPlayer", initialPlayer.toGtpColor())
-            .put("initialStones", initialStones.toJsonInitialStones(boardSize))
-            .put("moves", queryMoves.toJsonMoves(boardSize))
-            .put("analyzeTurns", JSONArray().put(queryMoves.size))
-            .put("maxVisits", limit.visits)
-            .put("includeOwnership", false)
-            .put("includeMovesOwnership", false)
-            .put("includePolicy", includePolicyOverride ?: (refineMove == null && limit.includePolicy))
-            .put("overrideSettings", overrideSettings)
-            .put("priority", 0)
-        // 접바둑 보정 방식(refactor backlog #106) — 이름 룰의 기본값과 다를 때만 최상위 `whiteHandicapBonus`를
-        // 싣는다. KataGo 분석 엔진이 `rules`보다 우선해 읽는 필드다(Analysis_Engine.md, #65가 실측에 쓴 그 필드).
-        // 지금 룰셋은 전부 기본값과 같아 이 키가 없고 쿼리는 예전과 같은 바이트다.
-        KataGoNamedRules.handicapBonusOverride(ruleset.katagoName, handicapBonusRule)
-            ?.let { override -> query.put("whiteHandicapBonus", override.katagoValue) }
-        return query
+        return buildJsonObject {
+            put("id", id)
+            put("rules", ruleset.katagoName)
+            put("komi", komi)
+            put("boardXSize", boardSize.value)
+            put("boardYSize", boardSize.value)
+            put("initialPlayer", initialPlayer.toGtpColor())
+            put("initialStones", initialStones.toJsonInitialStones(boardSize))
+            put("moves", queryMoves.toJsonMoves(boardSize))
+            put("analyzeTurns", buildJsonArray { add(queryMoves.size) })
+            put("maxVisits", limit.visits)
+            put("includeOwnership", false)
+            put("includeMovesOwnership", false)
+            put("includePolicy", includePolicyOverride ?: (refineMove == null && limit.includePolicy))
+            put(
+                "overrideSettings",
+                buildJsonObject { limit.timeMillis?.let { put("maxTime", it / 1_000.0) } },
+            )
+            put("priority", 0)
+            // 접바둑 보정 방식(refactor backlog #106) — 이름 룰의 기본값과 다를 때만 최상위 `whiteHandicapBonus`를
+            // 싣는다. KataGo 분석 엔진이 `rules`보다 우선해 읽는 필드다(Analysis_Engine.md, #65가 실측에 쓴 그 필드).
+            // 지금 룰셋은 전부 기본값과 같아 이 키가 없다.
+            KataGoNamedRules.handicapBonusOverride(ruleset.katagoName, handicapBonusRule)
+                ?.let { override -> put("whiteHandicapBonus", override.katagoValue) }
+        }
     }
 
-    private fun List<Pair<StoneColor, BoardCoordinate>>.toJsonInitialStones(boardSize: BoardSize): JSONArray =
-        JSONArray().also { stones ->
+    private fun List<Pair<StoneColor, BoardCoordinate>>.toJsonInitialStones(boardSize: BoardSize): JsonArray =
+        buildJsonArray {
             forEach { (color, coord) ->
-                stones.put(
-                    JSONArray()
-                        .put(color.toGtpColor())
-                        .put(coord.label(boardSize)),
-                )
+                addJsonArray {
+                    add(color.toGtpColor())
+                    add(coord.label(boardSize))
+                }
             }
         }
 
-    private fun List<Move>.toJsonMoves(boardSize: BoardSize): JSONArray =
-        JSONArray().also { moves ->
+    private fun List<Move>.toJsonMoves(boardSize: BoardSize): JsonArray =
+        buildJsonArray {
             forEach { move ->
-                moves.put(
-                    JSONArray()
-                        .put(move.player.toGtpColor())
-                        .put(move.toGtpVertex(boardSize)),
-                )
+                addJsonArray {
+                    add(move.player.toGtpColor())
+                    add(move.toGtpVertex(boardSize))
+                }
             }
         }
 }

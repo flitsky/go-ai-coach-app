@@ -1,9 +1,8 @@
 package com.worksoc.goaicoach.engine.android
 
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.Volatile
+import kotlin.concurrent.atomics.AtomicReference
+import kotlin.time.TimeSource
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -52,7 +51,7 @@ internal class EngineProcessHandle(
     val generation: Long,
     private val pipes: EngineProcessPipes,
 ) {
-    private val startedAtNanos = System.nanoTime()
+    private val startedAt = TimeSource.Monotonic.markNow()
     private val retirement = AtomicReference<EngineProcessRetireReason?>(null)
 
     /**
@@ -62,21 +61,21 @@ internal class EngineProcessHandle(
      */
     val roundTripMutex = Mutex()
 
-    val writer: BufferedWriter
+    val writer: EngineLineWriter
         get() = pipes.writer
 
-    val reader: BufferedReader
+    val reader: EngineLineReader
         get() = pipes.reader
 
     val retireReason: EngineProcessRetireReason?
-        get() = retirement.get()
+        get() = retirement.load()
 
     /** 아직 내려가지 않았고 프로세스도 살아 있다. */
     val isUsable: Boolean
-        get() = retirement.get() == null && pipes.isAlive
+        get() = retirement.load() == null && pipes.isAlive
 
     val ageMillis: Long
-        get() = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos)
+        get() = startedAt.elapsedNow().inWholeMilliseconds
 
     /** 한 번이라도 왕복을 끝까지 마쳤다 — 모델 적재가 끝났다(KataGo는 적재 뒤에야 stdin을 읽는다). */
     @Volatile
@@ -115,17 +114,17 @@ internal interface EngineProcessEvents {
     fun retired(handle: EngineProcessHandle, reason: EngineProcessRetireReason)
 
     /**
-     * 기본값 — 한 줄씩 `System.err`에. Android에서는 로그캣에 `System.err` 태그로 나온다
-     * (`adb logcat -s System.err | grep KataGoProcess`). `android.util.Log`은 JVM 단위 테스트(실제 런타임을
+     * 기본값 — 한 줄씩 [engineDiagnosticLine]에(안드로이드는 `System.err` — 로그캣에 `System.err` 태그로 나온다,
+     * `adb logcat -s System.err | grep KataGoProcess`). `android.util.Log`은 JVM 단위 테스트(실제 런타임을
      * 도는 골든)에서 못 쓴다.
      */
     object StdErr : EngineProcessEvents {
         override fun started(handle: EngineProcessHandle) {
-            System.err.println("KataGoProcess $handle started")
+            engineDiagnosticLine("KataGoProcess $handle started")
         }
 
         override fun retired(handle: EngineProcessHandle, reason: EngineProcessRetireReason) {
-            System.err.println("KataGoProcess $handle retired reason=$reason age=${handle.ageMillis}ms")
+            engineDiagnosticLine("KataGoProcess $handle retired reason=$reason age=${handle.ageMillis}ms")
         }
     }
 }
@@ -157,13 +156,13 @@ internal class EngineProcessSlot(
     /** [lifecycleMutex] 안에서만 읽고 쓴다. 기동이 실패하면 올리지 않는다. */
     private var lastGeneration = 0L
 
-    fun currentOrNull(): EngineProcessHandle? = current.get()
+    fun currentOrNull(): EngineProcessHandle? = current.load()
 
     /** 쓸 수 있는 핸들을 돌려준다 — 없으면 [start]로 하나 띄운다. [start]는 블로킹이지만 짧아야 한다(fork/exec). */
     suspend fun acquire(start: () -> EngineProcessPipes): EngineProcessHandle {
-        current.get()?.takeIf { it.isUsable }?.let { return it }
+        current.load()?.takeIf { it.isUsable }?.let { return it }
         return lifecycleMutex.withLock {
-            current.get()?.let { existing ->
+            current.load()?.let { existing ->
                 if (existing.isUsable) return@withLock existing
                 retire(existing, EngineProcessRetireReason.Died)
             }
@@ -187,6 +186,6 @@ internal class EngineProcessSlot(
 
     /** `forceReset` 전용 — 지금 슬롯에 있는 것을 무조건 내린다. 락·대기·서스펜드가 없다. */
     fun retireCurrent(reason: EngineProcessRetireReason) {
-        current.getAndSet(null)?.let { handle -> if (handle.retire(reason)) events.retired(handle, reason) }
+        current.exchange(null)?.let { handle -> if (handle.retire(reason)) events.retired(handle, reason) }
     }
 }
