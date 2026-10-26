@@ -133,12 +133,22 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 ### 291. **iOS 출시 준비 — 방향 정하기 · Xcode · Apple 계정 · 앱 레코드** (Opus / 높음) — ⭐ 사용자(2026-10-26): 최상위 · 착수 2026-10-26 · ⚠️ U-83 · U-84 · U-85 먼저
 
 - **목표**(사용자 2026-10-26): *"현재 리포지토리의 1.8.4 버전을 기준으로 IOS 앱으로 빌드해서, 애뮬레이터 및 실기기로 테스트 해본 뒤, 앱스토어 등록까지"* — #291 ~ #298이 그 길이고, 이 일감이 문을 연다.
-- **할 일**: ① ~~U-83 · U-84 · U-85를 묻는다~~ — 2026-10-26 답했다(아래)
+- **할 일**: ① U-83 · U-84 · U-85를 묻는다 — ✅ 2026-10-26 답했다(아래)
   ② **Xcode 설치가 끝난 뒤**(사용자 2026-10-26: 설치 중) — 활성 개발 경로를 Xcode로(`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` — 비밀번호가 들어 **사용자가** 친다) ·
   첫 실행 구성요소 · iOS 시뮬레이터 런타임 · 사용자 아이폰의 개발자 모드. 설치가 끝나기 전에는 Xcode가 드는 일(②의 확인 · #292)을 시작하지 않는다 — ①과 ③은 먼저 해도 된다
   ③ Apple Developer Program(연회비 — 사용자) · 팀 ID ④ 번들 ID 등록 · App Store Connect에 앱 레코드(이름 「포켓 바둑 코치」를 쓸 수 있는지 여기서 처음 안다) — TestFlight(#297)가 이것을 딛는다.
 - **딛는 사실**: 「지금의 앱」의 iOS 줄 · 안드로이드의 applicationId는 `com.zenit9hub.ai.baduk`이다(패키지 `com.worksoc.goaicoach`와 다르다).
 - ✅ **U-83 · U-84 · U-85 결정(2026-10-26 사용자)** — 내용은 「지금의 앱」의 iOS 줄 한 곳에 적었다.
+- **진행**(2026-10-26): ② Xcode 27.1이 쓸 수 있는 상태다 — iOS 27.1 SDK · 시뮬레이터 런타임 iOS 27.0 · 27.1(아이폰 기기 목록 있음) · 첫 실행 구성요소 끝(`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`로 확인).
+  `xcode-select -p`는 아직 Command Line Tools다. ③ ④는 사용자 차례 — 아래 순서.
+- **사용자 차례**(순서 · 넣을 값):
+  1. 활성 개발 경로: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`(비밀번호).
+  2. Apple Developer Program **개인** 가입(developer.apple.com — 2단계 인증을 켠 Apple ID · 본인 실명 · 연회비) → 승인 메일을 기다린다.
+  3. Xcode › Settings › Accounts에 그 Apple ID를 더한다 → 팀 ID가 보인다(#292의 서명이 쓴다).
+  4. Certificates, Identifiers & Profiles › Identifiers › App ID(명시형) `com.zenit9hub.ai.baduk`.
+  5. App Store Connect › 앱 › 새로운 앱: 플랫폼 iOS · 이름 「포켓 바둑 코치」 · 기본 언어 한국어 · 번들 ID는 4의 것 · SKU `pocket-baduk-coach-ios`. 이름 · SKU는 스레드 제안이다(Play 제목의 뒷부분 「오프라인 AI 대국·복기」는 #298에서 부제로).
+  6. 아이폰을 맥에 연결 → 「이 컴퓨터를 신뢰」 → 설정 › 개인정보 보호 및 보안 › **개발자 모드** 켜기(재시동).
+  · 유료 앱 계약(Agreements, Tax, and Banking)은 구독(#296) 전까지만 하면 된다.
 - ⚠️ 계정 가입 · 결제 · 약관 동의 · 인증서 발급은 **사용자가 한다** — 스레드는 순서와 넣을 값을 준비한다.
 - **끝**: U 셋의 답이 카드에 있다 · `xcodebuild -version`과 `xcrun simctl list`가 돈다 · 사용자 아이폰이 Xcode에 개발 기기로 보인다 · App Store Connect에 앱 레코드가 있다.
 
