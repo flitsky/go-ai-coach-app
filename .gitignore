@@ -10,6 +10,9 @@ dist/
 # IDE
 .idea/
 *.iml
+# Xcode(app-ios/ — 백로그 #292) — 사람마다 다른 창 · 중단점 상태
+xcuserdata/
+*.xcuserstate
 
 # Android
 local.properties

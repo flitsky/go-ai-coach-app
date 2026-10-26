@@ -76,7 +76,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run
 
 help:
 	@echo "=========================================================================="
@@ -98,6 +98,8 @@ help:
 	@echo "                             (Supports TARGET=emu/phone or auto-resolution)"
 	@echo "  make test                - Run unit tests for core, shared, engine, and app modules"
 	@echo "  make test-ios            - Compile-only iOS targets check (see 함정 75; NOT part of make test)"
+	@echo "  make ios-build           - Build the iOS app (app-ios/) for the simulator (Xcode; NOT part of make test)"
+	@echo "  make ios-run             - ios-build, then install & launch on IOS_SIM (default \"iPhone 17\"; name or UDID)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
 	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
 	@echo "  make test-remote-analysis-server - Check run-katago-remote-analysis-server.py's query builder"
@@ -174,8 +176,29 @@ test: doctor
 # ⚠️ 테스트 소스도 컴파일한다(2026-09-25, refactor backlog #101). 본 코드만 컴파일하던 동안 commonTest의
 # `System.currentTimeMillis()` 한 줄(2026-08-16부터)로 iOS 테스트 컴파일이 깨진 채 아무도 몰랐다 —
 # commonTest의 JVM 전용 API도 이 타깃이 잡는다.
+# `:shared-ui`(iOS 화면, 백로그 #292)도 같은 이유로 여기서 컴파일한다 — 화면 코드가 iOS에 없는 API를 쓰면 여기서 빨개진다.
 test-ios:
-	$(GRADLEW) :core:domain:compileKotlinIosSimulatorArm64 :core:domain:compileTestKotlinIosSimulatorArm64 :core:enginecontract:compileKotlinIosSimulatorArm64 :core:enginecontract:compileTestKotlinIosSimulatorArm64 :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 -PenableIosTargets=true
+	$(GRADLEW) :core:domain:compileKotlinIosSimulatorArm64 :core:domain:compileTestKotlinIosSimulatorArm64 :core:enginecontract:compileKotlinIosSimulatorArm64 :core:enginecontract:compileTestKotlinIosSimulatorArm64 :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 :shared-ui:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
+
+# iOS 앱(백로그 #292) — Xcode 프로젝트는 `app-ios/GoCoach.xcodeproj`, 화면은 Kotlin `:shared-ui`(Compose Multiplatform, U-83).
+# ⚠️ `test`에 합치지 마라 — test-ios와 같은 이유(함정 75)에 더해 Xcode가 있는 맥에서만 돈다.
+# Kotlin 프레임워크는 Xcode 빌드 단계(「Compile Kotlin Framework」)가 Gradle로 묶는다 — 여기서 따로 부르지 않는다.
+# `generic/platform=iOS Simulator` + `ARCHS=arm64`: 기기 이름에 묶이지 않고, 인텔 시뮬레이터(x86_64) 몫의 Kotlin 빌드를 건너뛴다.
+# 산출물은 `app-ios/build/`(gitignore의 `build/`) — Xcode 기본 DerivedData(~/Library)를 쓰지 않아 지울 곳이 저장소 안에 있다.
+IOS_PROJECT := app-ios/GoCoach.xcodeproj
+IOS_DERIVED := app-ios/build/DerivedData
+IOS_APP := $(IOS_DERIVED)/Build/Products/Debug-iphonesimulator/GoCoach.app
+IOS_BUNDLE_ID := com.zenit9hub.ai.baduk
+# 시뮬레이터 — 이름이나 UDID(`xcrun simctl list devices available`). 기본은 Xcode 27.1에 들어 있는 iPhone 17.
+IOS_SIM ?= iPhone 17
+
+ios-build:
+	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Debug -destination 'generic/platform=iOS Simulator' ARCHS=arm64 -derivedDataPath $(IOS_DERIVED) build
+
+ios-run: ios-build
+	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
+	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
+	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #13ⓑ). `make test`가 지키는 "빠른
 # 루프"(에뮬레이터/실기기 없이 몇 초~몇 분 안에 결과)를 계기 테스트가 깨뜨린다 — 에뮬레이터
