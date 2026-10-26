@@ -55,7 +55,7 @@ class AttendanceBoardViewTest {
 
     @Test
     fun everyGlyphReferencedInTheSourceExistsAsADrawable() {
-        val referenced = Regex("""R\.drawable\.(reward_\w+)""").findAll(source)
+        val referenced = Regex("""AppImage\.(reward_\w+)""").findAll(source)
             .map { it.groupValues[1] }
             .toSortedSet()
         assertTrue("소스가 글리프를 하나도 안 쓴다", referenced.isNotEmpty())

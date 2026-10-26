@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,10 +50,8 @@ import com.worksoc.goaicoach.application.premium.state.PremiumSource
 import com.worksoc.goaicoach.application.premium.state.PremiumState
 import com.worksoc.goaicoach.application.premium.state.decideStaleSubscriptionDowngrade
 import com.worksoc.goaicoach.application.premium.state.staleDowngradeMayApply
-import com.worksoc.goaicoach.performPremiumAdGrant
-import com.worksoc.goaicoach.performPremiumPurchase
-import com.worksoc.goaicoach.performPremiumPurchaseRestore
-import com.worksoc.goaicoach.simulatePremiumAdGrant
+import com.worksoc.goaicoach.application.time.currentEpochMillis
+import com.worksoc.goaicoach.platform.AppMonetization
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -171,20 +168,20 @@ internal val LocalPremiumUiState = staticCompositionLocalOf { PremiumUiState() }
 internal fun buildPremiumUiState(
     premiumState: PremiumState,
     store: PremiumStateStorePort,
-    context: Context,
+    monetization: AppMonetization,
     diagnosticEventLog: DiagnosticEventLogPort,
     characterPerkActive: Boolean,
     onStateChanged: (PremiumState) -> Unit,
 ): PremiumUiState = PremiumUiState(
     // 재구성 시점의 현재 시각으로 매번 평가한다(별도 tick 없이, 대국 중 재구성이 충분히 잦아 문제없음).
-    isActive = premiumState.isActive(nowMillis = System.currentTimeMillis()),
+    isActive = premiumState.isActive(nowMillis = currentEpochMillis()),
     isPurchased = premiumState.source == PremiumSource.Purchase,
     adGrantExpiresAtMillis = premiumState.adGrantStartedAtMillis?.plus(PremiumState.AdGrantDurationMillis),
     // 구매 특전(#18)을 **여기 한 곳에서** 접는다. 인게임 게이팅이 전부 이 람다를 지나므로
     // (`GamePlaySection`의 형세 보기·추천 수), 호출부를 하나도 고치지 않고 "지금 상대가 내가 산
     // 캐릭터면 열린다"가 성립한다 — 8.3절 1번이 걱정하던 "호출부 전부가 바뀐다"를 피한 자리다.
     resolve = { featureId ->
-        FeatureAccessPolicy.resolve(featureId, premiumState, System.currentTimeMillis(), characterPerkActive)
+        FeatureAccessPolicy.resolve(featureId, premiumState, currentEpochMillis(), characterPerkActive)
     },
     reload = { onStateChanged(store.load()) },
     simulateAdGrant = {
@@ -195,12 +192,12 @@ internal fun buildPremiumUiState(
         }
     },
     purchasePremium = {
-        val (outcome, nextState) = performPremiumPurchase(context, diagnosticEventLog)
+        val (outcome, nextState) = monetization.performPremiumPurchase(diagnosticEventLog)
         nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
         outcome
     },
     activateAdGrant = {
-        val (outcome, nextState) = performPremiumAdGrant(context, diagnosticEventLog, premiumState)
+        val (outcome, nextState) = monetization.performPremiumAdGrant(diagnosticEventLog, premiumState)
         nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
         outcome
     },
@@ -462,7 +459,7 @@ internal fun PremiumUpsellDialogHost(
  */
 @Composable
 internal fun PremiumPurchaseRestoreEffect(
-    context: Context,
+    monetization: AppMonetization,
     diagnosticEventLog: DiagnosticEventLogPort,
     // ⚠️ **현재 상태를 넘겨야 강등이 된다**(#158) — 안 넘기면 기본값(`None`)이 들어가
     // "내릴 것이 없다"로 판정돼 **해지한 구독이 계속 살아 있는다.**
@@ -490,7 +487,7 @@ internal fun PremiumPurchaseRestoreEffect(
 
     LaunchedEffect(Unit) {
         suspend fun queryOnce() {
-            val (_, nextState) = performPremiumPurchaseRestore(context, diagnosticEventLog, latestState)
+            val (_, nextState) = monetization.performPremiumPurchaseRestore(diagnosticEventLog, latestState)
             if (nextState != null) {
                 heldForGeneration = null
                 latestOnRestored(nextState)
@@ -498,7 +495,7 @@ internal fun PremiumPurchaseRestoreEffect(
             }
             // ⚠️ **조회로는 아무것도 못 정했을 때에만 신선도를 본다**(백로그 #174).
             // Play가 답을 줬다면 그 답이 정본이다 — 앱의 시계가 Play를 이기는 일은 없어야 한다.
-            val downgraded = decideStaleSubscriptionDowngrade(latestState, System.currentTimeMillis())
+            val downgraded = decideStaleSubscriptionDowngrade(latestState, currentEpochMillis())
             when {
                 // 그 사이 확인이 됐다(또는 내릴 것이 없다) — 붙잡은 것도 놓는다.
                 downgraded == null -> heldForGeneration = null
@@ -523,7 +520,7 @@ internal fun PremiumPurchaseRestoreEffect(
         val held = heldForGeneration ?: return@LaunchedEffect
         if (!staleDowngradeMayApply(held, match)) return@LaunchedEffect
         heldForGeneration = null
-        decideStaleSubscriptionDowngrade(latestState, System.currentTimeMillis())?.let { downgraded ->
+        decideStaleSubscriptionDowngrade(latestState, currentEpochMillis())?.let { downgraded ->
             showStaleNotice = true
             latestOnRestored(downgraded)
         }
@@ -600,9 +597,9 @@ internal fun PremiumExpiryAutoDisableEffect(
         val remainingMillis = premiumState.adGrantStartedAtMillis
             ?.takeIf { premiumState.source == PremiumSource.AdGrant }
             ?.plus(PremiumState.AdGrantDurationMillis)
-            ?.minus(System.currentTimeMillis())
+            ?.minus(currentEpochMillis())
         if (remainingMillis != null && remainingMillis > 0) delay(remainingMillis)
-        if (premiumState.isActive(System.currentTimeMillis())) return@LaunchedEffect
+        if (premiumState.isActive(currentEpochMillis())) return@LaunchedEffect
 
         var disabledAny = false
         if (isEvalEnabled && !consumables.isOneShotActive(FeatureId.Eval)) {
@@ -616,7 +613,7 @@ internal fun PremiumExpiryAutoDisableEffect(
         // 실제로 무언가를 껐을 때만 남긴다 — 위 2번 때문에 이 효과는 토글이 바뀔 때마다 도는데,
         // 만료된 상태로 계속 머무는 사용자에게 같은 로그를 반복해서 쌓지 않기 위함이다.
         if (disabledAny) {
-            buildPremiumDeactivatedDiagnosticEvent(premiumState, System.currentTimeMillis())
+            buildPremiumDeactivatedDiagnosticEvent(premiumState, currentEpochMillis())
                 ?.let(diagnosticEventLog::append)
         }
     }

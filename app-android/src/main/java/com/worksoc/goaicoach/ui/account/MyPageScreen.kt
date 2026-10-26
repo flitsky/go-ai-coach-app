@@ -29,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
@@ -41,6 +40,7 @@ import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.painterFor
 import com.worksoc.goaicoach.ui.guide.GuideLine
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
@@ -196,7 +196,7 @@ internal fun MyPageScreen(
                             ) {
                                 consumableGlyphRes(item)?.let { glyph ->
                                     Icon(
-                                        painter = painterResource(glyph),
+                                        painter = painterFor(glyph),
                                         // 바로 옆 이름이 같은 것을 말한다 — 두 번 읽히면 소음이다.
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp),

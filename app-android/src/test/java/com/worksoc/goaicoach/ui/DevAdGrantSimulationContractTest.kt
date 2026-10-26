@@ -17,7 +17,8 @@ import org.junit.Test
  */
 class DevAdGrantSimulationContractTest {
 
-    private val glue = codeOnly(RepoPaths.compositionFile("PremiumPurchaseGlue.kt").readContractSource())
+    // #294: 시뮬레이션은 결제 SDK를 모르는 순수 함수라 공용 파일로 옮겼다(`PremiumAdGrantSimulation.kt`).
+    private val glue = codeOnly(sourceOf("PremiumAdGrantSimulation.kt"))
     private val uiState = codeOnly(sourceOf("PremiumUiState.kt"))
     // ⚠️ **개발자 섹션은 이제 별도 파일이다**(백로그 #102). 두 파일을 **셸 → 섹션 순서로**
     // 이어 읽는다 — 그래야 아래 위치 비교(`indexOf`)가 **원래의 문서 순서**를 그대로 뜻한다.
@@ -99,7 +100,7 @@ class DevAdGrantSimulationContractTest {
      */
     private fun simulationBody(): String {
         val start = glue.indexOf("internal fun simulatePremiumAdGrant")
-        val end = glue.indexOf("internal suspend fun showRewardedAdOnce")
+        val end = glue.length
         assertTrue("시뮬레이션 함수를 찾지 못했다 — 이 계약의 전제가 무너졌으니 다시 쓸 것.", start in 0 until end)
         return glue.substring(start, end)
     }

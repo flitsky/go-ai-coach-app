@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,14 +27,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.application.attendance.AttendanceBoard
 import com.worksoc.goaicoach.application.attendance.AttendanceBoardCell
 import com.worksoc.goaicoach.application.attendance.AttendanceCellState
@@ -46,9 +43,11 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppImage
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
+import com.worksoc.goaicoach.ui.designsystem.painterFor
 import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
@@ -300,7 +299,7 @@ private fun RewardFace(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(1.dp),
         ) {
-            Icon(painterResource(glyph), contentDescription = null, Modifier.size(CompactGlyphSize), tint = tint)
+            Icon(painterFor(glyph), contentDescription = null, Modifier.size(CompactGlyphSize), tint = tint)
             // ⚠️ 개수가 없어도 줄은 **비운 채로 남긴다.** 없애면 그 칸만 글리프가 아래로 내려와
             // (무르기·조각 회차) 여섯 칸의 그림 높이가 들쭉날쭉해진다.
             Text(
@@ -316,7 +315,7 @@ private fun RewardFace(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
     ) {
-        Icon(painterResource(glyph), contentDescription = null, Modifier.size(WideGlyphSize), tint = tint)
+        Icon(painterFor(glyph), contentDescription = null, Modifier.size(WideGlyphSize), tint = tint)
         if (amount != null) {
             Text(
                 text = amount.toString(),
@@ -379,15 +378,14 @@ private fun BoxScope.StampSeal(compact: Boolean) {
 }
 
 /**
- * 4계층(External Integration) — 보상 종류를 Android 그림 리소스로 옮기는 유일한 지점(#57).
+ * 4계층(External Integration) — 보상 종류를 그림([AppImage])으로 옮기는 유일한 지점(#57).
  *
  * ⚠️ **`Resources.getIdentifier`를 쓰지 않는다.** [botAvatarRes]와 같은 이유다 — 이름을 실행
  * 중에 찾으면 R8이 리소스를 지웠는지 알 수 없고, `playInternal`에도 R8이 켜져 있다(#47).
  *
  * 캐릭터가 걸린 보상은 `null`이다 — 그쪽은 글리프가 아니라 **얼굴**로 그린다.
  */
-@DrawableRes
-internal fun rewardGlyphRes(reward: AttendanceReward): Int? = when (reward) {
+internal fun rewardGlyphRes(reward: AttendanceReward): AppImage? = when (reward) {
     is AttendanceReward.PermanentFeature -> featureGlyphRes(reward.featureId)
     is AttendanceReward.Consumable -> consumableGlyphRes(reward.item)
     is AttendanceReward.BotCharacterShards -> null
@@ -401,22 +399,20 @@ internal fun rewardGlyphRes(reward: AttendanceReward): Int? = when (reward) {
  * ⚠️ 이 `when`은 `else -> null`로 닫혀 있어 **컴파일러가 빠뜨림을 잡아 주지 않는다.** 카탈로그에
  * 소모품을 더하면 그 자리만 조용히 빈다 — `AttendanceBoardViewTest`가 그 그물이다.
  */
-@DrawableRes
-internal fun consumableGlyphRes(item: ConsumableItem): Int? = when (item) {
-    ConsumableCatalog.EvalOnce -> R.drawable.reward_eval
-    ConsumableCatalog.TopMovesOnce -> R.drawable.reward_top_moves
-    ConsumableCatalog.PremiumOnce -> R.drawable.reward_ad_skip
+internal fun consumableGlyphRes(item: ConsumableItem): AppImage? = when (item) {
+    ConsumableCatalog.EvalOnce -> AppImage.reward_eval
+    ConsumableCatalog.TopMovesOnce -> AppImage.reward_top_moves
+    ConsumableCatalog.PremiumOnce -> AppImage.reward_ad_skip
     // 카탈로그에 없는 소모품(다운그레이드로 흘러든 옛 저장값 등)은 그림이 없다.
     else -> null
 }
 
-@DrawableRes
-private fun featureGlyphRes(featureId: FeatureId): Int = when (featureId) {
-    FeatureId.Undo -> R.drawable.reward_undo
-    FeatureId.Eval -> R.drawable.reward_eval
-    FeatureId.TopMoves -> R.drawable.reward_top_moves
-    FeatureId.MoveReview -> R.drawable.reward_move_review
-    FeatureId.BoardScan -> R.drawable.reward_eval
+private fun featureGlyphRes(featureId: FeatureId): AppImage = when (featureId) {
+    FeatureId.Undo -> AppImage.reward_undo
+    FeatureId.Eval -> AppImage.reward_eval
+    FeatureId.TopMoves -> AppImage.reward_top_moves
+    FeatureId.MoveReview -> AppImage.reward_move_review
+    FeatureId.BoardScan -> AppImage.reward_eval
 }
 
 /** 이 보상이 걸고 있는 캐릭터. 조각도 해금도 같은 얼굴을 쓴다 — 다른 것은 색이 얼마나 도느냐다. */

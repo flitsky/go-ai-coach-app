@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -13,9 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
-import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.UiStrings
@@ -37,11 +34,11 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun AdPrivacyOptionsRow(strings: UiStrings) {
-    val context = LocalContext.current
+    val monetization = rememberAppMonetization()
     val scope = rememberCoroutineScope()
     // 콘솔 설정에 따라 정해지는 값이라 조회 결과를 한 번 들고 있는다. 폼을 닫고 나면 요구
     // 상태가 바뀔 수 있어(예: 철회) 다시 읽는다.
-    var required by remember { mutableStateOf(AdsConsentManager.isPrivacyOptionsRequired(context)) }
+    var required by remember { mutableStateOf(monetization.isPrivacyOptionsRequired()) }
     if (!required) return
 
     Spacer(modifier = Modifier.height(AppSpacing.Space8))
@@ -51,10 +48,10 @@ internal fun AdPrivacyOptionsRow(strings: UiStrings) {
         color = MaterialTheme.colorScheme.primary,
         textDecoration = TextDecoration.Underline,
         modifier = Modifier.clickable {
-            val activity = context as? Activity ?: return@clickable
+            // 액티비티가 아니면 폼을 띄우지 않는다 — 그 판정은 안드로이드 구현(`AndroidAppMonetization`)에 있다.
             scope.launch {
-                AdsConsentManager.showPrivacyOptionsForm(activity)
-                required = AdsConsentManager.isPrivacyOptionsRequired(context)
+                monetization.showPrivacyOptionsForm()
+                required = monetization.isPrivacyOptionsRequired()
             }
         },
     )

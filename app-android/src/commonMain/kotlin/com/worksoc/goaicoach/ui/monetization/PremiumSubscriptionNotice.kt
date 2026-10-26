@@ -1,8 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,16 +31,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
-import com.worksoc.goaicoach.queryPremiumProductInfo
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
@@ -117,10 +111,10 @@ internal sealed interface PremiumProductInfoState {
  */
 @Composable
 internal fun rememberPremiumProductInfo(): PremiumProductInfoState {
-    val context = LocalContext.current
+    val monetization = rememberAppMonetization()
     var state by remember { mutableStateOf<PremiumProductInfoState>(PremiumProductInfoState.Loading) }
     LaunchedEffect(Unit) {
-        val info = queryPremiumProductInfo(context)
+        val info = monetization.queryPremiumProductInfo()
         state = if (info != null) {
             PremiumProductInfoState.Loaded(info)
         } else {
@@ -199,7 +193,7 @@ internal fun PremiumSubscriptionNoticeBlock(
 @Composable
 internal fun PremiumSubscriptionCard(modifier: Modifier = Modifier) {
     val premium = LocalPremiumUiState.current
-    val context = LocalContext.current
+    val monetization = rememberAppMonetization()
     val strings = LocalUiStrings.current
     var showSubscribeDialog by remember { mutableStateOf(false) }
 
@@ -227,7 +221,7 @@ internal fun PremiumSubscriptionCard(modifier: Modifier = Modifier) {
     ) {
         if (subscribed) {
             TextButton(
-                onClick = { openSubscriptionManagement(context) },
+                onClick = { monetization.openSubscriptionManagement() },
                 // 기본 여백(가로 24dp)이 좁은 폭에서 라벨 몫을 가져간다 — 해지 경로 문구를
                 // 줄이지 않기 위해 여백 쪽을 줄인다.
                 contentPadding = PaddingValues(horizontal = AppSpacing.Space8, vertical = AppSpacing.Space4),
@@ -321,28 +315,6 @@ private fun PremiumSubscriptionCardFrame(
         }
         Spacer(modifier = Modifier.width(AppSpacing.Space8))
         trailing()
-    }
-}
-
-/**
- * 이 앱의 **구독 관리 화면**을 연다 — 해지가 실제로 일어나는 자리다.
- *
- * ⚠️ **두 겹으로 시도한다**(`openStoreListing`과 같은 형태). 첫 주소는 이 상품을 바로 펴고,
- * 실패하면 구독 목록으로 떨어진다. 둘 다 실패하는 기기(브라우저조차 없음)에서는
- * **조용히 아무 일도 없다** — 그래도 고지 문구가 경로를 말해 두었다.
- *
- * ⚠️ 패키지 이름은 `BuildConfig`가 아니라 [Context.getPackageName]에서 읽는다 — 이 앱은
- * `applicationId`와 `namespace`가 다르고, Play가 아는 것은 전자다.
- */
-internal fun openSubscriptionManagement(context: Context) {
-    val packageName = context.packageName
-    val sku = BuildConfig.PREMIUM_PRODUCT_ID
-    val attempts = listOf(
-        "https://play.google.com/store/account/subscriptions?sku=$sku&package=$packageName",
-        "https://play.google.com/store/account/subscriptions",
-    )
-    attempts.firstOrNull { url ->
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.isSuccess
     }
 }
 

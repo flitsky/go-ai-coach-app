@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,8 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -61,16 +58,16 @@ import com.worksoc.goaicoach.application.dailydraw.dailyDrawOdds
 import com.worksoc.goaicoach.application.dailydraw.dailyDrawPrizeCharacter
 import com.worksoc.goaicoach.application.dailydraw.runDailyDraw
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
-import com.worksoc.goaicoach.persistence.BotCollectionStore
-import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
-import com.worksoc.goaicoach.persistence.DailyDrawStore
-import com.worksoc.goaicoach.showRewardedAdOnce
+import com.worksoc.goaicoach.application.time.currentEpochMillis
+import com.worksoc.goaicoach.platform.formatRootLocale
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.ShardReveal
+import com.worksoc.goaicoach.ui.designsystem.painterFor
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceAtStockCapNoticeFor
@@ -87,7 +84,7 @@ import com.worksoc.goaicoach.ui.l10n.dailyDrawTicketsLabelFor
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.ownedCharacterSubstituteNoticeFor
 import com.worksoc.goaicoach.ui.l10n.unbreakable
-import java.util.Locale
+import com.worksoc.goaicoach.ui.monetization.rememberAppMonetization
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -109,16 +106,17 @@ import kotlinx.coroutines.launch
  */
 @Composable
 internal fun DailyDrawCard(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
+    val monetization = rememberAppMonetization()
     val strings = LocalUiStrings.current
     val language = strings.language
     val colors = MaterialTheme.colorScheme
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
     val withAd = !LocalPremiumUiState.current.isPurchased
-    val drawStore = remember(context) { DailyDrawStore(context) }
+    val drawStore = remember(platform) { platform.stores.dailyDraw }
     var lastDrawn by remember(drawStore) { mutableStateOf(drawStore.lastDrawnAtMillis()) }
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(currentEpochMillis()) }
     var busy by remember { mutableStateOf(false) }
     var shown by remember { mutableStateOf<DailyDrawResult?>(null) }
     val scope = rememberCoroutineScope()
@@ -129,7 +127,7 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
     LaunchedEffect(cooling) {
         while (cooling) {
             delay(1_000)
-            now = System.currentTimeMillis()
+            now = currentEpochMillis()
         }
     }
 
@@ -161,16 +159,16 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
                     onClick = {
                         busy = true
                         scope.launch {
-                            val outcome = if (withAd) showRewardedAdOnce(context) else null
+                            val outcome = if (withAd) monetization.showRewardedAdOnce() else null
                             if (outcome is AdRewardOutcome.NotRewarded) {
-                                Toast.makeText(context, dailyDrawAdFailedFor(language, outcome.reason), Toast.LENGTH_SHORT).show()
+                                platform.notice.show(dailyDrawAdFailedFor(language, outcome.reason))
                             } else {
                                 // 광고를 본 뒤에 상품을 정한다(shared) — 그 사이 출석 보상이 같은 저장소에 썼을 수 있다.
                                 val result = runDailyDraw(
-                                    consumableStore = ConsumableInventoryStore(context),
-                                    collectionStore = BotCollectionStore(context),
+                                    consumableStore = platform.stores.consumables,
+                                    collectionStore = platform.stores.botCollection,
                                     drawStore = drawStore,
-                                    nowMillis = System.currentTimeMillis(),
+                                    nowMillis = currentEpochMillis(),
                                     random = Random.Default,
                                 )
                                 consumables.refresh()
@@ -180,7 +178,7 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
                                 if (acquired != null) bots.enqueueAcquired(listOf(acquired)) else shown = result
                             }
                             lastDrawn = drawStore.lastDrawnAtMillis()
-                            now = System.currentTimeMillis()
+                            now = currentEpochMillis()
                             busy = false
                         }
                     },
@@ -242,7 +240,7 @@ private fun CooldownLine(remainingMillis: Long) {
         )
         Text(text = dailyDrawNextInFor(language), fontSize = AppTextSize.Text14, color = colors.onSurfaceVariant)
         Text(
-            text = String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds),
+            text = formatRootLocale("%d:%02d:%02d", hours, minutes, seconds),
             fontSize = AppTextSize.Text18,
             fontWeight = FontWeight.Bold,
             color = colors.onSurfaceVariant,
@@ -356,7 +354,7 @@ private fun PrizePile(kinds: List<DailyDrawPrizeKind>, collection: BotCollection
 @Composable
 private fun PileGlyph(item: ConsumableItem, tint: Color) {
     val glyph = consumableGlyphRes(item) ?: return
-    Icon(painter = painterResource(glyph), contentDescription = null, tint = tint, modifier = Modifier.size(PileGlyphSize))
+    Icon(painter = painterFor(glyph), contentDescription = null, tint = tint, modifier = Modifier.size(PileGlyphSize))
 }
 
 /** 뽑기로 나오는 출석 캐릭터 둘 — 7일차(반상) · 28일차(천원), 등급 순. 카탈로그에서 읽는다(이름 · 회차를 여기 적지 않는다). */

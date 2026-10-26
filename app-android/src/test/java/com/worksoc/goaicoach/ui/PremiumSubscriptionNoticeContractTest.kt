@@ -197,12 +197,13 @@ class PremiumSubscriptionNoticeContractTest {
         val notice = source(noticeFile)
         assertTrue(
             "구독 중 카드가 `openSubscriptionManagement`를 부르지 않는다(#159).",
-            notice.contains("openSubscriptionManagement(context)"),
+            notice.contains("monetization.openSubscriptionManagement()"),
         )
         assertTrue(
             "구독 관리 딥링크가 `context.packageName`을 쓰지 않는다 — 이 앱은 `applicationId`와 " +
                 "`namespace`가 다르고 Play가 아는 것은 전자다(`openStoreListing`과 같은 이유).",
-            notice.contains("context.packageName"),
+            // #294: 딥링크 본문은 안드로이드 결제 묶음(`AndroidAppMonetization.kt`)으로 옮겼다 — 화면은 부르기만 한다.
+            source(RepoPaths.compositionFile("AndroidAppMonetization.kt").relativeTo(repoRoot).path).contains("context.packageName"),
         )
     }
 

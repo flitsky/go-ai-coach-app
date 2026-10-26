@@ -409,6 +409,8 @@ class LayeringContractTest {
             "GoCoachProcessRuntime.kt",
             // #294 S1: 화면이 쓰는 플랫폼 묶음 — 이미 있던 어댑터를 만들어 묶기만 한다(공용 화면은 LocalAppPlatform으로 읽는다).
             "AndroidAppPlatform.kt",
+            // #294 S12: 화면의 결제 · 광고 묶음 — 옛 전역 함수(`PremiumPurchaseGlue.kt`)에 화면의 문맥을 넘기기만 한다.
+            "AndroidAppMonetization.kt",
             // #26: ui/에서 옮겨 온 배선.
             "GameExitRecording.kt",
             "GameLifecycleControllerWiring.kt",
@@ -457,7 +459,8 @@ class LayeringContractTest {
             "import android.os.VibrationEffect",
         )
         val allowances = setOf(
-            "BannerAdView.kt" to "import com.google.android.gms.",
+            // #294: 광고 뷰는 안드로이드 쪽 actual로 갈라졌다 — 공용 `BannerAdView.kt`는 expect와 구독 분기만 든다.
+            "BannerAdViewAndroid.kt" to "import com.google.android.gms.",
             "AccountDeletionFlow.kt" to "import com.google.firebase.",
             "OnboardingScreen.kt" to "import com.google.firebase.",
         )

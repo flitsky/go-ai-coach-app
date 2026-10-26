@@ -31,7 +31,7 @@ class SubscriptionWiringContractTest {
     fun theRestoreEffectReceivesTheCurrentPremiumState() {
         assertTrue(
             "복원 효과에 현재 상태를 안 넘긴다 — 해지한 구독이 영원히 살아 있는다(#158).",
-            app.contains("PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState,"),
+            app.contains("PremiumPurchaseRestoreEffect(AndroidAppMonetization(context), diagnosticEventLog, premiumState,"),
         )
         // #209 — 지금 두고 있는 판도 넘긴다. 안 넘기면(또는 세대를 안 넘기면) 72시간 강등이 대국 도중에 그대로 일어난다(U-46).
         assertTrue(
@@ -52,7 +52,7 @@ class SubscriptionWiringContractTest {
         //   여기서 이름만 보면 누군가 `latestState`라는 이름의 엉뚱한 값을 넘겨도 통과한다.
         assertTrue(
             "복원 효과가 받은 상태를 조회에 흘리지 않는다(#158 · 이름은 #174에서 `latestState`로 바뀜).",
-            premium.contains("performPremiumPurchaseRestore(context, diagnosticEventLog, latestState)"),
+            premium.contains("monetization.performPremiumPurchaseRestore(diagnosticEventLog, latestState)"),
         )
         assertTrue(
             "조회가 상태를 판정 함수까지 넘기지 않는다(#158).",
@@ -65,7 +65,7 @@ class SubscriptionWiringContractTest {
     fun theAdGrantPathReceivesTheCurrentPremiumStateSoItCannotOverwriteASubscription() {
         assertTrue(
             "광고 부여에 현재 상태를 안 넘긴다 — Purchase가 AdGrant로 덮인다(#158).",
-            premium.contains("performPremiumAdGrant(context, diagnosticEventLog, premiumState)"),
+            premium.contains("monetization.performPremiumAdGrant(diagnosticEventLog, premiumState)"),
         )
         // ⚠️ **개발자 시뮬레이션도 같은 루틴을 탄다.** 여기만 빠뜨리면 *"개발자 버튼으로만
         // 구독이 강등되는"* 더 찾기 어려운 어긋남이 된다.

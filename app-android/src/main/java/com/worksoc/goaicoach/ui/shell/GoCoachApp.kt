@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import com.worksoc.goaicoach.AndroidAppMonetization
 import com.worksoc.goaicoach.GoCoachAppWiringContext
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
@@ -835,25 +836,25 @@ private fun GoCoachScreen(
 
     // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/monetization/BotCharacterUiState.kt).
     // 프리미엄 배선보다 **먼저** 만드는 이유: 구매 특전(#18) 판정에 지금 상대와 컬렉션이 필요하다.
-    val botCharacterUiState = buildBotCharacterUiState(context)
+    val botCharacterUiState = buildBotCharacterUiState(AndroidAppMonetization(context))
     val characterPerkActive = isBotCharacterPerkActive(matchOpponentCharacter(playerSetup), botCharacterUiState.collection)
     // 프리미엄 배선(활성화 판정·저장·클레임 규칙)의 본체는 ui/monetization/PremiumUiState.kt의
     // buildPremiumUiState에 있다 — PremiumPurchaseGlue.kt와 같은 이유로 이 셸 밖에 뒀다.
     val premiumUiState = buildPremiumUiState(
         premiumState = premiumState,
         store = premiumStateStore,
-        context = context,
+        monetization = AndroidAppMonetization(context),
         diagnosticEventLog = diagnosticEventLog,
         characterPerkActive = characterPerkActive,
         onStateChanged = { nextState -> premiumState = nextState },
     )
 
-    PremiumPurchaseRestoreEffect(context, diagnosticEventLog, premiumState, MatchInPlay(runtimeState.matchGeneration, inProgress = (!isGameEnded && gameState.moves.isNotEmpty()) || currentDestination == ScreenDestination.InGame)) { nextState ->
+    PremiumPurchaseRestoreEffect(AndroidAppMonetization(context), diagnosticEventLog, premiumState, MatchInPlay(runtimeState.matchGeneration, inProgress = (!isGameEnded && gameState.moves.isNotEmpty()) || currentDestination == ScreenDestination.InGame)) { nextState ->
         premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 
     // 소모품 재고/단발성 상태 배선의 본체는 ui/monetization/ConsumableUiState.kt에 있다(위와 같은 이유).
-    val consumableUiState = buildConsumableUiState(context, runtimeState.matchGeneration, isFreeUseMatch(playerSetup)) { next -> premiumState = next }
+    val consumableUiState = buildConsumableUiState(runtimeState.matchGeneration, isFreeUseMatch(playerSetup)) { next -> premiumState = next }
 
     // 프리미엄 만료/해제 시 형세보기·추천수 토글을 되끄는 효과 — 본체는 ui/monetization/PremiumUiState.kt에 있다(위와 같은 이유).
     PremiumExpiryAutoDisableEffect(premiumState, topMovesEnabled, uxOptions.showOwnershipOverlay, consumableUiState, diagnosticEventLog, characterPerkActive, controllers.topMovesController::hide) { uxOptions = uxOptions.copy(showOwnershipOverlay = false) }
@@ -932,7 +933,7 @@ private fun GoCoachScreen(
         // 스플래시·엔진 준비 화면 뒤에, 출석 팝업 앞에(그 판의 일이 먼저다). 대국 화면은 판정 창이 닫힌 뒤 제 자리에서 띄운다(`GoCoachContent`).
         !ReleaseResetNoticeDialog(context) && !(currentDestination == ScreenDestination.Home && RankMeasureChangeDialog(rankMeasureUiState))
     ) {
-        AttendanceRewardClaimDialog(context) { next -> premiumState = next }
+        AttendanceRewardClaimDialog { next -> premiumState = next }
     }
     // 엔진 준비 화면이 덮는 동안 아래 화면을 TalkBack에서 가린다(#253) — 덮개는 터치만 막고 접근성 노드는 그대로 남았다.
     Box(modifier = if (showsEngineSetup) Modifier.clearAndSetSemantics {} else Modifier) {

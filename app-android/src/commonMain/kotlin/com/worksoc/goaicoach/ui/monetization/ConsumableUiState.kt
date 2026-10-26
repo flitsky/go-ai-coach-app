@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,8 +17,8 @@ import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.premium.state.MatchFreeUses
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
-import com.worksoc.goaicoach.persistence.PremiumStateStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 
 /**
  * 화면 트리 전역에서 읽는 소모품 재고 상태([LocalPremiumUiState]와 같은 방식으로 공급된다).
@@ -148,15 +147,15 @@ internal val LocalConsumableUiState = staticCompositionLocalOf { ConsumableUiSta
  */
 @Composable
 internal fun buildConsumableUiState(
-    context: Context,
     /** 지금 대국의 세대 — 무료 사용(#228)을 「한 판」 단위로 세는 잣대다. 무르기에는 그대로이고 새 대국·이어하기에서 오른다. */
     matchGeneration: Long,
     /** 이 판이 무료 사용을 주는 판인가 — 캐릭터와 두는 대국(`isFreeUseMatch`). */
     isFreeUseMatch: Boolean,
     onPremiumChanged: (PremiumState) -> Unit,
 ): ConsumableUiState {
-    val store: ConsumableStorePort = remember(context) { ConsumableInventoryStore(context) }
-    val premiumStore: PremiumStateStorePort = remember(context) { PremiumStateStore(context) }
+    val platform = LocalAppPlatform.current
+    val store: ConsumableStorePort = remember(platform) { platform.stores.consumables }
+    val premiumStore: PremiumStateStorePort = remember(platform) { platform.stores.premiumState }
     var inventory by remember(store) { mutableStateOf(store.load()) }
     // 전이 규칙은 [OneShotLedger]에 있다 — 여기서는 그 값을 상태로 들고만 있는다(#44).
     var ledger by remember { mutableStateOf(OneShotLedger()) }
@@ -170,7 +169,7 @@ internal fun buildConsumableUiState(
         spend = { item ->
             // 차감 여부 판정은 6계층(decideConsumableSpend)이 한다 — 프리미엄이 이미 활성이면
             // 재고를 건드리지 않고 통과시키는 4.5절 우선순위 규칙도 그쪽에 들어 있다.
-            val decision = runConsumableSpend(item, store, premiumStore, System.currentTimeMillis())
+            val decision = runConsumableSpend(item, store, premiumStore, currentEpochMillis())
             if (decision is ConsumableSpendDecision.Spent) {
                 inventory = decision.inventory
                 decision.premiumState?.let(onPremiumChanged)

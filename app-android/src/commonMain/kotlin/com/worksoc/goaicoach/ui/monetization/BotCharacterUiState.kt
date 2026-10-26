@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,7 +36,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,10 +55,8 @@ import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
-import com.worksoc.goaicoach.performBotCharacterPurchase
-import com.worksoc.goaicoach.performBotCharacterPurchaseRestore
-import com.worksoc.goaicoach.persistence.BotCollectionStore
-import com.worksoc.goaicoach.showRewardedAdOnce
+import com.worksoc.goaicoach.platform.AppMonetization
+import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -69,6 +64,7 @@ import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.shardRevealOf
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.botCharacterStrengthFor
@@ -163,8 +159,9 @@ internal val LocalBotCharacterUiState = staticCompositionLocalOf { BotCharacterU
  * 저장하고, 구매(#18)가 붙으면 그때 세 번째 경로가 생긴다.
  */
 @Composable
-internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
-    val store: BotCollectionStorePort = remember(context) { BotCollectionStore(context) }
+internal fun buildBotCharacterUiState(monetization: AppMonetization): BotCharacterUiState {
+    val platform = LocalAppPlatform.current
+    val store: BotCollectionStorePort = remember(platform) { platform.stores.botCollection }
     var collection by remember(store) { mutableStateOf(store.load()) }
     // 축전 대기열(#69). 광고·출석 두 경로가 여기에 넣고, 아래에서 맨 앞 하나를 팝업으로 띄운다.
     var pendingAcquired by remember(store) { mutableStateOf(emptyList<BotCharacter>()) }
@@ -181,7 +178,7 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
             .firstOrNull { candidate -> candidate.unlockSource is BotUnlockSource.Purchase }
             ?: return@LaunchedEffect
         if (store.load().isClaimed(purchasable.id)) return@LaunchedEffect
-        if (performBotCharacterPurchaseRestore(context) is PurchaseOutcome.Purchased) {
+        if (monetization.performBotCharacterPurchaseRestore() is PurchaseOutcome.Purchased) {
             runBotCharacterUnlock(purchasable.id, store)?.let { next -> collection = next }
         }
     }
@@ -190,7 +187,7 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
         collection = collection,
         refresh = { collection = store.load() },
         watchAdForShard = { character ->
-            val outcome = showRewardedAdOnce(context)
+            val outcome = monetization.showRewardedAdOnce()
             // 시청 성공일 때만 적립한다 — 광고를 끝까지 안 봤는데 조각이 쌓이면 안 된다.
             // 적립 자체는 6계층 순수 함수가 하고(read-modify-write), 여기서는 결과만 반영한다.
             if (outcome !is AdRewardOutcome.RewardEarned) {
@@ -213,7 +210,7 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
         },
         consumeAcquired = { pendingAcquired = pendingAcquired.drop(1) },
         purchase = { character ->
-            val outcome = performBotCharacterPurchase(context)
+            val outcome = monetization.performBotCharacterPurchase()
             // 결제가 확정됐을 때만 소유로 남긴다. Pending(계좌이체 등)은 아직 아니다 — 확정되면
             // 다음 실행의 복원 조회가 잡는다.
             if (outcome is PurchaseOutcome.Purchased) {
@@ -228,7 +225,7 @@ internal fun buildBotCharacterUiState(context: Context): BotCharacterUiState {
     // 깨진다. 이 함수는 이미 `@Composable`이고 저장소와 상태를 직접 들고 있으므로 여기서
     // emit하면 셸에 **0줄**이 든다.
     //
-    // ⚠️ `LocalUiStrings`는 이 호출부(`GoCoachApp.kt`의 `buildBotCharacterUiState(context)`)보다
+    // ⚠️ `LocalUiStrings`는 이 호출부(`GoCoachApp.kt`의 `buildBotCharacterUiState(AndroidAppMonetization(context))`)보다
     // **위에서** 공급되므로 팝업 안에서 읽을 수 있다. 반면 `LocalBotCharacterUiState`는 **아래에서**
     // 공급되므로 여기서 읽으면 안 된다 — 위 지역 변수를 그대로 쓴다.
     //
@@ -551,7 +548,7 @@ internal suspend fun watchAdForShardAndReport(
     character: BotCharacter,
     bots: BotCharacterUiState,
     strings: UiStrings,
-    context: Context,
+    notice: AppNotice,
 ): Boolean {
     val required = (character.unlockSource as? BotUnlockSource.AdShards)?.required ?: return false
     val result = bots.watchAdForShard(character)
@@ -572,7 +569,7 @@ internal suspend fun watchAdForShardAndReport(
         ad !is AdRewardOutcome.RewardEarned -> return false
         else -> strings.botShardEarnedToast(character, result.shards, required)
     }
-    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    notice.show(message)
     return false
 }
 
@@ -589,13 +586,13 @@ internal suspend fun purchaseBotCharacterAndReport(
     character: BotCharacter,
     bots: BotCharacterUiState,
     strings: UiStrings,
-    context: Context,
+    notice: AppNotice,
 ) {
     val message = when (val outcome = bots.purchase(character)) {
         is PurchaseOutcome.Purchased -> strings.botPurchasedToast(character)
         is PurchaseOutcome.NotPurchased -> strings.botPurchaseFailedMessage(outcome.reason)
     }
-    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    notice.show(message, long = true)
 }
 
 /**
@@ -620,7 +617,7 @@ internal fun BotCharacterRosterHost(
     val scope = rememberCoroutineScope()
     val bots = LocalBotCharacterUiState.current
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     if (!visible) return
     BotCharacterPickerDialog(
         selected = selected,
@@ -632,7 +629,7 @@ internal fun BotCharacterRosterHost(
             // 다이얼로그 안에서 돌리면 스코프가 취소돼 결과 처리를 못 한다.
             scope.launch {
                 adInProgress = true
-                purchaseBotCharacterAndReport(character, bots, strings, context)
+                purchaseBotCharacterAndReport(character, bots, strings, platform.notice)
                 adInProgress = false
                 onVisibleChange(true)
             }
@@ -640,7 +637,7 @@ internal fun BotCharacterRosterHost(
         onWatchAd = { character ->
             scope.launch {
                 adInProgress = true
-                val acquired = watchAdForShardAndReport(character, bots, strings, context)
+                val acquired = watchAdForShardAndReport(character, bots, strings, platform.notice)
                 adInProgress = false
                 // 만에 하나 광고가 픽커를 닫았더라도 여기서 되살린다 — 다만 **획득했을 때는 되살리지 않는다**(#69).
                 // 축전을 닫으면 사용자는 원래 화면으로 돌아가고, 얻은 상대는 픽커를 다시 열어 보면 된다.

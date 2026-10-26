@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,11 +31,9 @@ import com.worksoc.goaicoach.application.botcharacter.BotCollectionState
 import com.worksoc.goaicoach.application.consumable.ConsumableInventory
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.premium.state.PremiumState
-import com.worksoc.goaicoach.persistence.AttendanceStore
-import com.worksoc.goaicoach.persistence.BotCollectionStore
-import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
-import com.worksoc.goaicoach.persistence.PremiumStateStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -88,7 +85,7 @@ import com.worksoc.goaicoach.ui.l10n.ownedCharacterSubstituteNoticeFor
  *
  * ## ⚠️ 저장소를 되감기만 하면 팝업이 다시 뜨지 않는다
  * 아래 [AttendanceRewardClaimDialog]가 받을 것을 계산하는 곳은 `LaunchedEffect(attendanceStore)`
- * 하나이고, 그 키인 저장소는 `remember(context)`라 **컴포지션 수명 내내 불변**이다. 게다가
+ * 하나이고, 그 키인 저장소는 `remember(platform)`라 **컴포지션 수명 내내 불변**이다. 게다가
  * 지급하면 `pending`이 비워지는데 그 상태 역시 키 없는 `remember`다. 즉 **디스크를 되감아도
  * 화면은 그 사실을 알 방법이 없다** — "저장하면 알아서 뜬다"고 가정하면 버튼이 아무 일도 안
  * 하는 것처럼 보인다.
@@ -132,15 +129,15 @@ internal object AttendanceClaimReplaySignal {
 
 @Composable
 internal fun AttendanceRewardClaimDialog(
-    context: Context,
     onPremiumChanged: (PremiumState) -> Unit,
 ) {
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
-    val attendanceStore = remember(context) { AttendanceStore(context) }
-    val premiumStore = remember(context) { PremiumStateStore(context) }
-    val consumableStore = remember(context) { ConsumableInventoryStore(context) }
-    val botStore = remember(context) { BotCollectionStore(context) }
+    val platform = LocalAppPlatform.current
+    val attendanceStore = remember(platform) { platform.stores.attendance }
+    val premiumStore = remember(platform) { platform.stores.premiumState }
+    val consumableStore = remember(platform) { platform.stores.consumables }
+    val botStore = remember(platform) { platform.stores.botCollection }
     var pending by remember { mutableStateOf(emptyList<AttendanceRewardTier>()) }
     // 도장판(#55)은 "받을 것"만이 아니라 **10회차 전체**를 그리므로 보드와 재고를 함께 읽는다.
     var board by remember { mutableStateOf<AttendanceBoard?>(null) }
@@ -151,7 +148,7 @@ internal fun AttendanceRewardClaimDialog(
 
     LaunchedEffect(attendanceStore, AttendanceClaimReplaySignal.revision) {
         val checkIn = runAttendanceCheckIn(
-            request = AttendanceCheckInRequest(nowEpochMillis = System.currentTimeMillis()),
+            request = AttendanceCheckInRequest(nowEpochMillis = currentEpochMillis()),
             store = attendanceStore,
         )
         // 컬렉션까지 넘겨야 이미 다 모은 캐릭터의 조각이 팝업에 실리지 않는다 — 조각은 7일차마다

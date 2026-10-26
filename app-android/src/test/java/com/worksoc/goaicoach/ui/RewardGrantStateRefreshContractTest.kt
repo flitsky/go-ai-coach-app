@@ -80,7 +80,7 @@ class RewardGrantStateRefreshContractTest {
         assertTrue(
             "셸이 출석 팝업의 프리미엄 콜백을 자기 `premiumState`에 꽂지 않는다(#65) — " +
                 "콜백만 받고 버리면 저장소만 바뀌고 화면 판정은 그대로다.",
-            shell.contains("AttendanceRewardClaimDialog(context) { next -> premiumState = next }"),
+            shell.contains("AttendanceRewardClaimDialog { next -> premiumState = next }"),
         )
     }
 
