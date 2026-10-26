@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.play
 
-import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -46,7 +45,6 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -71,8 +69,10 @@ import com.worksoc.goaicoach.application.safety.engineTurnWatchdogTimeoutMillisF
 import com.worksoc.goaicoach.application.safety.isEngineStuckDialogVisible
 import com.worksoc.goaicoach.application.safety.isEngineTurnWatchdogTriggered
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.isRankMeasure
+import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -90,6 +90,7 @@ import com.worksoc.goaicoach.ui.designsystem.SingleActionButton
 import com.worksoc.goaicoach.ui.designsystem.StonePalette
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
@@ -141,21 +142,19 @@ internal fun GamePlaySection(
     // ⚠️ 「착수 확인」이 **바뀔 때마다** 토스트로 알린다(2026-10-09 사용자 지시) — 돌 버튼으로 바꾸든 메뉴의 스위치로 바꾸든
     //   같은 말이 뜨도록 누른 자리가 아니라 **값이 바뀐 자리**에서 띄운다. 화면에 처음 들어올 때는 바뀐 것이 아니므로 말하지 않는다.
     //   연달아 누르면 앞 토스트를 지우고 띄운다 — 쌓이면 마지막 상태와 다른 말이 몇 초씩 뒤늦게 뜬다.
-    val confirmPlayToastContext = LocalContext.current
+    val confirmPlayNotice = LocalAppPlatform.current.notice
     val confirmPlayToastLanguage = LocalUiStrings.current.language
     var announcedDirectPlay by remember { mutableStateOf(screenState.uxOptions.isDirectPlayEnabled) }
-    var confirmPlayToast by remember { mutableStateOf<Toast?>(null) }
+    var confirmPlayToast by remember { mutableStateOf<NoticeHandle?>(null) }
     LaunchedEffect(screenState.uxOptions.isDirectPlayEnabled) {
         tentativeMove = null
         val isDirectPlay = screenState.uxOptions.isDirectPlayEnabled
         if (announcedDirectPlay != isDirectPlay) {
             announcedDirectPlay = isDirectPlay
             confirmPlayToast?.cancel()
-            confirmPlayToast = Toast.makeText(
-                confirmPlayToastContext,
+            confirmPlayToast = confirmPlayNotice.show(
                 confirmPlayToggledToastFor(confirmPlayToastLanguage, isConfirmOn = !isDirectPlay),
-                Toast.LENGTH_SHORT,
-            ).also { it.show() }
+            )
         }
     }
 
@@ -175,7 +174,7 @@ internal fun GamePlaySection(
     }
 
     // 대국 현황 패널 & 실시간 타이머 계산 (AI 차례 포함 실시간 티킹)
-    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableStateOf(currentEpochMillis()) }
     // 와치독 발동 시 뜨는 복구 팝업의 표시 여부. 새 차례가 시작될 때마다(키가 바뀔 때마다)
     // remember가 자동으로 false로 되돌리므로, 다음 차례에는 다시 정상적으로 감지 가능하다.
     var showEngineStuckDialog by remember(turnTimeState.currentTurnStartedAtMillis) { mutableStateOf(false) }
@@ -209,13 +208,13 @@ internal fun GamePlaySection(
             watchdogCompletionSeqAtPause = liveEngineTurnWaitCompletionSeq.value
         } else {
             // 멈춘 사이 시도가 끝났으면(백그라운드에서 취소된 AI 차례) 복귀 순간부터 새 시도로 잰다(#202).
-            watchdogAttempt = watchdogAttempt.resumedAfterPause(watchdogCompletionSeqAtPause, System.currentTimeMillis())
+            watchdogAttempt = watchdogAttempt.resumedAfterPause(watchdogCompletionSeqAtPause, currentEpochMillis())
             watchdogCompletionSeqAtPause = null
         }
-        var previousTickMillis = System.currentTimeMillis()
+        var previousTickMillis = currentEpochMillis()
         while (!screenState.isGameEnded && !turnTimeState.isPaused) {
             delay(TurnTimerTickIntervalMillis)
-            now = System.currentTimeMillis()
+            now = currentEpochMillis()
             // 두 틱 사이에 앱이 화면에 있는 채로 멈췄으면(동결·VM 정지) 그 시간은 엔진이 멎은 시간이 아니다 — 지금부터 다시 잰다(#204).
             watchdogAttempt = watchdogAttempt.resumedAfterProcessPause(previousTickMillis, now, TurnTimerTickIntervalMillis)
             previousTickMillis = now
@@ -287,7 +286,7 @@ internal fun GamePlaySection(
     // 「한 번 더 기다리기」 — 밖을 눌러 닫는 것도 같다(그래야 판이 멈춘 채로 남지 않는다).
     val onEngineStuckWait = {
         showEngineStuckDialog = false
-        watchdogRearmedAtMillis = System.currentTimeMillis()
+        watchdogRearmedAtMillis = currentEpochMillis()
         when (engineStuckWaitActionFor(isAwaitingEngineTimeoutChoice)) {
             EngineStuckWaitAction.KeepWaitingAndRearm -> Unit
             EngineStuckWaitAction.RetryTimedOutTurnAndRearm -> onEvent(GameUiEvent.RetryTimedOutAiTurn)
@@ -326,7 +325,7 @@ internal fun GamePlaySection(
                 TextButton(
                     onClick = {
                         showEngineStuckDialog = false
-                        watchdogRearmedAtMillis = System.currentTimeMillis()
+                        watchdogRearmedAtMillis = currentEpochMillis()
                         onEvent(GameUiEvent.ForceResetEngine)
                     },
                 ) {
@@ -973,7 +972,7 @@ private fun GameActionButtonHost(
 ) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     var showResignConfirm by remember { mutableStateOf(false) }
     var showPremiumUpsellDialog by remember { mutableStateOf(false) }
     val consumables = LocalConsumableUiState.current
@@ -995,8 +994,7 @@ private fun GameActionButtonHost(
         everyMoveHintShown = true
         val text = listOfNotNull(spentMessage, hint).joinToString("\n")
         if (text.isEmpty()) return
-        val duration = if (hint != null) Toast.LENGTH_LONG else Toast.LENGTH_SHORT
-        Toast.makeText(context, text, duration).show()
+        platform.notice.show(text, long = hint != null)
     }
 
     // 기능별 판정은 FeatureAccessPolicy(6계층, application/premium/state/FeatureAccessPolicy.kt)에
@@ -1103,7 +1101,7 @@ private fun GameActionButtonHost(
         val freeLeft = consumables.freeUsesRemaining(FeatureId.Undo)
         if (freeLeft > 0 && consumables.useFree(FeatureId.Undo)) {
             action()
-            Toast.makeText(context, freeAnalysisUsedToastFor(strings.language, freeLeft - 1), Toast.LENGTH_SHORT).show()
+            platform.notice.show(freeAnalysisUsedToastFor(strings.language, freeLeft - 1))
         } else {
             showPremiumUpsellDialog = true
         }

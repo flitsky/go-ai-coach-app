@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.history
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -37,9 +35,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -53,7 +48,9 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.CanvasTextAnchor
 import com.worksoc.goaicoach.ui.designsystem.ScoreGraphPalette
+import com.worksoc.goaicoach.ui.designsystem.drawBoldCanvasText
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.blackLeadLabel
 import com.worksoc.goaicoach.ui.play.winRateLabelFor
@@ -214,8 +211,8 @@ internal fun ReplayScoreOverviewGraph(
                 drawCircle(graph.activeDot, radius = 3.5.dp.toPx(), center = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead)))
             }
             val scale = maxScale.toInt().toString()
-            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
-            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
+            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
+            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
         }
     }
 }
@@ -339,8 +336,8 @@ private fun ScrubbableScoreGraph(
             val chartBottom = size.height - 12.dp.toPx()
             drawLine(graph.activeDot, Offset(size.width / 2f, chartTop), Offset(size.width / 2f, chartBottom), strokeWidth = 1.5.dp.toPx())
             val scale = maxScale.toInt().toString()
-            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
-            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, Paint.Align.RIGHT)
+            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
+            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
         }
     }
 }
@@ -349,18 +346,9 @@ private fun DrawScope.drawGraphText(
     label: String,
     center: Offset,
     color: Color,
-    align: Paint.Align = Paint.Align.LEFT,
+    align: CanvasTextAnchor = CanvasTextAnchor.Left,
 ) {
-    drawIntoCanvas { canvas ->
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color.toArgb()
-            textAlign = align
-            textSize = 9.dp.toPx()
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        val baseline = center.y - (paint.ascent() + paint.descent()) / 2f
-        canvas.nativeCanvas.drawText(label, center.x, baseline, paint)
-    }
+    drawBoldCanvasText(label, center, 9.dp.toPx(), color, align)
 }
 
 /** 큰 그래프의 높이 ÷ 화면 높이 — 사용자: *"화면의 1/3 수준가량"*(2026-10-08). */

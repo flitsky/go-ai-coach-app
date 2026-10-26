@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.history
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableSpendDecision
 import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
@@ -24,6 +22,7 @@ import com.worksoc.goaicoach.application.premium.state.FeatureAccess
 import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.topmoves.buildTopMoveAnalysisPlan
 import com.worksoc.goaicoach.application.topmoves.runTopMoveAnalysis
+import com.worksoc.goaicoach.platform.appIoDispatcher
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
@@ -34,6 +33,7 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.ToggleActionButton
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.gameReplayAnalysisBusyFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayAnalysisFailedFor
@@ -42,7 +42,6 @@ import com.worksoc.goaicoach.ui.monetization.LocalConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
@@ -61,7 +60,7 @@ internal class ReplayAnalysisEngine(
 ) {
     /** 형세 — 대국 화면의 형세 보기와 같은 신경망 평가 1회. 영역([ScoreEstimate.ownership])이 함께 온다. */
     suspend fun estimate(position: GameState): ScoreEstimate =
-        withContext(Dispatchers.IO) {
+        withContext(appIoDispatcher) {
             scoring.estimateScoreForState(state = position, profile = ReplayEngineProfile, syncFirst = true)
         }
 
@@ -76,7 +75,7 @@ internal class ReplayAnalysisEngine(
             analysisPreset = ReplayAnalysisPreset,
             deep = false,
         )
-        return withContext(Dispatchers.IO) {
+        return withContext(appIoDispatcher) {
             analysis.runTopMoveAnalysis(
                 targetState = position,
                 engineProfile = ReplayEngineProfile,
@@ -166,7 +165,7 @@ internal fun rememberReplayAnalysis(
 ): ReplayAnalysisUi {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // 효과 안에서는 **지금의** 값으로 불러야 한다 — 효과가 떠 있는 동안 재구성이 지나가면 붙잡아 둔 것이 낡는다.
     val consumables by rememberUpdatedState(LocalConsumableUiState.current)
     val currentStrings by rememberUpdatedState(strings)
@@ -189,7 +188,7 @@ internal fun rememberReplayAnalysis(
     val evalUnlimited = evalAccess is FeatureAccess.Allowed
     val topMovesUnlimited = topMovesAccess is FeatureAccess.Allowed
 
-    fun toast(message: String) = Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    fun toast(message: String) = platform.notice.show(message)
 
     // 걸어 둔 1회권을 정산한다 — 결과가 손에 들어온 뒤에만 부른다(`ReplayFeatureLedger`의 "차감은 결과가 나온 뒤다").
     fun settleTicket(featureId: FeatureId, ledger: ReplayFeatureLedger, apply: (ReplayFeatureLedger) -> Unit) {

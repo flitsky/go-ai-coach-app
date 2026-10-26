@@ -132,3 +132,5 @@ private fun fixedPoint(value: Double, precision: Int): String {
 actual fun debugLog(tag: String, message: String) {
     println("$tag: $message")
 }
+
+actual val appIoDispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default

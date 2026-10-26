@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach
 
 import android.content.Context
+import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BackgroundMusicStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
@@ -24,10 +25,12 @@ import com.worksoc.goaicoach.persistence.UiLanguageStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.persistence.WhatsNewStore
+import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
+import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.platform.PlayHaptics
@@ -56,6 +59,12 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
 
     override val boardScan: BoardScanEntry = object : BoardScanEntry {
         override fun hasPendingSharedPhoto(): Boolean = SharedBoardPhotoInbox.hasPhoto(appContext)
+    }
+
+    override val assets = object : BundledAssets {
+        override fun readBytes(path: String): ByteArray? = runCatching { appContext.assets.open(path).use { it.readBytes() } }.getOrNull()
+
+        override fun referenceGameReplay(): GameReplayData? = loadReferenceGameReplay(appContext)
     }
 
     override val debugArmFiles = DebugArmFiles { name -> BuildConfig.DEBUG && File(appContext.filesDir, name).let { it.isFile && it.delete() } }

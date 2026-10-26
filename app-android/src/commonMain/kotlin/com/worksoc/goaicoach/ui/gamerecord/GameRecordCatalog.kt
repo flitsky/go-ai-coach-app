@@ -1,12 +1,12 @@
 package com.worksoc.goaicoach.ui.gamerecord
 
+import com.worksoc.goaicoach.platform.decodeText
 import com.worksoc.goaicoach.shared.gamerecord.GameRecord
 import com.worksoc.goaicoach.shared.gamerecord.GameRecordProblem
 import com.worksoc.goaicoach.shared.gamerecord.GameRecordRead
 import com.worksoc.goaicoach.shared.gamerecord.readSgfGameRecord
 import com.worksoc.goaicoach.ui.l10n.GameRecordGroup
 import com.worksoc.goaicoach.ui.l10n.GameRecordOpenFailure
-import java.nio.charset.Charset
 
 /** 앱에 싣는 기보의 에셋 폴더 — `app-android/src/main/assets/game-records/`. */
 internal const val GameRecordAssetFolder = "game-records"
@@ -60,11 +60,10 @@ internal sealed interface GameRecordOpen {
  * `CA`는 그 자체가 ASCII라 앞부분을 ISO-8859-1로 읽어 찾는다.
  */
 internal fun openGameRecord(bytes: ByteArray): GameRecordOpen {
-    val head = String(bytes, 0, minOf(bytes.size, 4096), Charsets.ISO_8859_1)
-    val charset = Regex("""CA\[([^\]]+)]""").find(head)?.groupValues?.get(1)?.trim()
-        ?.let { runCatching { Charset.forName(it) }.getOrNull() }
-        ?: Charsets.UTF_8
-    return when (val read = readSgfGameRecord(String(bytes, charset))) {
+    // ISO-8859-1 = 바이트 하나가 글자 하나(0~255) — `CA`를 찾는 데만 쓴다.
+    val head = buildString { for (index in 0 until minOf(bytes.size, 4096)) append((bytes[index].toInt() and 0xFF).toChar()) }
+    val charsetName = Regex("""CA\[([^\]]+)]""").find(head)?.groupValues?.get(1)?.trim()
+    return when (val read = readSgfGameRecord(decodeText(bytes, charsetName))) {
         is GameRecordRead.Read -> GameRecordOpen.Opened(read.record)
         is GameRecordRead.Unreadable -> GameRecordOpen.Failed(read.problem.toOpenFailure())
     }

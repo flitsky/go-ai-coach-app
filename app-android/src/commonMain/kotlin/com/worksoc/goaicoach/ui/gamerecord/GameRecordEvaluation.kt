@@ -5,8 +5,6 @@ import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
 import com.worksoc.goaicoach.shared.enginecontract.ownershipEstimateOf
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * 앱에 실은 기보의 **미리 잰 형세**(백로그 #269 — 사용자 2026-10-19: 형세 보기를 켜 두면 수를 넘길 때마다 형세가 그려져 변해 가는 것을 본다).
@@ -57,29 +55,28 @@ internal class GameRecordEvaluation(
 }
 
 private const val OwnershipScale = 127.0
-private val Magic = "GREV".toByteArray(Charsets.US_ASCII)
+private val Magic = "GREV".encodeToByteArray()
 private const val SupportedVersion = 1
 private const val HeaderBytes = 16
 
 /** `.eval` 바이트 → [GameRecordEvaluation]. 머리·길이가 맞지 않으면 null — 그 판은 형세 없이 연다(엔진에 묻는 길은 그대로다). */
 internal fun readGameRecordEvaluation(bytes: ByteArray): GameRecordEvaluation? {
     if (bytes.size < HeaderBytes || !bytes.copyOfRange(0, Magic.size).contentEquals(Magic)) return null
-    val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
-    buffer.position(Magic.size)
+    val buffer = LittleEndianReader(bytes, position = Magic.size)
     val version = buffer.get().toInt() and 0xFF
     val size = buffer.get().toInt() and 0xFF
     val rules = buffer.get().toInt() and 0xFF
     buffer.get()
-    val komi = buffer.float.toDouble()
-    val positions = buffer.int
+    val komi = buffer.float().toDouble()
+    val positions = buffer.int()
     val cells = size * size
     if (version != SupportedVersion || size !in setOf(9, 13, 19) || positions <= 0) return null
     if (bytes.size != HeaderBytes + positions * 8 + positions * cells) return null
     val leads = FloatArray(positions)
     val wins = FloatArray(positions)
     for (move in 0 until positions) {
-        leads[move] = buffer.float
-        wins[move] = buffer.float
+        leads[move] = buffer.float()
+        wins[move] = buffer.float()
     }
     val ownership = ByteArray(positions * cells)
     buffer.get(ownership, 0, cells)
@@ -90,4 +87,25 @@ internal fun readGameRecordEvaluation(bytes: ByteArray): GameRecordEvaluation? {
         }
     }
     return GameRecordEvaluation(size, rules, komi, positions, leads, wins, ownership)
+}
+
+/** 리틀 엔디언 바이트 읽기 — `java.nio.ByteBuffer`(LITTLE_ENDIAN)의 이 파일이 쓰던 몫만(#294 — 공용 코드에는 nio가 없다). 길이는 부르는 쪽이 먼저 확인한다. */
+private class LittleEndianReader(private val bytes: ByteArray, private var position: Int) {
+    fun get(): Byte = bytes[position++]
+
+    fun int(): Int {
+        val value = (bytes[position].toInt() and 0xFF) or
+            ((bytes[position + 1].toInt() and 0xFF) shl 8) or
+            ((bytes[position + 2].toInt() and 0xFF) shl 16) or
+            ((bytes[position + 3].toInt() and 0xFF) shl 24)
+        position += 4
+        return value
+    }
+
+    fun float(): Float = Float.fromBits(int())
+
+    fun get(destination: ByteArray, offset: Int, length: Int) {
+        bytes.copyInto(destination, offset, position, position + length)
+        position += length
+    }
 }

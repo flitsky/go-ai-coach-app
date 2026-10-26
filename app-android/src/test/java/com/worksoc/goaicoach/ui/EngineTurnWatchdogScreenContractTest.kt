@@ -180,7 +180,7 @@ class EngineTurnWatchdogScreenContractTest {
         )
         assertTrue(
             "루프 앞에서 앞 틱 시각을 들지 않는다.",
-            Regex("""var\s+previousTickMillis\s*=\s*System\.currentTimeMillis\(\)""").containsMatchIn(watchdogEffect.substring(0, loopStart)),
+            Regex("""var\s+previousTickMillis\s*=\s*(System\.currentTimeMillis|currentEpochMillis)\(\)""").containsMatchIn(watchdogEffect.substring(0, loopStart)),
         )
         val rearm = watchdogEffect.indexOfOrFail(
             Regex(

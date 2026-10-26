@@ -20,15 +20,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
+import com.worksoc.goaicoach.application.gamehistory.GameReplayData
+import com.worksoc.goaicoach.kv.GameReplayCodec
 import com.worksoc.goaicoach.kv.iosAppStores
+import com.worksoc.goaicoach.persistence.ReferenceGameAssetPath
+import com.worksoc.goaicoach.persistence.ReferenceGameBoardSize
 import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.AppUpdateStatus
 import com.worksoc.goaicoach.platform.BoardScanEntry
+import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
 import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.platform.isDebugBuild
+import com.worksoc.goaicoach.ui.designsystem.toByteArray
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -36,10 +42,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import platform.Foundation.NSBundle
+import platform.Foundation.NSData
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSUserDomainMask
+import platform.Foundation.dataWithContentsOfFile
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 import platform.UIKit.UINotificationFeedbackGenerator
@@ -58,6 +67,17 @@ internal class IosAppPlatform : AppPlatform {
 
     // 사진 분석은 iOS 첫 판에 싣지 않는다(U-84) — 홈의 카메라 단추 · 실험실 타일이 감춰진다.
     override val boardScan: BoardScanEntry? = null
+
+    // 안드로이드 `assets/`를 앱 묶음의 appassets/assets/로 복사해 싣는다(`scripts/ios-bundle-resources.sh`).
+    override val assets = object : BundledAssets {
+        override fun readBytes(path: String): ByteArray? {
+            val root = NSBundle.mainBundle.resourcePath ?: return null
+            return NSData.dataWithContentsOfFile("$root/appassets/assets/$path")?.toByteArray()
+        }
+
+        override fun referenceGameReplay(): GameReplayData? =
+            readBytes(ReferenceGameAssetPath)?.decodeToString()?.let { raw -> GameReplayCodec.decode(raw, ReferenceGameBoardSize) }
+    }
 
     override val debugArmFiles = DebugArmFiles { name -> isDebugBuild && consumeDocumentsFile(name) }
 }

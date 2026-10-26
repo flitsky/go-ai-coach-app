@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
+import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 
@@ -29,6 +30,9 @@ interface AppPlatform {
 
     /** 바둑판 사진 분석의 입구 — 없으면(`null`, iOS) 그 입구를 그리지 않는다. */
     val boardScan: BoardScanEntry?
+
+    /** 앱에 실은 파일(기보 · 참고 대국 — 안드로이드 `assets/`). */
+    val assets: BundledAssets
 }
 
 /** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). */

@@ -4,16 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.gamehistory.findRecordedGame
 import com.worksoc.goaicoach.application.gamehistory.hasProvisionalScores
 import com.worksoc.goaicoach.application.gamehistory.remeasureScoreRecord
-import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import kotlinx.coroutines.delay
 
 /**
@@ -43,7 +42,7 @@ internal fun ScoreRecordRemeasureEffect(
     profile: EngineProfile,
     onRemeasured: (List<ScoreSnapshot>) -> Unit,
 ) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val hasProvisionalScores = scoreSnapshots.hasProvisionalScores()
     val latestGameState by rememberUpdatedState(gameState)
     val latestGeneration by rememberUpdatedState(sessionGeneration)
@@ -51,7 +50,7 @@ internal fun ScoreRecordRemeasureEffect(
     LaunchedEffect(isActive, isResultKnown, hasProvisionalScores, sessionGeneration, gameState.moves.size) {
         if (!isActive || !isResultKnown || !hasProvisionalScores) return@LaunchedEffect
         val moves = gameState.moves
-        val store = GameHistoryStore(context)
+        val store = platform.stores.gameHistory
         // 기록 붙이기는 같은 프레임의 다른 효과가 한다 — 아직이면 잠깐 기다렸다 다시 본다.
         var recorded = runEngineIo { store.findRecordedGame(moves) }
         repeat(RecordLookupRetries) {

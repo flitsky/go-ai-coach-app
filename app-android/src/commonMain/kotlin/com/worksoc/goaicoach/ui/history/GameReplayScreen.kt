@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.history
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +59,7 @@ import com.worksoc.goaicoach.ui.designsystem.ActionButtonMinHeight
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
@@ -135,7 +135,7 @@ internal fun GameReplayScreen(
     // 무조건 `exitToHome()`을 불러 **복기를 건너뛰고 홈으로 튄다.** 디스패처는 나중에 등록된
     // 콜백부터 부르고, 이 화면은 셸의 `when(currentDestination)` 안에서 **뒤에** 컴포즈되므로
     // 여기가 먼저 잡는다. 이 저장소의 중첩 `BackHandler` **첫 사례**라 실기로 확인할 것.
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     val timeline = remember(entry.id, replay) {
         buildGameReplayTimeline(setup = entry.setup, moves = replay.moves)

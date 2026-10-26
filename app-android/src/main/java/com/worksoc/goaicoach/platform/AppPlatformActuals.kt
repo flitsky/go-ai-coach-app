@@ -23,3 +23,8 @@ actual fun formatRootLocale(format: String, vararg args: Any?): String = String.
 actual fun debugLog(tag: String, message: String) {
     android.util.Log.i(tag, message)
 }
+
+actual val appIoDispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO
+
+actual fun decodeText(bytes: ByteArray, charsetName: String?): String =
+    String(bytes, charsetName?.let { runCatching { java.nio.charset.Charset.forName(it) }.getOrNull() } ?: Charsets.UTF_8)

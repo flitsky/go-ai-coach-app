@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
+import com.worksoc.goaicoach.platform.formatDeviceLocale
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
@@ -327,7 +328,7 @@ internal fun formatMillis(millis: Long): String {
     val seconds = (millis + 50L) / 1000L
     val minutes = seconds / 60
     val remainingSeconds = seconds % 60
-    return String.format("%02d:%02d", minutes, remainingSeconds)
+    return formatDeviceLocale("%02d:%02d", minutes, remainingSeconds)
 }
 
 /**

@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.gamerecord
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +32,7 @@ import com.worksoc.goaicoach.shared.gamerecord.GameRecord
 import com.worksoc.goaicoach.ui.board.GoBoard
 import com.worksoc.goaicoach.ui.designsystem.ActionButton
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.history.ReplayAnalysisEngine
 import com.worksoc.goaicoach.ui.history.ReplayControls
 import com.worksoc.goaicoach.ui.history.ReplayHeader
@@ -76,7 +76,7 @@ internal fun GameRecordViewer(
 ) {
     val strings = LocalUiStrings.current
     val language = strings.language
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     val record = opened.record
     val timeline = remember(opened.key) { buildGameReplayTimeline(setup = record.setup, moves = record.moves) }

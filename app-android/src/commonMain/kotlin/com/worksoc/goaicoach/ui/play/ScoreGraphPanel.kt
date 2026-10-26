@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.play
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -29,10 +27,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,7 +37,10 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.CanvasTextAnchor
 import com.worksoc.goaicoach.ui.designsystem.ScoreGraphPalette
+import com.worksoc.goaicoach.ui.designsystem.drawBoldCanvasText
+import com.worksoc.goaicoach.ui.foundation.screenWidthDp
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.blackLeadLabel
@@ -138,8 +135,7 @@ internal fun ScoreTimelineGraph(
 ) {
     val graph = ScoreGraphPalette.current
     val strings = LocalUiStrings.current
-    val configuration = LocalConfiguration.current
-    val targetHeight = if (isExpanded) (configuration.screenWidthDp.dp / 4) else 44.dp
+    val targetHeight = if (isExpanded) (screenWidthDp().dp / 4) else 44.dp
     
     // 부드럽게 접히고 늘어나는 높이 애니메이션
     val heightDp by animateDpAsState(
@@ -342,7 +338,7 @@ internal fun ScoreTimelineGraph(
                             } else {
                                 current.x + 8.dp.toPx()
                             }
-                            val textAlign = if (isNearRightEdge) Paint.Align.RIGHT else Paint.Align.LEFT
+                            val textAlign = if (isNearRightEdge) CanvasTextAnchor.Right else CanvasTextAnchor.Left
                             drawAxisText(
                                 label = currentScoreLabel,
                                 center = Offset(textX, current.y),
@@ -384,17 +380,8 @@ private fun DrawScope.drawAxisText(
     label: String,
     center: Offset,
     color: Color,
-    align: Paint.Align = Paint.Align.LEFT,
+    align: CanvasTextAnchor = CanvasTextAnchor.Left,
     sizeDp: Int = 9,
 ) {
-    drawIntoCanvas { canvas ->
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.color = color.toArgb()
-            textAlign = align
-            textSize = sizeDp.dp.toPx()
-            typeface = Typeface.DEFAULT_BOLD
-        }
-        val baseline = center.y - (paint.ascent() + paint.descent()) / 2f
-        canvas.nativeCanvas.drawText(label, center.x, baseline, paint)
-    }
+    drawBoldCanvasText(label, center, sizeDp.dp.toPx(), color, align)
 }

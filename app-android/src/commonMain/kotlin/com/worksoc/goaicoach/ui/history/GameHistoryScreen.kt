@@ -35,7 +35,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -52,13 +51,13 @@ import com.worksoc.goaicoach.application.gamehistory.WinRateShortGameMaxMoveCoun
 import com.worksoc.goaicoach.application.gamehistory.buildBranchedGameSnapshot
 import com.worksoc.goaicoach.application.gamehistory.gameHistoryWinRate
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.persistence.GameHistoryStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
-import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
 import com.worksoc.goaicoach.persistence.referenceGameHistoryEntry
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
@@ -77,9 +76,6 @@ import com.worksoc.goaicoach.ui.l10n.winRateWhatCountsFor
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.note
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * 3 Depth: 대국 기록 화면 — Phase 1 범위는 단순 리스트 표시만이다(기보 재분석은 다음 단계,
@@ -122,7 +118,7 @@ internal fun GameHistoryScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val analysisEngine = remember(engineScoring, engineAnalysis) { ReplayAnalysisEngine(engineScoring, engineAnalysis) }
     // ⚠️ **참고 기보는 항상 맨 앞이다** — 실기 기록 정렬(재생 시각 내림차순)에 끼워 넣는 게
     // 아니라, 그 앞에 붙인다. 그래야 나중에 실제로 둔 판이 쌓여도 순서가 안 밀린다.
@@ -130,10 +126,10 @@ internal fun GameHistoryScreen(
     // ⚠️ **`var`다 — 한 줄 평을 저장한 뒤 다시 읽지 않고 그 자리에서 갱신한다**(2026-09-20).
     // 전체를 다시 읽으면 정렬이 다시 계산돼 화면이 깜빡이고, 그사이 다른 기록이 추가됐다면
     // 그 판이 슬쩍 끼어드는 모양이 된다.
-    var entries by remember(context) {
+    var entries by remember(platform) {
         mutableStateOf(
             listOf(referenceGameHistoryEntry()) +
-                GameHistoryStore(context).loadAll().sortedByDescending { it.playedAtMillis },
+                platform.stores.gameHistory.loadAll().sortedByDescending { it.playedAtMillis },
         )
     }
 
@@ -230,9 +226,9 @@ internal fun GameHistoryScreen(
     // 한 번 더 막는다 — 본문이 없으면 열지 않는다.
     val open: (GameHistoryEntry) -> Unit = { entry ->
         val replay = if (entry.id == ReferenceGameHistoryId) {
-            loadReferenceGameReplay(context)
+            platform.assets.referenceGameReplay()
         } else {
-            GameHistoryStore(context).loadReplay(entry.id)
+            platform.stores.gameHistory.loadReplay(entry.id)
         }
         replay?.takeIf { !it.isEmpty }?.let { nonEmptyReplay -> opened = entry to nonEmptyReplay }
     }
@@ -262,7 +258,7 @@ internal fun GameHistoryScreen(
         var noteText by remember(entry.id) { mutableStateOf(entry.note.orEmpty()) }
         val save = {
             val saved = noteText.trim().ifEmpty { null }
-            GameHistoryStore(context).updateNote(entry.id, saved)
+            platform.stores.gameHistory.updateNote(entry.id, saved)
             entries = entries.map { if (it.id == entry.id) it.copy(note = saved) else it }
             editingNoteFor = null
         }
@@ -386,7 +382,7 @@ private fun GameHistoryWinRatePanel(
 ) {
     var period by rememberSaveable { mutableStateOf(WinRatePeriod.LastTenGames) }
     val rate = remember(entries, period) {
-        gameHistoryWinRate(entries.filter { it.id != ReferenceGameHistoryId }, period, System.currentTimeMillis())
+        gameHistoryWinRate(entries.filter { it.id != ReferenceGameHistoryId }, period, currentEpochMillis())
     }
     Column(
         modifier = Modifier
@@ -469,22 +465,14 @@ private fun branchedSnapshotOf(
         playerSetup = entry.playerSetup,
         scoreSnapshots = replay.scoreSnapshots,
         topMovesEnabled = false,
-        nowMillis = System.currentTimeMillis(),
+        nowMillis = currentEpochMillis(),
     )
 
 /**
- * 언어별 날짜 표기 어순이 달라 [UiLanguage]마다 다른 패턴/로케일을 쓴다(연도는 생략 — 목록용 짧은 표기).
- *
- * ⚠️ **시각(HH:mm)을 뺐다**(백로그 #151, 2026-09-18 사용자). 한 줄에 다섯 조각이 들어가는데
- * 분 단위까지 붙으면 폭만 먹고 고르는 데 도움이 안 된다 — 같은 날 여러 판은 **차례로 놓인다.**
+ * 목록의 짧은 날짜(연도 없이) — 언어마다 어순이 달라 패턴과 로케일이 다르다(백로그 #294 — S6: 안드로이드 `SimpleDateFormat`, iOS `NSDateFormatter`,
+ * 같은 패턴). 시각(HH:mm)은 뺐다(#151).
  */
-private fun dateFormat(language: UiLanguage): SimpleDateFormat =
-    when (language) {
-        UiLanguage.Korean -> SimpleDateFormat("M.d", Locale.KOREAN)
-        UiLanguage.English -> SimpleDateFormat("MMM d", Locale.ENGLISH)
-        UiLanguage.Japanese -> SimpleDateFormat("M月d日", Locale.JAPANESE)
-        UiLanguage.ChineseSimplified -> SimpleDateFormat("M月d日", Locale.SIMPLIFIED_CHINESE)
-    }
+internal expect fun formatHistoryMonthDay(epochMillis: Long, language: UiLanguage): String
 
 /** "접바둑(5)"/"호선"처럼 대국 설정 요약에 쓰는 접바둑 값 — [UiStrings.gameModeLabel]과 달리 "대국 방식:" 접두어 없이 목록 행에 바로 쓸 짧은 조각. */
 private fun handicapPhrase(strings: UiStrings, handicapCount: Int): String =
@@ -519,7 +507,7 @@ internal fun gameHistorySummaryLine(entry: GameHistoryEntry, strings: UiStrings)
     val dateOrReferenceLabel = if (entry.id == ReferenceGameHistoryId) {
         gameHistoryReferenceLabelFor(strings.language)
     } else {
-        dateFormat(strings.language).format(Date(entry.playedAtMillis))
+        formatHistoryMonthDay(entry.playedAtMillis, strings.language)
     }
     val summary = listOf(
         dateOrReferenceLabel,

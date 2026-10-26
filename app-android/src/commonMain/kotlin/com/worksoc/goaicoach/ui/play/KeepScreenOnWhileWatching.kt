@@ -1,8 +1,6 @@
 package com.worksoc.goaicoach.ui.play
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalView
 import com.worksoc.goaicoach.match.MatchMode
 
 /**
@@ -18,13 +16,6 @@ import com.worksoc.goaicoach.match.MatchMode
 internal fun shouldKeepScreenOnWhileWatching(matchMode: MatchMode, isGameEnded: Boolean): Boolean =
     matchMode == MatchMode.AiVsAi && !isGameEnded
 
+/** 켜 있는 동안 화면이 꺼지지 않게 한다(백로그 #294 — S19). 안드로이드는 뷰의 `keepScreenOn`, iOS는 앱의 유휴 타이머를 끈다. */
 @Composable
-internal fun KeepScreenOnWhile(active: Boolean) {
-    val view = LocalView.current
-    DisposableEffect(view, active) {
-        if (active) view.keepScreenOn = true
-        onDispose {
-            if (active) view.keepScreenOn = false
-        }
-    }
-}
+internal expect fun KeepScreenOnWhile(active: Boolean)

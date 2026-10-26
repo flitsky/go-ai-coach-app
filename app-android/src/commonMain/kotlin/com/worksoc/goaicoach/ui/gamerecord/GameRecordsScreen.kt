@@ -1,9 +1,5 @@
 package com.worksoc.goaicoach.ui.gamerecord
 
-import android.content.Context
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,11 +23,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.engine.EngineAnalysisClient
 import com.worksoc.goaicoach.application.engine.EngineScoringClient
+import com.worksoc.goaicoach.platform.BundledAssets
+import com.worksoc.goaicoach.platform.appIoDispatcher
 import com.worksoc.goaicoach.shared.gamerecord.GameRecord
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.history.ReplayAnalysisEngine
 import com.worksoc.goaicoach.ui.l10n.GameRecordOpenFailure
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -47,7 +45,6 @@ import com.worksoc.goaicoach.ui.l10n.gameRecordsOpenFileFor
 import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
 import com.worksoc.goaicoach.ui.study.StudyEntryRow
 import com.worksoc.goaicoach.ui.study.StudyScreenHeader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -70,19 +67,19 @@ internal fun GameRecordsScreen(
 ) {
     val language = LocalUiStrings.current.language
     val analysisEngine = remember(engineScoring, engineAnalysis) { ReplayAnalysisEngine(engineScoring, engineAnalysis) }
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val scope = rememberCoroutineScope()
     var opened by remember { mutableStateOf<OpenedGameRecord?>(null) }
     var failure by remember { mutableStateOf<GameRecordOpenFailure?>(null) }
     // 자동 진행의 간격 — 여기 두어 다른 판을 열어도 고른 간격이 남는다(이 화면을 떠나면 기본 1초로 — 스레드가 정한 범위).
     var autoPlaySeconds by rememberSaveable { mutableIntStateOf(DefaultGameRecordAutoPlaySeconds) }
-    val rows by produceState(initialValue = emptyList<BundledRow>(), context) {
-        value = withContext(Dispatchers.IO) { BundledGameRecords.map { entry -> BundledRow(entry, loadBundled(context, entry)) } }
+    val assets = platform.assets
+    val rows by produceState(initialValue = emptyList<BundledRow>(), assets) {
+        value = withContext(appIoDispatcher) { BundledGameRecords.map { entry -> BundledRow(entry, loadBundled(assets, entry)) } }
     }
-    val openFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            when (val result = withContext(Dispatchers.IO) { openFromFile(context, uri) }) {
+    val openFile = rememberSgfFilePicker(MaxFileBytes) { bytes ->
+        run {
+            when (val result = withContext(appIoDispatcher) { openFromBytes(bytes) }) {
                 is FileOpen.Opened -> {
                     failure = null
                     opened = OpenedGameRecord(key = result.key, title = fileTitle(language, result.record), record = result.record)
@@ -124,8 +121,10 @@ internal fun GameRecordsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.secondary,
                     )
-                    OutlinedButton(onClick = { openFile.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(gameRecordsOpenFileFor(language))
+                    if (openFile != null) {
+                        OutlinedButton(onClick = openFile, modifier = Modifier.fillMaxWidth()) {
+                            Text(gameRecordsOpenFileFor(language))
+                        }
                     }
                     failure?.let {
                         Text(
@@ -145,7 +144,7 @@ internal fun GameRecordsScreen(
                     onClick = record?.let { loaded ->
                         {
                             scope.launch {
-                                val evaluation = withContext(Dispatchers.IO) { loadEvaluation(context, row.entry) }
+                                val evaluation = withContext(appIoDispatcher) { loadEvaluation(assets, row.entry) }
                                 opened = OpenedGameRecord(
                                     key = "bundled:${row.entry.asset}",
                                     title = bundledTitle(language, row.entry),
@@ -187,20 +186,18 @@ private fun fileTitle(language: UiLanguage, record: GameRecord): String =
         ?: gameRecordUntitledFor(language)
 
 /** 앱에 실은 기보는 모두 읽혀야 한다(`GameRecordCatalogContractTest`) — 그래도 못 읽으면 그 줄만 눌리지 않는다. */
-private fun loadBundled(context: Context, entry: BundledGameRecord): GameRecord? = runCatching {
-    val bytes = context.assets.open(entry.assetPath).use { it.readBytes() }
+private fun loadBundled(assets: BundledAssets, entry: BundledGameRecord): GameRecord? = runCatching {
+    val bytes = assets.readBytes(entry.assetPath) ?: return@runCatching null
     (openGameRecord(bytes) as? GameRecordOpen.Opened)?.record
 }.getOrNull()
 
 /** 그 판의 미리 잰 형세(`*.eval`, #269) — 없거나 읽지 못하면 null이고, 그 판은 형세 기록 없이 열린다(엔진에 묻는 형세 보기는 그대로). */
-private fun loadEvaluation(context: Context, entry: BundledGameRecord): GameRecordEvaluation? = runCatching {
-    context.assets.open(entry.evaluationPath).use { it.readBytes() }.let(::readGameRecordEvaluation)
+private fun loadEvaluation(assets: BundledAssets, entry: BundledGameRecord): GameRecordEvaluation? = runCatching {
+    assets.readBytes(entry.evaluationPath)?.let(::readGameRecordEvaluation)
 }.getOrNull()
 
-private fun openFromFile(context: Context, uri: Uri): FileOpen {
-    val bytes = runCatching {
-        context.contentResolver.openInputStream(uri)?.use { input -> input.readNBytesCapped(MaxFileBytes) }
-    }.getOrNull() ?: return FileOpen.Failed(GameRecordOpenFailure.CannotOpen)
+private fun openFromBytes(bytes: ByteArray?): FileOpen {
+    if (bytes == null) return FileOpen.Failed(GameRecordOpenFailure.CannotOpen)
     return when (val result = openGameRecord(bytes)) {
         is GameRecordOpen.Opened -> FileOpen.Opened(key = "sgf:${bytes.contentHashCode()}", record = result.record)
         is GameRecordOpen.Failed -> FileOpen.Failed(result.failure)
@@ -209,14 +206,3 @@ private fun openFromFile(context: Context, uri: Uri): FileOpen {
 
 /** 기보 모음 파일(수천 판)도 첫 판만 읽으면 되므로 앞부분만 읽는다 — 스레드가 정한 상한. */
 private const val MaxFileBytes = 4 * 1024 * 1024
-
-private fun java.io.InputStream.readNBytesCapped(limit: Int): ByteArray {
-    val out = java.io.ByteArrayOutputStream()
-    val buffer = ByteArray(8192)
-    while (out.size() < limit) {
-        val read = read(buffer, 0, minOf(buffer.size, limit - out.size()))
-        if (read < 0) break
-        out.write(buffer, 0, read)
-    }
-    return out.toByteArray()
-}

@@ -425,6 +425,13 @@ internal object ShellStateLedger {
     private val HIDDEN_EFFECT_CALL = rx("""\b(?:launch|async)\s*[({]|\.collect\w*\s*[({]|\b(?:launchIn|stateIn|shareIn|produceIn)\s*\(""")
     private val LAUNCH_CALL = rx("""\b(?:launch|async)\s*[({]|\b(?:launchIn|stateIn|shareIn|produceIn)\s*\(""")
     private val IDIOM_INSTANCE_LAMBDA = rx("""\{\s*(MutableInteractionSource|FocusRequester)\(\s*\)\s*\}""")
+
+    /**
+     * 공용 화면(백로그 #294)의 저장소 읽기 — `remember(platform) { platform.stores.x }`. 안드로이드에서는 `XStore(context)`를 그 자리에서
+     * 만드는 것과 같은 저장소 · 같은 수명이다(`AndroidAppStores`는 읽을 때마다 새로 만든다). PLATFORM_PORT의 두 번째 모양이다 —
+     * 원장 규칙을 넓힌 것이라 #294 보고의 「제가 정한 것」에 적었다.
+     */
+    private val PLATFORM_STORE_READ = rx("""\{\s*platform\.stores\.\w+\s*\}""")
     private val ALSO_APPLY = rx("""^\.(?:also|apply)\s*\{""")
     private val BIND = rx(
         """^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:private|internal|public|override|lateinit|const)\s+)*""" +
@@ -617,7 +624,8 @@ internal object ShellStateLedger {
                     FLOW_CONTAINERS.containsMatchIn(body) || bind?.groupValues?.get(3) == "by" ||
                     index.snapshotStateClasses.any { callsClass(body, it) } || index.stateFactories.any { callsFunction(body, it) } ->
                     Construct.STATE
-                raw.hook == "remember" && raw.lambda != null && instanceCall(t, raw.lambda) != null -> Construct.INSTANCE
+                raw.hook == "remember" && raw.lambda != null &&
+                    (instanceCall(t, raw.lambda) != null || (lambdaText != null && PLATFORM_STORE_READ.matches(lambdaText))) -> Construct.INSTANCE
                 else -> Construct.MEMO
             }
             val name = when {
@@ -1468,7 +1476,10 @@ internal object ShellStateLedger {
                 }
             }
             when (kind) {
-                Kind.PLATFORM_PORT -> if (construct == Construct.INSTANCE) {
+                Kind.PLATFORM_PORT -> if (construct == Construct.INSTANCE && PLATFORM_STORE_READ.matches(lambdaText)) {
+                    val keys = rememberKeys(t, site)
+                    if (keys != listOf("platform") && keys != setOf("platform")) problems += "L7 $key PLATFORM_PORT `platform.stores` read must be remember(platform), found $keys"
+                } else if (construct == Construct.INSTANCE) {
                     val call = site.lambda?.let { instanceCall(t, it) }
                     if (call == null || !PORT_SUFFIX.containsMatchIn(call.constructor)) {
                         problems += "L7 $key PLATFORM_PORT needs ${kind.shape}; found constructor ${call?.constructor}"

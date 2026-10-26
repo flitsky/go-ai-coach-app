@@ -4,16 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.engine.EngineScoringClient
 import com.worksoc.goaicoach.application.engine.runEngineIo
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryEntry
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.gamehistory.hasProvisionalScores
 import com.worksoc.goaicoach.application.gamehistory.remeasureScoreRecord
-import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 
 /**
  * 다시보기를 연 판의 형세 기록에 사람 모델의 임시 값이 남아 있으면 **그 자리에서 주 모델로 마저 잰다**(백로그 #215 보강 ①).
@@ -33,14 +32,14 @@ internal fun ReplayScoreRemeasureEffect(
     engine: EngineScoringClient,
     onRemeasured: (GameHistoryEntry, GameReplayData) -> Unit,
 ): Boolean {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // 번들 참고 기보는 저장소를 거치지 않는 기록이고, 임시 값도 없다.
     val shouldRemeasure = entry.id != ReferenceGameHistoryId && replay.scoreSnapshots.hasProvisionalScores()
     val latestReplay by rememberUpdatedState(replay)
     val latestOnRemeasured by rememberUpdatedState(onRemeasured)
     LaunchedEffect(entry.id, shouldRemeasure) {
         if (!shouldRemeasure) return@LaunchedEffect
-        val store = GameHistoryStore(context)
+        val store = platform.stores.gameHistory
         remeasureScoreRecord(
             entry = entry,
             replay = latestReplay,
