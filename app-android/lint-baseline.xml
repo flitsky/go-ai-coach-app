@@ -227,7 +227,7 @@
         errorLine1="    modifier: Modifier = Modifier,"
         errorLine2="    ~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/designsystem/GameActionButtons.kt"
+            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/designsystem/GameActionButtons.kt"
             line="74"
             column="5"/>
     </issue>
@@ -300,7 +300,7 @@
         errorLine1="    var scale by mutableStateOf(DefaultAppFontScale)"
         errorLine2="                 ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/settings/AppFontScaleState.kt"
+            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/settings/AppFontScaleState.kt"
             line="32"
             column="18"/>
     </issue>

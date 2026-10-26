@@ -372,6 +372,9 @@ androidComponents {
             manifest.srcFile("src/main/AndroidManifest.xml")
             res.setSrcDirs(listOf("src/main/res"))
             assets.setSrcDirs(listOf("src/main/assets"))
+            // 린트는 AGP의 소스 목록만 본다 — 공용 소스가 없으면 거기로 옮긴 타입을 못 풀어 `remember`가 Unit을 돌려준다고
+            // 오탐한다(W2). 컴파일은 KMP가 이미 commonMain을 넣으므로 같은 파일이 두 번 들어가지 않는다(지문 동일로 확인).
+            kotlin.srcDir("src/commonMain/kotlin")
         }
         extension.sourceSets.getByName("debug") {
             manifest.srcFile("src/debug/AndroidManifest.xml")

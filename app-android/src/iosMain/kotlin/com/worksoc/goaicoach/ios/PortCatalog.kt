@@ -91,4 +91,5 @@ private fun requestedPageId(): String? =
 /** 카탈로그의 페이지 — 웨이브마다 옮긴 것을 더한다. */
 internal val PortCatalogPages: List<PortCatalogPage> = listOf(
     PortCatalogPage(id = "skeleton", title = "뼈대 첫 화면", wave = "#292") { SkeletonApp() },
+    PortCatalogPage(id = "design-tokens", title = "디자인 값 — 색 · 급수 배지 · 대국 버튼", wave = "W2") { CatalogDesignTokens() },
 )
