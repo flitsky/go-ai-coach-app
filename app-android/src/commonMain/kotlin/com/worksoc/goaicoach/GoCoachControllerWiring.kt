@@ -42,6 +42,7 @@ import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.platform.DebugReportPlatformInfo
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
@@ -64,8 +65,8 @@ internal data class GoCoachControllers(
 )
 
 internal interface GoCoachAppWiringContext {
-    /** 플랫폼 API가 필요한 배선용(#36의 진동 진단 등). 애플리케이션 컨텍스트를 담는다. */
-    val androidContext: android.content.Context
+    /** 진단 리포트의 기기 정보(#36의 진동 진단 · #92의 빌드 스탬프) — 리포트를 뽑을 때만 읽는다(#294: 예전의 애플리케이션 컨텍스트 자리). */
+    val debugReportPlatform: DebugReportPlatformInfo
     val scope: CoroutineScope
     val engineClient: EngineSessionClient
     val diagnosticEventLog: DiagnosticEventLogPort

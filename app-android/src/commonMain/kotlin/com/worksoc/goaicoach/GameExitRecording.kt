@@ -1,10 +1,10 @@
 package com.worksoc.goaicoach
 
-import android.content.Context
+import com.worksoc.goaicoach.application.gamehistory.GameHistoryStorePort
 import com.worksoc.goaicoach.application.gamehistory.runGameHistoryAppendIfCompleted
 import com.worksoc.goaicoach.application.score.FinalScoreJudgement
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 
@@ -43,7 +43,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
  * 그 순서를 소스에서 못박는 이유).
  */
 internal fun recordFinishedGameOnExit(
-    context: Context,
+    store: GameHistoryStorePort,
     isGameEnded: Boolean,
     finalScoreJudgement: FinalScoreJudgement?,
     gameState: GameState,
@@ -55,8 +55,8 @@ internal fun recordFinishedGameOnExit(
         finalScoreJudgement = finalScoreJudgement,
         gameState = gameState,
         playerSetup = playerSetup,
-        nowMillis = System.currentTimeMillis(),
-        store = GameHistoryStore(context),
+        nowMillis = currentEpochMillis(),
+        store = store,
         // ⚠️ **이 경로도 형세를 실어야 한다**(백로그 #151). 뒤로가기 기권은 여기서만
         // 기록되므로, 빠뜨리면 **기권으로 끝난 판만 형세 없는** 기록이 된다. 손실집수는
         // 넘길 필요가 없다 — 호출된 함수가 이 형세로부터 직접 계산한다.

@@ -1,13 +1,17 @@
 package com.worksoc.goaicoach.ui.foundation
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
+import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
+import com.worksoc.goaicoach.platform.DebugReportPlatformInfo
 import com.worksoc.goaicoach.platform.DeveloperTools
+import com.worksoc.goaicoach.platform.GoogleIdTokenSource
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 
 /**
@@ -37,6 +41,19 @@ interface AppPlatform {
 
     /** 개발자 메뉴의 초기화 · 진단 손잡이. */
     val developer: DeveloperTools
+
+    /** 로그인 어댑터와 구글 토큰 출처 — 셸이 한 번씩 꺼내 쓴다(로그인은 지금 꺼져 있다). */
+    val authClient: AuthClientPort
+    val googleIdTokens: GoogleIdTokenSource
+
+    /** 실행 기록(진단 리포트의 뒤쪽 꼬리). */
+    val runtimeEventLog: RuntimeEventLogPort
+
+    /** 진단 리포트의 기기 정보. */
+    val debugReportPlatform: DebugReportPlatformInfo
+
+    /** 엔진 모델이 아직 없어 준비 화면부터 보여야 하는가(S16) — 컴포지션 첫 순간에 한 번 묻는다. */
+    fun isEngineSetupRequired(): Boolean
 }
 
 /** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). */

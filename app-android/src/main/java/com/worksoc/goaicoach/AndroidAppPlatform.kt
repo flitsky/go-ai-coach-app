@@ -1,7 +1,10 @@
 package com.worksoc.goaicoach
 
 import android.content.Context
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
+import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
+import com.worksoc.goaicoach.engine.isEngineSetupRequired
 import com.worksoc.goaicoach.persistence.AttendanceStore
 import com.worksoc.goaicoach.persistence.BackgroundMusicStore
 import com.worksoc.goaicoach.persistence.BotCollectionStore
@@ -21,6 +24,7 @@ import com.worksoc.goaicoach.persistence.LifeAndDeathProgressStore
 import com.worksoc.goaicoach.persistence.PremiumStateStore
 import com.worksoc.goaicoach.persistence.RankMeasureStore
 import com.worksoc.goaicoach.persistence.ReleaseResetStore
+import com.worksoc.goaicoach.persistence.RuntimeEventLog
 import com.worksoc.goaicoach.persistence.ThemeModeStore
 import com.worksoc.goaicoach.persistence.UiLanguageStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
@@ -28,15 +32,20 @@ import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.persistence.WhatsNewStore
 import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
 import com.worksoc.goaicoach.platform.AdsConsentManager
+import com.worksoc.goaicoach.platform.AndroidAuthClient
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
+import com.worksoc.goaicoach.platform.DebugReportPlatformInfo
 import com.worksoc.goaicoach.platform.DeveloperTools
+import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
+import com.worksoc.goaicoach.platform.GoogleIdTokenSource
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.platform.PlayHaptics
+import com.worksoc.goaicoach.platform.debugReportBuildStamp
 import com.worksoc.goaicoach.platform.processAppUpdateCheck
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
@@ -85,6 +94,19 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
         override fun diagnosticLogText(): String = DiagnosticEventLog(File(appContext.filesDir, DiagnosticEventLog.FileName)).readText()
     }
 
+    // 셸이 `remember`로 하나씩 들고 있던 것들 — 읽을 때마다 새로 만든다(오늘의 수명과 같다).
+    override val authClient: AuthClientPort get() = AndroidAuthClient()
+    override val googleIdTokens: GoogleIdTokenSource get() = GoogleCredentialManagerClient()
+    override val runtimeEventLog: RuntimeEventLogPort get() = RuntimeEventLog(File(appContext.filesDir, RuntimeEventLog.FileName))
+
+    override val debugReportPlatform = object : DebugReportPlatformInfo {
+        override fun hapticDiagnostic(): String = PlayHaptics(appContext).diagnosticReport()
+
+        override fun buildStamp(): String = debugReportBuildStamp()
+    }
+
+    override fun isEngineSetupRequired(): Boolean = isEngineSetupRequired(appContext)
+
     override val debugArmFiles = DebugArmFiles { name -> BuildConfig.DEBUG && File(appContext.filesDir, name).let { it.isFile && it.delete() } }
 }
 
@@ -117,4 +139,8 @@ internal class AndroidAppStores(private val appContext: Context) : AppStores {
     override val engineBenchmark get() = EngineBenchmarkStore(appContext)
     override val deviceIdentity get() = DeviceIdentityStore(appContext)
     override val debugReportMirror get() = DebugReportMirrorStore(appContext)
+
+    override fun savedGameRawJson(): String? = GameSessionStore(appContext).readRawJson()
+
+    override fun storedBenchmarkText(): String = EngineBenchmarkStore(appContext).loadText()
 }

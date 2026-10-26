@@ -31,7 +31,7 @@ class SubscriptionWiringContractTest {
     fun theRestoreEffectReceivesTheCurrentPremiumState() {
         assertTrue(
             "복원 효과에 현재 상태를 안 넘긴다 — 해지한 구독이 영원히 살아 있는다(#158).",
-            app.contains("PremiumPurchaseRestoreEffect(AndroidAppMonetization(context), diagnosticEventLog, premiumState,"),
+            app.contains("PremiumPurchaseRestoreEffect(monetization, diagnosticEventLog, premiumState,"),
         )
         // #209 — 지금 두고 있는 판도 넘긴다. 안 넘기면(또는 세대를 안 넘기면) 72시간 강등이 대국 도중에 그대로 일어난다(U-46).
         assertTrue(

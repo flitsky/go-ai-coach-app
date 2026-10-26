@@ -427,11 +427,14 @@ internal object ShellStateLedger {
     private val IDIOM_INSTANCE_LAMBDA = rx("""\{\s*(MutableInteractionSource|FocusRequester)\(\s*\)\s*\}""")
 
     /**
-     * 공용 화면(백로그 #294)의 저장소 읽기 — `remember(platform) { platform.stores.x }`. 안드로이드에서는 `XStore(context)`를 그 자리에서
-     * 만드는 것과 같은 저장소 · 같은 수명이다(`AndroidAppStores`는 읽을 때마다 새로 만든다). PLATFORM_PORT의 두 번째 모양이다 —
-     * 원장 규칙을 넓힌 것이라 #294 보고의 「제가 정한 것」에 적었다.
+     * 공용 화면(백로그 #294)의 포트 읽기 — `remember(platform) { platform.stores.x }` · `remember(platform) { platform.notice }`.
+     * 안드로이드에서는 `XStore(context)` · `XClient()`를 그 자리에서 만드는 것과 같은 포트 · 같은 수명이다(`AndroidAppPlatform`은
+     * 읽을 때마다 새로 만든다). PLATFORM_PORT의 두 번째 모양이다 — 원장 규칙을 넓힌 것이라 #294 보고의 「제가 정한 것」에 적었다.
      */
-    private val PLATFORM_STORE_READ = rx("""\{\s*platform\.stores\.\w+\s*\}""")
+    private val PLATFORM_STORE_READ = rx("""\{\s*platform\.(?:stores\.)?\w+\s*\}""")
+
+    /** `platform.stores.premiumState`의 멤버 이름은 지역 부채 `premiumState`를 읽는 것이 아니다 — 부채 접촉 검사에서 뺀다. */
+    private val PLATFORM_MEMBER = rx("""\bplatform\.(?:stores\.)?\w+""")
     private val ALSO_APPLY = rx("""^\.(?:also|apply)\s*\{""")
     private val BIND = rx(
         """^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:private|internal|public|override|lateinit|const)\s+)*""" +
@@ -1469,7 +1472,7 @@ internal object ShellStateLedger {
             // WIRING은 컨트롤러 인스턴스와 배선 컨텍스트 object만 빠진다(콜백이 부채를 쓰는 것이 그 일이다).
             val wiringExempt = kind == Kind.WIRING && (site.construct == Construct.INSTANCE || WIRING_OBJECT.containsMatchIn(lambdaText))
             if (kind.allowed && !wiringExempt) {
-                val reach = "$receiver $body"
+                val reach = "$receiver $body".replace(PLATFORM_MEMBER, "platform")
                 val touched = debtNamesFor(site.owner).filter { word(it).containsMatchIn(reach) }.sorted()
                 if (touched.isNotEmpty()) {
                     problems += "L7 $key ($kind) reads OWED debt or a local alias of it $touched — an allowed kind cannot lean on debt"

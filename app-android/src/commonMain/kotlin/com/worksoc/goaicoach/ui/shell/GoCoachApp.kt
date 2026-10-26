@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.shell
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
@@ -19,9 +18,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import com.worksoc.goaicoach.AndroidAppMonetization
 import com.worksoc.goaicoach.GoCoachAppWiringContext
 import com.worksoc.goaicoach.application.analysis.AnalysisResultCache
 import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizationUiState
@@ -82,26 +79,15 @@ import com.worksoc.goaicoach.application.session.GameSessionStateHolder
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.runTurnAutomationTriggerEffect
 import com.worksoc.goaicoach.application.session.toRuntimeLogContext
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
 import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.engine.EngineIdentity
 import com.worksoc.goaicoach.engine.SessionGenerationRelay
-import com.worksoc.goaicoach.engine.isEngineSetupRequired
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.isRankMeasure
-import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
-import com.worksoc.goaicoach.persistence.DeviceIdentityStore
-import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
-import com.worksoc.goaicoach.persistence.GameHistoryStore
-import com.worksoc.goaicoach.persistence.GameSessionStore
-import com.worksoc.goaicoach.persistence.PremiumStateStore
-import com.worksoc.goaicoach.persistence.RuntimeEventLog
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
-import com.worksoc.goaicoach.platform.AndroidAuthClient
-import com.worksoc.goaicoach.platform.AndroidClipboardPort
-import com.worksoc.goaicoach.platform.AndroidUserNoticePort
-import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
+import com.worksoc.goaicoach.platform.DebugReportPlatformInfo
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.presentation.GoCoachScreenStateAssembler
 import com.worksoc.goaicoach.presentation.applyEvalActivation
@@ -117,8 +103,9 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.EngineTimeoutPolicy
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.ui.account.MyPageScreen
-import com.worksoc.goaicoach.ui.account.OnboardingScreen
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.foundation.withPlayConfirmModeGate
 import com.worksoc.goaicoach.ui.gamerecord.GameRecordsScreen
 import com.worksoc.goaicoach.ui.history.GameHistoryScreen
@@ -144,6 +131,7 @@ import com.worksoc.goaicoach.ui.monetization.PremiumPurchaseRestoreEffect
 import com.worksoc.goaicoach.ui.monetization.buildBotCharacterUiState
 import com.worksoc.goaicoach.ui.monetization.buildConsumableUiState
 import com.worksoc.goaicoach.ui.monetization.buildPremiumUiState
+import com.worksoc.goaicoach.ui.monetization.rememberAppMonetization
 import com.worksoc.goaicoach.ui.play.FinishedGameFlow
 import com.worksoc.goaicoach.ui.play.GoCoachContent
 import com.worksoc.goaicoach.ui.play.ProvisionalScoreRefineEffect
@@ -157,9 +145,7 @@ import com.worksoc.goaicoach.ui.setup.engineSetupGateVisible
 import com.worksoc.goaicoach.ui.splash.SplashVisibility
 import com.worksoc.goaicoach.ui.study.StudyEntry
 import com.worksoc.goaicoach.ui.study.StudyScreen
-import com.worksoc.goaicoach.ui.vision.BoardScanScreen
 import com.worksoc.goaicoach.wireGoCoachControllers
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -209,12 +195,12 @@ private fun GoCoachScreen(
     val engineName = identity.name
     val engineDiagnostic = identity.diagnostic
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val preferencesStore: UserPreferencesStorePort = remember(context) { UserPreferencesStore(context) }
+    val platform = LocalAppPlatform.current
+    val preferencesStore: UserPreferencesStorePort = remember(platform) { platform.stores.userPreferences }
     val initialPreferences = remember(preferencesStore) { preferencesStore.load() }
-    val authClient: AuthClientPort = remember { AndroidAuthClient() }
-    val deviceIdentityStore: DeviceIdentityStorePort = remember(context) { DeviceIdentityStore(context) }
-    val credentialManagerClient = remember { GoogleCredentialManagerClient() }
+    val authClient: AuthClientPort = remember(platform) { platform.authClient }
+    val deviceIdentityStore: DeviceIdentityStorePort = remember(platform) { platform.stores.deviceIdentity }
+    val credentialManagerClient = remember(platform) { platform.googleIdTokens }
     // 첫 화면 판단(로그인 기능 온/오프 포함)은 InitialDestination.kt의 initialDestination으로
     // 뺐다 — 별도 훅을 새로 추가하지 않고 이 초기값 계산식만 함수 호출로 바꾼다(이 파일의
     // 상태 훅 예산이 거의 소진돼 있어, 새 컴포즈 상태 훅을 추가하지 않는 쪽을 우선한다).
@@ -225,17 +211,15 @@ private fun GoCoachScreen(
     var showResumeDialog by remember { mutableStateOf(false) }
     // 백그라운드에서 시스템이 프로세스를 종료했다 재시작해도(사용자의 명시적 강제 종료와 구분 불가)
     // 활성화 상태가 사라지지 않도록 저장소에서 복원한다.
-    val premiumStateStore: PremiumStateStorePort = remember(context) { PremiumStateStore(context) }
+    val premiumStateStore: PremiumStateStorePort = remember(platform) { platform.stores.premiumState }
     var premiumState by remember { mutableStateOf(premiumStateStore.load()) }
-    // 포트가 아니라 어댑터 타입으로 쥔다 — 디버그 리포트용 원문(#86)은 어댑터에만 있다.
-    val sessionStore = remember(context) { GameSessionStore(context) }
-    val benchmarkStore = remember(context) { EngineBenchmarkStore(context) }
-    val debugReportMirror: DebugReportMirrorPort = remember(context) { DebugReportMirrorStore(context) }
-    val clipboardPort: ClipboardPort = remember(context) { AndroidClipboardPort(context) }
-    val userNoticePort: UserNoticePort = remember(context) { AndroidUserNoticePort(context) }
-    val runtimeEventLog: RuntimeEventLogPort = remember(context) {
-        RuntimeEventLog(File(context.filesDir, RuntimeEventLog.FileName))
-    }
+    // 디버그 리포트용 원문(#86)은 포트에 없다 — `platform.stores.savedGameRawJson()`처럼 조립 루트가 따로 준다.
+    val sessionStore = remember(platform) { platform.stores.savedGame }
+    val benchmarkStore = remember(platform) { platform.stores.engineBenchmark }
+    val debugReportMirror: DebugReportMirrorPort = remember(platform) { platform.stores.debugReportMirror }
+    val clipboardPort: ClipboardPort = remember(platform) { platform.clipboard }
+    val userNoticePort: UserNoticePort = remember(platform) { platform.notice }
+    val runtimeEventLog: RuntimeEventLogPort = remember(platform) { platform.runtimeEventLog }
     val defaultPlayLevel = remember { PlayLevelSetting() }
     val initialPlan = remember(initialPreferences, defaultPlayLevel) {
         buildInitialUserPreferencesPlan(
@@ -250,7 +234,7 @@ private fun GoCoachScreen(
                 initialPlan = initialPlan,
                 engineDiagnostic = engineDiagnostic,
                 benchmarkStore = benchmarkStore,
-                storedBenchmarkText = benchmarkStore.loadText(),
+                storedBenchmarkText = platform.stores.storedBenchmarkText(),
             ),
         ).also { holder ->
             // 홀더가 생기는 **바로 이 자리에서** 잇는다(#18) — 홀더가 새로 만들어질 때만 다시 돈다.
@@ -364,7 +348,7 @@ private fun GoCoachScreen(
     // 형세보기는 프리미엄 전용이라, 대국 종료 등에서 자동으로 부르는 이 함수가 권한 없이
     // showOwnershipOverlay를 켜면 새 대국을 시작해도 안 꺼지는 버튼이 남는다.
     fun activateEndgameJudgementReview() {
-        if (FeatureAccessPolicy.resolve(FeatureId.Eval, premiumState, System.currentTimeMillis()) !is FeatureAccess.Allowed) return
+        if (FeatureAccessPolicy.resolve(FeatureId.Eval, premiumState, currentEpochMillis()) !is FeatureAccess.Allowed) return
         uxOptions = uxOptions.copy(showOwnershipOverlay = true)
     }
     // ⚠️ 키 없는 `lifecycleController`(아래)는 **첫 컴포지션의** 이 지역 함수를 쥔다 — 엔진 이름·진단을 평범한
@@ -511,7 +495,7 @@ private fun GoCoachScreen(
                 playLevel = runtimeState.playLevel,
                 topMovesEnabled = topMovesEnabled,
                 scoreSnapshots = scoreState.scoreSnapshots,
-                nowMillis = System.currentTimeMillis(),
+                nowMillis = currentEpochMillis(),
                 store = sessionStore,
                 finalScoreJudgement = scoreState.finalScoreJudgement,
             ),
@@ -519,7 +503,7 @@ private fun GoCoachScreen(
         runGameHistoryAppendIfCompleted( // 대국 히스토리(백로그 #6) — 저장소 자체로 멱등성 확인
             isGameEnded = isGameEnded, finalScoreJudgement = scoreState.finalScoreJudgement,
             gameState = gameState, playerSetup = playerSetup,
-            nowMillis = System.currentTimeMillis(), store = GameHistoryStore(context),
+            nowMillis = currentEpochMillis(), store = platform.stores.gameHistory,
             // 리플레이 적재(백로그 #151) — **이미 세션 상태에 있던 것**이라 새로 계산하지
             // 않는다. 여기서 넘기지 않으면 대국이 끝나는 순간 그대로 버려진다. 손실집수는
             // 더 이상 여기서 넘기지 않는다 — 호출된 함수가 이 형세로부터 직접 계산한다.
@@ -544,7 +528,7 @@ private fun GoCoachScreen(
         uxOptions
     ) {
         object : GoCoachAppWiringContext {
-            override val androidContext: android.content.Context = context.applicationContext
+            override val debugReportPlatform: DebugReportPlatformInfo = platform.debugReportPlatform
             override val scope: CoroutineScope = scope
             override val engineClient: EngineSessionClient = engineClient
             override val diagnosticEventLog: DiagnosticEventLogPort = diagnosticEventLog
@@ -562,8 +546,8 @@ private fun GoCoachScreen(
             override val deferredTopMoveAnalysis: TopMoveAnalysisDeferral = deferredTopMoveAnalysis
             override val postUndoSync: PostUndoSyncSlot = postUndoSync
 
-            override fun savedSessionRawJson(): String? = sessionStore.readRawJson()
-            override fun storedBenchmarkText(): String = benchmarkStore.loadText()
+            override fun savedSessionRawJson(): String? = platform.stores.savedGameRawJson()
+            override fun storedBenchmarkText(): String = platform.stores.storedBenchmarkText()
 
             override fun sessionSnapshot(): GameSessionControllerState = sessionSnapshot
             override fun gameState(): GameState = gameState
@@ -633,7 +617,7 @@ private fun GoCoachScreen(
         // ⚠️ 판을 갈아엎기 **전에** 기록한다(#96) — 아래 `refreshNewGamePreview()`가 새 미리보기
         // 판을 적용해 `Move.Resign`을 지운다. 순서를 바꾸면 뒤로가기 기권이 다시 안 남는다.
         recordFinishedGameOnExit(
-            context, true, scoreState.finalScoreJudgement, gameState, playerSetup,
+            platform.stores.gameHistory, true, scoreState.finalScoreJudgement, gameState, playerSetup,
             scoreState.scoreSnapshots,
         )
         // 승급 대국이었으면 방금 기록한 판을 기력에 반영하고 일반 대국 설정으로 되돌린다 — 기록 **뒤**, 갈아엎기 **전**(#219).
@@ -649,7 +633,7 @@ private fun GoCoachScreen(
                 isTopMovesEnabled = { topMovesEnabled },
                 startConfiguredGame = {
                     // 승급 대국의 「재 대국」은 상대를 지금의 내 기력으로, 판 크기를 그 기력이 둘 수 있는 것으로 맞추고 시작한다(#219).
-                    prepareNextRankMeasureGame(AndroidUserNoticePort(context), selectedLanguage, settingsState.playerSetup, settingsState.boardSize, rankMeasureUiState.latestState(), controllers.settingsController)
+                    prepareNextRankMeasureGame(platform.notice, selectedLanguage, settingsState.playerSetup, settingsState.boardSize, rankMeasureUiState.latestState(), controllers.settingsController)
                     sessionStore.clear()
                     savedSessionUiState = savedSessionUiState.dismiss()
                     controllers.newGameController::startConfiguredGame.invoke()
@@ -788,7 +772,7 @@ private fun GoCoachScreen(
         )
     }
 
-    BackHandler(enabled = currentDestination != ScreenDestination.Home && currentDestination != ScreenDestination.Onboarding && currentDestination != ScreenDestination.BoardScan) {
+    PlatformBackHandler(enabled = currentDestination != ScreenDestination.Home && currentDestination != ScreenDestination.Onboarding && currentDestination != ScreenDestination.BoardScan) {
         if (currentDestination == ScreenDestination.InGame && !isGameEnded) {
             showResignConfirmFromBack = true
         } else {
@@ -836,20 +820,21 @@ private fun GoCoachScreen(
 
     // 봇 캐릭터 수집 상태 — #8이 배선을 남겨 둔 자리를 #10이 채운다(본체는 ui/monetization/BotCharacterUiState.kt).
     // 프리미엄 배선보다 **먼저** 만드는 이유: 구매 특전(#18) 판정에 지금 상대와 컬렉션이 필요하다.
-    val botCharacterUiState = buildBotCharacterUiState(AndroidAppMonetization(context))
+    val monetization = rememberAppMonetization()
+    val botCharacterUiState = buildBotCharacterUiState(monetization)
     val characterPerkActive = isBotCharacterPerkActive(matchOpponentCharacter(playerSetup), botCharacterUiState.collection)
     // 프리미엄 배선(활성화 판정·저장·클레임 규칙)의 본체는 ui/monetization/PremiumUiState.kt의
     // buildPremiumUiState에 있다 — PremiumPurchaseGlue.kt와 같은 이유로 이 셸 밖에 뒀다.
     val premiumUiState = buildPremiumUiState(
         premiumState = premiumState,
         store = premiumStateStore,
-        monetization = AndroidAppMonetization(context),
+        monetization = monetization,
         diagnosticEventLog = diagnosticEventLog,
         characterPerkActive = characterPerkActive,
         onStateChanged = { nextState -> premiumState = nextState },
     )
 
-    PremiumPurchaseRestoreEffect(AndroidAppMonetization(context), diagnosticEventLog, premiumState, MatchInPlay(runtimeState.matchGeneration, inProgress = (!isGameEnded && gameState.moves.isNotEmpty()) || currentDestination == ScreenDestination.InGame)) { nextState ->
+    PremiumPurchaseRestoreEffect(monetization, diagnosticEventLog, premiumState, MatchInPlay(runtimeState.matchGeneration, inProgress = (!isGameEnded && gameState.moves.isNotEmpty()) || currentDestination == ScreenDestination.InGame)) { nextState ->
         premiumState = premiumStateStore.saveMergingClaimedFeatures(nextState)
     }
 
@@ -915,7 +900,7 @@ private fun GoCoachScreen(
     //   배운 것이다. 상태는 `SplashVisibility`가 들고 있어 이 셸의 상태 원장(`architecture-budgets.json`)에 자리를 늘리지 않는다.
     // 엔진 준비 화면(#249) — 모델이 없으면 화면들 위에 덮는다. 판정은 첫 컴포지션에서 동기로(스플래시 안에서) 끝난다.
     // ⚠️ 떠 있는 동안 출석 팝업도 미룬다 — 실행 루틴은 「준비 화면 → 시작하기 → 출석 보상」이다(사용자 2026-10-11).
-    val engineSetupRequired = remember(context) { isEngineSetupRequired(context) }
+    val engineSetupRequired = remember(platform) { platform.isEngineSetupRequired() }
     var engineSetupClosed by rememberSaveable { mutableStateOf(false) } // 「나중에」는 화면이 다시 만들어져도 지킨다(#253)
     val showsEngineSetup = engineSetupGateVisible(engineSetupRequired, engineSetupClosed, identity.mode)
     if (!SplashVisibility.isShowing &&
@@ -931,7 +916,7 @@ private fun GoCoachScreen(
         ) &&
         // 홈의 기력 변동 팝업·승급을 고르는 창(#219 · #268) — 고르지 않은 승급은 저장돼 콜드 스타트에 바로 뜰 수 있어 이 줄에 선다:
         // 스플래시·엔진 준비 화면 뒤에, 출석 팝업 앞에(그 판의 일이 먼저다). 대국 화면은 판정 창이 닫힌 뒤 제 자리에서 띄운다(`GoCoachContent`).
-        !ReleaseResetNoticeDialog(context) && !(currentDestination == ScreenDestination.Home && RankMeasureChangeDialog(rankMeasureUiState))
+        !ReleaseResetNoticeDialog() && !(currentDestination == ScreenDestination.Home && RankMeasureChangeDialog(rankMeasureUiState))
     ) {
         AttendanceRewardClaimDialog { next -> premiumState = next }
     }
@@ -939,7 +924,7 @@ private fun GoCoachScreen(
     Box(modifier = if (showsEngineSetup) Modifier.clearAndSetSemantics {} else Modifier) {
     when (currentDestination) {
         ScreenDestination.Onboarding -> {
-            OnboardingScreen(
+            OnboardingSlot(
                 authClient = authClient,
                 deviceIdentityStore = deviceIdentityStore,
                 credentialManagerClient = credentialManagerClient,
@@ -982,7 +967,7 @@ private fun GoCoachScreen(
             StudyScreen(onBackClick = { currentDestination = ScreenDestination.Home })
         }
         ScreenDestination.BoardScan -> {
-            BoardScanScreen(
+            BoardScanSlot(
                 engineClient = engineClient,
                 onBackClick = exitToHome,
                 onStartGameWithState = { scannedState ->

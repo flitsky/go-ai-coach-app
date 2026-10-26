@@ -303,7 +303,7 @@ class FirstDolGuideContractTest {
     fun theFirstRunIsSettledBeforeTheAppComposesAndArmsTheGuideOnce() {
         val gate = uiSources.getValue("FirstRunGate.kt")
         val save = gate.indexOf("store.save(completeFirstRun(")
-        val arm = gate.indexOf("GuideProgressStore(context).arm()")
+        val arm = gate.indexOf("platform.stores.guideProgress.arm()")
         val content = gate.lastIndexOf("content()")
         assertTrue("첫 실행을 저장하지 않는다.", save >= 0)
         assertTrue("가이드를 무장하지 않는다 — 신규 사용자에게 첫돌이 안내가 영영 뜨지 않는다.", arm >= 0)

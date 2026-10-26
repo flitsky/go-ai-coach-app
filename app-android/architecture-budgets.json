@@ -60,7 +60,8 @@
         "GoCoachScreen.wiringContext": { "kind": "WIRING", "since": "#46", "why": "컨트롤러 배선 컨텍스트 — ⚠️ remember 키 7개는 WiringContextFreezeContractTest가 지킨다(함정 67). 이 원장은 키를 보지 않는다" },
         "GoCoachScreen.controllers": { "kind": "WIRING", "since": "#46", "why": "컨트롤러 그래프 — remember(wiringContext)로 재배선(#43)" },
         "GoCoachScreen.LaunchedEffect(isEngineReady)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "AI 차례·추천 수 자동 트리거" },
-        "GoCoachScreen.LaunchedEffect(isGameEnded)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "캐시 최적화 안내 갱신" }
+        "GoCoachScreen.LaunchedEffect(isGameEnded)": { "kind": "WORKFLOW_EFFECT", "since": "#46", "why": "캐시 최적화 안내 갱신" },
+        "GoCoachScreen.monetization": { "kind": "HOSTED_ROLE_STATE", "since": "#294", "why": "rememberAppMonetization()가 플랫폼마다(안드로이드 AndroidAppMonetization · iOS IosAppMonetization) 만드는 결제·광고 포트 — 예전엔 쓰는 자리 셋에서 AndroidAppMonetization(context)를 새로 만들었다. 셸은 읽기만" }
       }
     },
     "settingsScreen": {

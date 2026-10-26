@@ -8,8 +8,6 @@ import com.worksoc.goaicoach.application.session.GameSessionAnalysisState
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.match.PlayerSetup
-import com.worksoc.goaicoach.platform.PlayHaptics
-import com.worksoc.goaicoach.platform.debugReportBuildStamp
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 
@@ -48,9 +46,9 @@ internal fun wireDebugReportController(context: GoCoachAppWiringContext): DebugR
     DebugReportController(
         engineName = { context.engineName() },
         engineDiagnostic = { context.engineDiagnostic() },
-        hapticDiagnostic = { PlayHaptics(context.androidContext).diagnosticReport() },
+        hapticDiagnostic = { context.debugReportPlatform.hapticDiagnostic() },
         // 빌드·기기 스탬프(#92). 리포트를 뽑는 그 시점에 읽는다 — `DebugReportBuildStamp.kt` 참고.
-        buildStamp = { debugReportBuildStamp() },
+        buildStamp = { context.debugReportPlatform.buildStamp() },
         runtimeEventLog = context.runtimeEventLog,
         diagnosticEventLog = context.diagnosticEventLog,
         clipboard = context.clipboardPort,

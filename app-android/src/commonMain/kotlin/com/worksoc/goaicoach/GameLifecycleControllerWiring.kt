@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.application.session.GameSessionResetPlan
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.startgame.NewGameController
 import com.worksoc.goaicoach.application.startgame.runtimeGameResetLog
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
 
 /**
@@ -42,7 +43,7 @@ internal fun wireNewGameController(
             context.setTurnTimeState(
                 GameSessionTurnTimeState.reset(
                     state = reset.gameState,
-                    nowMillis = System.currentTimeMillis(),
+                    nowMillis = currentEpochMillis(),
                 )
             )
             context.runtimeEventLog.append(
@@ -91,7 +92,7 @@ internal fun wireSavedSessionController(
             context.setTurnTimeState(
                 GameSessionTurnTimeState.reset(
                     state = restore.gameState,
-                    nowMillis = System.currentTimeMillis(),
+                    nowMillis = currentEpochMillis(),
                 )
             )
         },

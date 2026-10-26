@@ -41,6 +41,7 @@ import com.worksoc.goaicoach.application.topmoves.TopMoveAnalysisDeferral
 import com.worksoc.goaicoach.application.undo.PostUndoSyncSlot
 import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
+import com.worksoc.goaicoach.platform.DebugReportPlatformInfo
 import com.worksoc.goaicoach.shared.diagnostic.DiagnosticEvent
 import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
@@ -241,7 +242,7 @@ internal class FakeGoCoachAppWiringContext(
     val runtimeLog = RecordingRuntimeEventLog()
     val diagnosticLog = RecordingDiagnosticEventLog()
 
-    override val androidContext: android.content.Context
+    override val debugReportPlatform: DebugReportPlatformInfo
         get() {
             androidContextReads++
             throw AndroidContextTouched()

@@ -11,6 +11,7 @@ import com.worksoc.goaicoach.application.contract.AutoAiTurnDisplayPlan
 import com.worksoc.goaicoach.application.humanmove.HumanMoveController
 import com.worksoc.goaicoach.application.session.AutoAiTurnTimeout
 import com.worksoc.goaicoach.application.session.TurnTimeMoveUpdate
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.application.topmoves.TopMovesController
 import com.worksoc.goaicoach.application.undo.UndoController
 import com.worksoc.goaicoach.shared.domain.GameState
@@ -93,7 +94,7 @@ internal fun wireUndoController(
             context.setTurnTimeState(
                 context.turnTimeState().restartCurrentTurn(
                     state = undo.gameState,
-                    nowMillis = System.currentTimeMillis(),
+                    nowMillis = currentEpochMillis(),
                 )
             )
         },

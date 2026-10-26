@@ -15,6 +15,7 @@ import com.worksoc.goaicoach.application.session.GameSessionMoveReviewState
 import com.worksoc.goaicoach.application.session.GameSessionScoreState
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
 import com.worksoc.goaicoach.application.session.buildGameSessionControllerState
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.shared.domain.GameState
 
@@ -52,7 +53,7 @@ internal fun buildInitialSessionState(
     engineMessage = "Ready to start a new game.",
     turnTimeState = GameSessionTurnTimeState.reset(
         state = initialPlan.gameState,
-        nowMillis = System.currentTimeMillis(),
+        nowMillis = currentEpochMillis(),
     ),
     settings = initialPlan.toGameSessionSettingsState(),
     benchmark = EngineBenchmarkUiState.initial(
@@ -74,5 +75,5 @@ internal fun snapshotStartingFrom(state: GameState, screenState: GameScreenState
         playerSetup = screenState.playerSetup,
         playLevel = screenState.playLevel,
         topMovesEnabled = topMovesEnabled,
-        savedAtMillis = System.currentTimeMillis(),
+        savedAtMillis = currentEpochMillis(),
     )

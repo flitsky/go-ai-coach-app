@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.shell
 
-import android.content.Context
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -9,7 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.worksoc.goaicoach.persistence.ReleaseResetStore
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.releaseResetBodyFor
@@ -37,9 +36,10 @@ import com.worksoc.goaicoach.ui.l10n.releaseResetTitleFor
  * @return 안내가 지금 떠 있으면 `true`.
  */
 @Composable
-internal fun ReleaseResetNoticeDialog(context: Context): Boolean {
-    val store = remember(context) { ReleaseResetStore(context) }
-    var pending by remember(context) { mutableStateOf(store.isNoticePending()) }
+internal fun ReleaseResetNoticeDialog(): Boolean {
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.releaseReset }
+    var pending by remember(platform) { mutableStateOf(store.isNoticePending()) }
     if (!pending) return false
 
     val strings = LocalUiStrings.current

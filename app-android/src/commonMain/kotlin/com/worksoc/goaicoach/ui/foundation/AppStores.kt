@@ -52,4 +52,13 @@ interface AppStores {
     val engineBenchmark: EngineBenchmarkStorePort
     val deviceIdentity: DeviceIdentityStorePort
     val debugReportMirror: DebugReportMirrorPort
+
+    /**
+     * 진단 리포트가 보이는 저장 원문 — 포트에는 올리지 않는다(저장 형식은 어댑터 밖으로 내지 않는다 — `LayeringContractTest`).
+     * 조립 루트가 구체 저장소에서 읽어 꽂는다.
+     */
+    fun savedGameRawJson(): String?
+
+    /** 저장된 엔진 측정 파일 원문(진단 리포트 · 개발자 메뉴) — 없으면 그 사실을 한 줄로. */
+    fun storedBenchmarkText(): String
 }

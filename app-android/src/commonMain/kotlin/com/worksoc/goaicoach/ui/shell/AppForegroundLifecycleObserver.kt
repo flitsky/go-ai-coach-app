@@ -2,11 +2,9 @@ package com.worksoc.goaicoach.ui.shell
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
 
 /**
  * 앱 **프로세스**가 화면을 떠나고 돌아오는 전환을 알린다(backlog #202).
@@ -22,7 +20,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 internal fun ObserveAppForegroundLifecycle(
     onBackgrounded: () -> Unit,
     onForegrounded: () -> Unit,
-    processLifecycle: Lifecycle = remember { ProcessLifecycleOwner.get().lifecycle },
+    processLifecycle: Lifecycle = rememberProcessLifecycle(),
 ) {
     val currentOnBackgrounded = rememberUpdatedState(onBackgrounded)
     val currentOnForegrounded = rememberUpdatedState(onForegrounded)
@@ -48,3 +46,10 @@ internal fun ObserveAppForegroundLifecycle(
         }
     }
 }
+
+/**
+ * 앱 전체가 앞 · 뒤로 가는 수명(백로그 #294 — S27). 안드로이드는 `ProcessLifecycleOwner`(액티비티가 아니라 프로세스 — 위 KDoc),
+ * iOS는 이 화면 컨트롤러의 수명(앱이 뒤로 가면 멈춘다 — 창이 하나라 프로세스와 같다).
+ */
+@Composable
+internal expect fun rememberProcessLifecycle(): Lifecycle

@@ -19,8 +19,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.worksoc.goaicoach.application.auth.port.AuthClientPort
+import com.worksoc.goaicoach.application.auth.state.AuthState
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
+import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.kv.GameReplayCodec
 import com.worksoc.goaicoach.kv.iosAppStores
 import com.worksoc.goaicoach.kv.iosWipeToFreshInstall
@@ -32,9 +35,12 @@ import com.worksoc.goaicoach.platform.AppUpdateStatus
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
+import com.worksoc.goaicoach.platform.DebugReportPlatformInfo
 import com.worksoc.goaicoach.platform.DeveloperTools
+import com.worksoc.goaicoach.platform.GoogleIdTokenSource
 import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
+import com.worksoc.goaicoach.platform.appBuildInfo
 import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.designsystem.toByteArray
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
@@ -96,6 +102,28 @@ internal class IosAppPlatform : AppPlatform {
 
         override fun diagnosticLogText(): String = ""
     }
+
+    // 로그인은 꺼져 있다 — 부르면 「지원 안 함」으로 답한다(Sign in with Apple · 계정 연동은 사용자 작업 뒤).
+    override val authClient: AuthClientPort = IosNoAuthClient
+    override val googleIdTokens: GoogleIdTokenSource = object : GoogleIdTokenSource {}
+
+    // 실행 기록 파일은 아직 없다(진단 리포트의 그 꼬리가 빈다).
+    override val runtimeEventLog: RuntimeEventLogPort = object : RuntimeEventLogPort {
+        override fun append(event: String, nowMillis: Long) {}
+
+        override fun readText(): String = ""
+
+        override fun clear() {}
+    }
+
+    override val debugReportPlatform = object : DebugReportPlatformInfo {
+        override fun hapticDiagnostic(): String = "ios-uikit-feedback"
+
+        override fun buildStamp(): String = "ios ${appBuildInfo.versionName} (${appBuildInfo.versionCode}) ${appBuildInfo.buildType}"
+    }
+
+    // 모델은 앱과 함께 싣는다(시뮬레이터는 맥의 모델 경로) — 받기 화면이 필요 없다.
+    override fun isEngineSetupRequired(): Boolean = false
 
     override val debugArmFiles = DebugArmFiles { name -> isDebugBuild && consumeDocumentsFile(name) }
 }
@@ -179,4 +207,20 @@ private class IosClipboard : ClipboardPort {
         UIPasteboard.generalPasteboard.string = text
         return true
     }
+}
+
+private object IosNoAuthClient : AuthClientPort {
+    private fun unsupported() = Result.failure<AuthState>(UnsupportedOperationException("sign-in is not available on iOS yet"))
+
+    override suspend fun signInWithGoogle(idToken: String): Result<AuthState> = unsupported()
+
+    override suspend fun linkGoogleCredential(idToken: String): Result<AuthState> = unsupported()
+
+    override suspend fun signInWithEmail(email: String, password: String): Result<AuthState> = unsupported()
+
+    override suspend fun linkEmailCredential(email: String, password: String): Result<AuthState> = unsupported()
+
+    override fun currentAuthState(): AuthState = AuthState()
+
+    override suspend fun deleteAccount(): Result<Unit> = Result.failure(UnsupportedOperationException("no account on iOS yet"))
 }

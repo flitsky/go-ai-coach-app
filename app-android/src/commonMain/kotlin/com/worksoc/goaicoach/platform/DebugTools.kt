@@ -30,3 +30,10 @@ interface DeveloperTools {
     /** 진단 로그 전체(뒤쪽만 보여 주는 것은 화면 몫). */
     fun diagnosticLogText(): String
 }
+
+/** 진단 리포트에 싣는 기기 정보(백로그 #294 — S26) — 리포트를 뽑는 그 순간에 읽는다. 안드로이드는 진동기 진단 · 빌드 스탬프. */
+interface DebugReportPlatformInfo {
+    fun hapticDiagnostic(): String
+
+    fun buildStamp(): String
+}

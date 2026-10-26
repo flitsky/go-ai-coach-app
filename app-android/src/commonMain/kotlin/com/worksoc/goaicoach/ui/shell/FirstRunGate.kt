@@ -2,10 +2,8 @@ package com.worksoc.goaicoach.ui.shell
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.preferences.completeFirstRun
-import com.worksoc.goaicoach.persistence.GuideProgressStore
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 
 /**
  * 첫 실행을 **앱 화면 전체보다 바깥에서** 끝내는 문(백로그 #140 — 예전의 `LandingGate`, #51).
@@ -28,16 +26,16 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
  */
 @Composable
 internal fun FirstRunGate(content: @Composable () -> Unit) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // ⚠️ `remember`의 초기화식에서 **한 번만** 한다. 멱등이라(플래그를 보고 건너뛴다) 컴포지션이
     // 버려져 다시 돌아도 안전하다. `LaunchedEffect`·`SideEffect`로 옮기지 말 것 — 둘 다 컴포지션
     // **뒤에** 돌아서 위 순서가 깨진다.
-    remember(context) {
-        val store = UserPreferencesStore(context)
+    remember(platform) {
+        val store = platform.stores.userPreferences
         val current = store.load()
         if (!current.hasSeenOnboarding) {
             store.save(completeFirstRun(current))
-            GuideProgressStore(context).arm()
+            platform.stores.guideProgress.arm()
         }
     }
     content()

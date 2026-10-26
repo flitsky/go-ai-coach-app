@@ -7,6 +7,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.worksoc.goaicoach.application.session.GameSessionTurnTimeState
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 
 @Composable
 internal fun ObserveTimerLifecycle(
@@ -21,11 +22,11 @@ internal fun ObserveTimerLifecycle(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
                 currentOnTurnTimeStateChange.value(
-                    currentTurnTimeState.value.pause(System.currentTimeMillis()),
+                    currentTurnTimeState.value.pause(currentEpochMillis()),
                 )
             } else if (event == Lifecycle.Event.ON_RESUME) {
                 currentOnTurnTimeStateChange.value(
-                    currentTurnTimeState.value.resume(System.currentTimeMillis()),
+                    currentTurnTimeState.value.resume(currentEpochMillis()),
                 )
             }
         }
