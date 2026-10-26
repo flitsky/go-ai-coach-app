@@ -135,7 +135,7 @@ class GameSetupStorageGoldenTest {
 }
 
 /** 두 JSON 글자가 키 순서만 빼고 같은가 — 객체의 키를 정렬해 다시 써서 견준다(수 · 문자열 표기는 그대로). */
-private fun assertSameJson(expected: String, actual: String) {
+internal fun assertSameJson(expected: String, actual: String) {
     assertEquals(canonicalJson(expected), canonicalJson(actual))
 }
 

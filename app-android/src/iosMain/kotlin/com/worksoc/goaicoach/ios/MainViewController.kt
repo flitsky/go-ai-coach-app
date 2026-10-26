@@ -28,7 +28,7 @@ fun MainViewController(): UIViewController {
     val catalog = NSProcessInfo.processInfo.environment["GOCOACH_PORT_CATALOG_PAGE"] != null
     val platform = IosAppPlatform()
     runIosAppStartup(platform)
-    val runtime = iosProcessRuntime()
+    val runtime = iosProcessRuntime(platform.diagnosticEventLog)
     val statusBar = IosStatusBarAppearance()
     return ComposeUIViewController(
         configure = {

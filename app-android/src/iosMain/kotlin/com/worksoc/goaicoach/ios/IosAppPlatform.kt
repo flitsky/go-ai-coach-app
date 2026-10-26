@@ -22,9 +22,13 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.auth.state.AuthState
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
+import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.kv.GameReplayCodec
+import com.worksoc.goaicoach.kv.IosAppFileStore
+import com.worksoc.goaicoach.kv.KvDiagnosticEventLog
+import com.worksoc.goaicoach.kv.KvRuntimeEventLog
 import com.worksoc.goaicoach.kv.iosAppStores
 import com.worksoc.goaicoach.kv.iosWipeToFreshInstall
 import com.worksoc.goaicoach.persistence.ReferenceGameAssetPath
@@ -100,21 +104,18 @@ internal class IosAppPlatform : AppPlatform {
 
         override fun resetAdConsent() {}
 
-        override fun diagnosticLogText(): String = ""
+        override fun diagnosticLogText(): String = diagnosticEventLog.readText()
     }
 
     // 로그인은 꺼져 있다 — 부르면 「지원 안 함」으로 답한다(Sign in with Apple · 계정 연동은 사용자 작업 뒤).
     override val authClient: AuthClientPort = IosNoAuthClient
     override val googleIdTokens: GoogleIdTokenSource = object : GoogleIdTokenSource {}
 
-    // 실행 기록 파일은 아직 없다(진단 리포트의 그 꼬리가 빈다).
-    override val runtimeEventLog: RuntimeEventLogPort = object : RuntimeEventLogPort {
-        override fun append(event: String, nowMillis: Long) {}
+    // 실행 기록 · 진단 로그 — 안드로이드와 같은 파일 · 같은 줄(`KvAppendOnlyLogs.kt`). 파일마다 하나씩만 만든다(매체 실패 횟수를 인스턴스가 센다).
+    override val runtimeEventLog: RuntimeEventLogPort = KvRuntimeEventLog(IosAppFileStore())
 
-        override fun readText(): String = ""
-
-        override fun clear() {}
-    }
+    /** 엔진 묶음(`iosProcessRuntime`)과 개발자 메뉴가 같은 것을 본다. */
+    val diagnosticEventLog: DiagnosticEventLogPort = KvDiagnosticEventLog(IosAppFileStore())
 
     override val debugReportPlatform = object : DebugReportPlatformInfo {
         override fun hapticDiagnostic(): String = "ios-uikit-feedback"
