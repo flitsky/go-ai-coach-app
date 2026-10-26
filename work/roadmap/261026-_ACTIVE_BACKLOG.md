@@ -51,7 +51,7 @@ python3 scripts/check-doc-links.py           # 문서·경로를 건드렸으면
 python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 ```
 
-**iOS**(#292부터): `make test-ios`(공유 코드 · `:shared-ui`의 iOS 컴파일) · `make ios-build`(Xcode로 시뮬레이터 빌드 — Kotlin 프레임워크도 함께) · `make ios-run`(설치 · 실행).
+**iOS**(#292부터): `make test-ios`(공유 코드 · `:shared-ui`의 iOS 컴파일) · `make ios-prebuild-engine`(KataGo 라이브러리 — 처음 한 번, #293) · `make ios-build`(Xcode로 시뮬레이터 빌드 — Kotlin 프레임워크도 함께) · `make ios-run`(설치 · 실행) · `make ios-engine-probe`(엔진 확인).
 셋 다 `make test`에 넣지 않는다(함정 75). 처음 받는 Kotlin/Native · Compose 빌드는 10분 가까이 걸린다.
 
 **기기** — 에뮬레이터와 사용자 폰이 함께 붙어 있을 수 있다. `./gradlew installDebug`는 **붙어 있는 전부에** 설치한다 — 반드시 대상을 준다.
@@ -119,7 +119,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - **iOS — 뼈대만 있다**(2026-10-26 · ← #291 ~ #298): `app-ios/GoCoach.xcodeproj`(SwiftUI 껍데기) → Kotlin `:shared-ui`(Compose Multiplatform)의 임시 첫 화면 하나 — 실행은 `make ios-run`(#292). 아래는 iOS로 옮길 것이 딛는 사실이다.
   공유 코드(`:shared` · `:core:domain` · `:core:enginecontract`)는 iOS 타깃으로 컴파일되고 `:shared-ui`를 거쳐 앱에 링크된다 — 게이트 뒤(`-PenableIosTargets=true`, `make test-ios` · 함정 75), `iosMain`의 실제 구현은 둘(`SharedLock` · `EngineIoDispatcher`)뿐이다.
   화면은 전부 `app-android`의 Jetpack Compose다(Kotlin 279파일 · 약 5.6만 줄, 그중 98파일이 Android 전용 API를 import) — 규칙 · 정책 · 세션은 shared(약 2.6만 줄), 4개 언어 문구는 `ui/l10n/`의 Kotlin.
-  엔진은 KataGo를 **별도 프로세스로 띄운다**(`ProcessBuilder` — `engine-android/.../KataGoProcessRuntime.kt`가 유일한 곳). 모델 둘 `model.bin.gz` 97.9MB · `human.bin.gz` 99.1MB(PAD 팩 — `katago_model_pack` · `katago_human_pack`).
+  엔진은 안드로이드에서 KataGo를 **별도 프로세스로 띄운다**(`ProcessBuilder` — `engine-android/.../KataGoProcessRuntime.kt`가 유일한 곳) — iOS는 같은 KataGo를 **앱 안 스레드**로 부른다(#293 — 시뮬레이터 확인, `make ios-engine-probe`). 모델 둘 `model.bin.gz` 97.9MB · `human.bin.gz` 99.1MB(PAD 팩 — `katago_model_pack` · `katago_human_pack`).
   Android에만 있는 것: Play 결제 · AdMob · PAD · 인앱 업데이트 · CameraX · OpenCV(원근 · 격자 틀) · Firebase Auth(로그인은 꺼져 있다 — `FeatureFlags.isLoginEnabled`). 돌 판정 신경망 `StoneNet`은 순수 Kotlin이지만 `app-android`에 있다(`java.nio`를 쓴다).
   applicationId `com.zenit9hub.ai.baduk` · 패키지 `com.worksoc.goaicoach`. 이 맥: Xcode 27.1 · 활성 개발 경로 Xcode(2026-10-26) · 시뮬레이터 런타임 iOS 27.0 · 27.1.
   원칙(`FEATURE_ACCESS_PRINCIPLES.md` §3): Play 먼저 · App Store는 뒤였고, 붙일 때 **사용자가 보는 팝업 · 문구 · 단계는 같은 틀**(결제 같은 내부만 다르게).
@@ -184,6 +184,19 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - ⚠️ 실험실(`engine-lab/`)이 잰 세기 · 기권 값은 **같은 모델 · 같은 방문 수**가 전제다 — 백엔드가 바뀌어 값이 흔들리는지 `make engine-lab-test`의 대응표로 견준다. 기기마다 신경망 값이 조금 다른 것은 허용오차로 본다(원격 엔진 MQ 프로토타입의 결론).
 - **끝**: 실기기에서 9 · 13 · 19줄 한 판을 AI와 끝까지 둔다 · 형세 · 추천 수가 뜬다 · 착수 시간을 S23과 나란히 적는다(사용자 폰).
 - **착수 때 물을 것**: 모델 싣는 방식(앱에 함께 / 받기) · 지원할 가장 낮은 아이폰 · iOS 버전.
+- **진행 ① — 앱 안에서 도는가: 된다**(2026-10-26, 시뮬레이터 — `5e7e048c`): 안드로이드와 **같은** KataGo 1.16.4 · Eigen 3.4.0을 정적 라이브러리로 지어(`scripts/build-katago-ios.sh` — `main` → `katago_main`)
+  앱 안 스레드에서 같은 명령줄(`gtp -model … -config … -override-config …`)로 부르고, 표준 입출력을 파이프로 돌린다(`app-ios/GoCoach/Engine/KataGoBridge.cpp`). 자식 프로세스 없음(pid 하나).
+  `make ios-engine-probe`(디버그 빌드 · 시뮬레이터 전용 — 맥의 모델 파일을 읽는다): b18 주 모델 올리기 1.8 ~ 2.2초 · 9줄 64방문 첫 수 9 ~ 12초(맥 CPU 위 시뮬레이터 — **폰의 값이 아니다**) ·
+  `quit` 뒤 **같은 앱 안에서 사람 모델로 다시 띄워** 프로필을 바꾸고 둔다(안드로이드의 「갈아 올리기」와 같은 길). 앱 디버그 빌드 55MB(모델 빼고).
+- **확인한 것**: ① 자식 프로세스 — Apple DTS 엔지니어의 포럼 답 *"iOS apps are not allowed to spawn child processes"*(developer.apple.com/forums/thread/747499 — 공식 문서 문장은 못 찾았다).
+  ⚠️ 시뮬레이터는 맥의 프로세스라 이 제한을 보여 주지 못한다 — 앱 안 방식은 그 물음을 비켜 간다. 선례: App Store에 KataGo를 돌리는 앱이 있다(A Master of Go · AI KataGo Go) ·
+  공개 구현 `eliotfowler/katago-metal-ios-demo`(ChinChangYang의 Metal + CoreML 포크를 Xcode 안에서 빌드 — Swift/C++ 상호 운용이라 CMake로는 iOS를 못 짓는다고 적었다) · `ChinChangYang/KataGo`에 `ios-dev` 가지. KataGo 라이선스는 MIT 계열(외부 라이브러리는 각자 — `cpp/external`).
+- ⚠️ **앱 안이라서 달라지는 것**(다음 단계의 설계 — 안드로이드 엔진 코드가 프로세스를 전제한다):
+  ⓐ KataGo가 던진 예외가 새면 **앱 전체가 죽는다** — 다리가 잡아 EOF로 바꾼다(안드로이드의 「프로세스가 죽었다」와 같은 모양) ⓑ 안드로이드는 멈추거나 시간을 넘긴 엔진을 **SIGKILL로 내린다**
+  (`EngineProcessLifecycle.kt` — Timeout · ForceReset · Died · NetworkSwap). 스레드는 죽일 수 없다 — 시간 초과 · 「엔진 다시 시작하기」 · 갈아 올리기를 `quit`과 기다리기(또는 KataGo의 멈춤)로 바꿔야 한다(함정 71 · 85의 분기를 깨지 말 것)
+  ⓒ std::cin / std::cout은 프로세스에 하나라 **한 번에 한 엔진**이다 — 안드로이드는 `gtp`와 JSON `analysis`를 **함께** 띄울 때가 있다(`KataGoProcessEngineAdapter.analyze`). 길: GTP만 쓰고 넓은 분석은 이미 있는 GTP 폴백으로(분석 설정이 없을 때 안드로이드도 그렇게 돈다) / KataGo의 두 루프가 스트림을 인자로 받게 고친다
+  ⓓ KataGo는 로그 · 홈 폴더를 한 단계만 만든다 — 미리 만든다(안드로이드 `EngineBootstrap.kt`의 mkdirs와 같다).
+- **다음**: Kotlin 쪽 엔진 어댑터가 이 다리를 부르게(cinterop — 안드로이드의 GTP 클라이언트 · 파서를 그대로 쓰는 것이 목표, ⓑ · ⓒ의 설계를 먼저 정한다) → 실기기 라이브러리(`build-katago-ios.sh iphoneos`)와 아이폰 속도(개발자 가입 뒤) → 백엔드(Eigen이 느리면 Metal · CoreML 포크) → 모델 싣기.
 
 ---
 
