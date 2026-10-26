@@ -32,10 +32,10 @@ internal suspend fun awaitUpdateBeforeEngineDownload(
     val skipped = CompletableDeferred<Unit>()
     tracker.registerSkipUpdateHandler { skipped.complete(Unit) }
     tracker.updateStatus(EngineDownloadStatus.UpdateFirst)
-    padLog("update available - waiting for the user before fetching packs")
+    engineSetupLog("update available - waiting for the user before fetching packs")
     skipped.await()
     tracker.registerSkipUpdateHandler {}
     // 받기가 곧 Downloading을 적는다 — 그 사이(수 ms)는 「준비하고 있어요」다.
     tracker.updateStatus(EngineDownloadStatus.Idle)
-    padLog("user chose to download without updating")
+    engineSetupLog("user chose to download without updating")
 }

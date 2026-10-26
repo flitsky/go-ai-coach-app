@@ -16,6 +16,7 @@ import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.enginecontract.HumanPolicy
 import com.worksoc.goaicoach.shared.enginecontract.MoveResult
 import com.worksoc.goaicoach.shared.enginecontract.ScoreEstimate
+import kotlin.concurrent.Volatile
 import kotlinx.coroutines.Deferred
 
 /**

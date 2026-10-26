@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.engine
 
+import kotlin.concurrent.Volatile
+
 /**
  * 엔진 세션 클라이언트가 **세션 세대**를 물어보는 자리(refactor backlog #18).
  *

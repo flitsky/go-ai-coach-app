@@ -31,13 +31,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
-data class EngineBootstrap(
-    val coreApi: EngineCoreApi,
-    val mode: EngineMode,
-    val displayName: String,
-    val diagnostic: String,
-)
-
 /**
  * KataGo 엔진 모델을 찾고 부트스트랩을 구성한다 (백로그 #245 — PAD on-demand, #249 — 두 모델 필수).
  *
@@ -240,7 +233,7 @@ internal const val PlayStoreNotFoundErrorCode = -11 // AssetPackErrorCode.PLAY_S
  * Play 스토어 밖 설치처럼 재시작·재설치가 아니라 「Google Play에서 설치」가 답인 영구 실패인지 판정한다.
  * 스텁 팝업의 문구를 이것으로 가른다([EngineDownloadTracker.isOfficialPlatformPermanentFailure]).
  */
-internal fun isStoreInstallationErrorCode(errorCode: Int?): Boolean =
+internal actual fun isStoreInstallationErrorCode(errorCode: Int?): Boolean =
     when (errorCode) {
         AssetPackErrorCode.APP_NOT_OWNED,
         AssetPackErrorCode.UNRECOGNIZED_INSTALLATION,
@@ -693,6 +686,8 @@ internal fun padLog(message: String, error: Throwable? = null) {
     } catch (_: RuntimeException) {
     }
 }
+
+internal actual fun engineSetupLog(message: String, error: Throwable?) = padLog(message, error)
 
 /**
  * 엔진 모델 두 파일의 자리. 없으면 `null`이다.
