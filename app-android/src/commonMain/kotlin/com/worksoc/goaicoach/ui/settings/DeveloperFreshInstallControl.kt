@@ -36,8 +36,8 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
  * 이 컨트롤은 **그 남긴 것들까지** 밀어 첫 실행 처리와 가이드가 다시 도는 상태를 만든다.
  *
  * ## ⚠️ 지울 목록을 여기 적지 않는다
- * `wipeToFreshInstall`의 **접두사 훑기**를 그대로 쓴다(함정 6번) — 저장소가 새로 늘어도 자동으로
- * 포함되고, 목록이 두 벌로 갈라지지 않는다.
+ * 플랫폼의 초기화를 그대로 쓴다 — 안드로이드는 `wipeToFreshInstall`의 **접두사 훑기**(함정 6번), iOS는 저장 묶음 이름을 한 곳에 모은
+ * `KvSuites.wipedByFreshInstall`(#294 — 안드로이드 이름과 같은 집합인지 `KvSuitesContractTest`가 본다). 어느 쪽도 목록이 두 벌로 갈라지지 않는다.
  */
 @Composable
 internal fun DeveloperFreshInstallControl() {
@@ -81,7 +81,11 @@ internal fun DeveloperFreshInstallControl() {
                 TextButton(
                     // ⚠️ 토스트를 띄우지 않는다 — 이 줄 다음에 **프로세스가 끝난다.** 띄워 봐야
                     // 보이지 않고, 재시작된 앱의 첫돌이 가이드가 그 자체로 결과를 알린다.
-                    onClick = { platform.developer.restartToFreshInstall() },
+                    // 창은 먼저 닫는다 — 프로세스가 곧바로 끝나지 않는 플랫폼에서 지운 뒤에도 창이 남지 않게.
+                    onClick = {
+                        showConfirm = false
+                        platform.developer.restartToFreshInstall()
+                    },
                 ) { Text(strings.settingsDevFreshInstallAction) }
             },
             dismissButton = {

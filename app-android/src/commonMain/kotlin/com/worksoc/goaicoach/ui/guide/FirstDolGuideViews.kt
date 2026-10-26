@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.BotCharacterAvatar
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import kotlin.math.roundToInt
 
 /**
  * 첫돌이의 **얼굴과 정체를 한 곳에서** 정한다(백로그 #128).
@@ -101,9 +103,13 @@ private fun MaterialThemeSurface(): Color = androidx.compose.material3.MaterialT
 internal fun ZeroSizeOverlay(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Layout(content = content, modifier = modifier) { measurables, _ ->
         val placeable = measurables.first().measure(Constraints())
+        val edgeMargin = AppSpacing.Space8.roundToPx()
         layout(0, 0) {
-            // 기준점(카드 우측 상단)에서 **위·왼쪽으로** 그린다.
-            placeable.place(x = -placeable.width, y = -placeable.height)
+            // 기준점(카드 우측 상단)에서 **위·왼쪽으로** 그린다. 다만 화면 왼쪽 끝을 넘으면 넘은 만큼만 오른쪽으로 민다(#294) — 대국 카드가
+            // 둘이면(#288) 카드가 반쪽 폭이라 말풍선(최대 260dp)이 카드보다 넓어 글머리가 화면 밖으로 잘렸다. 카드가 하나면 그대로다.
+            val anchorX = coordinates?.positionInRoot()?.x?.roundToInt()
+            val x = if (anchorX == null) -placeable.width else maxOf(-placeable.width, edgeMargin - anchorX)
+            placeable.place(x = x, y = -placeable.height)
         }
     }
 }

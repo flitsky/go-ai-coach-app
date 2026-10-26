@@ -142,7 +142,7 @@ internal fun HomeTopNotice(modifier: Modifier = Modifier) {
         HomeTopNoticeKind.AppUpdate -> HomeLineBanner(
             message = appUpdateAvailableLabelFor(language),
             action = appUpdateShortActionLabelFor(language),
-            onClick = { openStoreListing() },
+            onClick = { openStoreListing?.invoke() },
             onDismiss = updateCheck::dismissNotice,
             modifier = modifier,
         )

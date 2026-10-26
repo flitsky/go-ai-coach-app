@@ -19,7 +19,7 @@ import kotlin.uuid.Uuid
 // 진행도 · 정체 저장소의 공용 구현(백로그 #294 — P1). 안드로이드 `persistence/`의 같은 이름 저장소와 묶음 이름 · 키 · 표기가 같다.
 
 internal class KvDailyQuoteStore(factory: KeyValueStoreFactory) : DailyQuoteStorePort {
-    private val kv = factory.open("go_ai_coach_daily_quote")
+    private val kv = factory.open(KvSuites.DailyQuote)
 
     override fun load(): DailyQuoteProgress = DailyQuoteProgress(
         order = kv.getString("order").toIds(),
@@ -41,7 +41,7 @@ internal class KvDailyQuoteStore(factory: KeyValueStoreFactory) : DailyQuoteStor
 }
 
 internal class KvDailyFortuneStore(factory: KeyValueStoreFactory) : DailyFortuneStorePort {
-    private val kv = factory.open("go_ai_coach_daily_fortune")
+    private val kv = factory.open(KvSuites.DailyFortune)
 
     override fun load(): DailyFortuneProgress = DailyFortuneProgress(
         day = kv.getLong("day", -1L).takeIf { it != -1L },
@@ -57,7 +57,7 @@ internal class KvDailyFortuneStore(factory: KeyValueStoreFactory) : DailyFortune
 }
 
 internal class KvGuideProgressStore(factory: KeyValueStoreFactory) : GuideProgressStorePort {
-    private val kv = factory.open("go_ai_coach_guide")
+    private val kv = factory.open(KvSuites.Guide)
 
     override fun load(): GuideProgress = GuideProgress(
         armed = kv.getBoolean("armed", false),
@@ -70,7 +70,7 @@ internal class KvGuideProgressStore(factory: KeyValueStoreFactory) : GuideProgre
 }
 
 internal class KvLifeAndDeathProgressStore(factory: KeyValueStoreFactory) : LifeAndDeathProgressPort {
-    private val kv = factory.open("go_ai_coach_life_and_death")
+    private val kv = factory.open(KvSuites.LifeAndDeath)
 
     override fun solved(): Set<String> = kv.getString("solved")?.split(",")?.filter { it.isNotBlank() }?.toSet().orEmpty()
 
@@ -82,7 +82,7 @@ internal class KvLifeAndDeathProgressStore(factory: KeyValueStoreFactory) : Life
 }
 
 internal class KvUserProfileStore(factory: KeyValueStoreFactory) : UserProfileStorePort {
-    private val kv = factory.open("go_ai_coach_user_profile")
+    private val kv = factory.open(KvSuites.UserProfile)
 
     override fun nickname(): String? = kv.getString("nickname")?.takeIf { it.isNotBlank() }
 
@@ -90,7 +90,7 @@ internal class KvUserProfileStore(factory: KeyValueStoreFactory) : UserProfileSt
 }
 
 internal class KvDailyDrawStore(factory: KeyValueStoreFactory) : DailyDrawStorePort {
-    private val kv = factory.open("go_ai_coach_daily_draw")
+    private val kv = factory.open(KvSuites.DailyDraw)
 
     override fun lastDrawnAtMillis(): Long? = kv.getLong("last_drawn_at_millis", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
 
@@ -98,7 +98,7 @@ internal class KvDailyDrawStore(factory: KeyValueStoreFactory) : DailyDrawStoreP
 }
 
 internal class KvDeviceIdentityStore(factory: KeyValueStoreFactory) : DeviceIdentityStorePort {
-    private val kv = factory.open("go_ai_coach_device_identity")
+    private val kv = factory.open(KvSuites.DeviceIdentity)
 
     @OptIn(ExperimentalUuidApi::class)
     override fun loadOrCreate(): DeviceIdentity {

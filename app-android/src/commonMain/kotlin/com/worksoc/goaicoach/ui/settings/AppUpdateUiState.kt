@@ -56,6 +56,8 @@ internal fun rememberAppUpdateStatus(): AppUpdateStatus {
 internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier) {
     if (status == AppUpdateStatus.Checking) return
     val openStoreListing = rememberStoreListingLauncher()
+    // 갈 스토어 페이지가 없는 플랫폼(iOS — App Store 등록 전)에서는 「업데이트」 · 「스토어에서 확인」을 그리지 않는다.
+    if (openStoreListing == null && status != AppUpdateStatus.UpToDate) return
     val language = LocalUiStrings.current.language
     Column(
         modifier = modifier,
@@ -72,7 +74,7 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
                 )
                 Spacer(Modifier.height(AppSpacing.Space6))
                 // 새 버전이 있을 때만 버튼을 쓴다 — 나머지 상태는 알림이지 할 일이 아니다.
-                Button(onClick = { openStoreListing() }) {
+                Button(onClick = { openStoreListing?.invoke() }) {
                     Text(appUpdateActionLabelFor(language), fontSize = AppTextSize.Text13)
                 }
             }
@@ -90,7 +92,7 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
                 fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { openStoreListing() },
+                modifier = Modifier.clickable { openStoreListing?.invoke() },
             )
 
             AppUpdateStatus.Checking -> Unit // 위에서 이미 걸렀다.

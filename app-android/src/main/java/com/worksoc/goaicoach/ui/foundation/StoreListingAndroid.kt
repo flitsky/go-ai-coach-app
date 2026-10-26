@@ -6,7 +6,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.platform.openStoreListing
 
 @Composable
-actual fun rememberStoreListingLauncher(): () -> Unit {
+actual fun rememberStoreListingLauncher(): (() -> Unit)? {
     val context = LocalContext.current
     return remember(context) { { openStoreListing(context) } }
 }

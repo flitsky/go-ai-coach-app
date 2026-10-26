@@ -23,7 +23,7 @@ import com.worksoc.goaicoach.application.time.currentEpochMillis
 // 저장소와 같다 — 코덱은 같은 파일의 공용 사본(`*Codecs.kt`)이다.
 
 internal class KvAttendanceStore(factory: KeyValueStoreFactory) : AttendanceStorePort {
-    private val kv = factory.open("go_ai_coach_attendance")
+    private val kv = factory.open(KvSuites.Attendance)
 
     override fun save(state: AttendanceState) {
         Lock.withLock { write(state) }
@@ -52,7 +52,7 @@ internal class KvAttendanceStore(factory: KeyValueStoreFactory) : AttendanceStor
 }
 
 internal class KvBotCollectionStore(factory: KeyValueStoreFactory) : BotCollectionStorePort {
-    private val kv = factory.open("go_ai_coach_bot_collection")
+    private val kv = factory.open(KvSuites.BotCollection)
 
     override fun save(state: BotCollectionState) = kv.putString("bot_collection_state", BotCollectionCodec.encode(state))
 
@@ -65,7 +65,7 @@ internal class KvBotCollectionStore(factory: KeyValueStoreFactory) : BotCollecti
 }
 
 internal class KvConsumableInventoryStore(factory: KeyValueStoreFactory) : ConsumableStorePort {
-    private val kv = factory.open("go_ai_coach_consumables")
+    private val kv = factory.open(KvSuites.Consumables)
 
     override fun save(inventory: ConsumableInventory) = kv.putString("consumable_inventory", ConsumableInventoryCodec.encode(inventory))
 
@@ -78,7 +78,7 @@ internal class KvConsumableInventoryStore(factory: KeyValueStoreFactory) : Consu
 }
 
 internal class KvPremiumStateStore(factory: KeyValueStoreFactory) : PremiumStateStorePort {
-    private val kv = factory.open("go_ai_coach_premium_state")
+    private val kv = factory.open(KvSuites.PremiumState)
 
     override fun save(state: PremiumState) = kv.putString("premium_state", PremiumStateCodec.encode(state))
 
@@ -92,7 +92,7 @@ internal class KvPremiumStateStore(factory: KeyValueStoreFactory) : PremiumState
 }
 
 internal class KvRankMeasureStore(factory: KeyValueStoreFactory) : RankMeasureStorePort {
-    private val kv = factory.open("go_ai_coach_rank_measure")
+    private val kv = factory.open(KvSuites.RankMeasure)
 
     override fun load(): RankMeasureState = kv.getString("rank_measure_state")?.let(RankMeasureCodec::decode) ?: RankMeasureState()
 
@@ -105,7 +105,7 @@ internal class KvRankMeasureStore(factory: KeyValueStoreFactory) : RankMeasureSt
 }
 
 internal class KvUserPreferencesStore(factory: KeyValueStoreFactory) : UserPreferencesStorePort {
-    private val kv = factory.open("go_ai_coach_user_preferences")
+    private val kv = factory.open(KvSuites.UserPreferences)
 
     override fun save(snapshot: UserPreferencesSnapshot) = kv.putString("user_preferences", UserPreferencesCodec.encode(snapshot))
 
@@ -119,7 +119,7 @@ internal class KvUserPreferencesStore(factory: KeyValueStoreFactory) : UserPrefe
 }
 
 internal class KvSavedGameStore(factory: KeyValueStoreFactory) : SavedGameStorePort {
-    private val kv = factory.open("go_ai_coach_session")
+    private val kv = factory.open(KvSuites.Session)
 
     override fun save(snapshot: SavedGameSnapshot) {
         if (!snapshot.isResumable && snapshot.finalScoreJudgement == null) {

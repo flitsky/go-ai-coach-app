@@ -87,7 +87,7 @@ internal fun EngineDownloadStatusBanner(
                         tracker.reopen()
                         tracker.requestCellularConfirmation()
                     }
-                    EngineDownloadStatus.UpdateFirst -> openStoreListing()
+                    EngineDownloadStatus.UpdateFirst -> openStoreListing?.invoke()
                     else -> Unit
                 }
             }
@@ -168,7 +168,7 @@ internal fun EngineUpdateFirstCard(modifier: Modifier = Modifier) {
                     Text(appDownloadWithoutUpdateLabelFor(language), fontSize = AppTextSize.Text13)
                 }
                 Spacer(modifier = Modifier.width(AppSpacing.Space8))
-                Button(onClick = { openStoreListing() }, shape = RoundedCornerShape(AppRadius.Corner8)) {
+                Button(onClick = { openStoreListing?.invoke() }, shape = RoundedCornerShape(AppRadius.Corner8)) {
                     Text(appUpdateShortActionLabelFor(language), fontWeight = FontWeight.Bold)
                 }
             }

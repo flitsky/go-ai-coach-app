@@ -11,7 +11,7 @@ internal class IosAppStores(
     kv: KeyValueStoreFactory = UserDefaultsKeyValueStores,
     files: AppFileStore = IosAppFileStore(),
 ) : AppStores {
-    private val firstLaunch = !kv.open("go_ai_coach_whats_new").contains("last_seen_version_code")
+    private val firstLaunch = !kv.open(KvSuites.WhatsNew).contains("last_seen_version_code")
 
     override val userPreferences = KvUserPreferencesStore(kv)
     override val themeMode = KvThemeModeStore(kv)
@@ -47,12 +47,6 @@ internal val iosAppStores: IosAppStores by lazy { IosAppStores() }
 
 /** 개발자 메뉴 「새로 설치한 것처럼」 — 안드로이드 `wipeToFreshInstall`과 같은 범위: `go_ai_coach_*` 묶음(기기 id 제외)과 대국 기록 폴더. */
 internal fun iosWipeToFreshInstall() {
-    listOf(
-        "go_ai_coach_user_preferences", "go_ai_coach_theme_mode", "go_ai_coach_background_music", "go_ai_coach_ui_language",
-        "go_ai_coach_developer_mode", "go_ai_coach_whats_new", "go_ai_coach_release_reset", "go_ai_coach_daily_quote",
-        "go_ai_coach_daily_fortune", "go_ai_coach_guide", "go_ai_coach_life_and_death", "go_ai_coach_user_profile",
-        "go_ai_coach_session", "go_ai_coach_bot_collection", "go_ai_coach_premium_state", "go_ai_coach_consumables",
-        "go_ai_coach_attendance", "go_ai_coach_daily_draw", "go_ai_coach_rank_measure",
-    ).forEach { name -> UserDefaultsKeyValueStores.open(name).clear() }
+    KvSuites.wipedByFreshInstall.forEach { name -> UserDefaultsKeyValueStores.open(name).clear() }
     IosAppFileStore().deleteRecursively("game_history")
 }
