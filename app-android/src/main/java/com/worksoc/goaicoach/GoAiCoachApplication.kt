@@ -6,6 +6,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
+import com.worksoc.goaicoach.ui.foundation.ProcessAppPlatform
 
 /**
  * App-wide lifecycle hook — registered via `android:name` in
@@ -29,6 +30,11 @@ class GoAiCoachApplication : Application() {
 
     /** 화면이 쓰는 플랫폼 묶음(백로그 #294 — S1) — 프로세스에 하나. `MainActivity`가 `LocalAppPlatform`으로 컴포지션에 넣는다. */
     internal val appPlatform: AndroidAppPlatform by lazy { AndroidAppPlatform(this) }
+
+    init {
+        // 루트 밖에서 짠 컴포지션(계기 시험의 setContent)도 같은 묶음을 보게 한다 — `onCreate`의 순서 계약은 건드리지 않는다.
+        ProcessAppPlatform.provider = { appPlatform }
+    }
 
     /** 앱 배경음악(백로그 #244) — 프로세스에 하나. 전면 광고 동안 멈추려고 광고를 띄우는 곳(`showRewardedAdOnce`)이 여기서 찾는다. */
     internal val backgroundMusic: BackgroundMusicCoordinator by lazy { BackgroundMusicCoordinator(this) }

@@ -426,6 +426,7 @@ kotlin {
             implementation(libs.compose.mp.ui)
             implementation(libs.compose.mp.material3)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
+            implementation(libs.compose.mp.material.icons.core)
         }
         if (enableIosTargets) {
             iosMain.dependencies {

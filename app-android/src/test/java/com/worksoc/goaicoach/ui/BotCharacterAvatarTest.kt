@@ -102,7 +102,7 @@ class BotCharacterAvatarTest {
     fun avatarResolverListsEveryCatalogReference() {
         val source = RepoPaths.uiFile("BotCharacterAvatar.kt").readContractSource()
         val unlisted = BotCharacterCatalog.all.filter { character ->
-            !source.contains("\"${character.avatarRef}\" -> R.drawable.${character.avatarRef}")
+            !source.contains("\"${character.avatarRef}\" -> AppImage.${character.avatarRef}")
         }
         assertTrue("botAvatarRes에 빠진 캐릭터: ${unlisted.map { it.id.raw }}", unlisted.isEmpty())
     }

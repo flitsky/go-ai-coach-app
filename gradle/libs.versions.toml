@@ -87,6 +87,8 @@ compose-mp-foundation = { module = "org.jetbrains.compose.foundation:foundation"
 compose-mp-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-mp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMultiplatformMaterial3" }
 compose-mp-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
+# 아이콘 그리기 도구(materialIcon · materialPath) — JetBrains는 1.7.3을 마지막으로 낸다. 안드로이드에서는 이미 있는 androidx 1.7.8로 풀린다.
+compose-mp-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version = "1.7.3" }
 jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "jetbrainsLifecycle" }
 
 [plugins]

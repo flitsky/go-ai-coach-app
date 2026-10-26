@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui.l10n
 
+import com.worksoc.goaicoach.platform.formatDeviceLocale
+
 /**
  * 「바둑판 사진 분석」 화면 넷(촬영 · 핀 · 인식 · 보정)의 문구(백로그 #210).
  *
@@ -74,7 +76,7 @@ internal data class BoardScanStrings(
     val exportSgfFailed: String,
 )
 
-private fun pct(v: Double) = "%.1f".format(v)
+private fun pct(v: Double) = formatDeviceLocale("%.1f", v)
 
 private val Korean = BoardScanStrings(
     cameraPermissionNeeded = "바둑판 촬영을 위해\n카메라 권한이 필요합니다",

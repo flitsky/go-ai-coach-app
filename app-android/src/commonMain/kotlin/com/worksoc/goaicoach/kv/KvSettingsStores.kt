@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 // 설정 저장소의 공용 구현(백로그 #294 — 이식 계획 P1). 안드로이드 `persistence/`의 같은 이름 저장소와 **묶음 이름 · 키 · 기본값이
 // 같다** — 고칠 때는 둘을 함께 고친다(`KvStoreParityTest`가 같은 순서로 둘을 견준다).
 
-class KvThemeModeStore(factory: KeyValueStoreFactory) : ThemeModeStorePort {
+internal class KvThemeModeStore(factory: KeyValueStoreFactory) : ThemeModeStorePort {
     private val kv = factory.open("go_ai_coach_theme_mode")
 
     override fun load(): ThemeMode = ThemeMode.fromId(kv.getString("mode"))
@@ -23,7 +23,7 @@ class KvThemeModeStore(factory: KeyValueStoreFactory) : ThemeModeStorePort {
     override fun modeChanges(): Flow<ThemeMode> = kv.watch("mode") { load() }
 }
 
-class KvBackgroundMusicStore(factory: KeyValueStoreFactory) : BackgroundMusicSettingsPort {
+internal class KvBackgroundMusicStore(factory: KeyValueStoreFactory) : BackgroundMusicSettingsPort {
     private val kv = factory.open("go_ai_coach_background_music")
 
     override fun isEnabled(): Boolean = kv.getBoolean("enabled", true)
@@ -33,7 +33,7 @@ class KvBackgroundMusicStore(factory: KeyValueStoreFactory) : BackgroundMusicSet
     override fun enabledChanges(): Flow<Boolean> = kv.watch("enabled") { isEnabled() }
 }
 
-class KvUiLanguageStore(factory: KeyValueStoreFactory) : UiLanguageStorePort {
+internal class KvUiLanguageStore(factory: KeyValueStoreFactory) : UiLanguageStorePort {
     private val kv = factory.open("go_ai_coach_ui_language")
 
     override fun loadName(): String? = kv.getString("language")
@@ -41,7 +41,7 @@ class KvUiLanguageStore(factory: KeyValueStoreFactory) : UiLanguageStorePort {
     override fun save(languageName: String) = kv.putString("language", languageName)
 }
 
-class KvDeveloperModeStore(factory: KeyValueStoreFactory) : DeveloperModeStorePort {
+internal class KvDeveloperModeStore(factory: KeyValueStoreFactory) : DeveloperModeStorePort {
     private val kv = factory.open("go_ai_coach_developer_mode")
 
     override fun isEnabled(): Boolean = kv.getBoolean("enabled", false)
@@ -54,7 +54,7 @@ class KvDeveloperModeStore(factory: KeyValueStoreFactory) : DeveloperModeStorePo
 }
 
 /** [isFreshInstall]은 플랫폼이 답한다 — 안드로이드는 설치 시각 = 갱신 시각, iOS는 이 묶음이 처음 열렸는가. */
-class KvWhatsNewStore(factory: KeyValueStoreFactory, private val freshInstall: () -> Boolean) : WhatsNewStorePort {
+internal class KvWhatsNewStore(factory: KeyValueStoreFactory, private val freshInstall: () -> Boolean) : WhatsNewStorePort {
     private val kv = factory.open("go_ai_coach_whats_new")
 
     override fun lastSeenVersionCode(): Int? = kv.getInt("last_seen_version_code", -1).takeIf { it != -1 }
@@ -64,7 +64,7 @@ class KvWhatsNewStore(factory: KeyValueStoreFactory, private val freshInstall: (
     override fun isFreshInstall(): Boolean = runCatching { freshInstall() }.getOrDefault(true)
 }
 
-class KvReleaseResetStore(factory: KeyValueStoreFactory) : ReleaseResetMarkerPort {
+internal class KvReleaseResetStore(factory: KeyValueStoreFactory) : ReleaseResetMarkerPort {
     private val kv = factory.open("go_ai_coach_release_reset")
 
     override fun lastAppliedGeneration(): Int = kv.getInt("applied_generation", ReleaseResetPolicy.NoResetApplied)

@@ -9,12 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.guide.autoPlayStep
-import com.worksoc.goaicoach.persistence.GuideProgressStore
+import com.worksoc.goaicoach.platform.appBuildInfo
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.GuideToolLabels
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.guideBodyFor
@@ -115,14 +114,14 @@ internal fun GuideAnchor(
     modifier: Modifier = Modifier,
     toolLabels: GuideToolLabels? = null,
 ) {
-    val context = LocalContext.current
-    val store = remember(context) { GuideProgressStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.guideProgress }
     // 디스크는 한 번만 읽는다 — 앵커마다 컴포지션에서 `load()`를 부르면 그것이 디스크 읽기가 된다.
-    var progress by remember(context) { mutableStateOf(store.load()) }
-    var latched by remember(context) { mutableStateOf<GuideStep?>(null) }
+    var progress by remember(store) { mutableStateOf(store.load()) }
+    var latched by remember(store) { mutableStateOf<GuideStep?>(null) }
 
     // ⚠️ `remember`로 감싸지 말 것(위 파일 머리말) — `blocked`와 `progress`가 둘 다 변한다.
-    val candidate = autoPlayStep(surface, progress, blocked, BuildConfig.VERSION_CODE)
+    val candidate = autoPlayStep(surface, progress, blocked, appBuildInfo.versionCode)
     if (candidate != null && latched == null) latched = candidate
     val step = if (blocked) null else latched
     if (step == null) return

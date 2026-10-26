@@ -37,3 +37,6 @@ internal class IosAppStores(
     override val deviceIdentity = KvDeviceIdentityStore(kv)
     override val debugReportMirror = KvDebugReportMirrorStore(files)
 }
+
+/** 프로세스의 iOS 저장소 — `IosAppPlatform`과 ui 맨 아래층(`l10n`처럼 `LocalAppPlatform`을 못 읽는 곳)이 같은 묶음을 본다. */
+internal val iosAppStores: IosAppStores by lazy { IosAppStores() }

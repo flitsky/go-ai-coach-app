@@ -15,7 +15,11 @@ interface AppPlatform {
     val stores: AppStores
 }
 
-/** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). 넣지 않고 읽으면 바로 터진다 — 조용한 무동작보다 낫다. */
-val LocalAppPlatform = staticCompositionLocalOf<AppPlatform> {
-    error("AppPlatform not provided — the root provides LocalAppPlatform (MainActivity / MainViewController)")
-}
+/** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). */
+val LocalAppPlatform = staticCompositionLocalOf<AppPlatform> { defaultAppPlatform() }
+
+/**
+ * 루트가 넣지 않은 컴포지션의 플랫폼 — 안드로이드는 프로세스의 것(애플리케이션이 건다 — 계기 시험이 `setContent`로 화면 하나를
+ * 띄워도 같은 묶음을 본다), iOS는 없다(루트가 꼭 넣는다).
+ */
+internal expect fun defaultAppPlatform(): AppPlatform

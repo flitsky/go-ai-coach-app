@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.kv.IosAppStores
+import com.worksoc.goaicoach.kv.iosAppStores
 import com.worksoc.goaicoach.platform.AppNotice
 import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
@@ -35,7 +35,7 @@ import platform.UIKit.UIPasteboard
 internal class IosAppPlatform : AppPlatform {
     override val notice = IosNotice()
     override val clipboard: ClipboardPort = IosClipboard()
-    override val stores: AppStores = IosAppStores()
+    override val stores: AppStores = iosAppStores
 }
 
 /**

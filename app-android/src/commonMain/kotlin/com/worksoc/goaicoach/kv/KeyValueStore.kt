@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
  *
  * 값의 뜻은 `SharedPreferences`와 같다: 없는 키는 기본값, `putString(key, null)`은 지우기.
  */
-interface KeyValueStore {
+internal interface KeyValueStore {
     fun getString(key: String): String?
 
     fun putString(key: String, value: String?)
@@ -51,7 +51,7 @@ interface KeyValueStore {
 }
 
 /** 이름으로 묶음을 연다 — 같은 이름은 같은 묶음이다(프로세스에 하나). */
-fun interface KeyValueStoreFactory {
+internal fun interface KeyValueStoreFactory {
     fun open(name: String): KeyValueStore
 }
 
@@ -67,7 +67,7 @@ internal fun <T> KeyValueStore.watch(key: String, read: () -> T): Flow<T> = call
 }.conflate()
 
 /** 메모리 구현 — JVM 시험과 iOS 카탈로그용. 값은 프로세스와 함께 사라진다. */
-class InMemoryKeyValueStore : KeyValueStore {
+internal class InMemoryKeyValueStore : KeyValueStore {
     private val values = mutableMapOf<String, Any>()
     private val changes = MutableSharedFlow<String>(extraBufferCapacity = 64)
     override val changedKeys: SharedFlow<String> = changes.asSharedFlow()
@@ -110,7 +110,7 @@ class InMemoryKeyValueStore : KeyValueStore {
 }
 
 /** 메모리 묶음들 — 같은 이름은 같은 묶음. */
-class InMemoryKeyValueStoreFactory : KeyValueStoreFactory {
+internal class InMemoryKeyValueStoreFactory : KeyValueStoreFactory {
     private val stores = mutableMapOf<String, InMemoryKeyValueStore>()
 
     override fun open(name: String): KeyValueStore = stores.getOrPut(name) { InMemoryKeyValueStore() }

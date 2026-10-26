@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.quickactions
 
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.Icon
@@ -13,9 +11,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.persistence.ThemeModeStore
+import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.shared.policy.ThemeMode
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.themeModeLabelFor
 import com.worksoc.goaicoach.ui.l10n.themeModeQuickToggleNoticeFor
@@ -32,21 +31,21 @@ import com.worksoc.goaicoach.ui.l10n.themeModeTitleFor
  * 이미 보이므로 아이콘에 따로 얹지 않는다.
  *
  * ⚠️ **빠르게 여러 번 눌러도 마지막 모드 하나만 알린다**(폰 확인 2026-10-21 — 토스트가 줄을 서서 하나씩 차례로 떴다). 앞의 안내를 내리고
- * 새로 띄운다([LatestToast]). 다음 모드도 화면에 보이는 값이 아니라 **저장소의 지금 값**에서 고른다 — 흐름이 다시 그리기 전에 또 누르면
+ * 새로 띄운다([LatestNotice]). 다음 모드도 화면에 보이는 값이 아니라 **저장소의 지금 값**에서 고른다 — 흐름이 다시 그리기 전에 또 누르면
  * 화면의 값은 아직 앞의 것이라 같은 모드를 두 번 고른다(저장은 메모리에 곧바로 반영된다).
  */
 @Composable
 internal fun ThemeModeQuickToggle(tint: Color, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val language = LocalUiStrings.current.language
-    val store = remember(context) { ThemeModeStore(context) }
+    val store = remember(platform) { platform.stores.themeMode }
     val mode by remember(store) { store.modeChanges() }.collectAsState(initial = remember(store) { store.load() })
-    val notice = remember { LatestToast() }
+    val notice = remember(platform) { LatestNotice(platform.notice) }
     IconButton(
         onClick = {
             val next = store.load().nextOnQuickToggle
             store.save(next)
-            notice.show(context, themeModeQuickToggleNoticeFor(language, next))
+            notice.show(themeModeQuickToggleNoticeFor(language, next))
         },
         modifier = modifier,
     ) {
@@ -59,12 +58,12 @@ internal fun ThemeModeQuickToggle(tint: Color, modifier: Modifier = Modifier) {
 }
 
 /** 마지막 안내 하나만 남기는 토스트 — 새로 띄우기 전에 앞의 것을 내린다(시스템은 앱의 토스트를 차례로 줄 세운다). */
-private class LatestToast {
-    private var shown: Toast? = null
+private class LatestNotice(private val notice: AppNotice) {
+    private var shown: NoticeHandle? = null
 
-    fun show(context: Context, text: String) {
+    fun show(text: String) {
         shown?.cancel()
-        shown = Toast.makeText(context, text, Toast.LENGTH_SHORT).also(Toast::show)
+        shown = notice.show(text)
     }
 }
 

@@ -42,10 +42,10 @@ class AppSplashContractTest {
      */
     @Test
     fun theSplashUsesEveryAvatarThatBotAvatarResKnows() {
-        val known = Regex("""R\.drawable\.(bot_[a-z0-9_]+)""")
+        val known = Regex("""AppImage\.(bot_[a-z0-9_]+)""")
             .findAll(avatar.substringAfter("fun botAvatarRes").substringBefore("internal val AllBotAvatarRes"))
             .map { it.groupValues[1] }.toList()
-        val listed = Regex("""R\.drawable\.(bot_[a-z0-9_]+)""")
+        val listed = Regex("""AppImage\.(bot_[a-z0-9_]+)""")
             .findAll(avatar.substringAfter("internal val AllBotAvatarRes"))
             .map { it.groupValues[1] }.toList()
         assertTrue("botAvatarRes에서 그림을 하나도 못 찾았다 — 이 계약의 전제가 무너졌다.", known.isNotEmpty())
@@ -240,7 +240,7 @@ class AppSplashContractTest {
     fun everyLaunchIllustrationShipsAsAWebp() {
         listOf("splash_spotlight_night", "splash_hanok_dojo_day1", "splash_hanok_dojo_day2").forEach { name ->
             assertTrue("스플래시 그림이 없다: $name.webp", RepoPaths.appAndroidMain("res/drawable-nodpi/$name.webp").isFile)
-            assertTrue("`SplashVariants.kt`가 $name 을 쓰지 않는다.", variants.contains("R.drawable.$name"))
+            assertTrue("`SplashVariants.kt`가 $name 을 쓰지 않는다.", variants.contains("AppImage.$name"))
         }
     }
 

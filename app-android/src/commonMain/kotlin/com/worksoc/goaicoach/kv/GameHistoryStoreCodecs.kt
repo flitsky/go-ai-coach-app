@@ -154,7 +154,7 @@ internal object GameReplayCodec {
  * `game_history/replay/<id>.json`(본문), 쓰기는 임시 파일 → fsync → 이름 바꾸기, 보존 상한은 [GameHistoryRetentionPolicy].
  * 옛 SharedPreferences 목록의 이주는 없다(iOS에는 옛 판이 없다).
  */
-class KvGameHistoryStore(private val files: AppFileStore) : GameHistoryStorePort {
+internal class KvGameHistoryStore(private val files: AppFileStore) : GameHistoryStorePort {
     private val root = GameHistoryDirName
     private val indexFile = "$root/index.json"
     private val replayDir = "$root/replay"

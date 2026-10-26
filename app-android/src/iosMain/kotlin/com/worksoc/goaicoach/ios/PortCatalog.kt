@@ -94,4 +94,7 @@ internal val PortCatalogPages: List<PortCatalogPage> = listOf(
     PortCatalogPage(id = "design-tokens", title = "디자인 값 — 색 · 급수 배지 · 대국 버튼", wave = "W2") { CatalogDesignTokens() },
     PortCatalogPage(id = "platform-seams", title = "플랫폼 이음매 — 알림 · 뒤로가기 · 빌드 정보 · 서식", wave = "W4") { CatalogPlatformSeams() },
     PortCatalogPage(id = "stores", title = "저장소 — NSUserDefaults · 파일(껐다 켜도 남는가)", wave = "P1~P3") { CatalogStores() },
+    PortCatalogPage(id = "strings", title = "문구 — 네 언어 · 명언 줄바꿈", wave = "W6") { CatalogStrings() },
+    PortCatalogPage(id = "images", title = "그림 — 캐릭터 · 보상 벡터 · 스플래시 · 썸네일", wave = "W7") { CatalogImages() },
+    PortCatalogPage(id = "splash", title = "스플래시 · 빠른 버튼(기동 추첨)", wave = "W8") { CatalogSplashAndQuickActions(variant = null) },
 )

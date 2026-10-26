@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.designsystem
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,10 +22,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import kotlin.math.PI
@@ -44,14 +41,13 @@ import kotlin.math.sin
  *
  * 모르는 참조는 `null`이다 — 그림이 아직 없는 캐릭터도 이름·설명만으로 정상 동작해야 한다.
  */
-@DrawableRes
-internal fun botAvatarRes(character: BotCharacter): Int? =
+internal fun botAvatarRes(character: BotCharacter): AppImage? =
     when (character.avatarRef) {
-        "bot_fast_beginner_1" -> R.drawable.bot_fast_beginner_1
-        "bot_fast_beginner_2" -> R.drawable.bot_fast_beginner_2
-        "bot_fast_beginner_3" -> R.drawable.bot_fast_beginner_3
-        "bot_fast_beginner_4" -> R.drawable.bot_fast_beginner_4
-        "bot_fast_beginner_5" -> R.drawable.bot_fast_beginner_5
+        "bot_fast_beginner_1" -> AppImage.bot_fast_beginner_1
+        "bot_fast_beginner_2" -> AppImage.bot_fast_beginner_2
+        "bot_fast_beginner_3" -> AppImage.bot_fast_beginner_3
+        "bot_fast_beginner_4" -> AppImage.bot_fast_beginner_4
+        "bot_fast_beginner_5" -> AppImage.bot_fast_beginner_5
         else -> null
     }
 
@@ -62,12 +58,12 @@ internal fun botAvatarRes(character: BotCharacter): Int? =
  * ⚠️ **위 `when`과 이 목록은 손으로 맞춰야 한다** — 캐릭터 그림을 더하면서 여기를 빠뜨리면
  * 스플래시만 조용히 옛 5장을 계속 쓴다. `AppSplashContractTest`가 두 자리를 묶어 둔다.
  */
-internal val AllBotAvatarRes: List<Int> = listOf(
-    R.drawable.bot_fast_beginner_1,
-    R.drawable.bot_fast_beginner_2,
-    R.drawable.bot_fast_beginner_3,
-    R.drawable.bot_fast_beginner_4,
-    R.drawable.bot_fast_beginner_5,
+internal val AllBotAvatarRes: List<AppImage> = listOf(
+    AppImage.bot_fast_beginner_1,
+    AppImage.bot_fast_beginner_2,
+    AppImage.bot_fast_beginner_3,
+    AppImage.bot_fast_beginner_4,
+    AppImage.bot_fast_beginner_5,
 )
 
 /**
@@ -149,7 +145,7 @@ internal fun BotCharacterAvatar(
                     .background(placeholderColor),
             )
         } else {
-            val painter = painterResource(res)
+            val painter = painterFor(res)
             Canvas(Modifier.size(size)) {
                 if (available) {
                     drawAvatar(painter)
@@ -229,7 +225,7 @@ private val GreyscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setT
 internal fun BotCharacterSquareIcon(character: BotCharacter, modifier: Modifier = Modifier) {
     val res = botAvatarRes(character) ?: return
     Image(
-        painter = painterResource(res),
+        painter = painterFor(res),
         contentDescription = null,
         contentScale = ContentScale.Fit,
         alpha = 0.9f,

@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui.l10n
 
+import com.worksoc.goaicoach.platform.formatDeviceLocale
+
 /**
  * 바둑판 조작법 가이드(백로그 #249 ③) — 문하생 판다(첫돌이)가 판 위에서 시연하며 하는 말과 단계·모드 이름.
  *
@@ -141,18 +143,18 @@ internal object UiStringsBoardControlsGuide {
 
     /** 착수 확인 시연의 네 마디(켜기 → 놓아 보기 → 옮기기 → 확정). */
     fun confirmLines(language: UiLanguage, confirmPlayLabel: String, playMoveLabel: String): List<String> = listOf(
-        Confirm1.of(language).format(confirmPlayLabel),
+        formatDeviceLocale(Confirm1.of(language), confirmPlayLabel),
         Confirm2.of(language),
         Confirm3.of(language),
-        Confirm4.of(language).format(playMoveLabel),
+        formatDeviceLocale(Confirm4.of(language), playMoveLabel),
     )
 
     /** 판 크기 시연의 두 마디. */
-    fun sizeLines(language: UiLanguage, boardMaxLabel: String): List<String> = listOf(Size1.of(language).format(boardMaxLabel), Size2.of(language))
+    fun sizeLines(language: UiLanguage, boardMaxLabel: String): List<String> = listOf(formatDeviceLocale(Size1.of(language), boardMaxLabel), Size2.of(language))
 
     fun tryDrag(language: UiLanguage): String = TryDrag.of(language)
     fun tryConfirm(language: UiLanguage, confirmPlayLabel: String, playMoveLabel: String): String =
-        TryConfirm.of(language).format(confirmPlayLabel, playMoveLabel)
-    fun trySize(language: UiLanguage, boardMaxLabel: String): String = TrySize.of(language).format(boardMaxLabel)
+        formatDeviceLocale(TryConfirm.of(language), confirmPlayLabel, playMoveLabel)
+    fun trySize(language: UiLanguage, boardMaxLabel: String): String = formatDeviceLocale(TrySize.of(language), boardMaxLabel)
     fun wellDone(language: UiLanguage): String = WellDone.of(language)
 }

@@ -58,6 +58,7 @@
 				29200000000000000000A008 /* Sources */,
 				29200000000000000000A009 /* Frameworks */,
 				29200000000000000000A00A /* Resources */,
+				29200000000000000000A0F1 /* Bundle Android Resources */,
 			);
 			buildRules = (
 			);
@@ -139,6 +140,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# 백로그 #292 — Kotlin 화면(:app-android의 commonMain · iosMain)을 Xcode가 고른 구성 · SDK · 아키텍처로 묶어\n# app-android/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME 에 둔다(FRAMEWORK_SEARCH_PATHS가 그 자리를 본다).\n# Gradle은 JDK 17로만 돈다. iOS 타깃은 게이트 뒤라 -PenableIosTargets=true를 준다(함정 75).\nset -e\ncd \"$SRCROOT/..\"\nexport JAVA_HOME=\"$(/usr/libexec/java_home -v 17)\"\n./gradlew :app-android:embedAndSignAppleFrameworkForXcode -PenableIosTargets=true\n";
+		};
+		29200000000000000000A0F1 /* Bundle Android Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Bundle Android Resources";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# 백로그 #294 — 공용 화면이 읽는 안드로이드 리소스(비트맵 · assets)를 앱 묶음의 appassets/로 복사한다.\nset -e\n\"$SRCROOT/../scripts/ios-bundle-resources.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

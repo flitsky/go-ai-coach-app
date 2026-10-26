@@ -21,8 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
+import com.worksoc.goaicoach.platform.localTimeOfDay
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
-import java.time.LocalTime
 
 /**
  * 4계층(External Integration) — 앱 기동 직후의 브랜드 모먼트(백로그 #125·#126).
@@ -103,7 +103,7 @@ internal fun AppSplash(variant: SplashVariant? = null) {
     var finished by rememberSaveable { mutableStateOf(false) }
     if (finished) return
     // 기동 한 번에 한 장 — 고른 **번호**를 저장해 둔다. ⚠️ 기본 인자 자리에서 고르면 다시 그릴 때마다 다른 그림이 된다.
-    val chosenNumber by rememberSaveable { mutableIntStateOf((variant ?: SplashVariant.pickForLaunch(LocalTime.now().hour)).number) }
+    val chosenNumber by rememberSaveable { mutableIntStateOf((variant ?: SplashVariant.pickForLaunch(localTimeOfDay().hour)).number) }
     val chosen = SplashVariant.ofNumber(chosenNumber) ?: SplashVariant.LaunchPool.first()
     // 홈 위의 팝업을 미루게 한다(위 KDoc).
     SplashVisibility.TrackWhileShown()

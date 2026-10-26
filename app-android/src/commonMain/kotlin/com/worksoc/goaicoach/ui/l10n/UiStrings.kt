@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.attendance.AttendanceReward
 import com.worksoc.goaicoach.application.botcharacter.BotCharacter
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
@@ -16,6 +15,7 @@ import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
+import com.worksoc.goaicoach.application.preferences.UiLanguageStorePort
 import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.state.AllowedVia
@@ -26,7 +26,7 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.persistence.UiLanguageStore
+import com.worksoc.goaicoach.platform.formatDeviceLocale
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -51,7 +51,7 @@ internal val LocalUiStrings = staticCompositionLocalOf { UiStringsKorean }
  * 저장된 표시 언어 — 이름이 없거나 알 수 없는 값이면 한국어다(값 하나 때문에 앱이 죽지 않게).
  * 컴포즈 밖(공유로 사진을 받는 문 — 백로그 #263)도 이것으로 읽는다.
  */
-internal fun savedUiLanguage(store: UiLanguageStore): UiLanguage =
+internal fun savedUiLanguage(store: UiLanguageStorePort): UiLanguage =
     store.loadName()?.let { name -> UiLanguage.entries.firstOrNull { it.name == name } } ?: UiLanguage.Korean
 
 /**
@@ -59,14 +59,20 @@ internal fun savedUiLanguage(store: UiLanguageStore): UiLanguage =
  *
  * **선택은 저장된다**(#34). 예전에는 `remember`뿐이라 앱을 껐다 켤 때마다 한국어로 돌아갔는데,
  * 언어 선택 UI가 홈 상단 칩에서 **설정 화면 안으로** 들어오면서 "저장되지 않는 설정"이 되어
- * 그대로 둘 수 없었다. 저장소를 별도로 두는 이유는 [UiLanguageStore]의 주석에 있다.
+ * 그대로 둘 수 없었다. 저장소를 별도로 두는 이유는 안드로이드 `UiLanguageStore`의 주석에 있다(화면은 플랫폼의 저장소 포트로 읽는다 — #294).
  */
+/**
+ * 화면 언어 저장소 — 안드로이드는 오늘처럼 그 자리에서 `UiLanguageStore(context)`를 만들고, iOS는 프로세스의 iOS 저장소를 쓴다(#294).
+ * ⚠️ `LocalAppPlatform`을 읽지 않는다 — `l10n`은 ui 맨 아래층이라 다른 ui 패키지(`ui.foundation` 포함)를 모른다(refactor backlog #27).
+ */
+@Composable
+internal expect fun rememberUiLanguageStore(): UiLanguageStorePort
+
 @Composable
 internal fun ProvideUiLanguage(
     content: @Composable (UiLanguage, (UiLanguage) -> Unit) -> Unit,
 ) {
-    val context = LocalContext.current
-    val store = remember(context) { UiLanguageStore(context) }
+    val store = rememberUiLanguageStore()
     var language by remember { mutableStateOf(savedUiLanguage(store)) }
     val strings = remember(language) { UiStrings.forLanguage(language) }
     CompositionLocalProvider(LocalUiStrings provides strings) {
@@ -1020,7 +1026,7 @@ internal data class UiStrings(
 
     /** 사람 플레이어 기준 결과 문구. [margin]은 [GameHistoryResult.Win]/[GameHistoryResult.Loss]에서만 쓰인다. */
     fun gameHistoryResultLabel(result: GameHistoryResult, margin: Double?): String {
-        val marginText = margin?.let { "%.1f".format(it) }
+        val marginText = margin?.let { formatDeviceLocale("%.1f", it) }
         return when (result) {
             GameHistoryResult.Resign -> when (language) {
                 UiLanguage.Korean -> "기권"

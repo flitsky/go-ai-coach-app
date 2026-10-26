@@ -12,9 +12,9 @@ package com.worksoc.goaicoach.kv.json
  *  - 쓰기: 수는 정수로 떨어지면 정수 표기(3.0 → `3`), `/`는 `\/`로, 제어 문자는 `\uXXXX`로.
  */
 
-class JSONException(message: String) : Exception(message)
+internal class JSONException(message: String) : Exception(message)
 
-class JSONObject() {
+internal class JSONObject() {
     private val values = LinkedHashMap<String, Any>()
 
     constructor(json: String) : this() {
@@ -104,7 +104,7 @@ class JSONObject() {
     }
 }
 
-class JSONArray() {
+internal class JSONArray() {
     private val values = ArrayList<Any?>()
 
     constructor(json: String) : this() {

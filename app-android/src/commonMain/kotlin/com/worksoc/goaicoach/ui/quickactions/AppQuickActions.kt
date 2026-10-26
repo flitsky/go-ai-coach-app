@@ -14,8 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.persistence.BackgroundMusicStore
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.backgroundMusicLabelFor
 
@@ -57,8 +56,8 @@ internal fun AppQuickActions(
  */
 @Composable
 private fun BackgroundMusicQuickToggle(tint: Color, modifier: Modifier) {
-    val context = LocalContext.current
-    val store = remember(context) { BackgroundMusicStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.backgroundMusic }
     val isEnabled by remember(store) { store.enabledChanges() }.collectAsState(initial = store.isEnabled())
     IconToggleButton(
         checked = isEnabled,

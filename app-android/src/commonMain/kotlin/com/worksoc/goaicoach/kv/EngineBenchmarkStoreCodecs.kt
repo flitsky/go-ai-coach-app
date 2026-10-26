@@ -132,7 +132,7 @@ internal object EngineBenchmarkCodec {
 }
 
 /** 엔진 측정값 저장소의 공용 구현(P3) — 안드로이드와 같은 파일 이름(`engine_benchmark_profile.json`), 같은 코덱. */
-class KvEngineBenchmarkStore(private val files: AppFileStore) : EngineBenchmarkStorePort {
+internal class KvEngineBenchmarkStore(private val files: AppFileStore) : EngineBenchmarkStorePort {
     override fun exists(): Boolean = files.exists(BenchmarkFileName)
 
     override fun save(profile: EngineBenchmarkProfile) {
@@ -149,7 +149,7 @@ class KvEngineBenchmarkStore(private val files: AppFileStore) : EngineBenchmarkS
 }
 
 /** 마지막 진단 리포트의 사본(안드로이드 `DebugReportMirrorStore`와 같은 파일 이름). */
-class KvDebugReportMirrorStore(private val files: AppFileStore) : DebugReportMirrorPort {
+internal class KvDebugReportMirrorStore(private val files: AppFileStore) : DebugReportMirrorPort {
     override fun save(report: String) {
         files.writeAtomically("last_debug_report.txt", report)
     }

@@ -45,6 +45,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import kotlin.math.PI
 import kotlin.math.roundToInt
 
 /**
@@ -254,7 +255,7 @@ private fun sketchyEllipse(rect: Rect, wobble: Float, sweepFrom: Float): Path {
     // 고정 흔들림 여덟 개. 난수를 쓰지 않는 이유는 위 KDoc.
     val jitter = floatArrayOf(1.03f, 0.96f, 1.05f, 0.98f, 1.02f, 0.94f, 1.06f, 0.99f)
     val points = (0 until 8).map { i ->
-        val angle = ((i / 8f) + sweepFrom) * 2f * Math.PI.toFloat()
+        val angle = ((i / 8f) + sweepFrom) * 2f * PI.toFloat()
         val scale = 1f + (jitter[i] - 1f) * (wobble / 0.05f)
         Offset(
             x = cx + rx * scale * kotlin.math.cos(angle),

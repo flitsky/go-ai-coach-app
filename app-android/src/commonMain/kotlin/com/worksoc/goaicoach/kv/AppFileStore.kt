@@ -6,7 +6,7 @@ package com.worksoc.goaicoach.kv
  *
  * 실패는 던지지 않고 값으로 돌려준다(`null` · `false` · 0) — 안드로이드 저장소가 `runCatching`으로 하던 것과 같다.
  */
-interface AppFileStore {
+internal interface AppFileStore {
     fun exists(path: String): Boolean
 
     fun readText(path: String): String?

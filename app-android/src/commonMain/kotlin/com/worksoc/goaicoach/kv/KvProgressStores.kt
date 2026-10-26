@@ -18,7 +18,7 @@ import kotlin.uuid.Uuid
 
 // 진행도 · 정체 저장소의 공용 구현(백로그 #294 — P1). 안드로이드 `persistence/`의 같은 이름 저장소와 묶음 이름 · 키 · 표기가 같다.
 
-class KvDailyQuoteStore(factory: KeyValueStoreFactory) : DailyQuoteStorePort {
+internal class KvDailyQuoteStore(factory: KeyValueStoreFactory) : DailyQuoteStorePort {
     private val kv = factory.open("go_ai_coach_daily_quote")
 
     override fun load(): DailyQuoteProgress = DailyQuoteProgress(
@@ -40,7 +40,7 @@ class KvDailyQuoteStore(factory: KeyValueStoreFactory) : DailyQuoteStorePort {
     private fun String?.toIds(): List<String> = this?.split(",")?.filter { it.isNotBlank() }.orEmpty()
 }
 
-class KvDailyFortuneStore(factory: KeyValueStoreFactory) : DailyFortuneStorePort {
+internal class KvDailyFortuneStore(factory: KeyValueStoreFactory) : DailyFortuneStorePort {
     private val kv = factory.open("go_ai_coach_daily_fortune")
 
     override fun load(): DailyFortuneProgress = DailyFortuneProgress(
@@ -56,7 +56,7 @@ class KvDailyFortuneStore(factory: KeyValueStoreFactory) : DailyFortuneStorePort
     }
 }
 
-class KvGuideProgressStore(factory: KeyValueStoreFactory) : GuideProgressStorePort {
+internal class KvGuideProgressStore(factory: KeyValueStoreFactory) : GuideProgressStorePort {
     private val kv = factory.open("go_ai_coach_guide")
 
     override fun load(): GuideProgress = GuideProgress(
@@ -69,7 +69,7 @@ class KvGuideProgressStore(factory: KeyValueStoreFactory) : GuideProgressStorePo
     override fun markSeen(step: GuideStep) = kv.putStringSet("seen_steps", load().seenSteps + step.id)
 }
 
-class KvLifeAndDeathProgressStore(factory: KeyValueStoreFactory) : LifeAndDeathProgressPort {
+internal class KvLifeAndDeathProgressStore(factory: KeyValueStoreFactory) : LifeAndDeathProgressPort {
     private val kv = factory.open("go_ai_coach_life_and_death")
 
     override fun solved(): Set<String> = kv.getString("solved")?.split(",")?.filter { it.isNotBlank() }?.toSet().orEmpty()
@@ -81,7 +81,7 @@ class KvLifeAndDeathProgressStore(factory: KeyValueStoreFactory) : LifeAndDeathP
     }
 }
 
-class KvUserProfileStore(factory: KeyValueStoreFactory) : UserProfileStorePort {
+internal class KvUserProfileStore(factory: KeyValueStoreFactory) : UserProfileStorePort {
     private val kv = factory.open("go_ai_coach_user_profile")
 
     override fun nickname(): String? = kv.getString("nickname")?.takeIf { it.isNotBlank() }
@@ -89,7 +89,7 @@ class KvUserProfileStore(factory: KeyValueStoreFactory) : UserProfileStorePort {
     override fun saveNickname(raw: String) = kv.putString("nickname", UserNicknamePolicy.sanitize(raw))
 }
 
-class KvDailyDrawStore(factory: KeyValueStoreFactory) : DailyDrawStorePort {
+internal class KvDailyDrawStore(factory: KeyValueStoreFactory) : DailyDrawStorePort {
     private val kv = factory.open("go_ai_coach_daily_draw")
 
     override fun lastDrawnAtMillis(): Long? = kv.getLong("last_drawn_at_millis", Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }
@@ -97,7 +97,7 @@ class KvDailyDrawStore(factory: KeyValueStoreFactory) : DailyDrawStorePort {
     override fun markDrawn(atMillis: Long) = kv.putLong("last_drawn_at_millis", atMillis)
 }
 
-class KvDeviceIdentityStore(factory: KeyValueStoreFactory) : DeviceIdentityStorePort {
+internal class KvDeviceIdentityStore(factory: KeyValueStoreFactory) : DeviceIdentityStorePort {
     private val kv = factory.open("go_ai_coach_device_identity")
 
     @OptIn(ExperimentalUuidApi::class)

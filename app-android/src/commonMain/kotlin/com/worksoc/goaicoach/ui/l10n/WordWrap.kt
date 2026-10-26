@@ -21,11 +21,10 @@ private const val WordJoiner = "\u2060"
  * 명언의 줄바꿈 — 일본어는 구절 단위로 줄을 바꾼다(안드로이드 13+). ⚠️ `LineBreak.Heading`(줄 길이 고르기)은 쓰지 않는다 — 두 줄에 들던 영어가 세 줄이 됐다.
  * 홈 한 줄 자리(`HomeDailyQuote`)와 실험실의 명언록(#280)이 함께 쓴다.
  */
-internal val QuoteLineBreak = LineBreak(
-    strategy = LineBreak.Strategy.Simple,
-    strictness = LineBreak.Strictness.Normal,
-    wordBreak = LineBreak.WordBreak.Phrase,
-)
+internal val QuoteLineBreak: LineBreak = quoteLineBreak()
+
+/** 플랫폼의 명언 줄바꿈 — 안드로이드는 구절 단위(일본어), iOS(Compose Multiplatform)는 그 설정이 없어 `Simple`이다(#294 S8). */
+internal expect fun quoteLineBreak(): LineBreak
 
 /** 명언 글자의 언어 — 일본어 구절 줄바꿈이 일본어 글자에만 듣고, 중국어 한자가 한국·일본 글자꼴로 그려지지 않게 화면 언어로 단다. */
 internal val UiLanguage.quoteLocaleTag: String

@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.splash
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -17,12 +16,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.shared.policy.isNightHour
 import com.worksoc.goaicoach.ui.designsystem.AllBotAvatarRes
+import com.worksoc.goaicoach.ui.designsystem.AppImage
+import com.worksoc.goaicoach.ui.designsystem.painterFor
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -196,7 +195,7 @@ internal enum class SplashVariant(val number: Int, val durationMillis: Int) {
 internal fun SplashScene(
     variant: SplashVariant,
     elapsedMillis: Int,
-    avatars: List<Int> = AllBotAvatarRes,
+    avatars: List<AppImage> = AllBotAvatarRes,
     modifier: Modifier = Modifier,
 ) {
     variant.illustration?.let { art ->
@@ -238,13 +237,13 @@ internal fun SplashScene(
  * 폰은 그림보다 길쭉해 좌우가 조금 잘리고(세로를 꽉 채운다), 펼친 폴더블 · 태블릿은 위아래가 잘린다 — 그때 캐릭터와 판이 있는 아래쪽을 남긴다.
  * 그림의 원본은 1536x2752(9:16에 가깝다)라 폰 화면에서 줄여서 그린다.
  */
-private class Illustration(@DrawableRes val res: Int, val verticalBias: Float)
+private class Illustration(val res: AppImage, val verticalBias: Float)
 
 private val SplashVariant.illustration: Illustration?
     get() = when (this) {
-        SplashVariant.IllustrationSpotlightNight -> Illustration(R.drawable.splash_spotlight_night, verticalBias = 0.3f)
-        SplashVariant.IllustrationHanokAngled -> Illustration(R.drawable.splash_hanok_dojo_day2, verticalBias = 0.6f)
-        SplashVariant.IllustrationHanokFront -> Illustration(R.drawable.splash_hanok_dojo_day1, verticalBias = 0.6f)
+        SplashVariant.IllustrationSpotlightNight -> Illustration(AppImage.splash_spotlight_night, verticalBias = 0.3f)
+        SplashVariant.IllustrationHanokAngled -> Illustration(AppImage.splash_hanok_dojo_day2, verticalBias = 0.6f)
+        SplashVariant.IllustrationHanokFront -> Illustration(AppImage.splash_hanok_dojo_day1, verticalBias = 0.6f)
         else -> null
     }
 
@@ -262,7 +261,7 @@ private fun IllustrationScene(art: Illustration, durationMillis: Int, elapsedMil
     val fadeStart = durationMillis - IllustrationFadeOutMillis
     val alpha = 1f - ((elapsedMillis - fadeStart).toFloat() / IllustrationFadeOutMillis).coerceIn(0f, 1f)
     Image(
-        painter = painterResource(art.res),
+        painter = painterFor(art.res),
         contentDescription = null,
         modifier = modifier
             .fillMaxSize()
@@ -282,7 +281,7 @@ private val SplashVariant.usesCoin: Boolean
     }
 
 @Composable
-private fun SplashCoin(res: Int, size: Dp, coin: Boolean, modifier: Modifier) {
+private fun SplashCoin(res: AppImage, size: Dp, coin: Boolean, modifier: Modifier) {
     val base = modifier.size(size)
     if (coin) {
         Box(
@@ -292,10 +291,10 @@ private fun SplashCoin(res: Int, size: Dp, coin: Boolean, modifier: Modifier) {
                 .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center,
         ) {
-            Image(painterResource(res), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            Image(painterFor(res), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         }
     } else {
-        Image(painterResource(res), null, base, contentScale = ContentScale.Fit)
+        Image(painterFor(res), null, base, contentScale = ContentScale.Fit)
     }
 }
 
