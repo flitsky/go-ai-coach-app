@@ -5,7 +5,8 @@
 #   appassets/assets/    안드로이드 `assets/` 그대로(기보 · 참고 대국) — `BundledAssets`가 같은 상대 경로로 읽는다.
 #                        더해 `licenses/aboutlibraries-ios.json` — iOS의 오픈소스 목록(`:ios-licenses`가 앞 단계 Gradle에서 만든다).
 #   appassets/audio/     배경음악(#244) — 안드로이드 `res/raw/bgm_*.ogg`를 AAC(m4a)로 바꿔 싣는다(iOS의 AVAudioPlayer는 Ogg Vorbis를 못 연다).
-#                        바꾼 파일은 DerivedData에 두고 원본이 더 새로울 때만 다시 바꾼다. ffmpeg가 없으면 음악 없이 묶는다(경고 — 앱은 조용할 뿐이다).
+#                        바꾼 파일은 DerivedData에 두고 원본이 더 새로울 때만 다시 바꾼다. ffmpeg가 없으면 Debug는 음악 없이 묶고(경고 — 앱은 조용할 뿐이다),
+#                        Release는 멈춘다(출시 빌드가 음악 없이 나가지 않게).
 set -euo pipefail
 SRC="${SRCROOT}/../app-android/src/main"
 DST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/appassets"
@@ -29,6 +30,9 @@ if [ -n "$FFMPEG" ]; then
     fi
     cp -f "$out" "$DST/audio/"
   done
+elif [ "${CONFIGURATION:-Debug}" = "Release" ]; then
+  echo "error: ffmpeg not found — Release builds must bundle the background music (brew install ffmpeg)"
+  exit 1
 else
   echo "warning: ffmpeg not found — background music is not bundled (brew install ffmpeg)"
 fi

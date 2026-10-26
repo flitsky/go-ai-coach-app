@@ -15,6 +15,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
+        // 실행 화면이 내려간 뒤 첫 프레임까지도 앱 바탕색으로(번쩍임 방지 — Info.plist UILaunchScreen과 같은 색).
+        window.backgroundColor = UIColor(named: "LaunchBackground")
         window.rootViewController = MainViewControllerKt.MainViewController()
         window.makeKeyAndVisible()
         self.window = window

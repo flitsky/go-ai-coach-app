@@ -87,6 +87,27 @@ class AppNameContractTest {
     }
 
     /**
+     * iOS 홈 화면 이름(백로그 #294 — `app-ios/GoCoach/<언어>.lproj/InfoPlist.strings`)이 안드로이드 런처 이름과 **언어마다** 같은지.
+     * 안드로이드 `values-zh`는 번체 기기에도 걸리므로 iOS의 `zh-Hans` · `zh-Hant`가 둘 다 그 값을 쓴다.
+     */
+    @Test
+    fun theIosHomeScreenNameIsTheAndroidLauncherNameInEveryLanguage() {
+        val androidByIos = mapOf("ko" to "values", "en" to "values-en", "ja" to "values-ja", "zh-Hans" to "values-zh", "zh-Hant" to "values-zh")
+        androidByIos.forEach { (iosLocale, androidValues) ->
+            val android = resourceNameIn(androidValues)
+            val ios = Regex(""""CFBundleDisplayName" = "([^"]+)";""")
+                .find(File(repoRoot, "app-ios/GoCoach/$iosLocale.lproj/InfoPlist.strings").readContractSource())
+                ?.groupValues?.get(1)
+            assertTrue("$androidValues/strings.xml에서 app_name을 찾지 못했다.", android != null)
+            assertEquals("iOS $iosLocale 홈 화면 이름이 안드로이드($androidValues) 런처 이름과 다르다(#294).", android, ios)
+        }
+    }
+
+    private fun resourceNameIn(valuesDir: String): String? = Regex("""<string name="app_name"[^>]*>([^<]+)</string>""")
+        .find(File(repoRoot, "app-android/src/main/res/$valuesDir/strings.xml").readContractSource())
+        ?.groupValues?.get(1)
+
+    /**
      * 스토어 제목은 **30자**를 넘을 수 없다(Play 제한). 넘으면 콘솔이 저장 자체를 거부한다.
      *
      * ⚠️ 런처 이름은 이 제한과 별개로 **짧아야 한다** — 홈 화면 아이콘 아래는 두 줄에서 잘리고,

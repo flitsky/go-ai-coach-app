@@ -4,6 +4,12 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- 실행 화면 바탕 = 앱 바탕(밝게 #F6F1E7 · 어둡게 #1A1815 — AppColorScheme.kt · 안드로이드 colors.xml과 같은 값, 바꾸면 함께). 흰/검은 번쩍임을 막는다. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -1,0 +1,2 @@
+// 홈 화면 앱 이름(백로그 #294) — 안드로이드 res의 values 폴더들 strings.xml에 있는 app_name과 같은 값(AppNameContractTest가 대조한다).
+"CFBundleDisplayName" = "포켓 바둑 코치";
