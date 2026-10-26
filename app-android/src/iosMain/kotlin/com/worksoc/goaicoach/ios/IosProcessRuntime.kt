@@ -12,8 +12,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSNumber
 import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLIsExcludedFromBackupKey
 import platform.Foundation.NSUserDomainMask
 
 /**
@@ -25,7 +28,7 @@ import platform.Foundation.NSUserDomainMask
  * 그대로 읽는다, `make ios-run`) ② 앱 묶음의 `appassets/katago/`(모델을 싣는 방식은 #293 남은 일) ③ 없으면 스텁 — 「엔진 아직」 흐름을 탄다.
  * 사람 모델이 없으면 캐릭터 대국이 사람 모델 없이 도는 것을 막으려고 안드로이드처럼 스텁이다(#249 U-78: 두 모델 필수).
  *
- * 하나만 만든다 — `MainViewController()`가 앱을 띄울 때 한 번(안드로이드는 `GoAiCoachApplication`이 쥔다, #110). 전역 object로 두지 않는다:
+ * 하나만 만든다 — [IosAppRoot]가(Swift `AppDelegate`가 프로세스에 하나 든다) 한 번(안드로이드는 `GoAiCoachApplication`이 쥔다, #110). 전역 object로 두지 않는다:
  * 컴포즈 상태를 든 전역은 셸 원장이 막는다(`ShellStateLedgerContractTest`).
  */
 internal fun iosProcessRuntime(diagnosticEventLog: DiagnosticEventLogPort): GoCoachProcessRuntime = GoCoachProcessRuntime(
@@ -59,6 +62,8 @@ private fun createIosEngineBootstrap(): EngineBootstrap {
     for (dir in listOf(workDirectory, "$workDirectory/logs", "$workDirectory/home")) {
         NSFileManager.defaultManager.createDirectoryAtPath(dir, withIntermediateDirectories = true, attributes = null, error = null)
     }
+    // 엔진의 작업 폴더(로그 · 임시 기보)는 백업에서 뺀다 — 안드로이드 `backup_rules.xml`의 `exclude path="katago"`와 같은 짝. 폴더에 걸면 안이 모두 빠진다.
+    NSURL.fileURLWithPath(workDirectory, isDirectory = true).setResourceValue(NSNumber(bool = true), forKey = NSURLIsExcludedFromBackupKey, error = null)
     val processConfig = KataGoProcessConfig(
         executablePath = "katago",
         modelPath = model!!,

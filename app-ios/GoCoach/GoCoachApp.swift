@@ -7,7 +7,10 @@ import SharedUI
 // SwiftUI 호스트 안에 넣으면 Kotlin 화면이 그것을 정할 수 없다.
 // 창을 여는 장면 델리게이트는 `Info.plist`의 `UISceneDelegateClassName`이 고른다(지난 실행에서 저장된 장면도 같은 델리게이트로 다시 붙는다).
 @main
-final class AppDelegate: UIResponder, UIApplicationDelegate {}
+final class AppDelegate: UIResponder, UIApplicationDelegate {
+    /// 프로세스에 하나 — 플랫폼 · 시작 처리 · 엔진 묶음(안드로이드 `GoAiCoachApplication`의 짝). 장면이 다시 붙어도 같은 것을 쓴다.
+    let root = IosAppRoot()
+}
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -17,7 +20,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         // 실행 화면이 내려간 뒤 첫 프레임까지도 앱 바탕색으로(번쩍임 방지 — Info.plist UILaunchScreen과 같은 색).
         window.backgroundColor = UIColor(named: "LaunchBackground")
-        window.rootViewController = MainViewControllerKt.MainViewController()
+        window.rootViewController = (UIApplication.shared.delegate as! AppDelegate).root.makeViewController()
         window.makeKeyAndVisible()
         self.window = window
     }
