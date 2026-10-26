@@ -150,7 +150,7 @@ doctor:
 	@echo "ANDROID_HOME=$(ANDROID_HOME)"
 	@echo "Environment check passed."
 
-# ⚠️ `:app-android:compileDebugAndroidTestKotlin`은 **컴파일만** 한다(기기 불필요, 약 5초).
+# ⚠️ `:app-android:compileDebugAndroidTestKotlinAndroid`(KMP 전환 뒤의 이름 — 백로그 #294)는 **컴파일만** 한다(기기 불필요, 약 5초).
 # 계기 테스트를 돌리려는 게 아니라 **그 소스셋이 썩는 것을 막으려는 것**이다 — 실제로
 # 2026-08-30부터 6일간 컴파일조차 되지 않는 채로 방치됐고(`GoCoachApp`에 필수 파라미터
 # `engineMode`가 늘었는데 호출부 둘을 안 고침), 이 명령이 그 트리를 건드리지 않아 아무도 몰랐다.
@@ -160,7 +160,7 @@ doctor:
 # enforceCheck) — app-android·engine-android는 `check`를 안 거치므로 여기서 이름으로 부른다. 빨가면 격리
 # 워크트리에서 `./gradlew spotlessApply`(공유 메인 트리에서 돌리면 남의 미커밋 파일 import까지 재배열된다).
 test: doctor
-	$(GRADLEW) :core:domain:check :core:enginecontract:check :shared:check :app-android:spotlessCheck :engine-android:spotlessCheck :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlin :app-android:lintDebug
+	$(GRADLEW) :core:domain:check :core:enginecontract:check :shared:check :app-android:spotlessCheck :engine-android:spotlessCheck :engine-android:testDebugUnitTest :app-android:assembleDebug :app-android:testDebugUnitTest :app-android:compileDebugAndroidTestKotlinAndroid :app-android:lintDebug
 
 # ⚠️ 별도 타깃이다 — `test`에 합치지 마라(refactor backlog #11, 함정 75).
 # iOS 타깃은 `shared/build.gradle.kts`의 `enableIosTargets` 게이트 뒤에 숨어 있어(기본 false)
@@ -178,11 +178,11 @@ test: doctor
 # ⚠️ 테스트 소스도 컴파일한다(2026-09-25, refactor backlog #101). 본 코드만 컴파일하던 동안 commonTest의
 # `System.currentTimeMillis()` 한 줄(2026-08-16부터)로 iOS 테스트 컴파일이 깨진 채 아무도 몰랐다 —
 # commonTest의 JVM 전용 API도 이 타깃이 잡는다.
-# `:shared-ui`(iOS 화면, 백로그 #292)도 같은 이유로 여기서 컴파일한다 — 화면 코드가 iOS에 없는 API를 쓰면 여기서 빨개진다.
+# `:app-android`의 iOS 쪽(옮긴 화면 · iOS 입구, 백로그 #292 · #294)도 같은 이유로 여기서 컴파일한다 — 화면 코드가 iOS에 없는 API를 쓰면 여기서 빨개진다.
 test-ios:
-	$(GRADLEW) :core:domain:compileKotlinIosSimulatorArm64 :core:domain:compileTestKotlinIosSimulatorArm64 :core:enginecontract:compileKotlinIosSimulatorArm64 :core:enginecontract:compileTestKotlinIosSimulatorArm64 :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 :shared-ui:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
+	$(GRADLEW) :core:domain:compileKotlinIosSimulatorArm64 :core:domain:compileTestKotlinIosSimulatorArm64 :core:enginecontract:compileKotlinIosSimulatorArm64 :core:enginecontract:compileTestKotlinIosSimulatorArm64 :shared:compileKotlinIosSimulatorArm64 :shared:compileTestKotlinIosSimulatorArm64 :app-android:compileKotlinIosSimulatorArm64 -PenableIosTargets=true
 
-# iOS 앱(백로그 #292) — Xcode 프로젝트는 `app-ios/GoCoach.xcodeproj`, 화면은 Kotlin `:shared-ui`(Compose Multiplatform, U-83).
+# iOS 앱(백로그 #292) — Xcode 프로젝트는 `app-ios/GoCoach.xcodeproj`, 화면은 Kotlin `:app-android`의 commonMain(Compose Multiplatform, U-83 · #294).
 # ⚠️ `test`에 합치지 마라 — test-ios와 같은 이유(함정 75)에 더해 Xcode가 있는 맥에서만 돈다.
 # Kotlin 프레임워크는 Xcode 빌드 단계(「Compile Kotlin Framework」)가 Gradle로 묶는다 — 여기서 따로 부르지 않는다.
 # `generic/platform=iOS Simulator` + `ARCHS=arm64`: 기기 이름에 묶이지 않고, 인텔 시뮬레이터(x86_64) 몫의 Kotlin 빌드를 건너뛴다.
@@ -215,7 +215,7 @@ ios-run: ios-build
 	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
 	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
-# Kotlin 엔진 코드(안드로이드와 같은 어댑터)가 앱 안 KataGo로 도는지 시뮬레이터에서 본다(백로그 #293 — `shared-ui/.../EngineProbe.kt`).
+# Kotlin 엔진 코드(안드로이드와 같은 어댑터)가 앱 안 KataGo로 도는지 시뮬레이터에서 본다(백로그 #293 — `app-android/.../ios/EngineProbe.kt`).
 # GTP 착수 → JSON 분석 엔진을 함께 → 사람 모델로 갈아 올리기 → forceReset 뒤 다시 → stop. 모델 · 설정은 안드로이드 번들과 같은 맥의 파일을 읽는다
 # (시뮬레이터 앱은 맥의 경로를 읽을 수 있다 — 실기기에서는 안 된다). 끝나면 앱이 스스로 닫히고 기록이 이 터미널에 찍힌다.
 ios-engine-probe: ios-build

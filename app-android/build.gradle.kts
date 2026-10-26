@@ -5,8 +5,13 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // KMP(백로그 #294 — iOS 이식 X안): 안드로이드 앱 모듈이 **제자리에서** 멀티플랫폼이 된다. 지금 코드는 `src/main/java` 그대로
+    // androidMain이고, 웨이브마다 옮겨도 되는 파일만 `src/commonMain/kotlin`으로 간다(같은 패키지). iOS 프레임워크도 이 모듈이 낸다.
+    // ⚠️ AGP 9부터는 KMP + `com.android.application`이 막힌다 — 그때 안드로이드 입구(Application · Activity · 매니페스트 · 빌드 타입)를
+    //    얇은 `androidApp` 모듈로 떼어 낸다(이식 계획 §1). 이 저장소는 AGP 8.13에 머문다.
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.spotless)
     // 오픈소스 라이선스 화면(백로그 #195) — 빌드마다 의존성 목록을 모아 `R.raw.aboutlibraries`로 싣는다.
     alias(libs.plugins.aboutlibraries.android)
@@ -296,12 +301,6 @@ android {
         //     정규식으로 읽는다** — 개명하면 그 계약이 깨진다.
         //   · 파이썬 벤치마크 스크립트 6곳이 이 경로를 기본값으로 박고 있다.
         //   이름 하나 고치자고 네 표면을 동시에 흔드는 값은 없다. 대신 이 주석이 그 자리를 대신한다.
-        // 모듈 사이 테스트 코드 공유(리팩토링 백로그 #71). 사유와 대안 기각 근거는
-        // `shared/build.gradle.kts`의 같은 배선에 모아 두었다 — 거기가 정본이다.
-        // ⚠️ 이 모듈의 test·androidTest는 `:shared`의 commonTest를 **볼 수 없다.** 그래서
-        //   `EngineSessionClient` 손 페이크가 세 벌로 복제돼 있었고(함정 70), 이 두 줄이 그것을 끝냈다.
-        getByName("test").kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
-        getByName("androidTest").kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
         // 바둑판 사진의 정답·원근 틀(백로그 #263) — 기기 계기 테스트가 단위 테스트와 **같은 파일**을 읽는다(사본을 두지 않는다).
         getByName("androidTest").resources.srcDir("src/test/resources")
 
@@ -364,8 +363,81 @@ android {
     }
 }
 
+// KMP는 안드로이드 소스 자리의 기본값을 `src/androidMain` · `src/androidDebug` …로 바꾼다(백로그 #294). 이 앱의 매니페스트 · 리소스 ·
+// 에셋 · 디버그 엔진 `.so`는 예전 자리(`src/main` · `src/debug`)에 그대로 둔다 — KMP 설정이 끝난 뒤(finalizeDsl)에 못박아야 덮어써지지 않는다.
+// 확인: `scripts/android-fingerprint.sh`의 APK 파일 목록이 전환 앞뒤로 같아야 한다.
+androidComponents {
+    finalizeDsl { extension ->
+        extension.sourceSets.getByName("main") {
+            manifest.srcFile("src/main/AndroidManifest.xml")
+            res.setSrcDirs(listOf("src/main/res"))
+            assets.setSrcDirs(listOf("src/main/assets"))
+        }
+        extension.sourceSets.getByName("debug") {
+            manifest.srcFile("src/debug/AndroidManifest.xml")
+            res.setSrcDirs(listOf("src/debug/res"))
+            jniLibs.setSrcDirs(listOf("src/debug/jniLibs"))
+        }
+    }
+}
+
+val enableIosTargets = providers.gradleProperty("enableIosTargets")
+    .map(String::toBoolean)
+    .getOrElse(false)
+
 kotlin {
+    androidTarget {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
+    // iOS 앱(`app-ios/`)이 링크하는 프레임워크 — 화면은 commonMain(옮긴 것), iOS 입구는 iosMain(`com.worksoc.goaicoach.ios`).
+    // ⚠️ 게이트는 `:shared`와 같다(`enableIosTargets` — 기본 꺼짐, 함정 75).
+    if (enableIosTargets) {
+        listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach { target ->
+            target.binaries.framework {
+                // Xcode가 `import SharedUI`로 부르는 이름(백로그 #292). 정적 프레임워크라 앱에 따로 싣지 않는다.
+                baseName = "SharedUI"
+                isStatic = true
+            }
+        }
+    }
+
     jvmToolchain(17)
+
+    sourceSets {
+        // 공용 원자값(`kotlin.concurrent.atomics`) — `:engine-android`와 같다.
+        all { languageSettings.optIn("kotlin.concurrent.atomics.ExperimentalAtomicApi") }
+        // 지금까지의 안드로이드 코드 — 자리를 옮기지 않는다(옮기는 것은 웨이브마다 commonMain으로, 같은 패키지).
+        androidMain {
+            kotlin.srcDir("src/main/java")
+            // 돌 판정 신경망 가중치(`vision/stone-net.bin`, 백로그 #263) — 클래스패스 리소스로 읽는다.
+            resources.srcDir("src/main/resources")
+        }
+        commonMain.dependencies {
+            implementation(project(":shared"))
+            implementation(project(":engine-android"))
+            implementation(libs.compose.mp.runtime)
+            implementation(libs.compose.mp.foundation)
+            implementation(libs.compose.mp.ui)
+            implementation(libs.compose.mp.material3)
+        }
+        // 테스트는 예전 자리 그대로 안드로이드 JVM 단위 테스트 · 계기 테스트로 돈다 — commonMain의 internal도 본다.
+        // 모듈 사이 테스트 코드 공유(리팩토링 백로그 #71). 사유와 대안 기각 근거는
+        // `shared/build.gradle.kts`의 같은 배선에 모아 두었다 — 거기가 정본이다.
+        // ⚠️ 이 모듈의 test·androidTest는 `:shared`의 commonTest를 **볼 수 없다.** 그래서
+        //   `EngineSessionClient` 손 페이크가 세 벌로 복제돼 있었고(함정 70), 이 두 줄이 그것을 끝냈다.
+        getByName("androidUnitTest") {
+            kotlin.srcDir("src/test/java")
+            kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
+            resources.srcDir("src/test/resources")
+        }
+        getByName("androidInstrumentedTest") {
+            kotlin.srcDir("src/androidTest/java")
+            kotlin.srcDir("../shared/src/commonTestSupport/kotlin")
+        }
+    }
 }
 
 // ── 오픈소스 라이선스 목록(백로그 #195) ─────────────────────────────────────────
@@ -546,7 +618,7 @@ tasks.matching { it.name == "packageRelease" || it.name == "packageReleaseBundle
 //    모듈 사이 픽스처 트리)가 모두 이 `src` 아래다. 모듈을 떼어 내면 **여기 한 줄**을 더한다.
 //    목록의 폴더는 실재해야 한다 — 없는 폴더의 fileTree는 조용히 비어 입력에서 빠지기 때문이다.
 val architectureContractScannedTrees = listOf(
-    "app-android/src/main/java",
+    "app-android/src",
     "engine-android/src",
     "core/domain/src",
     "core/enginecontract/src",

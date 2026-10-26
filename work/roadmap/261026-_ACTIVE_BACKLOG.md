@@ -44,7 +44,7 @@
 
 ```sh
 ./gradlew :shared:check :core:enginecontract:testDebugUnitTest :engine-android:testDebugUnitTest :app-android:testDebugUnitTest \
-  :app-android:spotlessCheck :engine-android:spotlessCheck :app-android:lintDebug :app-android:compileDebugAndroidTestKotlin
+  :app-android:spotlessCheck :engine-android:spotlessCheck :app-android:lintDebug :app-android:compileDebugAndroidTestKotlinAndroid
 make test-ios                                # :shared를 건드렸으면 — iOS 컴파일
 make engine-lab-test                         # AI의 값(급수·방문·기권 문턱)을 건드렸으면 — 실험실 대응표
 python3 scripts/check-doc-links.py           # 문서·경로를 건드렸으면

@@ -67,7 +67,7 @@
 **테스트·검증**
 - **15** `@Test` 누락은 조용히 사라진다(`TestAnnotationContractTest`). shared만 바뀌면 app 테스트가 쉰다 → `--rerun-tasks`
 - **16** 테스트 건수 — `build/test-results` 누적 XML을 세지 말 것. 비우고 한 번의 실행만
-- **19** 아무도 컴파일 안 하는 소스셋 — `make test`에 `compileDebugAndroidTestKotlin`. 시그니처 바꿀 땐 세 트리
+- **19** 아무도 컴파일 안 하는 소스셋 — `make test`에 `compileDebugAndroidTestKotlin`(⚠️ 2026-10-27 app-android가 KMP가 되며 `compileDebugAndroidTestKotlinAndroid`). 시그니처 바꿀 땐 세 트리
 - **20** 저장소 밖 상태가 초록을 만든다 — "이름이 서로 맞나"를 계약으로(AGP는 `.gz`를 푼다). 산출물은 직접 열어 볼 것
 - **22** 소스 계약은 식별자를 고정 — 이름을 바꾸기보다 되돌리는 게 싸다
 - **23** 스텁 폴백 재현법 — 에셋 치우기·`make release` 금지·병합 산출물 삭제·`pm clear`·원복

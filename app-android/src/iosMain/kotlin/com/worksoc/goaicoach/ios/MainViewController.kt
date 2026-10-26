@@ -1,7 +1,6 @@
-package com.worksoc.goaicoach.ui
+package com.worksoc.goaicoach.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
-import com.worksoc.goaicoach.ui.skeleton.SkeletonApp
 import platform.UIKit.UIViewController
 
 /**

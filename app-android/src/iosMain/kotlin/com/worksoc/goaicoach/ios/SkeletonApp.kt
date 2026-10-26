@@ -1,4 +1,4 @@
-package com.worksoc.goaicoach.ui.skeleton
+package com.worksoc.goaicoach.ios
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
