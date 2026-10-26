@@ -1,11 +1,12 @@
 package com.worksoc.goaicoach.ios
 
 import com.worksoc.goaicoach.GoCoachProcessRuntime
-import com.worksoc.goaicoach.application.analysis.NoopPositionAnalysisCacheStore
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.engine.EngineBootstrap
 import com.worksoc.goaicoach.engine.android.IosEngineCoreApiFactory
 import com.worksoc.goaicoach.engine.android.KataGoProcessConfig
+import com.worksoc.goaicoach.kv.IosAppFileStore
+import com.worksoc.goaicoach.kv.KvPositionAnalysisCacheStore
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSApplicationSupportDirectory
@@ -17,8 +18,8 @@ import platform.Foundation.NSUserDomainMask
 
 /**
  * iOS 앱의 엔진 묶음(백로그 #294 — 이식 계획 S30) — 안드로이드와 **같은** [GoCoachProcessRuntime]이다(세션 클라이언트 · 지연 엔진 · 세대 중계 ·
- * 프로세스에 한 번 도는 부트스트랩). 다른 것은 재료뿐이다: 엔진은 앱 안 KataGo(#293), 진단 로그는 [diagnosticEventLog](안드로이드와 같은 파일),
- * 분석 캐시는 아직 없다(no-op).
+ * 프로세스에 한 번 도는 부트스트랩). 다른 것은 재료뿐이다: 엔진은 앱 안 KataGo(#293), 진단 로그는 [diagnosticEventLog] · 분석 캐시는
+ * `KvPositionAnalysisCacheStore` — 둘 다 안드로이드와 같은 파일 · 같은 JSON.
  *
  * 모델 · 설정을 찾는 차례: ① 환경 변수(`GOCOACH_KATAGO_MODEL` · `…_HUMAN_MODEL` · `…_CONFIG` · `…_ANALYSIS_CONFIG` — 시뮬레이터에서 맥의 파일을
  * 그대로 읽는다, `make ios-run`) ② 앱 묶음의 `appassets/katago/`(모델을 싣는 방식은 #293 남은 일) ③ 없으면 스텁 — 「엔진 아직」 흐름을 탄다.
@@ -29,7 +30,7 @@ import platform.Foundation.NSUserDomainMask
  */
 internal fun iosProcessRuntime(diagnosticEventLog: DiagnosticEventLogPort): GoCoachProcessRuntime = GoCoachProcessRuntime(
     diagnosticEventLog = diagnosticEventLog,
-    positionAnalysisCacheStore = NoopPositionAnalysisCacheStore,
+    positionAnalysisCacheStore = KvPositionAnalysisCacheStore(IosAppFileStore()),
     createBootstrap = { createIosEngineBootstrap() },
     remoteEngineUrl = null,
 )

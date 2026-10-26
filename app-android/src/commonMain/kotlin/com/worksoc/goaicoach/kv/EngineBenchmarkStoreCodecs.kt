@@ -154,10 +154,3 @@ internal class KvDebugReportMirrorStore(private val files: AppFileStore) : Debug
         files.writeAtomically("last_debug_report.txt", report)
     }
 }
-
-// 안드로이드 `middleware/JsonNullableExtensions.kt`의 공용 사본 — 이 파일의 코덱만 쓴다.
-private fun JSONObject.optNullableInt(name: String): Int? = if (isNull(name) || !has(name)) null else optInt(name)
-
-private fun JSONObject.optNullableLong(name: String): Long? = if (isNull(name) || !has(name)) null else optLong(name)
-
-private fun JSONObject.optNullableDouble(name: String): Double? = if (isNull(name) || !has(name)) null else optDouble(name)
