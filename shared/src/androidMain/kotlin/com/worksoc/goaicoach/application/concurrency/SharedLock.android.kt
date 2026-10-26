@@ -1,6 +1,6 @@
 package com.worksoc.goaicoach.application.concurrency
 
-internal actual fun sharedLock(): SharedLock = MonitorSharedLock()
+actual fun sharedLock(): SharedLock = MonitorSharedLock()
 
 private class MonitorSharedLock : SharedLock {
     private val monitor = Any()

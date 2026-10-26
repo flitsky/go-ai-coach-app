@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.guide.GuideProgress
+import com.worksoc.goaicoach.application.guide.GuideProgressStorePort
 import com.worksoc.goaicoach.application.guide.GuideStep
 
 /**
@@ -31,10 +32,10 @@ import com.worksoc.goaicoach.application.guide.GuideStep
  * 그쪽은 초기화 마커라 프로세스가 죽으면 초기화가 한 번 더 돌아 `commit()`을 썼다. 여기서 유실의
  * 대가는 **안내를 한 번 더 보는 것**뿐이라 메인 스레드를 막을 이유가 없다.
  */
-internal class GuideProgressStore(context: Context) {
+internal class GuideProgressStore(context: Context) : GuideProgressStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun load(): GuideProgress = GuideProgress(
+    override fun load(): GuideProgress = GuideProgress(
         armed = prefs.getBoolean(ArmedKey, false),
         // ⚠️ `getStringSet`이 돌려주는 집합을 그대로 들고 있지 말 것 — 안드로이드 문서가 그 인스턴스를
         // 수정하지 말라고 못박고, 구현이 내부 집합을 그대로 돌려주는 버전도 있다. 사본을 만든다.
@@ -42,11 +43,11 @@ internal class GuideProgressStore(context: Context) {
     )
 
     /** 첫 실행 처리를 거쳤다(`FirstRunGate`, #140 — 전에는 랜딩을 끝낼 때). 이 시점부터 자동 재생이 무장된다. */
-    fun arm() {
+    override fun arm() {
         prefs.edit().putBoolean(ArmedKey, true).apply()
     }
 
-    fun markSeen(step: GuideStep) {
+    override fun markSeen(step: GuideStep) {
         val next = load().seenSteps + step.id
         prefs.edit().putStringSet(SeenStepsKey, next).apply()
     }

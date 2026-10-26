@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import androidx.core.content.edit
 import com.worksoc.goaicoach.application.dailyquote.DailyQuoteProgress
+import com.worksoc.goaicoach.application.dailyquote.DailyQuoteStorePort
 
 /**
  * 「오늘의 한 줄 명언」의 진행도(백로그 #273) — 섞은 차례와 이미 보인 명언을 **따로** 둔다(사용자 2026-10-20). 판정은 shared의 `pickDailyQuote` 한 곳이다.
@@ -16,10 +17,10 @@ import com.worksoc.goaicoach.application.dailyquote.DailyQuoteProgress
  * (`LayeringContractTest.releaseResetClearsEntitlementsOnlyAndSparesUserContent`).
  * ⚠️ 명언 id는 저장값이다 — `DailyQuoteCatalog`의 id를 바꾸면 그 명언을 본 기록이 끊긴다(함정 1과 같은 결).
  */
-internal class DailyQuoteStore(context: Context) {
+internal class DailyQuoteStore(context: Context) : DailyQuoteStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun load(): DailyQuoteProgress = DailyQuoteProgress(
+    override fun load(): DailyQuoteProgress = DailyQuoteProgress(
         order = prefs.getString(OrderKey, null).toIds(),
         shown = prefs.getString(ShownKey, null).toIds().toSet(),
         todayDay = prefs.getLong(TodayDayKey, NoDay).takeIf { it != NoDay },
@@ -27,7 +28,7 @@ internal class DailyQuoteStore(context: Context) {
         dismissedDay = prefs.getLong(DismissedDayKey, NoDay).takeIf { it != NoDay },
     )
 
-    fun save(progress: DailyQuoteProgress) {
+    override fun save(progress: DailyQuoteProgress) {
         prefs.edit {
             putString(OrderKey, progress.order.joinToString(Separator))
             putString(ShownKey, progress.shown.joinToString(Separator))

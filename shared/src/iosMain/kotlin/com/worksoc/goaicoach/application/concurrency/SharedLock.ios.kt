@@ -2,7 +2,7 @@ package com.worksoc.goaicoach.application.concurrency
 
 import platform.Foundation.NSLock
 
-internal actual fun sharedLock(): SharedLock = NsSharedLock()
+actual fun sharedLock(): SharedLock = NsSharedLock()
 
 private class NsSharedLock : SharedLock {
     private val lock = NSLock()

@@ -425,6 +425,12 @@ kotlin {
             implementation(libs.compose.mp.foundation)
             implementation(libs.compose.mp.ui)
             implementation(libs.compose.mp.material3)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
+        }
+        if (enableIosTargets) {
+            iosMain.dependencies {
+                implementation(libs.compose.mp.ui.backhandler)
+            }
         }
         // 테스트는 예전 자리 그대로 안드로이드 JVM 단위 테스트 · 계기 테스트로 돈다 — commonMain의 internal도 본다.
         // 모듈 사이 테스트 코드 공유(리팩토링 백로그 #71). 사유와 대안 기각 근거는
@@ -469,6 +475,12 @@ aboutLibraries {
     offlineMode = true
     collect {
         configPath = file("config/aboutlibraries")
+    }
+    // KMP 전환(백로그 #294 W0)이 끌어온 JetBrains Compose Multiplatform · lifecycle 모듈은 안드로이드에서 **코드 없는 안내 모듈**이다
+    // (Gradle이 같은 이름의 androidx 라이브러리로 풀고, 그 androidx 쪽은 이미 목록에 있다). 그래서 안드로이드 목록에서는 뺀다 —
+    // 빼지 않으면 같은 라이브러리가 두 이름으로 24줄 는다. iOS에서는 진짜 코드라 iOS 목록이 따로 싣는다.
+    library {
+        exclusionPatterns.add(Regex("""org\.jetbrains\.(compose|androidx)\..*""").toPattern())
     }
 }
 

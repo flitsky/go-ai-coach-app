@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import androidx.core.content.edit
 import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneProgress
+import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneStorePort
 
 /**
  * 실험실 「오늘의 운세」의 진행도(백로그 #276) — 그날 뽑은 랜덤 운세(카탈로그 순번)와 갱신 횟수. 판정은 shared의 `DailyFortune.kt` 한 곳이다.
@@ -14,16 +15,16 @@ import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneProgress
  * 권한이 아니라 정식 릴리즈 초기화(함정 6)는 건드리지 않는다 — 지워도 그날 다시 뽑을 수 있을 뿐이다.
  * ⚠️ 순번은 `DailyFortuneCatalog.fortunes`의 자리다 — 출시 뒤에는 새 글을 맨 끝에만 더한다(그 KDoc).
  */
-internal class DailyFortuneStore(context: Context) {
+internal class DailyFortuneStore(context: Context) : DailyFortuneStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun load(): DailyFortuneProgress = DailyFortuneProgress(
+    override fun load(): DailyFortuneProgress = DailyFortuneProgress(
         day = prefs.getLong(DayKey, NoValue).takeIf { it != NoValue },
         fortuneIndex = prefs.getInt(FortuneIndexKey, NoIndex).takeIf { it != NoIndex },
         refreshesUsed = prefs.getInt(RefreshesUsedKey, 0),
     )
 
-    fun save(progress: DailyFortuneProgress) {
+    override fun save(progress: DailyFortuneProgress) {
         prefs.edit {
             putLong(DayKey, progress.day ?: NoValue)
             putInt(FortuneIndexKey, progress.fortuneIndex ?: NoIndex)

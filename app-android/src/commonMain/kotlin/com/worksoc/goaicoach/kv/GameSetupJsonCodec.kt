@@ -1,0 +1,99 @@
+package com.worksoc.goaicoach.kv
+
+// 안드로이드 `persistence/GameSetupJsonCodec.kt`의 공용 사본(백로그 #294 — P2) —  import만 바꿨다(org.json → kv.json). 고칠 때는 둘을 함께 고친다(`KvStoreParityTest`).
+
+import com.worksoc.goaicoach.kv.json.JSONArray
+import com.worksoc.goaicoach.kv.json.JSONObject
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.BoardSize
+import com.worksoc.goaicoach.shared.domain.DefaultKomi
+import com.worksoc.goaicoach.shared.domain.GameSetup
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+
+/**
+ * 판 정체성([GameSetup])의 저장 키 네 개 — 이어하기([SavedGameSessionCodec])와 대국 기록 index([GameHistoryIndexCodec])가
+ * **이 한 곳으로만** 쓰고 읽는다(refactor backlog #22). 예전에는 두 코덱이 네 키를 각자 손으로 적어, 한쪽이 덤을
+ * 빠뜨려도 컴파일이 통과했다(#1).
+ *
+ * ⚠️ **키 이름·없는 키의 기본값·넣는 순서가 전부 저장 포맷이다**(함정 69 — 스키마 번호는 올리지 않는다).
+ * - 이름: 두 저장분 모두 `boardSize`·`ruleset`·`handicapCount`·`komi`. 룰은 enum 상수 이름이다(함정 1).
+ * - 기본값: 판 크기 9·룰 일본·접바둑 0·덤 [DefaultKomi]. 덤 키가 없던 옛 이어하기(`40c4975c` 이전)는 줄곧 6.5로
+ *   되살아났으므로 6.5여야 같은 판이 이어진다. 접바둑 키가 없던 첫 형식(`25269f04`)은 호선이다.
+ * - **순서**: 기기의 `JSONObject`는 넣은 순서대로 쓴다. 두 저장분이 네 키를 넣어 온 순서가 달라서([Order]),
+ *   순서를 하나로 맞추면 같은 상태의 저장 바이트가 달라진다. `DeviceGameSetupStorageGoldenTest`가 기기 바이트를 고정한다.
+ *
+ * 새 칸을 [GameSetup]에 더하면 `GameSetupJsonCodecTest`가 이 파일에 키가 없다고 빨개진다 — 키를 더하고, 그 키가
+ * 없는 옛 저장분을 무엇으로 읽을지 기본값을 정할 것.
+ *
+ * 시작 배치 두 키(`setupStones` · `firstPlayer`, 백로그 #266)는 **시작 배치가 있을 때만** 쓴다 — 보통의 판은 저장 바이트가
+ * 예전과 한 바이트도 다르지 않다(기기 골든 그대로). 없으면 빈 배치 · 접바둑이면 백, 아니면 흑으로 읽는다(옛 저장분 전부가 그랬다).
+ * 돌은 `[["B","D4"], …]` — GTP 좌표 이름(판 크기에 따라 읽는다).
+ */
+internal object GameSetupJsonCodec {
+    const val BoardSizeKey = "boardSize"
+    const val RulesetKey = "ruleset"
+    const val HandicapCountKey = "handicapCount"
+    const val KomiKey = "komi"
+    const val SetupStonesKey = "setupStones"
+    const val FirstPlayerKey = "firstPlayer"
+
+    /** 저장분마다 네 키를 넣어 온 순서. 바꾸면 그 저장분의 기기 바이트가 바뀐다. */
+    enum class Order {
+        /** 이어하기(`active_game_snapshot`): 판 크기·룰·접바둑·덤. */
+        HandicapThenKomi,
+
+        /** 대국 기록 `index.json`의 한 줄: 판 크기·룰·덤·접바둑. */
+        KomiThenHandicap,
+    }
+
+    fun write(json: JSONObject, setup: GameSetup, order: Order): JSONObject {
+        json.put(BoardSizeKey, setup.boardSize.value)
+        json.put(RulesetKey, setup.ruleset.name)
+        when (order) {
+            Order.HandicapThenKomi -> {
+                json.put(HandicapCountKey, setup.handicapCount)
+                json.put(KomiKey, setup.komi)
+            }
+            Order.KomiThenHandicap -> {
+                json.put(KomiKey, setup.komi)
+                json.put(HandicapCountKey, setup.handicapCount)
+            }
+        }
+        if (setup.setupStones.isNotEmpty()) {
+            val stones = JSONArray()
+            setup.setupStones.entries
+                .sortedWith(compareBy({ it.key.row }, { it.key.column }))
+                .forEach { (coordinate, color) -> stones.put(JSONArray().put(color.code()).put(coordinate.label(setup.boardSize))) }
+            json.put(SetupStonesKey, stones)
+            json.put(FirstPlayerKey, setup.firstPlayer.code())
+        }
+        return json
+    }
+
+    /** 지원하지 않는 판 크기면 던진다(`BoardSize`) — 두 코덱 모두 그 저장분 하나를 버리는 쪽으로 받는다. */
+    fun read(json: JSONObject): GameSetup {
+        val boardSize = BoardSize(json.optInt(BoardSizeKey, BoardSize.Nine.value))
+        val handicapCount = json.optInt(HandicapCountKey, 0)
+        val setupStones = buildMap {
+            json.optJSONArray(SetupStonesKey)?.let { stones ->
+                for (i in 0 until stones.length()) {
+                    val pair = stones.getJSONArray(i)
+                    put(BoardCoordinate.fromLabel(pair.getString(1), boardSize), colorOf(pair.getString(0)))
+                }
+            }
+        }
+        return GameSetup(
+            boardSize = boardSize,
+            ruleset = enumOrDefault(json.optString(RulesetKey), Ruleset.Japanese),
+            handicapCount = handicapCount,
+            komi = json.optDouble(KomiKey, DefaultKomi),
+            setupStones = setupStones,
+            firstPlayer = json.optString(FirstPlayerKey).takeIf { it.isNotEmpty() }?.let(::colorOf) ?: GameSetup.firstPlayerFor(handicapCount),
+        )
+    }
+
+    private fun StoneColor.code(): String = if (this == StoneColor.Black) "B" else "W"
+
+    private fun colorOf(code: String): StoneColor = if (code == "W") StoneColor.White else StoneColor.Black
+}

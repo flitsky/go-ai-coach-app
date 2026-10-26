@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
-import com.worksoc.goaicoach.application.debugreport.UserNoticePort
 
 internal class AndroidClipboardPort(
     context: Context,
@@ -26,10 +25,16 @@ internal class AndroidClipboardPort(
 
 internal class AndroidUserNoticePort(
     context: Context,
-) : UserNoticePort {
+) : AppNotice {
     private val appContext = context.applicationContext
 
     override fun showShort(message: String) {
         Toast.makeText(appContext, message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun show(message: String, long: Boolean): NoticeHandle {
+        val toast = Toast.makeText(appContext, message, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT)
+        toast.show()
+        return NoticeHandle { toast.cancel() }
     }
 }

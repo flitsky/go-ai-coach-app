@@ -146,6 +146,8 @@ internal object StandardTypes {
         "kotlin.UByte", "kotlin.UShort", "kotlin.UInt", "kotlin.ULong",
         "kotlin.Unit",
         "kotlin.time.Duration", "kotlin.time.Instant",
+        // 닫힌 정수 구간 — 불변 값이다(`GuideStep.shownInVersions`, 안내 진행도 포트가 #294 W5에 생기며 폐포에 들어왔다).
+        "kotlin.ranges.IntRange",
     )
 
     private val CONTAINERS = setOf(

@@ -92,4 +92,6 @@ private fun requestedPageId(): String? =
 internal val PortCatalogPages: List<PortCatalogPage> = listOf(
     PortCatalogPage(id = "skeleton", title = "뼈대 첫 화면", wave = "#292") { SkeletonApp() },
     PortCatalogPage(id = "design-tokens", title = "디자인 값 — 색 · 급수 배지 · 대국 버튼", wave = "W2") { CatalogDesignTokens() },
+    PortCatalogPage(id = "platform-seams", title = "플랫폼 이음매 — 알림 · 뒤로가기 · 빌드 정보 · 서식", wave = "W4") { CatalogPlatformSeams() },
+    PortCatalogPage(id = "stores", title = "저장소 — NSUserDefaults · 파일(껐다 켜도 남는가)", wave = "P1~P3") { CatalogStores() },
 )

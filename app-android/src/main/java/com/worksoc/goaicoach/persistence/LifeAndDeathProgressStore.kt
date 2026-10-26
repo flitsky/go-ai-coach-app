@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import androidx.core.content.edit
+import com.worksoc.goaicoach.application.guide.LifeAndDeathProgressPort
 
 /**
  * 「기본 사활」에서 **스스로 푼 문제**의 기록(백로그 #184) — 문제 id의 집합 하나다. 「정답 보기」로 본 것은 넣지 않는다.
@@ -14,14 +15,14 @@ import androidx.core.content.edit
  * 풀게 할 이유가 없다). `LayeringContractTest.releaseResetClearsEntitlementsOnlyAndSparesUserContent`가 이 판단을 못박는다.
  * ⚠️ 문제 id는 저장값이다 — `lifeAndDeathProblems`의 id를 바꾸면 그 문제를 푼 기록이 끊긴다(함정 1과 같은 결).
  */
-internal class LifeAndDeathProgressStore(context: Context) {
+internal class LifeAndDeathProgressStore(context: Context) : LifeAndDeathProgressPort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun solved(): Set<String> =
+    override fun solved(): Set<String> =
         prefs.getString(SolvedKey, null)?.split(Separator)?.filter { it.isNotBlank() }?.toSet().orEmpty()
 
     /** [problemId]를 푼 것으로 남기고, 남긴 뒤의 집합을 돌려준다(화면이 그것으로 다시 그린다 — 함정 13). */
-    fun markSolved(problemId: String): Set<String> {
+    override fun markSolved(problemId: String): Set<String> {
         val next = solved() + problemId
         prefs.edit { putString(SolvedKey, next.sorted().joinToString(Separator)) }
         return next

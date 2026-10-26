@@ -65,9 +65,7 @@ class LayeringContractTest {
      */
     @Test
     fun applicationDiagnosticSinkDoesNotDependOnEngineAndroidRuntime() {
-        val checkedDirs = listOf(
-            RepoPaths.appAndroid("application"),
-        )
+        val checkedDirs = RepoPaths.appAndroidDirs("application")
         val forbiddenImports = listOf(
             importOf(ENGINE_ANDROID_RUNTIME_PACKAGE),
         )
@@ -99,7 +97,7 @@ class LayeringContractTest {
      */
     @Test
     fun platformAdaptersDoNotImportComposeUiOrComposition() {
-        val files = ktFilesIn(RepoPaths.appAndroid("platform"))
+        val files = ktFilesIn(*RepoPaths.appAndroidDirs("platform").toTypedArray())
         val forbiddenImports = listOf(
             "import androidx.compose.",
             importOf(UI_PACKAGE),
@@ -409,6 +407,8 @@ class LayeringContractTest {
             "ReleaseResetCoordinator.kt",
             // #110: 엔진 묶음의 프로세스 수명 소유자 — MainActivity의 엔진 조립을 옮겨 왔다. 조립만 한다.
             "GoCoachProcessRuntime.kt",
+            // #294 S1: 화면이 쓰는 플랫폼 묶음 — 이미 있던 어댑터를 만들어 묶기만 한다(공용 화면은 LocalAppPlatform으로 읽는다).
+            "AndroidAppPlatform.kt",
             // #26: ui/에서 옮겨 온 배선.
             "GameExitRecording.kt",
             "GameLifecycleControllerWiring.kt",
@@ -1142,10 +1142,9 @@ class LayeringContractTest {
     @Test
     fun positionAnalysisGatewayContractsStayKmpReadyAndTransportFree() {
         val repoRoot = RepoPaths.root
-        val middlewareRoot = RepoPaths.appAndroid("middleware")
         val contracts = listOf(
-            middlewareRoot.resolve("PositionAnalysisGateway.kt"),
-            middlewareRoot.resolve("RemotePositionAnalysisGateway.kt"),
+            RepoPaths.appAndroid("middleware/PositionAnalysisGateway.kt"),
+            RepoPaths.appAndroid("middleware/RemotePositionAnalysisGateway.kt"),
         )
         val forbiddenImports = listOf(
             "import android.",

@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.persistence
 import android.content.Context
 import android.content.SharedPreferences
 import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
+import com.worksoc.goaicoach.application.profile.UserProfileStorePort
 
 /**
  * 사용자가 자기 자신에게 붙인 이름(백로그 #165). 앱 어디에도 **사용자 자신을 가리키는
@@ -29,13 +30,13 @@ import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
  */
 internal class UserProfileStore internal constructor(
     private val prefs: SharedPreferences,
-) {
+) : UserProfileStorePort {
     constructor(context: Context) : this(
         context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE),
     )
 
     /** 저장된 닉네임. 한 번도 지은 적이 없으면 `null`(빈 문자열도 `null`로 접는다). */
-    fun nickname(): String? = prefs.getString(NicknameKey, null)?.takeIf { it.isNotBlank() }
+    override fun nickname(): String? = prefs.getString(NicknameKey, null)?.takeIf { it.isNotBlank() }
 
     /**
      * 닉네임을 저장한다. 무엇을 남길지는 [UserNicknamePolicy.sanitize]가 정한다(앞뒤 공백을 걷고
@@ -44,7 +45,7 @@ internal class UserProfileStore internal constructor(
      * ⚠️ **그 결과가 `null`이면 지운다** — 사용자가 다 지우고 확인하면 「이름 없음」으로
      * 되돌아가야 한다. 빈 문자열을 그대로 저장하면 원 안에 아무것도 없는 아바타가 남는다.
      */
-    fun saveNickname(raw: String) {
+    override fun saveNickname(raw: String) {
         val sanitized = UserNicknamePolicy.sanitize(raw)
         prefs.edit().apply {
             if (sanitized == null) remove(NicknameKey) else putString(NicknameKey, sanitized)

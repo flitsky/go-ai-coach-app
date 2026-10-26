@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.platform.AdsConsentManager
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.play.allowsRotation
 import com.worksoc.goaicoach.ui.settings.AppFontScaleState
 import com.worksoc.goaicoach.ui.settings.AppTheme
@@ -63,7 +64,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(preferencesStore) { AppFontScaleState.load(preferencesStore) }
             val baseDensity = LocalDensity.current
             val density = Density(density = baseDensity.density, fontScale = AppFontScaleState.scale)
-            CompositionLocalProvider(LocalDensity provides density) {
+            CompositionLocalProvider(LocalDensity provides density, LocalAppPlatform provides (application as GoAiCoachApplication).appPlatform) {
                 // ⚠️ **여기에 준비 화면이 있었다**(백로그 #101, 2026-09-05 제거). `engineBootstrap`이
                 // null인 동안 앱 전체를 막고 *"준비 중…"* 을 그렸는데, 최초 실행에는 약 100MB 모델
                 // 복사가 돌아 **몇 초 동안 사용자가 아무것도 못 했다.**

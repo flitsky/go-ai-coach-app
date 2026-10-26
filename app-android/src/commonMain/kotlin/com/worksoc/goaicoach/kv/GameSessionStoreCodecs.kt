@@ -1,0 +1,112 @@
+package com.worksoc.goaicoach.kv
+
+// 안드로이드 `persistence/GameSessionStore.kt`의 공용 사본(백로그 #294 — P2) — 저장소 클래스를 빼고 코덱만, import만 바꿨다(org.json → kv.json). 고칠 때는 둘을 함께 고친다(`KvStoreParityTest`).
+
+import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
+import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
+import com.worksoc.goaicoach.application.score.FinalScoreJudgement
+import com.worksoc.goaicoach.kv.PlayerSetupJsonCodec.decodePlayLevel
+import com.worksoc.goaicoach.kv.PlayerSetupJsonCodec.decodePlayerSetup
+import com.worksoc.goaicoach.kv.PlayerSetupJsonCodec.encodePlayLevel
+import com.worksoc.goaicoach.kv.PlayerSetupJsonCodec.encodePlayerSetup
+import com.worksoc.goaicoach.kv.json.JSONArray
+import com.worksoc.goaicoach.kv.json.JSONObject
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
+import com.worksoc.goaicoach.shared.domain.GameSetup
+import com.worksoc.goaicoach.shared.domain.GameStateReplayer
+import com.worksoc.goaicoach.shared.domain.Move
+import com.worksoc.goaicoach.shared.domain.Ruleset
+import com.worksoc.goaicoach.shared.domain.StoneColor
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
+import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
+
+/**
+ * 진행 중 대국("이어하기")의 JSON 코덱.
+ *
+ * 판 정체성(판 크기·룰·접바둑·덤)은 [GameSetup] **하나**로 왕복한다(refactor backlog #22) — encode는
+ * `gameState.setup`을 [GameSetupJsonCodec]에 넘기고, decode는 그것이 읽은 값을 [GameStateReplayer.replay]에
+ * 그대로 준다. 예전에는 네 값을 하나씩 골라 담아 덤 하나가 빠져도 컴파일이 통과했고, 덤을 0.5나 7.5로 고른
+ * 사용자가 이어하기를 하면 조용히 6.5로 돌아갔다(2026-09-23 `40c4975c`, #1).
+ *
+ * ⚠️ **[SchemaVersion]은 등호 검사다**(아래 decode). 번호를 올리면 저장된 대국이 통째로
+ * 버려진다 — 새 필드는 `optXxx(키, 기존 기본값)` 흡수로만 더한다.
+ */
+internal object SavedGameSessionCodec {
+    private const val SchemaVersion = 1
+
+    fun encode(snapshot: SavedGameSnapshot): String =
+        JSONObject()
+            .put("schema", SchemaVersion)
+            .put("savedAtMillis", snapshot.savedAtMillis)
+            .also { json ->
+                GameSetupJsonCodec.write(json, snapshot.gameState.setup, GameSetupJsonCodec.Order.HandicapThenKomi)
+            }
+            .put("moves", ReplayJsonCodec.encodeMoves(snapshot.gameState.moves, snapshot.gameState.boardSize))
+            .put("playerSetup", encodePlayerSetup(snapshot.playerSetup))
+            .put("playLevel", encodePlayLevel(snapshot.playLevel))
+            .put("topMovesEnabled", snapshot.topMovesEnabled)
+            .put("scoreSnapshots", ReplayJsonCodec.encodeScoreSnapshots(snapshot.scoreSnapshots))
+            .put("finalScoreJudgement", snapshot.finalScoreJudgement?.let(::encodeFinalScoreJudgement) ?: JSONObject.NULL)
+            .toString()
+
+    fun decode(raw: String): SavedGameSnapshot? =
+        runCatching {
+            val json = JSONObject(raw)
+            if (json.optInt("schema", SchemaVersion) != SchemaVersion) {
+                return@runCatching null
+            }
+            // ⚠️ 없는 키의 기본값(덤 키가 없던 옛 저장분은 6.5 등)은 [GameSetupJsonCodec.read]가 갖는다 — 스키마 번호를
+            // 올리지 않고 옛 데이터를 그대로 잇는 규칙이다(함정 69).
+            val setup = GameSetupJsonCodec.read(json)
+            val moves = ReplayJsonCodec.decodeMoves(json.optJSONArray("moves") ?: JSONArray(), setup.boardSize)
+            val gameState = GameStateReplayer.replay(setup = setup, moves = moves)
+            val scoreSnapshots = ReplayJsonCodec.decodeScoreSnapshots(json.optJSONArray("scoreSnapshots") ?: JSONArray())
+            SavedGameSnapshot(
+                gameState = gameState,
+                playerSetup = decodePlayerSetup(json.optJSONObject("playerSetup")),
+                playLevel = decodePlayLevel(json.optJSONObject("playLevel")),
+                topMovesEnabled = json.optBoolean("topMovesEnabled", false),
+                savedAtMillis = json.optLong("savedAtMillis", 0L),
+                scoreSnapshots = scoreSnapshots,
+                finalScoreJudgement = json.optJSONObject("finalScoreJudgement")?.let(::decodeFinalScoreJudgement),
+            )
+        }.getOrNull()
+
+    private fun encodeFinalScoreJudgement(judgement: FinalScoreJudgement): JSONObject =
+        JSONObject()
+            .put("winner", judgement.winner?.name ?: JSONObject.NULL)
+            .put("margin", judgement.margin ?: JSONObject.NULL)
+            .put("ruleset", judgement.ruleset.name)
+            .put("isEstimatedDisplay", judgement.isEstimatedDisplay)
+            .put("removedBlack", judgement.removedBlack)
+            .put("removedWhite", judgement.removedWhite)
+            .put("blackArea", judgement.blackArea ?: JSONObject.NULL)
+            .put("whiteAreaWithKomi", judgement.whiteAreaWithKomi ?: JSONObject.NULL)
+            .put("capturedByBlack", judgement.capturedByBlack)
+            .put("capturedByWhite", judgement.capturedByWhite)
+            .put("komi", judgement.komi ?: JSONObject.NULL)
+            .put("handicapCount", judgement.handicapCount)
+            .put("whiteHandicapBonus", judgement.whiteHandicapBonus)
+
+    private fun decodeFinalScoreJudgement(json: JSONObject): FinalScoreJudgement =
+        FinalScoreJudgement(
+            winner = if (json.isNull("winner")) null else enumOrDefault(json.optString("winner"), StoneColor.Black),
+            margin = if (json.isNull("margin")) null else json.optDouble("margin"),
+            ruleset = enumOrDefault(json.optString("ruleset"), Ruleset.Japanese),
+            isEstimatedDisplay = json.optBoolean("isEstimatedDisplay", false),
+            removedBlack = json.optInt("removedBlack", 0),
+            removedWhite = json.optInt("removedWhite", 0),
+            blackArea = if (json.isNull("blackArea")) null else json.optDouble("blackArea"),
+            whiteAreaWithKomi = if (json.isNull("whiteAreaWithKomi")) null else json.optDouble("whiteAreaWithKomi"),
+            capturedByBlack = json.optInt("capturedByBlack", 0),
+            capturedByWhite = json.optInt("capturedByWhite", 0),
+            komi = if (json.isNull("komi")) null else json.optDouble("komi"),
+            handicapCount = json.optInt("handicapCount", 0),
+            // ⚠️ 기본값은 반드시 0이다(#89) — 이 키가 없던 옛 판정은 보정 없이 계가됐으므로 0이어야
+            // 그 판정의 백 합계(whiteAreaWithKomi)와 맞는다. 스키마 번호는 올리지 않는다(함정 69).
+            // 거꾸로 새 저장본을 옛 코드가 읽어도 깨지지 않는다 — 이 decode는 키를 이름으로만 꺼내고
+            // 모르는 키는 보지 않으며, 스키마 번호가 그대로라 등호 검사도 통과한다.
+            whiteHandicapBonus = json.optDouble("whiteHandicapBonus", 0.0),
+        )
+
+}

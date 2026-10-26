@@ -27,6 +27,9 @@ class GoAiCoachApplication : Application() {
      */
     internal val processRuntime: GoCoachProcessRuntime by lazy { GoCoachProcessRuntime.forApplication(this) }
 
+    /** 화면이 쓰는 플랫폼 묶음(백로그 #294 — S1) — 프로세스에 하나. `MainActivity`가 `LocalAppPlatform`으로 컴포지션에 넣는다. */
+    internal val appPlatform: AndroidAppPlatform by lazy { AndroidAppPlatform(this) }
+
     /** 앱 배경음악(백로그 #244) — 프로세스에 하나. 전면 광고 동안 멈추려고 광고를 띄우는 곳(`showRewardedAdOnce`)이 여기서 찾는다. */
     internal val backgroundMusic: BackgroundMusicCoordinator by lazy { BackgroundMusicCoordinator(this) }
 

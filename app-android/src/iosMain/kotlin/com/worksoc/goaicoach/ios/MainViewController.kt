@@ -1,6 +1,9 @@
 package com.worksoc.goaicoach.ios
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.window.ComposeUIViewController
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import platform.UIKit.UIViewController
 
 /**
@@ -13,5 +16,13 @@ import platform.UIKit.UIViewController
 fun MainViewController(): UIViewController {
     // 엔진 확인(백로그 #293 — `make ios-engine-probe`)이 요청됐으면 그 화면, 아니면 이식 카탈로그(#294 — 앱 전체가 뜨기 전까지).
     val probe = EngineProbe.requested()
-    return ComposeUIViewController { if (probe != null) EngineProbeScreen(probe) else PortCatalog() }
+    val platform = IosAppPlatform()
+    return ComposeUIViewController {
+        CompositionLocalProvider(LocalAppPlatform provides platform) {
+            Box {
+                if (probe != null) EngineProbeScreen(probe) else PortCatalog()
+                IosNoticeOverlay(platform.notice)
+            }
+        }
+    }
 }

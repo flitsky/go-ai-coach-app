@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.preferences.DeveloperModeStorePort
 
 /**
  * 설정 화면의 버전 텍스트를 10번 두드리면 활성화되는 "개발자 테스트" 섹션 노출 여부를
@@ -9,12 +10,12 @@ import android.content.Context
  * 다시 만들어 저장하는 autosave 패턴이라, 그 흐름에 배선되지 않은 필드는 저장 시점에
  * 조용히 초기값으로 되돌아간다. 이 플래그는 그 위험을 피하기 위해 독립된 저장소를 쓴다.
  */
-internal class DeveloperModeStore(context: Context) {
+internal class DeveloperModeStore(context: Context) : DeveloperModeStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
-    fun isEnabled(): Boolean = prefs.getBoolean(EnabledKey, false)
+    override fun isEnabled(): Boolean = prefs.getBoolean(EnabledKey, false)
 
-    fun setEnabled(enabled: Boolean) {
+    override fun setEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(EnabledKey, enabled).apply()
     }
 
@@ -25,10 +26,10 @@ internal class DeveloperModeStore(context: Context) {
      * 않는다(켜자마자 지우면 사용자가 무슨 일인지 알 수 없다). 즉 이 값을 안 심으면 주기 초기화가
      * **조용히 동작하지 않는다.**
      */
-    fun lastResetUtcMillis(): Long? =
+    override fun lastResetUtcMillis(): Long? =
         prefs.getLong(LastResetKey, NoLastReset).takeIf { it != NoLastReset }
 
-    fun markResetBaseline(utcMillis: Long) {
+    override fun markResetBaseline(utcMillis: Long) {
         prefs.edit().putLong(LastResetKey, utcMillis).apply()
     }
 

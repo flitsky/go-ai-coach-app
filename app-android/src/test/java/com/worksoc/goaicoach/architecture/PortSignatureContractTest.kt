@@ -513,9 +513,10 @@ class PortSignatureContractTest {
         /**
          * 기준선의 계약 수 — `*Port` 인터페이스 21개 + 명시 등록 1개(`PositionAnalysisCacheStore`). `#73` 실측(19 + 1)에
          * `RankMeasureStorePort`(승급 대국의 상태 저장, 백로그 #219 — 2026-10-06)와 `DailyDrawStorePort`(실험실 1일 1회
-         * 뽑기를 마지막으로 뽑은 때, 백로그 #283 — 2026-10-23)가 더해졌다. 포트를 새로 만들거나 지우면 여기를 고친다.
+         * 뽑기를 마지막으로 뽑은 때, 백로그 #283 — 2026-10-23)가 더해졌다. iOS 이식(백로그 #294 W5, 2026-10-27)이 화면이 직접 만들던
+         * 저장소 11개에 포트를 달았다(설정 6 · 명언 · 운세 · 안내 · 사활 · 닉네임). 포트를 새로 만들거나 지우면 여기를 고친다.
          */
-        const val EXPECTED_CONTRACT_COUNT = 22
+        const val EXPECTED_CONTRACT_COUNT = 33
 
         /**
          * 허용한 **함수 타입 매개변수** 자리. ⓐ의 유일한 예외(원자적 갱신의 순수 변환)이고, 모양은 판정기가 재지만

@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.persistence
 
 import android.content.Context
 import com.worksoc.goaicoach.application.lifecycle.ReleaseResetPolicy
+import com.worksoc.goaicoach.application.preferences.ReleaseResetMarkerPort
 
 /**
  * 4계층 — **정식 릴리즈 초기화**가 어느 세대까지 적용됐는지만 담는다(백로그 #63).
@@ -14,14 +15,14 @@ import com.worksoc.goaicoach.application.lifecycle.ReleaseResetPolicy
  * 초기화 직후 프로세스가 죽으면 마커가 유실돼 **다음 실행에서 한 번 더 밀기** 때문이다 —
  * 초기화 자체는 멱등이라 치명적이진 않지만, 그 사이 사용자가 얻은 것이 있으면 잃는다.
  */
-internal class ReleaseResetStore(context: Context) {
+internal class ReleaseResetStore(context: Context) : ReleaseResetMarkerPort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
     /** 지금까지 적용된 초기화 세대. 마커가 없으면 [ReleaseResetPolicy.NoResetApplied]. */
-    fun lastAppliedGeneration(): Int =
+    override fun lastAppliedGeneration(): Int =
         prefs.getInt(GenerationKey, ReleaseResetPolicy.NoResetApplied)
 
-    fun markApplied(generation: Int) {
+    override fun markApplied(generation: Int) {
         prefs.edit()
             .putInt(GenerationKey, generation)
             .commit()
@@ -36,13 +37,13 @@ internal class ReleaseResetStore(context: Context) {
      *
      * ⚠️ 메모리가 아니라 저장소에 두는 이유: 안내를 보기 전에 앱이 죽으면 **영영 못 본다.**
      */
-    fun isNoticePending(): Boolean = prefs.getBoolean(NoticePendingKey, false)
+    override fun isNoticePending(): Boolean = prefs.getBoolean(NoticePendingKey, false)
 
-    fun markNoticePending() {
+    override fun markNoticePending() {
         prefs.edit().putBoolean(NoticePendingKey, true).commit()
     }
 
-    fun clearNoticePending() {
+    override fun clearNoticePending() {
         prefs.edit().putBoolean(NoticePendingKey, false).apply()
     }
 

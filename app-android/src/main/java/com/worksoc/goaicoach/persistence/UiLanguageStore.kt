@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
+import com.worksoc.goaicoach.application.preferences.UiLanguageStorePort
 
 /**
  * 화면 표시 언어 선택을 저장한다(백로그 #34).
@@ -20,13 +21,13 @@ import android.content.Context
  * 저장은 **enum 이름 문자열**로 한다. 값을 못 알아보면(언어가 삭제·개명된 빌드로 롤백 등)
  * `null`을 돌려주고, 호출부는 기본 언어로 시작한다 — 저장된 값 하나 때문에 앱이 죽지 않는다.
  */
-internal class UiLanguageStore(context: Context) {
+internal class UiLanguageStore(context: Context) : UiLanguageStorePort {
     private val prefs = context.applicationContext.getSharedPreferences(PrefsName, Context.MODE_PRIVATE)
 
     /** 저장된 언어 이름. 고른 적이 없거나 알 수 없는 값이면 `null`. */
-    fun loadName(): String? = prefs.getString(LanguageKey, null)
+    override fun loadName(): String? = prefs.getString(LanguageKey, null)
 
-    fun save(languageName: String) {
+    override fun save(languageName: String) {
         prefs.edit().putString(LanguageKey, languageName).apply()
     }
 

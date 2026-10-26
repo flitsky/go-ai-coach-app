@@ -43,6 +43,8 @@ aboutLibraries = "13.2.1"
 # BOM을 올리면 이 두 줄도 그 줄에 맞는 판으로 함께 올린다 — 한쪽만 올리면 #294에서 안드로이드 화면이 다른 판으로 끌려간다.
 composeMultiplatform = "1.9.3"
 composeMultiplatformMaterial3 = "1.9.0"
+# Compose Multiplatform이 이미 끌어오는 판(안드로이드에서는 androidx.lifecycle 2.9.4로 풀린다) — 공용 코드가 생명주기를 직접 쓰려고 적는다(백로그 #294).
+jetbrainsLifecycle = "2.9.6"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -84,6 +86,8 @@ compose-mp-runtime = { module = "org.jetbrains.compose.runtime:runtime", version
 compose-mp-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-mp-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-mp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMultiplatformMaterial3" }
+compose-mp-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
+jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "jetbrainsLifecycle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
