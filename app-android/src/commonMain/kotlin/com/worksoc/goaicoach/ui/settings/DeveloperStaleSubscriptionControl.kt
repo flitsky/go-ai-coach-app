@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.settings
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,12 +10,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import com.worksoc.goaicoach.application.premium.state.PremiumSource
 import com.worksoc.goaicoach.application.premium.state.SubscriptionFreshnessPolicy
-import com.worksoc.goaicoach.persistence.PremiumStateStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsDeveloperStaleSubscription
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
@@ -33,7 +32,7 @@ import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
  */
 @Composable
 internal fun DeveloperStaleSubscriptionControl() {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val language = LocalUiStrings.current.language
     val premium = LocalPremiumUiState.current
     Row(
@@ -51,12 +50,12 @@ internal fun DeveloperStaleSubscriptionControl() {
         }
         TextButton(
             onClick = {
-                val store = PremiumStateStore(context)
-                val staleAt = System.currentTimeMillis() - SubscriptionFreshnessPolicy.ExpireAfterMillis - StaleMarginMillis
+                val store = platform.stores.premiumState
+                val staleAt = currentEpochMillis() - SubscriptionFreshnessPolicy.ExpireAfterMillis - StaleMarginMillis
                 store.save(store.load().copy(source = PremiumSource.Purchase, lastSubscriptionVerifiedAtMillis = staleAt))
                 // 화면의 사본을 되읽는다 — 안 그러면 셸이 든 옛 상태가 남는다(#65와 같은 함정).
                 premium.reload()
-                Toast.makeText(context, UiStringsDeveloperStaleSubscription.done(language), Toast.LENGTH_LONG).show()
+                platform.notice.show(UiStringsDeveloperStaleSubscription.done(language), long = true)
             },
         ) { Text(UiStringsDeveloperStaleSubscription.action(language)) }
     }

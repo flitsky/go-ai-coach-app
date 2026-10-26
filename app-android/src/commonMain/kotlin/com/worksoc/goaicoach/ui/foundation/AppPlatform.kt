@@ -7,6 +7,7 @@ import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
+import com.worksoc.goaicoach.platform.DeveloperTools
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 
 /**
@@ -33,6 +34,9 @@ interface AppPlatform {
 
     /** 앱에 실은 파일(기보 · 참고 대국 — 안드로이드 `assets/`). */
     val assets: BundledAssets
+
+    /** 개발자 메뉴의 초기화 · 진단 손잡이. */
+    val developer: DeveloperTools
 }
 
 /** 루트가 한 번 넣는다(안드로이드 `MainActivity`, iOS `MainViewController`). */

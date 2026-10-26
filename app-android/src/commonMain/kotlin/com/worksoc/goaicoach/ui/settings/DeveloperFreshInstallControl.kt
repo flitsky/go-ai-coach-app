@@ -15,10 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import com.worksoc.goaicoach.restartToFreshInstall
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -42,7 +41,7 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
  */
 @Composable
 internal fun DeveloperFreshInstallControl() {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val strings = LocalUiStrings.current
     var showConfirm by remember { mutableStateOf(false) }
 
@@ -82,7 +81,7 @@ internal fun DeveloperFreshInstallControl() {
                 TextButton(
                     // ⚠️ 토스트를 띄우지 않는다 — 이 줄 다음에 **프로세스가 끝난다.** 띄워 봐야
                     // 보이지 않고, 재시작된 앱의 첫돌이 가이드가 그 자체로 결과를 알린다.
-                    onClick = { restartToFreshInstall(context) },
+                    onClick = { platform.developer.restartToFreshInstall() },
                 ) { Text(strings.settingsDevFreshInstallAction) }
             },
             dismissButton = {

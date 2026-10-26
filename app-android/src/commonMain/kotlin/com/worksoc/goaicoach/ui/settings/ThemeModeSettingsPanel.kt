@@ -16,12 +16,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.persistence.ThemeModeStore
 import com.worksoc.goaicoach.shared.policy.ThemeMode
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.themeModeLabelFor
 import com.worksoc.goaicoach.ui.l10n.themeModeNightHoursHintFor
@@ -36,8 +35,8 @@ import com.worksoc.goaicoach.ui.l10n.themeModeTitleFor
 @Composable
 internal fun ThemeModeSettingsPanel(modifier: Modifier = Modifier) {
     val language = LocalUiStrings.current.language
-    val context = LocalContext.current
-    val store = remember(context) { ThemeModeStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.themeMode }
     val selected by remember(store) { store.modeChanges() }.collectAsState(initial = remember(store) { store.load() })
 
     Surface(

@@ -23,6 +23,7 @@ import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.gamehistory.GameReplayData
 import com.worksoc.goaicoach.kv.GameReplayCodec
 import com.worksoc.goaicoach.kv.iosAppStores
+import com.worksoc.goaicoach.kv.iosWipeToFreshInstall
 import com.worksoc.goaicoach.persistence.ReferenceGameAssetPath
 import com.worksoc.goaicoach.persistence.ReferenceGameBoardSize
 import com.worksoc.goaicoach.platform.AppNotice
@@ -31,6 +32,7 @@ import com.worksoc.goaicoach.platform.AppUpdateStatus
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
+import com.worksoc.goaicoach.platform.DeveloperTools
 import com.worksoc.goaicoach.platform.NoticeHandle
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.platform.isDebugBuild
@@ -77,6 +79,22 @@ internal class IosAppPlatform : AppPlatform {
 
         override fun referenceGameReplay(): GameReplayData? =
             readBytes(ReferenceGameAssetPath)?.decodeToString()?.let { raw -> GameReplayCodec.decode(raw, ReferenceGameBoardSize) }
+
+        // iOS 오픈소스 목록은 따로 만든다(#294 W24 — Compose Multiplatform 등 iOS에서 실제로 싣는 것). 그때까지 빈 목록.
+        override fun licensesJson(): String? = readBytes("licenses/aboutlibraries-ios.json")?.decodeToString()
+    }
+
+    override val developer = object : DeveloperTools {
+        override fun wipeToFreshInstall() = iosWipeToFreshInstall()
+
+        // iOS는 프로세스를 스스로 다시 띄우지 않는다 — 지우기만 하고, 화면은 다음에 들어올 때 새 값을 읽는다.
+        override fun restartToFreshInstall() = iosWipeToFreshInstall()
+
+        override fun runReleaseResetAgain(): Boolean = false
+
+        override fun resetAdConsent() {}
+
+        override fun diagnosticLogText(): String = ""
     }
 
     override val debugArmFiles = DebugArmFiles { name -> isDebugBuild && consumeDocumentsFile(name) }

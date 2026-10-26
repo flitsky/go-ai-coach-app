@@ -26,7 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.BuildConfig
+import com.worksoc.goaicoach.platform.appBuildInfo
+import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.account.FirstDolGuideReplayDialog
 import com.worksoc.goaicoach.ui.account.LocalOnlyDataNoticeDialog
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
@@ -118,7 +119,7 @@ private fun SettingsHelpRow(text: String, onClick: () -> Unit) {
 @Composable
 internal fun SettingsWhatsNewLink() {
     val language = LocalUiStrings.current.language
-    val releases = remember { WhatsNewCatalog.releasesUpTo(if (BuildConfig.DEBUG) Int.MAX_VALUE else BuildConfig.VERSION_CODE) }
+    val releases = remember { WhatsNewCatalog.releasesUpTo(if (isDebugBuild) Int.MAX_VALUE else appBuildInfo.versionCode) }
     if (releases.isEmpty()) return
     var show by remember { mutableStateOf(false) }
     Text(

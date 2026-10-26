@@ -427,6 +427,8 @@ kotlin {
             implementation(libs.compose.mp.material3)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(libs.compose.mp.material.icons.core)
+            // 오픈소스 목록을 읽는 aboutlibraries-core는 멀티플랫폼이다 — 안드로이드는 이미 쓰던 같은 판이다.
+            implementation(libs.aboutlibraries.core)
         }
         if (enableIosTargets) {
             iosMain.dependencies {

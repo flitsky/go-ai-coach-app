@@ -15,11 +15,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import com.worksoc.goaicoach.persistence.BackgroundMusicStore
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.backgroundMusicLabelFor
 
@@ -33,8 +32,8 @@ import com.worksoc.goaicoach.ui.l10n.backgroundMusicLabelFor
 @Composable
 internal fun BackgroundMusicSettingsPanel(modifier: Modifier = Modifier) {
     val language = LocalUiStrings.current.language
-    val context = LocalContext.current
-    val store = remember(context) { BackgroundMusicStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.backgroundMusic }
     var isEnabled by remember(store) { mutableStateOf(store.isEnabled()) }
 
     Surface(

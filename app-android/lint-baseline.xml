@@ -322,7 +322,7 @@
         errorLine1="    var buildInfoTapCount by remember { mutableStateOf(0) }"
         errorLine2="                                        ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/settings/DeveloperTestSection.kt"
+            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/settings/DeveloperTestSection.kt"
             line="95"
             column="41"/>
     </issue>
@@ -388,7 +388,7 @@
         errorLine1="    var versionTapCount by remember { mutableStateOf(0) }"
         errorLine2="                                      ~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/settings/SettingsScreen.kt"
+            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/settings/SettingsScreen.kt"
             line="126"
             column="39"/>
     </issue>
@@ -788,7 +788,7 @@
         errorLine1="                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))"
         errorLine2="                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/com/worksoc/goaicoach/ui/settings/SettingsScreen.kt"
+            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/settings/SettingsScreen.kt"
             line="429"
             column="78"/>
     </issue>

@@ -1,8 +1,5 @@
 package com.worksoc.goaicoach.ui.settings
 
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,23 +33,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.hasDeepSearchingAi
-import com.worksoc.goaicoach.persistence.DeveloperModeStore
-import com.worksoc.goaicoach.platform.GoogleCredentialManagerClient
+import com.worksoc.goaicoach.platform.GoogleIdTokenSource
+import com.worksoc.goaicoach.platform.appBuildInfo
 import com.worksoc.goaicoach.presentation.GameActionButtonRole
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
-import com.worksoc.goaicoach.ui.account.AccountSettingsSection
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
@@ -66,7 +63,6 @@ import com.worksoc.goaicoach.ui.monetization.AdPrivacyOptionsRow
 import com.worksoc.goaicoach.ui.play.LanguageSettingsPanel
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuPanel
 import com.worksoc.goaicoach.ui.setup.SearchTimeSettingsPanel
-import com.worksoc.goaicoach.wipeToFreshInstall
 
 // AdMob·Play Billing 등 Play Console 필수 제출 항목(개인정보처리방침 URL)과 동일한 문서를
 // 가리킨다 — Play Console "앱 콘텐츠" 폼에도 이 URL을 별도로 등록해야 한다(코드 배선과
@@ -110,7 +106,7 @@ private const val DeveloperModeTapCountdownThreshold = 5
 @Composable
 internal fun SettingsScreen(
     authClient: AuthClientPort,
-    credentialManagerClient: GoogleCredentialManagerClient,
+    credentialManagerClient: GoogleIdTokenSource,
     diagnosticEventLog: DiagnosticEventLogPort,
     screenState: GameScreenState,
     onEvent: (GameUiEvent) -> Unit,
@@ -120,8 +116,9 @@ internal fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
-    val developerModeStore = remember(context) { DeveloperModeStore(context) }
+    val platform = LocalAppPlatform.current
+    val uriHandler = LocalUriHandler.current
+    val developerModeStore = remember(platform) { platform.stores.developerMode }
     var isDeveloperModeEnabled by remember { mutableStateOf(developerModeStore.isEnabled()) }
     // ⚠️ **2차는 저장하지 않는다**(백로그 #77). 1차와 달리 `DeveloperModeStore`에 남기지 않으므로
     // 화면을 벗어나거나 앱을 다시 켜면 꺼진다 — 한 번 켠 기기가 영구히 열린 상태로 남지 않게
@@ -240,7 +237,7 @@ internal fun SettingsScreen(
             if (FeatureFlags.isLoginEnabled) {
                 Spacer(modifier = Modifier.height(AppSpacing.Space4))
                 HorizontalDivider()
-                AccountSettingsSection(
+                AccountSettingsSlot(
                     authClient = authClient,
                     credentialManagerClient = credentialManagerClient,
                     diagnosticEventLog = diagnosticEventLog,
@@ -272,8 +269,8 @@ internal fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(AppSpacing.Space4))
                     Text(
-                        text = "${strings.settingsVersionLabel} ${BuildConfig.VERSION_NAME} · " +
-                            "${strings.settingsBuildTimeLabel} ${BuildConfig.BUILD_TIME}",
+                        text = "${strings.settingsVersionLabel} ${appBuildInfo.versionName} · " +
+                            "${strings.settingsBuildTimeLabel} ${appBuildInfo.buildTime}",
                         fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         // ⚠️ **다시 `clickable`이다 — 홀드 감지를 걷어냈다**(2026-09-04, #84).
@@ -297,11 +294,7 @@ internal fun SettingsScreen(
                                 versionTapCount = 0
                                 showDeveloperModeOptIn = true
                             } else if (remainingTaps <= DeveloperModeTapCountdownThreshold) {
-                                Toast.makeText(
-                                    context,
-                                    strings.settingsDeveloperModeCountdownMessage(remainingTaps),
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                platform.notice.show(strings.settingsDeveloperModeCountdownMessage(remainingTaps))
                             }
                         },
                     )
@@ -324,9 +317,7 @@ internal fun SettingsScreen(
                         fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.primary,
                         textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
-                        },
+                        modifier = Modifier.clickable { uriHandler.openUri(PRIVACY_POLICY_URL) },
                     )
                     // 광고 개인정보 옵션(#89). 자기 상태를 자기가 갖는다 — 이 파일은 상태 훅
                     // 13/13으로 여유가 0이다.
@@ -391,12 +382,8 @@ internal fun SettingsScreen(
                         developerModeStore.setEnabled(true)
                         // ⚠️ **기준 시각을 반드시 심는다** — 없으면 주기 초기화가 **조용히 동작하지
                         // 않는다**(`DeveloperModeResetPolicy`가 `null`에서는 절대 초기화하지 않는다).
-                        developerModeStore.markResetBaseline(System.currentTimeMillis())
-                        Toast.makeText(
-                            context,
-                            strings.settingsDeveloperModeEnabledMessage,
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                        developerModeStore.markResetBaseline(currentEpochMillis())
+                        platform.notice.show(strings.settingsDeveloperModeEnabledMessage)
                     },
                 ) { Text(strings.settingsDeveloperModeOptInConfirm) }
             },
@@ -419,14 +406,10 @@ internal fun SettingsScreen(
                         showDeveloperModeOptOut = false
                         // ⚠️ **주기 초기화(ⓒ)와 같은 함수로 수렴한다** — 둘은 같은 일이라
                         // 나눠 쓰면 한쪽만 고쳐진다.
-                        wipeToFreshInstall(context)
+                        platform.developer.wipeToFreshInstall()
                         isDeveloperModeEnabled = false
                         isAdvancedDeveloperModeEnabled = false
-                        Toast.makeText(
-                            context,
-                            strings.settingsDeveloperModeOffDoneMessage,
-                            Toast.LENGTH_LONG,
-                        ).show()
+                        platform.notice.show(strings.settingsDeveloperModeOffDoneMessage, long = true)
                         onBackClick()
                     },
                 ) { Text(strings.settingsDeveloperModeOffAction) }
@@ -438,6 +421,17 @@ internal fun SettingsScreen(
     }
 
     if (showDiagnosticLog) {
-        DiagnosticLogDialog(context = context, onDismiss = { showDiagnosticLog = false })
+        DiagnosticLogDialog(onDismiss = { showDiagnosticLog = false })
     }
 }
+
+/**
+ * 설정의 계정 절(로그인 · 연동 · 탈퇴) 자리(백로그 #294 — S24). 안드로이드는 `AccountSettingsSection`(Firebase · Credential Manager),
+ * iOS는 아직 로그인이 없어 비운다. 로그인은 지금 두 플랫폼 모두 꺼져 있다(`FeatureFlags.isLoginEnabled`).
+ */
+@Composable
+internal expect fun AccountSettingsSlot(
+    authClient: AuthClientPort,
+    credentialManagerClient: GoogleIdTokenSource,
+    diagnosticEventLog: DiagnosticEventLogPort,
+)

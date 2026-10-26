@@ -40,7 +40,7 @@ class DiagnosticLogDialogContractTest {
     fun theLogFileIsReadOnceRatherThanEveryComposition() {
         assertTrue(
             "로그를 `remember`로 감싸 읽지 않는다 — 스크롤마다 파일을 다시 읽는다(#79).",
-            dialog.contains("remember(context) { readDiagnosticLogTail(context) }"),
+            dialog.contains("remember(platform) { diagnosticLogTail(platform.developer.diagnosticLogText()) }"),
         )
     }
 

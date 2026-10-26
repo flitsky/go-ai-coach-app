@@ -19,7 +19,7 @@ import com.worksoc.goaicoach.R
  * [R.string.default_web_client_id]는 `google-services.json`에 Google 로그인용 웹 OAuth
  * 클라이언트가 포함돼 있어야(Firebase 콘솔에서 Google 로그인 활성화 후 재다운로드) 생성된다.
  */
-internal class GoogleCredentialManagerClient {
+internal class GoogleCredentialManagerClient : GoogleIdTokenSource {
     suspend fun requestIdToken(context: Context): Result<String> {
         val option = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)

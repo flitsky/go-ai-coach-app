@@ -14,14 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import com.worksoc.goaicoach.platform.AppUpdateStatus
-import com.worksoc.goaicoach.platform.openStoreListing
-import com.worksoc.goaicoach.platform.processAppUpdateCheck
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.rememberStoreListingLauncher
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.appUpToDateLabelFor
 import com.worksoc.goaicoach.ui.l10n.appUpdateActionLabelFor
@@ -37,8 +36,8 @@ import com.worksoc.goaicoach.ui.l10n.appUpdateCheckStoreLabelFor
  */
 @Composable
 internal fun rememberAppUpdateStatus(): AppUpdateStatus {
-    val context = LocalContext.current
-    val check = remember(context) { processAppUpdateCheck(context) }
+    val platform = LocalAppPlatform.current
+    val check = remember(platform) { platform.appUpdate }
     val status by check.status.collectAsState()
     LaunchedEffect(check) { check.ensureChecked() }
     return status
@@ -56,7 +55,7 @@ internal fun rememberAppUpdateStatus(): AppUpdateStatus {
 @Composable
 internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier) {
     if (status == AppUpdateStatus.Checking) return
-    val context = LocalContext.current
+    val openStoreListing = rememberStoreListingLauncher()
     val language = LocalUiStrings.current.language
     Column(
         modifier = modifier,
@@ -73,7 +72,7 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
                 )
                 Spacer(Modifier.height(AppSpacing.Space6))
                 // 새 버전이 있을 때만 버튼을 쓴다 — 나머지 상태는 알림이지 할 일이 아니다.
-                Button(onClick = { openStoreListing(context) }) {
+                Button(onClick = { openStoreListing() }) {
                     Text(appUpdateActionLabelFor(language), fontSize = AppTextSize.Text13)
                 }
             }
@@ -91,7 +90,7 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
                 fontSize = AppTextSize.Text12,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { openStoreListing(context) },
+                modifier = Modifier.clickable { openStoreListing() },
             )
 
             AppUpdateStatus.Checking -> Unit // 위에서 이미 걸렀다.

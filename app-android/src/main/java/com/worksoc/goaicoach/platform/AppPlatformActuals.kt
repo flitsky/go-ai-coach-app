@@ -12,6 +12,7 @@ actual val appBuildInfo: AppBuildInfo = AppBuildInfo(
     buildTime = BuildConfig.BUILD_TIME,
     buildType = BuildConfig.BUILD_TYPE,
     useTestAds = BuildConfig.USE_TEST_ADS,
+    forceEeaConsentDebug = BuildConfig.FORCE_EEA_CONSENT_DEBUG,
 )
 
 actual fun localTimeOfDay(): LocalTimeOfDay = LocalTime.now().let { now -> LocalTimeOfDay(now.hour, now.minute, now.second) }

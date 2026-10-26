@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -36,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.gamehistory.GameHistoryWinRate
 import com.worksoc.goaicoach.application.gamehistory.WinRatePeriod
 import com.worksoc.goaicoach.application.gamehistory.gameHistoryWinRate
-import com.worksoc.goaicoach.persistence.GameHistoryStore
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.persistence.ReferenceGameHistoryId
 import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
@@ -44,6 +43,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.RankTierBadge
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.home.RankResetButton
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
@@ -75,14 +75,14 @@ internal data class MyPageProfile(
  */
 @Composable
 internal fun MyPageProfileHeader(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val rankMeasure = LocalRankMeasureUiState.current
     // ⚠️ 번들 참고 기보는 뺀다 — 사용자가 둔 판이 아니다(대국 기록 화면의 승률과 같은 처리).
-    val winRate = remember(context) {
+    val winRate = remember(platform) {
         gameHistoryWinRate(
-            entries = GameHistoryStore(context).loadAll().filter { it.id != ReferenceGameHistoryId },
+            entries = platform.stores.gameHistory.loadAll().filter { it.id != ReferenceGameHistoryId },
             period = WinRatePeriod.AllTime,
-            nowMillis = System.currentTimeMillis(),
+            nowMillis = currentEpochMillis(),
         )
     }
     MyPageProfileCard(

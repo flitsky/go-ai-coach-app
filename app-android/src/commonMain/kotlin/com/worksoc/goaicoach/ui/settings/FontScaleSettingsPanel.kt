@@ -14,12 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import com.worksoc.goaicoach.application.preferences.AppFontScales
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 
 /**
@@ -43,8 +42,8 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 @Composable
 internal fun FontScaleSettingsPanel(modifier: Modifier = Modifier) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
-    val store = remember(context) { UserPreferencesStore(context) }
+    val platform = LocalAppPlatform.current
+    val store = remember(platform) { platform.stores.userPreferences }
 
     Surface(
         modifier = modifier.fillMaxWidth(),

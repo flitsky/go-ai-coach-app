@@ -82,8 +82,9 @@ private const val InitialSizeRatio = 0.42f
 internal fun avatarInitialOf(nickname: String?): String {
     val trimmed = nickname?.trim().orEmpty()
     if (trimmed.isEmpty()) return EmptyInitial
-    val firstCodePoint = trimmed.codePointAt(0)
-    return String(Character.toChars(firstCodePoint)).uppercase()
+    // 첫 코드 포인트 = 대리 쌍이면 두 글자, 아니면 한 글자(자바 `codePointAt` + `Character.toChars`와 같다 — #294 공용 코드).
+    val firstLength = if (trimmed.length > 1 && trimmed[0].isHighSurrogate() && trimmed[1].isLowSurrogate()) 2 else 1
+    return trimmed.substring(0, firstLength).uppercase()
 }
 
 /**

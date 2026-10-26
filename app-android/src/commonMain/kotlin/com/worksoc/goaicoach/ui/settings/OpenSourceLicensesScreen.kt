@@ -1,8 +1,5 @@
 package com.worksoc.goaicoach.ui.settings
 
-import android.content.Context
-import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,14 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.core.net.toUri
-import com.worksoc.goaicoach.R
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesEngineSectionFor
@@ -64,13 +61,13 @@ internal fun OpenSourceLicensesScreen(
 ) {
     val language = LocalUiStrings.current.language
     val closeLabel = LocalUiStrings.current.close
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // ⚠️ 한 번만 읽는다(~120KB). 실패는 삼키지 않고 아래에서 문구로 보인다(함정 40).
-    val entries = remember(context) { runCatching { loadOpenSourceEntries(context) }.getOrDefault(emptyList()) }
+    val entries = remember(platform) { runCatching { platform.assets.licensesJson()?.let(::openSourceEntriesFrom).orEmpty() }.getOrDefault(emptyList()) }
     // 펼침 상태 — 화면을 벗어나면 버린다. KataGo 두 줄만 처음부터 펼친다.
     val expanded = remember { mutableStateMapOf(*BundledNativeOrder.take(2).map { it to true }.toTypedArray()) }
 
-    BackHandler { onBackClick() }
+    PlatformBackHandler { onBackClick() }
 
     Column(
         modifier = modifier
@@ -143,11 +140,6 @@ internal fun OpenSourceLicensesScreen(
     }
 }
 
-private fun loadOpenSourceEntries(context: Context): List<OpenSourceEntry> {
-    val json = context.resources.openRawResource(R.raw.aboutlibraries).bufferedReader().use { it.readText() }
-    return openSourceEntriesFrom(json)
-}
-
 @Composable
 private fun SectionTitle(text: String) {
     Text(
@@ -166,7 +158,7 @@ private fun OpenSourceEntryRow(
     language: UiLanguage,
     onToggle: () -> Unit,
 ) {
-    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -212,7 +204,7 @@ private fun OpenSourceEntryRow(
                         color = MaterialTheme.colorScheme.primary,
                         textDecoration = TextDecoration.Underline,
                         modifier = Modifier.clickable {
-                            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
+                            runCatching { uriHandler.openUri(url) }
                         },
                     )
                 }

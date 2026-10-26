@@ -103,7 +103,7 @@ class DeveloperModeResetContractTest {
      */
     @Test
     fun theOffButtonAndThePeriodicResetShareOneImplementation() {
-        assertTrue("끄기 버튼이 공용 초기화를 부르지 않는다(#99).", settings.contains("wipeToFreshInstall(context)"))
+        assertTrue("끄기 버튼이 공용 초기화를 부르지 않는다(#99).", settings.contains("platform.developer.wipeToFreshInstall()"))
         assertTrue("코디네이터가 공용 초기화를 부르지 않는다(#99).", coordinator.contains("wipeToFreshInstall(context)"))
         assertEquals(
             "`wipeToFreshInstall` 정의가 하나가 아니다 — 구현이 갈라졌다(#99).",

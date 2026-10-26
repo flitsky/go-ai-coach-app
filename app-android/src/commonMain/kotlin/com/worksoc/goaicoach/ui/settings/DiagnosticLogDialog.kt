@@ -1,9 +1,5 @@
 package com.worksoc.goaicoach.ui.settings
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,10 +17,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
-import com.worksoc.goaicoach.persistence.DiagnosticEventLog
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
-import java.io.File
 
 /**
  * 진단 이벤트 로그를 앱 안에서 **읽고 복사**하는 개발자 1차 도구(백로그 #79).
@@ -50,12 +45,12 @@ import java.io.File
  */
 @Composable
 internal fun DiagnosticLogDialog(
-    context: Context,
     onDismiss: () -> Unit,
 ) {
+    val platform = LocalAppPlatform.current
     val strings = LocalUiStrings.current
     // ⚠️ 파일 읽기는 **한 번만** 한다 — 컴포지션마다 읽으면 스크롤할 때마다 디스크를 때린다.
-    val tail = remember(context) { readDiagnosticLogTail(context) }
+    val tail = remember(platform) { diagnosticLogTail(platform.developer.diagnosticLogText()) }
 
     // ⚠️ 이 팝업이 떠 있는 동안 첫돌이 가이드를 **기록하지 않는다** — 뒤에 깔린 채 "봤음"으로
 
@@ -94,8 +89,8 @@ internal fun DiagnosticLogDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    copyToClipboard(context, tail)
-                    Toast.makeText(context, strings.settingsDevDiagnosticLogCopied, Toast.LENGTH_SHORT).show()
+                    platform.clipboard.setText("go-ai-coach diagnostic log", tail)
+                    platform.notice.show(strings.settingsDevDiagnosticLogCopied)
                 },
             ) {
                 Text(strings.settingsDevDiagnosticLogCopyAction)
@@ -113,18 +108,12 @@ internal fun DiagnosticLogDialog(
  * ⓑ **클립보드/Intent에 그 크기를 실으면 `TransactionTooLargeException`으로 조용히 실패한다**
  * (바인더 트랜잭션 한도가 1MB 근처다). 진단에 필요한 것은 언제나 **최근**이라 뒤쪽만 남긴다.
  */
-private fun readDiagnosticLogTail(context: Context): String {
-    val log = DiagnosticEventLog(File(context.applicationContext.filesDir, DiagnosticEventLog.FileName))
-    val lines = log.readText().trim().lines()
+private fun diagnosticLogTail(text: String): String {
+    val lines = text.trim().lines()
     val tail = lines.takeLast(MaxTailLines)
     val omitted = lines.size - tail.size
     val header = if (omitted > 0) "… (앞부분 ${omitted}줄 생략)\n" else ""
     return header + tail.joinToString("\n")
-}
-
-private fun copyToClipboard(context: Context, text: String) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
-    clipboard.setPrimaryClip(ClipData.newPlainText("go-ai-coach diagnostic log", text))
 }
 
 /** 뒤쪽 몇 줄까지 보여줄지. 위 KDoc의 두 이유로 상한이 필요하다. */

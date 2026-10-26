@@ -12,6 +12,7 @@ import com.worksoc.goaicoach.persistence.DailyQuoteStore
 import com.worksoc.goaicoach.persistence.DebugReportMirrorStore
 import com.worksoc.goaicoach.persistence.DeveloperModeStore
 import com.worksoc.goaicoach.persistence.DeviceIdentityStore
+import com.worksoc.goaicoach.persistence.DiagnosticEventLog
 import com.worksoc.goaicoach.persistence.EngineBenchmarkStore
 import com.worksoc.goaicoach.persistence.GameHistoryStore
 import com.worksoc.goaicoach.persistence.GameSessionStore
@@ -26,12 +27,14 @@ import com.worksoc.goaicoach.persistence.UserPreferencesStore
 import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.persistence.WhatsNewStore
 import com.worksoc.goaicoach.persistence.loadReferenceGameReplay
+import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
 import com.worksoc.goaicoach.platform.DebugArmFiles
+import com.worksoc.goaicoach.platform.DeveloperTools
 import com.worksoc.goaicoach.platform.PlayHapticFeedback
 import com.worksoc.goaicoach.platform.PlayHaptics
 import com.worksoc.goaicoach.platform.processAppUpdateCheck
@@ -65,6 +68,21 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
         override fun readBytes(path: String): ByteArray? = runCatching { appContext.assets.open(path).use { it.readBytes() } }.getOrNull()
 
         override fun referenceGameReplay(): GameReplayData? = loadReferenceGameReplay(appContext)
+
+        override fun licensesJson(): String? =
+            runCatching { appContext.resources.openRawResource(R.raw.aboutlibraries).bufferedReader().use { it.readText() } }.getOrNull()
+    }
+
+    override val developer = object : DeveloperTools {
+        override fun wipeToFreshInstall() = wipeToFreshInstall(appContext)
+
+        override fun restartToFreshInstall() = restartToFreshInstall(appContext)
+
+        override fun runReleaseResetAgain(): Boolean = runReleaseResetAgain(appContext)
+
+        override fun resetAdConsent() = AdsConsentManager.resetForDebug(appContext)
+
+        override fun diagnosticLogText(): String = DiagnosticEventLog(File(appContext.filesDir, DiagnosticEventLog.FileName)).readText()
     }
 
     override val debugArmFiles = DebugArmFiles { name -> BuildConfig.DEBUG && File(appContext.filesDir, name).let { it.isFile && it.delete() } }

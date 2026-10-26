@@ -13,7 +13,7 @@ import org.junit.Test
  * ⚠️ **이 계약이 지키는 것은 "무엇이 어느 단에 있는가"이고, 그 기준은 라벨이 아니라 저장이다.**
  * 1차는 **release 빌드에도 실리므로**(10탭 게이트는 런타임 플래그다) 거기에 권한을 만드는
  * 컨트롤이 하나라도 섞이면 **무료 획득 경로가 그대로 출시된다.** 2차의 유일한 실제 경계는
- * `BuildConfig.DEBUG`이고, 길게 누르기는 오조작만 막는 은닉이다.
+ * `BuildConfig.DEBUG`(공용 화면에서는 그 값을 그대로 담은 `isDebugBuild` — #294)이고, 길게 누르기는 오조작만 막는 은닉이다.
  *
  * ⚠️ 주석은 걷어내고 본다([codeOnly]) — 이 처방들은 KDoc에도 그대로 적혀 있어서, 걷어내지 않으면
  * **코드를 되돌려도 주석만 보고 통과한다**(#63에서 실제로 거짓 통과가 났다).
@@ -35,11 +35,11 @@ class DeveloperSectionTierContractTest {
     fun theAdvancedTierIsGatedByTheBuildTypeAndNotOnlyByTheGesture() {
         assertTrue(
             "2차 블록이 `BuildConfig.DEBUG`로 감싸여 있지 않다 — release에 그대로 실린다(#77).",
-            settings.contains("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled"),
+            settings.contains("isDebugBuild && isAdvancedDeveloperModeEnabled"),
         )
         assertTrue(
             "길게 누르기 처리가 `BuildConfig.DEBUG`를 먼저 보지 않는다 — release에서 2차가 켜진다.",
-            settings.contains("if (!BuildConfig.DEBUG) return"),
+            settings.contains("if (!isDebugBuild) return"),
         )
     }
 
@@ -131,7 +131,7 @@ class DeveloperSectionTierContractTest {
     fun theAdvancedTierEntryPointLivesInsideTheFirstTierSection() {
         val firstTierGate = settings.indexOf("if (isDeveloperModeEnabled) {")
         val entryPoint = settings.indexOf("onBuildInfoTap(")
-        val advancedGate = settings.indexOf("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled")
+        val advancedGate = settings.indexOf("isDebugBuild && isAdvancedDeveloperModeEnabled")
         assertTrue("1차 섹션 게이트를 찾지 못했다 — 이 계약의 전제가 무너졌다.", firstTierGate >= 0)
         assertTrue("2차 진입점을 찾지 못했다.", entryPoint >= 0)
         assertTrue("2차 게이트를 찾지 못했다.", advancedGate >= 0)
@@ -170,7 +170,7 @@ class DeveloperSectionTierContractTest {
      */
     @Test
     fun theControlThatGrantsPremiumSitsInTheAdvancedTier() {
-        val advancedGate = settings.indexOf("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled")
+        val advancedGate = settings.indexOf("isDebugBuild && isAdvancedDeveloperModeEnabled")
         val premiumGrant = settings.indexOf("premium.simulateAdGrant")
         assertTrue("2차 게이트를 찾지 못했다 — 이 계약의 전제가 무너졌다.", advancedGate >= 0)
         assertTrue("프리미엄을 부여하는 컨트롤을 찾지 못했다.", premiumGrant >= 0)
@@ -196,8 +196,8 @@ class DeveloperSectionTierContractTest {
      */
     @Test
     fun theControlThatWipesEntitlementStoresSitsInTheAdvancedTier() {
-        val advancedGate = settings.indexOf("BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled")
-        val releaseReset = settings.indexOf("runReleaseResetAgain(context)")
+        val advancedGate = settings.indexOf("isDebugBuild && isAdvancedDeveloperModeEnabled")
+        val releaseReset = settings.indexOf("platform.developer.runReleaseResetAgain()")
         assertTrue("2차 게이트를 찾지 못했다 — 이 계약의 전제가 무너졌다.", advancedGate >= 0)
         assertTrue("정식 출시 초기화를 다시 돌리는 컨트롤을 찾지 못했다(#80).", releaseReset >= 0)
         assertTrue(
@@ -220,7 +220,7 @@ class DeveloperSectionTierContractTest {
      */
     @Test
     fun wipingTheStoresRefreshesEveryScreenCopy() {
-        val wipe = settings.indexOf("runReleaseResetAgain(context)")
+        val wipe = settings.indexOf("platform.developer.runReleaseResetAgain()")
         assertTrue("초기화 호출을 찾지 못했다.", wipe >= 0)
         val after = settings.substring(wipe)
         listOf("consumables.refresh()", "bots.refresh()", "premium.reload()").forEach { call ->

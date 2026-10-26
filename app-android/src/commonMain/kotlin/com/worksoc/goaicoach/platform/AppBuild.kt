@@ -13,6 +13,8 @@ data class AppBuildInfo(
     val buildTime: String,
     val buildType: String,
     val useTestAds: Boolean,
+    /** 디버그 빌드에서 EEA 동의 창을 억지로 띄우는가(개발자 메뉴 「광고 동의 초기화」의 부제). */
+    val forceEeaConsentDebug: Boolean = false,
 )
 
 expect val appBuildInfo: AppBuildInfo

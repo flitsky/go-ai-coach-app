@@ -1,7 +1,5 @@
 package com.worksoc.goaicoach.ui.settings
 
-import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,9 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import com.worksoc.goaicoach.BuildConfig
 import com.worksoc.goaicoach.application.attendance.isRewardedTier
 import com.worksoc.goaicoach.application.attendance.runAttendanceDevDayRewind
 import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
@@ -32,16 +28,14 @@ import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.botcharacter.runBotCharacterShardSet
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.runConsumableGrant
+import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
-import com.worksoc.goaicoach.persistence.AttendanceStore
-import com.worksoc.goaicoach.persistence.BotCollectionStore
-import com.worksoc.goaicoach.persistence.ConsumableInventoryStore
-import com.worksoc.goaicoach.persistence.DeveloperModeStore
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
-import com.worksoc.goaicoach.platform.AdsConsentManager
-import com.worksoc.goaicoach.runReleaseResetAgain
+import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.appBuildInfo
+import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.monetization.AttendanceClaimReplaySignal
@@ -92,9 +86,9 @@ internal fun DeveloperTestSection(
     onBenchmark: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val strings = LocalUiStrings.current
-    val preferencesStore = remember(context) { UserPreferencesStore(context) }
+    val preferencesStore = remember(platform) { platform.stores.userPreferences }
     val premium = LocalPremiumUiState.current
     val consumables = LocalConsumableUiState.current
     val bots = LocalBotCharacterUiState.current
@@ -105,7 +99,7 @@ internal fun DeveloperTestSection(
     // ⚠️ 초 단위로 갱신하지 않는다 — 화면을 다시 그릴 때만 맞다. 만료를 정확히 재는 것은
     // `PremiumExpiryAutoDisableEffect`의 몫이고, 여기 숫자는 "대략 얼마 남았나"의 안내다.
     val premiumRemainingMinutes = premium.adGrantExpiresAtMillis
-        ?.minus(System.currentTimeMillis())
+        ?.minus(currentEpochMillis())
         ?.takeIf { it > 0L }
         ?.let { millis -> (millis / 60_000L).toInt() }
     // 2차의 출석 부제가 읽는 값.
@@ -113,7 +107,7 @@ internal fun DeveloperTestSection(
     // 증가는 `AttendanceRewardClaimDialog`의 effect가 하기 때문이다. 그래서 증가를 아는 쪽이
     // 알려 주는 값(`lastCheckedInDay`)을 우선 쓰고, 아직 없으면 저장소를 읽는다.
     val attendanceDay = AttendanceClaimReplaySignal.lastCheckedInDay
-        ?: remember(context) { AttendanceStore(context).load().attendanceCount }
+        ?: remember(platform) { platform.stores.attendance.load().attendanceCount }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -157,15 +151,15 @@ internal fun DeveloperTestSection(
         // 토스트조차 띄우지 않는다(안내를 띄우면 2차의 존재를 광고하는 셈이다).
         DeveloperInfoRow(
             title = strings.settingsDevBuildInfoTitle,
-            value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · " +
-                "${BuildConfig.BUILD_TYPE} · ${if (BuildConfig.USE_TEST_ADS) "test ads" else "REAL ADS"}",
+            value = "${appBuildInfo.versionName} (${appBuildInfo.versionCode}) · " +
+                "${appBuildInfo.buildType} · ${if (appBuildInfo.useTestAds) "test ads" else "REAL ADS"}",
             onTap = {
                 buildInfoTapCount++
                 onBuildInfoTap(
                     tapCount = buildInfoTapCount,
                     isAdvancedEnabled = isAdvancedDeveloperModeEnabled,
                     onEnable = { onAdvancedEnabledChange(true) },
-                    context = context,
+                    notice = platform.notice,
                     strings = strings,
                 )
             },
@@ -196,7 +190,7 @@ internal fun DeveloperTestSection(
             }
             TextButton(
                 onClick = {
-                    val store = ConsumableInventoryStore(context)
+                    val store = platform.stores.consumables
                     // ⚠️ **`PremiumOnce`(광고 스킵권)는 여기 두지 않는다**(2026-09-05).
                     // 이 버튼은 1차라 **release 빌드에 그대로 실린다**(함정 11번). 형세·추천
                     // 1회권은 1일차 출석이 30장씩 주는 것이라 경제에 영향이 없지만,
@@ -273,7 +267,7 @@ internal fun DeveloperTestSection(
         //   **경로가 없는 것과 이름이 안 보이는 것은 다르다** — 이 배치가 보장하는 것은
         //   앞의 것뿐이고, APK를 뜯으면 2차의 존재는 드러난다. 그것으로 충분하다는 것이
         //   이 설계의 전제다(길게 누르기는 애초에 은닉이지 경계가 아니다).
-        if (BuildConfig.DEBUG && isAdvancedDeveloperModeEnabled) {
+        if (isDebugBuild && isAdvancedDeveloperModeEnabled) {
             Spacer(modifier = Modifier.height(AppSpacing.Space16))
             HorizontalDivider()
             Spacer(modifier = Modifier.height(AppSpacing.Space4))
@@ -339,13 +333,13 @@ internal fun DeveloperTestSection(
                     )
                     Text(
                         text = strings.settingsDevConsentResetSubtitle(
-                            BuildConfig.FORCE_EEA_CONSENT_DEBUG,
+                            appBuildInfo.forceEeaConsentDebug,
                         ),
                         fontSize = AppTextSize.Text12,
                         color = MaterialTheme.colorScheme.secondary,
                     )
                 }
-                TextButton(onClick = { AdsConsentManager.resetForDebug(context) }) {
+                TextButton(onClick = { platform.developer.resetAdConsent() }) {
                     Text(strings.settingsDevConsentResetAction)
                 }
             }
@@ -384,7 +378,7 @@ internal fun DeveloperTestSection(
                     }
                     TextButton(
                         onClick = {
-                            runBotCharacterShardSet(character, required - 1, BotCollectionStore(context))
+                            runBotCharacterShardSet(character, required - 1, platform.stores.botCollection)
                             bots.refresh()
                         },
                     ) {
@@ -392,7 +386,7 @@ internal fun DeveloperTestSection(
                     }
                     TextButton(
                         onClick = {
-                            runBotCharacterShardSet(character, 0, BotCollectionStore(context))
+                            runBotCharacterShardSet(character, 0, platform.stores.botCollection)
                             bots.refresh()
                         },
                     ) {
@@ -434,7 +428,7 @@ internal fun DeveloperTestSection(
                     onClick = {
                         // 되감기만으로는 팝업이 안 뜬다 — 신호까지 올려야 계산이 다시 돈다
                         // (`AttendanceClaimReplaySignal`의 KDoc 참고).
-                        runAttendanceDevDayRewind(AttendanceStore(context))
+                        runAttendanceDevDayRewind(platform.stores.attendance)
                         AttendanceClaimReplaySignal.request()
                     },
                 ) {
@@ -471,21 +465,17 @@ internal fun DeveloperTestSection(
                 }
                 TextButton(
                     onClick = {
-                        val wiped = runReleaseResetAgain(context)
+                        val wiped = platform.developer.runReleaseResetAgain()
                         // 지운 뒤 화면 사본을 전부 되읽는다 — 세 곳이 각자 저장소를 들고
                         // 있어서, 빠뜨리면 지워진 값이 화면에 남는다(#65와 같은 함정).
                         consumables.refresh()
                         bots.refresh()
                         premium.reload()
-                        Toast.makeText(
-                            context,
-                            if (wiped) {
+                        platform.notice.show(if (wiped) {
                                 strings.settingsDevReleaseResetDoneMessage
                             } else {
                                 strings.settingsDevReleaseResetNothingMessage
-                            },
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                            })
                     },
                 ) {
                     Text(strings.settingsDevReleaseResetAction)
@@ -525,15 +515,15 @@ private fun onBuildInfoTap(
     tapCount: Int,
     isAdvancedEnabled: Boolean,
     onEnable: () -> Unit,
-    context: Context,
+    notice: AppNotice,
     strings: UiStrings,
 ) {
-    if (!BuildConfig.DEBUG) return
+    if (!isDebugBuild) return
     if (isAdvancedEnabled) return
     val remaining = AdvancedDeveloperModeTapsRequired - tapCount
     if (remaining > 0) return
     onEnable()
-    Toast.makeText(context, strings.settingsAdvancedDeveloperModeEnabledMessage, Toast.LENGTH_SHORT).show()
+    notice.show(strings.settingsAdvancedDeveloperModeEnabledMessage)
 }
 
 /**

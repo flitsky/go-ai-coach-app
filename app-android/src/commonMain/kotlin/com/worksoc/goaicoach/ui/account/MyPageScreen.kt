@@ -28,19 +28,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.buildAttendanceBoard
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
-import com.worksoc.goaicoach.persistence.AttendanceStore
-import com.worksoc.goaicoach.persistence.BotCollectionStore
-import com.worksoc.goaicoach.persistence.UserProfileStore
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.painterFor
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideLine
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.attendanceBoardBeyondNoticeFor
@@ -77,12 +74,12 @@ internal fun MyPageScreen(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     val consumables = LocalConsumableUiState.current
     // ⚠️ **저장소를 읽은 값을 상태로 들고 있는다**(함정 13). 저장 직후에 저장소를 다시 읽지 않고
     // 이 자리에서 갱신한다 — 쓰기만 하고 되읽지 않으면 화면이 옛 이름을 그대로 보여 준다.
-    val profileStore = remember(context) { UserProfileStore(context) }
-    var nickname by remember(context) { mutableStateOf(profileStore.nickname()) }
+    val profileStore = remember(platform) { platform.stores.userProfile }
+    var nickname by remember(platform) { mutableStateOf(profileStore.nickname()) }
     var isEditingNickname by remember { mutableStateOf(false) }
 
     if (ShowUserProfileRow && isEditingNickname) {
@@ -242,12 +239,12 @@ internal fun MyPageScreen(
 @Composable
 private fun AttendanceBoardSection(titleTrailing: @Composable RowScope.() -> Unit) {
     val strings = LocalUiStrings.current
-    val context = LocalContext.current
+    val platform = LocalAppPlatform.current
     // 화면을 여는 시점의 저장값 한 번이면 된다 — 이 화면에 있는 동안 출석이 바뀌지 않는다.
     // 판이 캐릭터 얼굴을 그리므로(#57) 수집 상태를 판과 그림 양쪽에 넘긴다.
-    val collection = remember(context) { BotCollectionStore(context).load() }
-    val board = remember(context) {
-        buildAttendanceBoard(AttendanceStore(context).load(), collection)
+    val collection = remember(platform) { platform.stores.botCollection.load() }
+    val board = remember(platform) {
+        buildAttendanceBoard(platform.stores.attendance.load(), collection)
     }
     // **접어 둔다**(#256, 사용자 2026-10-13) — 판 전체가 화면 절반을 차지했다. 접힌 판은 지금 걸음이 있는 한 행이다.
     // 화면을 돌리거나 다녀와도 펼친 채로 남게 `rememberSaveable` — 저장소에는 쓰지 않는다(다음에 열면 접혀 있다).
