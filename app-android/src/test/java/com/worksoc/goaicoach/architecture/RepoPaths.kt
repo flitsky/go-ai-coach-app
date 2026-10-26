@@ -31,7 +31,15 @@ import java.io.File
  */
 internal object RepoPaths {
 
-    private const val APP_ANDROID = "app-android/src/main/java/com/worksoc/goaicoach"
+    /**
+     * app-android의 소스셋 패키지 루트 — KMP 모듈이다(백로그 #294, iOS 이식 X안). 지금까지의 코드는 `src/main/java`(androidMain)에 있고,
+     * 웨이브마다 옮겨도 되는 파일이 **같은 패키지 그대로** `src/commonMain/kotlin`으로 간다(git mv). iOS 입구는 `src/iosMain/kotlin`.
+     * 파일 하나는 [appAndroid]가 셋 중에서 찾고, 디렉터리를 훑는 계약은 [appAndroidDirs] · [uiRoots]로 **있는 것 전부**를 본다 —
+     * 한 폴더만 훑으면 파일이 옮겨 가는 순간 그 검사는 아무것도 안 보고 초록이 된다(헛도는 검사).
+     */
+    private val APP_ANDROID_SOURCE_SETS = listOf("main/java", "commonMain/kotlin", "iosMain/kotlin")
+        .map { sourceSet -> "app-android/src/$sourceSet/com/worksoc/goaicoach" }
+    private val APP_ANDROID = APP_ANDROID_SOURCE_SETS.first()
     private const val SHARED_COMMON_SOURCE_SET = "shared/src/commonMain"
     private const val SHARED_COMMON = "$SHARED_COMMON_SOURCE_SET/kotlin/com/worksoc/goaicoach"
     /**
@@ -99,7 +107,10 @@ internal object RepoPaths {
                     "shared/src/iosMain",
                     "engine-android/src/androidMain",
                     "engine-android/src/iosMain",
-                ),
+                    "app-android/src/iosMain",
+                ) +
+                // app-android의 commonMain은 첫 웨이브가 파일을 옮겨 올 때 생긴다(백로그 #294) — 생긴 뒤에는 늘 있어야 한다.
+                listOfNotNull("app-android/src/commonMain".takeIf { root.resolve(it).isDirectory }),
         )
 
     /**
@@ -121,7 +132,10 @@ internal object RepoPaths {
      * 계층 목록 밖으로 둔 자리다(`LAYER_2_MIDDLEWARE_BRIDGE.md` 「계층 배정」 — 「지금 위치」가 정본).
      */
     val iosCompiledCommonMainKotlinRoots: List<File>
-        get() = kmpCommonMainKotlinRoots + strictRoots("엔진 commonMain 코틀린 루트", listOf("engine-android/src/commonMain/kotlin"))
+        get() = kmpCommonMainKotlinRoots +
+            strictRoots("엔진 commonMain 코틀린 루트", listOf("engine-android/src/commonMain/kotlin")) +
+            // 앱 화면의 공용 부분(백로그 #294) — 첫 웨이브가 파일을 옮겨 오면 생긴다. 계층 목록은 7계층(UI_LAYERS)이 따로 맡는다.
+            listOfNotNull(root.resolve("app-android/src/commonMain/kotlin").takeIf { it.isDirectory })
 
     /** KMP 모듈의 공용 테스트 소스 루트 전부([KMP_COMMON_TEST]). 하나라도 없으면 터뜨린다. */
     val kmpCommonTestRoots: List<File>
@@ -151,8 +165,23 @@ internal object RepoPaths {
     /** L17 자기검증이 읽는 모듈 빌드 스크립트. */
     val appAndroidBuildScript: File get() = root.resolve("app-android/build.gradle.kts")
 
-    /** app-android 프로덕션 소스의 `com.worksoc.goaicoach` 패키지 루트(또는 그 아래 경로). */
-    fun appAndroid(relativePath: String = ""): File = resolveUnder(APP_ANDROID, relativePath)
+    /**
+     * app-android 프로덕션 소스의 `com.worksoc.goaicoach` 패키지 아래 한 경로 — 소스셋(`main/java` · `commonMain` · `iosMain`)
+     * 어디에 있든 **파일**을 찾는다. 빈 경로면 `main/java`의 패키지 루트다.
+     * ⚠️ 두 소스셋에 같은 파일이 있으면 터뜨린다 — 옮기기는 복사가 아니라 git mv다(남은 사본은 조용히 갈라진다).
+     * 디렉터리는 있는 첫 자리를 돌려줄 뿐이다 — 디렉터리를 **훑는** 계약은 [appAndroidDirs]를 쓴다.
+     */
+    fun appAndroid(relativePath: String = ""): File {
+        if (relativePath.isEmpty()) return root.resolve(APP_ANDROID)
+        val candidates = APP_ANDROID_SOURCE_SETS.map { packageRoot -> resolveUnder(packageRoot, relativePath) }
+        val files = candidates.filter { it.isFile }
+        check(files.size <= 1) { "app-android의 두 소스셋에 같은 파일이 있다 — 옮기기는 git mv다: $files" }
+        return files.singleOrNull() ?: candidates.firstOrNull { it.isDirectory } ?: candidates.first()
+    }
+
+    /** [relativePath] 디렉터리를 app-android의 **모든** 소스셋에서 — 있는 것만. 디렉터리를 훑는 계약은 이것을 쓴다(백로그 #294). */
+    fun appAndroidDirs(relativePath: String): List<File> =
+        APP_ANDROID_SOURCE_SETS.map { packageRoot -> resolveUnder(packageRoot, relativePath) }.filter { it.isDirectory }
 
     /** :shared commonMain의 `com.worksoc.goaicoach` 패키지 루트(또는 그 아래 경로). */
     fun shared(relativePath: String = ""): File = resolveUnder(SHARED_COMMON, relativePath)
@@ -170,10 +199,21 @@ internal object RepoPaths {
     }
 
     /**
-     * `ui` 패키지 트리의 루트 디렉터리 — 하위 패키지(`ui.l10n`·`ui.shell`·`ui.vision` …)의 디렉터리가
-     * 전부 이 아래에 있다(refactor backlog #27). 디렉터리를 직접 훑는 계약은 이 값과 [uiSourceFiles]를 쓴다.
+     * `ui` 패키지 트리의 루트 디렉터리 **전부** — 소스셋마다 하나(백로그 #294: 옮긴 화면은 commonMain에 같은 패키지로 있다).
+     * 하위 패키지(`ui.l10n`·`ui.shell`·`ui.vision` …)의 디렉터리가 이 아래에 있다(refactor backlog #27).
+     * 디렉터리를 직접 훑는 계약은 이 목록과 [uiSourceFiles]를 쓴다. 하나도 없으면 터뜨린다.
      */
-    val uiRoot: File get() = appAndroid("ui")
+    val uiRoots: List<File>
+        get() = appAndroidDirs("ui").also { roots ->
+            check(roots.isNotEmpty()) { "ui 트리를 하나도 못 찾았다 — 옮겨졌다면 RepoPaths.kt를 갱신하라." }
+        }
+
+    /** [file]의 `ui/` 아래 상대 경로(`designsystem/AppPalette.kt` 꼴) — 어느 소스셋에 있든 같은 꼴이다. */
+    fun uiRelativePath(file: File): String {
+        val uiRoot = uiRoots.firstOrNull { file.startsWith(it) }
+        checkNotNull(uiRoot) { "ui 트리 밖의 파일이다: ${file.absolutePath}" }
+        return file.relativeTo(uiRoot).invariantSeparatorsPath
+    }
 
     /**
      * [uiRoot] 아래 `.kt` **전부** — 하위 패키지까지 재귀로 훑는다(경로순).
@@ -183,12 +223,10 @@ internal object RepoPaths {
      * 재귀로 훑고, 하나도 못 찾으면 그 자리에서 터뜨린다.
      */
     fun uiSourceFiles(): List<File> {
-        val files = uiRoot.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
-            .sortedBy { it.path }
-            .toList()
+        val files = uiRoots.flatMap { uiRoot -> uiRoot.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList() }
+            .sortedBy { uiRelativePath(it) }
         check(files.isNotEmpty()) {
-            "ui 소스를 하나도 못 찾았다: ${uiRoot.absolutePath}. 옮겨졌다면 RepoPaths.kt를 갱신하라."
+            "ui 소스를 하나도 못 찾았다: ${uiRoots.joinToString { it.absolutePath }}. 옮겨졌다면 RepoPaths.kt를 갱신하라."
         }
         return files
     }
@@ -210,9 +248,9 @@ internal object RepoPaths {
         val matches = uiSourceFiles().filter { it.name == fileName }
         check(matches.size <= 1) {
             "ui 트리에 `$fileName`이 ${matches.size}개다 — 이름으로는 어느 파일인지 모른다: " +
-                matches.joinToString { it.relativeTo(uiRoot).path }
+                matches.joinToString { it.path }
         }
-        return matches.singleOrNull() ?: uiRoot.resolve(fileName)
+        return matches.singleOrNull() ?: uiRoots.first().resolve(fileName)
     }
 
     /**
@@ -228,6 +266,10 @@ internal object RepoPaths {
      * 명문화돼 있고(ARCHITECTURE.md), 매니페스트에 묶인 `MainActivity`가 루트를 떠날 수 없어서다.
      */
     fun compositionFile(fileName: String): File = appAndroid(fileName)
+
+    /** 루트 패키지(`com.worksoc.goaicoach`) **바로 아래**의 `.kt` 전부 — 소스셋 셋을 다 본다(백로그 #294: 루트 조립 코드도 웨이브 W20에 옮겨 간다). */
+    fun compositionRootFiles(): List<File> =
+        appAndroidDirs("").flatMap { packageRoot -> packageRoot.listFiles().orEmpty().filter { it.isFile && it.extension == "kt" } }
 
     /**
      * 컨트롤러 배선 파일 **전부**. `LayeringContractTest`의 "GoCoachApp이 워크플로 본문을 소유하지

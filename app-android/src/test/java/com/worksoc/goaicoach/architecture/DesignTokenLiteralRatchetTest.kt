@@ -34,7 +34,7 @@ class DesignTokenLiteralRatchetTest {
     fun colorLiteralsLiveOnlyInTheDesignSystem() {
         val found = screenFiles().flatMap { file ->
             ColorLiteralScanner.literals(file.readText()).map { (line, literal) ->
-                "${file.relativeTo(RepoPaths.uiRoot).path}:$line  $literal"
+                "${RepoPaths.uiRelativePath(file)}:$line  $literal"
             }
         }
 
@@ -53,7 +53,7 @@ class DesignTokenLiteralRatchetTest {
         val screens = screenFiles()
         val designSystem = RepoPaths.uiSourceFiles().filter { it.isInDesignSystem() }
 
-        assertTrue("ui 화면 파일을 거의 못 읽었다(${screens.size}개) — RepoPaths.uiRoot를 확인하라.", screens.size > 100)
+        assertTrue("ui 화면 파일을 거의 못 읽었다(${screens.size}개) — RepoPaths.uiRoots를 확인하라.", screens.size > 100)
         assertTrue(
             "디자인 시스템에 색 리터럴이 없다 — 팔레트가 옮겨졌다면 이 검사의 기준 경로도 옮겨라.",
             designSystem.sumOf { ColorLiteralScanner.literals(it.readText()).size } > 50,
@@ -90,7 +90,7 @@ class DesignTokenLiteralRatchetTest {
     private fun screenFiles(): List<File> = RepoPaths.uiSourceFiles().filterNot { it.isInDesignSystem() }
 
     private fun File.isInDesignSystem(): Boolean =
-        relativeTo(RepoPaths.uiRoot).invariantSeparatorsPath.startsWith("$DesignSystemDir/")
+        RepoPaths.uiRelativePath(this).startsWith("$DesignSystemDir/")
 
     private companion object {
         const val DesignSystemDir = "designsystem"

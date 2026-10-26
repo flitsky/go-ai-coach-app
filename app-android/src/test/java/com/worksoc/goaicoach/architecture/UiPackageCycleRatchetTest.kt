@@ -249,7 +249,7 @@ class UiPackageCycleRatchetTest {
 
         /** 한 번만 훑는다 — 테스트들이 같은 그래프를 본다. */
         val graph: PackageImportGraph by lazy {
-            PackageImportGraph.scan(RepoPaths.uiRoot, ContractSymbols.UI_ROOT_PACKAGE)
+            PackageImportGraph.scan(RepoPaths.uiRoots, ContractSymbols.UI_ROOT_PACKAGE)
         }
     }
 }

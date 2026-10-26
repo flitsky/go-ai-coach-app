@@ -24,11 +24,7 @@ import org.junit.Test
 class LayeringContractTest {
     @Test
     fun uiAndPresentationDoNotImportRawEngineCoreApi() {
-        val sourceRoot = RepoPaths.appAndroid()
-        val checkedDirs = listOf(
-            RepoPaths.uiRoot,
-            sourceRoot.resolve("presentation"),
-        )
+        val checkedDirs = RepoPaths.uiRoots + RepoPaths.appAndroidDirs("presentation")
         val forbiddenImports = listOf(
             importOf(ENGINE_CORE_API),
             importOf(ENGINE_ANDROID_RUNTIME_PACKAGE),
@@ -361,13 +357,12 @@ class LayeringContractTest {
      */
     @Test
     fun controllerWiringListMatchesTheRootAndCompositionDoesNotRegrowInUi() {
-        val root = RepoPaths.compositionFile("")
-        val onDisk = root.listFiles().orEmpty()
-            .filter { file -> file.isFile && file.name.endsWith("ControllerWiring.kt") }
+        val onDisk = RepoPaths.compositionRootFiles()
+            .filter { file -> file.name.endsWith("ControllerWiring.kt") }
             .map { file -> file.name }
             .toSet()
         val listed = RepoPaths.controllerWiringFiles.map { file -> file.name }.toSet()
-        assertTrue("루트에서 배선 파일을 하나도 못 찾았다 — 경로가 낡았다: ${root.path}", onDisk.isNotEmpty())
+        assertTrue("루트에서 배선 파일을 하나도 못 찾았다 — 경로가 낡았다: ${RepoPaths.appAndroid().path}", onDisk.isNotEmpty())
         assertEquals(
             "RepoPaths.controllerWiringFiles가 루트의 *ControllerWiring.kt와 다르다 — 빠진 파일은 " +
                 "goCoachAppDoesNotOwn… 가드 일곱 개에서 조용히 빠진다(#26).",
@@ -375,7 +370,7 @@ class LayeringContractTest {
             listed.sorted(),
         )
 
-        val regrown = ktFilesIn(RepoPaths.uiRoot)
+        val regrown = ktFilesIn(*RepoPaths.uiRoots.toTypedArray())
             .filter { file -> file.name.endsWith("Wiring.kt") || file.name.endsWith("Glue.kt") }
             .map { file -> file.relativeTo(RepoPaths.root).path }
         assertEquals(
@@ -398,9 +393,7 @@ class LayeringContractTest {
      */
     @Test
     fun compositionRootFileSetIsAConsciousDecision() {
-        val root = RepoPaths.compositionFile("")
-        val actual = root.listFiles().orEmpty()
-            .filter { file -> file.isFile && file.extension == "kt" }
+        val actual = RepoPaths.compositionRootFiles()
             .map { file -> file.name }
             .sorted()
         val expected = listOf(
@@ -472,7 +465,7 @@ class LayeringContractTest {
             "허용 목록이 금지 목록에 없는 접두사를 든다 — 허공을 허용하고 있다."
         }
 
-        val hits = ktFilesIn(RepoPaths.uiRoot).flatMap { file ->
+        val hits = ktFilesIn(*RepoPaths.uiRoots.toTypedArray()).flatMap { file ->
             val lines = file.readLines()
             forbiddenImports.flatMap { forbidden ->
                 detectForbiddenReference(lines, forbidden).map { reason -> Triple(file, forbidden, reason) }

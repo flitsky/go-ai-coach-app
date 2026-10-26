@@ -76,7 +76,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-prebuild-engine ios-ensure-engine ios-engine-probe
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe
 
 help:
 	@echo "=========================================================================="
@@ -100,6 +100,7 @@ help:
 	@echo "  make test-ios            - Compile-only iOS targets check (see 함정 75; NOT part of make test)"
 	@echo "  make ios-build           - Build the iOS app (app-ios/) for the simulator (Xcode; NOT part of make test)"
 	@echo "  make ios-run             - ios-build, then install & launch on IOS_SIM (default \"iPhone 17\"; name or UDID)"
+	@echo "  make ios-catalog PAGE=x - Open one page of the iOS port catalog on the simulator (empty PAGE = index)"
 	@echo "  make ios-prebuild-engine - Build KataGo as a static library for the iOS simulator (app-ios/build/katago/)"
 	@echo "  make ios-engine-probe    - Run KataGo inside the app on the simulator (GTP, main then human model; prints timings)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
@@ -214,6 +215,13 @@ ios-run: ios-build
 	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
 	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
 	xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
+
+# 이식 카탈로그의 한 페이지를 곧바로 연다(백로그 #294 — `app-android/.../ios/PortCatalog.kt`) — `make ios-catalog PAGE=<id>`.
+# 스크린샷: `xcrun simctl io "$(IOS_SIM)" screenshot <파일>.png`. PAGE를 비우면 목록.
+ios-catalog: ios-build
+	-xcrun simctl boot "$(IOS_SIM)" 2>/dev/null
+	xcrun simctl install "$(IOS_SIM)" $(IOS_APP)
+	SIMCTL_CHILD_GOCOACH_PORT_CATALOG_PAGE="$(PAGE)" xcrun simctl launch --terminate-running-process "$(IOS_SIM)" $(IOS_BUNDLE_ID)
 
 # Kotlin 엔진 코드(안드로이드와 같은 어댑터)가 앱 안 KataGo로 도는지 시뮬레이터에서 본다(백로그 #293 — `app-android/.../ios/EngineProbe.kt`).
 # GTP 착수 → JSON 분석 엔진을 함께 → 사람 모델로 갈아 올리기 → forceReset 뒤 다시 → stop. 모델 · 설정은 안드로이드 번들과 같은 맥의 파일을 읽는다

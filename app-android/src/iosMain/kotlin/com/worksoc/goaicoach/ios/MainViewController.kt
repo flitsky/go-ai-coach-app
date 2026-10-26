@@ -11,7 +11,7 @@ import platform.UIKit.UIViewController
  */
 @Suppress("ktlint:standard:function-naming", "FunctionName")
 fun MainViewController(): UIViewController {
-    // 엔진 확인(백로그 #293 — `make ios-engine-probe`)이 요청됐으면 그 화면, 아니면 뼈대 첫 화면.
+    // 엔진 확인(백로그 #293 — `make ios-engine-probe`)이 요청됐으면 그 화면, 아니면 이식 카탈로그(#294 — 앱 전체가 뜨기 전까지).
     val probe = EngineProbe.requested()
-    return ComposeUIViewController { if (probe != null) EngineProbeScreen(probe) else SkeletonApp() }
+    return ComposeUIViewController { if (probe != null) EngineProbeScreen(probe) else PortCatalog() }
 }
