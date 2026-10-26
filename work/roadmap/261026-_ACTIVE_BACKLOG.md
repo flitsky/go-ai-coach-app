@@ -51,13 +51,15 @@ python3 scripts/check-doc-links.py           # 문서·경로를 건드렸으면
 python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 ```
 
-**iOS**: 앱이 생기기 전(#292 전)에는 `make test-ios`(공유 코드의 iOS 컴파일)뿐이다. iOS 앱의 게이트 · 시뮬레이터 실행 명령은 **#292가 여기에 더한다.**
+**iOS**(#292부터): `make test-ios`(공유 코드 · `:shared-ui`의 iOS 컴파일) · `make ios-build`(Xcode로 시뮬레이터 빌드 — Kotlin 프레임워크도 함께) · `make ios-run`(설치 · 실행).
+셋 다 `make test`에 넣지 않는다(함정 75). 처음 받는 Kotlin/Native · Compose 빌드는 10분 가까이 걸린다.
 
 **기기** — 에뮬레이터와 사용자 폰이 함께 붙어 있을 수 있다. `./gradlew installDebug`는 **붙어 있는 전부에** 설치한다 — 반드시 대상을 준다.
 - `make install-dev TARGET=emu` — 스레드의 확인은 **에뮬레이터**에서 한다(덮어쓰기, 데이터·모델 유지). `TARGET=phone`은 **사용자가 요청할 때만.**
 - `make reinstall-dev-engine`·`make test-device`는 **앱을 지운다**(저장 데이터·모델이 사라진다).
 - Gradle 게이트와 에뮬레이터 확인을 **동시에 돌리지 않는다** — 에뮬레이터(RAM 2GB)가 멈춘다. 빠르기는 에뮬레이터로 판단하지 않는다(함정 86).
-- **iOS** — 스레드의 확인은 **시뮬레이터**에서, 아이폰 실기기 · TestFlight는 **사용자가** 한다(안드로이드의 에뮬레이터 · 폰과 같은 나눔). 명령은 #292가 정한다.
+- **iOS** — 스레드의 확인은 **시뮬레이터**에서(`make ios-run IOS_SIM="iPhone 17"` — 이름이나 UDID), 아이폰 실기기 · TestFlight는 **사용자가** 한다(안드로이드의 에뮬레이터 · 폰과 같은 나눔).
+  Gradle 게이트와 iOS 빌드를 **동시에 돌리지 않는다** — Xcode의 빌드 단계가 같은 저장소의 Gradle을 부른다.
 
 **커밋·푸시**(2026-10-07 사용자 결정)
 - **main에서 바로, 작은 단위로 커밋한다** — 결정 하나, 수정 하나가 커밋 하나. 미커밋으로 쌓아 두지 않는다(함정 62).
@@ -114,12 +116,12 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   판정은 `LifeAndDeathJudge` 하나(어느 판정을 쓰는지는 `lifeAndDeathJudgeFor` 한 곳) — 만든 문제는 풀이기(`LifeAndDeathSolver.kt`, 패는 오답 · 손을 빼도 되면 다 푼 것)가 읽고, 폰에서 읽기에 큰 문제와 고전은
   맥에서 미리 쓴 표(`LifeAndDeathAnswerTables.kt` — 고전은 원전의 수만 정답)를 읽는다. 고전의 국면 · 해답은 실험실 E13이 맞춘다. 19줄 문제는 왼쪽 위 귀만 보인다. (← #278 · #279)
 - **실험실** `engine-lab/`: AI의 세기 · 기권 · 모델을 바꾸기 전에 맥에서 잰다(E1~E10).
-- **iOS — 아직 앱이 없다**(2026-10-26 확인 · ← #291 ~ #298):
-  공유 코드(`:shared` · `:core:domain` · `:core:enginecontract`)는 iOS 타깃으로 **컴파일만** 된다 — 게이트 뒤(`-PenableIosTargets=true`, `make test-ios` · 함정 75), `iosMain`의 실제 구현은 둘(`SharedLock` · `EngineIoDispatcher`)뿐이다.
+- **iOS — 뼈대만 있다**(2026-10-26 · ← #291 ~ #298): `app-ios/GoCoach.xcodeproj`(SwiftUI 껍데기) → Kotlin `:shared-ui`(Compose Multiplatform)의 임시 첫 화면 하나 — 실행은 `make ios-run`(#292). 아래는 iOS로 옮길 것이 딛는 사실이다.
+  공유 코드(`:shared` · `:core:domain` · `:core:enginecontract`)는 iOS 타깃으로 컴파일되고 `:shared-ui`를 거쳐 앱에 링크된다 — 게이트 뒤(`-PenableIosTargets=true`, `make test-ios` · 함정 75), `iosMain`의 실제 구현은 둘(`SharedLock` · `EngineIoDispatcher`)뿐이다.
   화면은 전부 `app-android`의 Jetpack Compose다(Kotlin 279파일 · 약 5.6만 줄, 그중 98파일이 Android 전용 API를 import) — 규칙 · 정책 · 세션은 shared(약 2.6만 줄), 4개 언어 문구는 `ui/l10n/`의 Kotlin.
   엔진은 KataGo를 **별도 프로세스로 띄운다**(`ProcessBuilder` — `engine-android/.../KataGoProcessRuntime.kt`가 유일한 곳). 모델 둘 `model.bin.gz` 97.9MB · `human.bin.gz` 99.1MB(PAD 팩 — `katago_model_pack` · `katago_human_pack`).
   Android에만 있는 것: Play 결제 · AdMob · PAD · 인앱 업데이트 · CameraX · OpenCV(원근 · 격자 틀) · Firebase Auth(로그인은 꺼져 있다 — `FeatureFlags.isLoginEnabled`). 돌 판정 신경망 `StoneNet`은 순수 Kotlin이지만 `app-android`에 있다(`java.nio`를 쓴다).
-  applicationId `com.zenit9hub.ai.baduk` · 패키지 `com.worksoc.goaicoach`. 이 맥: **Xcode 설치 중**(사용자 2026-10-26) — 활성 개발 경로는 아직 Command Line Tools라 `xcodebuild` · `simctl`이 안 돈다(→ #291).
+  applicationId `com.zenit9hub.ai.baduk` · 패키지 `com.worksoc.goaicoach`. 이 맥: Xcode 27.1 · 활성 개발 경로 Xcode(2026-10-26) · 시뮬레이터 런타임 iOS 27.0 · 27.1.
   원칙(`FEATURE_ACCESS_PRINCIPLES.md` §3): Play 먼저 · App Store는 뒤였고, 붙일 때 **사용자가 보는 팝업 · 문구 · 단계는 같은 틀**(결제 같은 내부만 다르게).
   **정해진 것**(#291 — 카드들은 여기를 가리킨다): ✅ **U-83 결정(2026-10-26 사용자)**: **Compose Multiplatform** — 지금의 Compose 화면 · 4개 언어 문구 · 디자인 값을 공유 UI 모듈로 옮겨 안드로이드와 iOS가 함께 쓴다(SwiftUI · Flutter는 고르지 않았다).
   ✅ **U-84 결정(2026-10-26 사용자)**: 첫판은 **1.8.4에서 바둑판 사진 분석만 뺀 전부**(대국 · 승급 대국 · 이어하기 · 다시보기 · 학습 · 기보 보기 · 실험실 · 배경음악 · 구독 · 광고) · **아이폰만**(iPad는 다음 판).
@@ -161,6 +163,16 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - **딛는 사실**: iOS 타깃은 게이트 뒤에 있다(`shared/build.gradle.kts`의 `enableIosTargets` — 기본 꺼짐, 안드로이드 빌드를 빠르게 두려고). 프레임워크 출력은 아직 선언돼 있지 않다. `iosX64`(인텔 시뮬레이터)도 선언돼 있다 — 남길지 스레드가 제안.
 - ⚠️ **안드로이드 빌드 · 게이트를 느리게 하거나 바꾸지 않는다** — iOS는 게이트 뒤에 둔 채, 정규 게이트는 그대로 초록이어야 한다(함정 75: iOS가 깨져도 안드로이드의 초록이 가린다 — `make test-ios`).
 - **끝**: 시뮬레이터에서 앱이 뜨고 공유 코드의 값 하나가 화면에 보인다 · 사용자 아이폰에 개발 서명으로 설치돼 뜬다(사용자 확인).
+- **진행**(2026-10-26): **시뮬레이터 몫은 됐다** — 공유 UI 모듈 `:shared-ui`(`a163fa9b`) · Xcode 프로젝트 `app-ios/GoCoach.xcodeproj`와 `make ios-build` · `make ios-run`(`c358272f`).
+  iPhone 17 시뮬레이터(iOS 27.0)에서 앱이 뜨고 「승급 대국 20급 ~ 9단 · 29칸」(`KgsRank`)이 한글 글꼴로 보인다. 안드로이드 게이트 초록 · 플러그인 클래스패스 AGP 8.13.2 / Kotlin 2.3.20 그대로 · `make test-ios` 초록.
+  ⏳ **실기기 남음** — 개발자 가입 승인(#291) 뒤: Xcode › Signing에 팀을 고르고 사용자 아이폰에 설치(사용자 확인). 팀 ID를 프로젝트에 적을지는 그때 정한다.
+- **딛게 된 사실**(#293 ~ #298이 본다): Xcode의 빌드 단계 「Compile Kotlin Framework」가 `:shared-ui:embedAndSignAppleFrameworkForXcode`를 부른다(JDK 17) — 화면 코드를 고친 뒤 Xcode에서 그냥 빌드하면 된다.
+  ⚠️ Compose Multiplatform은 `Info.plist`에 `CADisableMinimumFrameDurationOnPhone`이 없으면 시작할 때 멈춘다(엄격한 plist 검사 — 1.9.3 UI 라이브러리에서 확인) — 키는 `app-ios/Info.plist`.
+  ⚠️ 링크할 때 경고 하나: 프레임워크 안의 ICU 데이터 오브젝트가 **iOS 시뮬레이터 17.2용**으로 지어졌다(배포 대상은 16.0) — 지원할 가장 낮은 iOS(#293의 물음)를 정할 때 함께 본다.
+  디버그 빌드는 시뮬레이터에서 첫 그림까지 몇 초 흰 화면이다 — 빠르기는 시뮬레이터로 판단하지 않는다.
+- **스레드가 정한 것**(사용자 확인 전): ① 이름 — 모듈 `:shared-ui` · 프레임워크 `SharedUI` · 폴더 `app-ios/`(`app-android/`의 짝) · 프로젝트 · 타깃 · 스킴 `GoCoach` · 첫 화면 `SkeletonApp`(임시 — #294가 홈으로 갈아 끼운다)
+  ② Compose Multiplatform 1.9.3 · Material3 1.9.0(앱의 Compose BOM과 같은 줄이라서 — 더 새 판은 BOM을 올릴 때 함께) ③ 자리표시 값 — 배포 대상 iOS 16.0(#293이 정한다) · 버전 1.8.4 / 10804(#298이 정한다) · 세로 고정 · 앱 분류 보드 게임 · 아이콘 없음
+  ④ `iosX64`는 `:shared`와 맞춰 남겼다(`make ios-build`는 arm64만 짓는다) ⑤ `make ios-run`의 기본 시뮬레이터 「iPhone 17」.
 
 ---
 
