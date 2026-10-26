@@ -196,7 +196,15 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   (`EngineProcessLifecycle.kt` — Timeout · ForceReset · Died · NetworkSwap). 스레드는 죽일 수 없다 — 시간 초과 · 「엔진 다시 시작하기」 · 갈아 올리기를 `quit`과 기다리기(또는 KataGo의 멈춤)로 바꿔야 한다(함정 71 · 85의 분기를 깨지 말 것)
   ⓒ std::cin / std::cout은 프로세스에 하나라 **한 번에 한 엔진**이다 — 안드로이드는 `gtp`와 JSON `analysis`를 **함께** 띄울 때가 있다(`KataGoProcessEngineAdapter.analyze`). 길: GTP만 쓰고 넓은 분석은 이미 있는 GTP 폴백으로(분석 설정이 없을 때 안드로이드도 그렇게 돈다) / KataGo의 두 루프가 스트림을 인자로 받게 고친다
   ⓓ KataGo는 로그 · 홈 폴더를 한 단계만 만든다 — 미리 만든다(안드로이드 `EngineBootstrap.kt`의 mkdirs와 같다).
-- **다음**: Kotlin 쪽 엔진 어댑터가 이 다리를 부르게(cinterop — 안드로이드의 GTP 클라이언트 · 파서를 그대로 쓰는 것이 목표, ⓑ · ⓒ의 설계를 먼저 정한다) → 실기기 라이브러리(`build-katago-ios.sh iphoneos`)와 아이폰 속도(개발자 가입 뒤) → 백엔드(Eigen이 느리면 Metal · CoreML 포크) → 모델 싣기.
+- ✅ **ⓑ · ⓒ 설계 결정(2026-10-26 사용자 — 스레드가 설계안을 보이고 물었다)**: ⓒ **KataGo를 고쳐 둘 다**(스레드는 「GTP 하나로」를 추천했다 — 사용자가 안드로이드처럼 대국용 · 분석용 함께를 골랐다) ·
+  코드 자리는 **공유 모듈로 옮기기**(시간 초과 · 재시작 규칙이 한 곳). ⓑ는 스레드 설계: 강제 종료 = **끊고 비우기**(명령 파이프를 닫으면 KataGo가 지금 명령을 끝내고 스스로 내려간다 · 응답은 뒤에서 EOF까지 버린다) · 같은 종류는 한 번에 하나(새 엔진은 옛 엔진이 물러난 뒤).
+- **진행 ② — Kotlin 어댑터 연결: 된다**(2026-10-26, 시뮬레이터): ① `:engine-android`를 KMP 모듈로 — 어댑터 · 수명 · GTP/JSON 클라이언트 · 파서가 commonMain, 안드로이드는 프로세스 띄우기(`LocalKataGoProcessRuntime.kt`)만(`4574e1d1` — 게이트 · 엔진 테스트 169 · 실험실 25 초록, 안드로이드 동작 불변)
+  ② iOS 런타임 `InProcessKataGoRuntime`(iosMain, cinterop) · 다리 v2(종류마다 하나 · 세션 번호 · 예외 잡기 · SIGPIPE 무시) · KataGo의 두 루프가 각자의 스트림(`build-katago-ios.sh`)(`6b7b7961`).
+  `make ios-engine-probe`(Kotlin 프로브 — 시뮬레이터): GTP 착수 E5 · C4 → **JSON 분석 엔진을 GTP와 함께**(폴백 없음) → 형세 → 사람 모델로 갈아 올리기(두 엔진 물러남 → 사람 GTP 2세대 · 15급 정책) → 주 모델 → forceReset 뒤 3세대 착수 → stop.
+- **스레드가 정한 것**(사용자 확인 전): ① 새 모듈 대신 `:engine-android`를 **제자리에서** KMP로(내부 공개 범위 · 엔진 테스트 25파일을 그대로 두려고) — 모듈 이름 `:engine-katago`로 바꾸기는 따로 남겼다(기계적 · 참조 41곳)
+  ② JSON은 org.json 대신 `kotlinx-serialization-json` 1.10.0(새 의존성 — 앱에도 실린다), 쿼리 JSON의 **키 순서만** 바뀐다(KataGo는 보지 않는다 — 골든의 순서만 고쳤다)
+  ③ 옛 엔진을 기다리는 상한 30초 · iOS 파이프 풀 8스레드 ④ 엔진 공용 코드에는 「JVM 전용 API 금지」 계약만 걸고 계층 목록에는 넣지 않았다(한 패키지에 1 · 2계층).
+- **다음**: 앱 화면이 이 엔진을 쓰게(#294와 함께 — 모델 · 설정 파일을 앱에 싣는 길) → 실기기 라이브러리(`build-katago-ios.sh iphoneos`)와 아이폰 속도(개발자 가입 뒤) → 백엔드(Eigen이 느리면 Metal · CoreML 포크) → 모델 싣기 방식.
 
 ---
 
