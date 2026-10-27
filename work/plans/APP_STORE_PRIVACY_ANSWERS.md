@@ -352,6 +352,11 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 
 ## ⑧ 개인정보처리방침: 제출 **전에** rezen.dev에서 고칠 것
 
+> ✅ **2026-10-27 반영(사용자 「지금 진행해두자」)**: rezen.dev `7924b07` — 방침 · 지원 페이지 · 지문 계약. 배포 게이트(`npm run build`) 통과. **로컬 커밋뿐이라 아직 배포 전이다**(푸시하면 Cloudflare가 배포한다). 아래 표는 초안 기록이고 문안의 정본은 그 커밋이다.
+> - 반박 검증 워크플로(관점 넷 + 반박 넷 + 빈 곳 점검)로 초안에서 바뀐 것: 충돌 기록은 **iPhone만**(Play A-4는 「진단」만 신고 — 안드로이드까지 쓰면 Play와 어긋난다) · 안드로이드 광고 경로를 Google 도움말(「설정 > 개인 정보 보호 > 광고」, 옛 경로는 「기기에 따라」로 남김)로 · iCloud 경로를 Apple 문서(108922)대로 · 지원 FAQ 「학습 하기」 → 실제 이름 「바둑 배우기」 · 「구독 화면」 → 「내 정보」 구독 카드. 더한 것: 안드로이드 카메라 · 사진 접근(Play 정책 — 기존 방침에도 없던 것) · 안드로이드 GMA는 앱 시작 때 초기화 · 식별자 · 진단 로그 · 구독 결과도 기기 백업에 담김 · 진단 로그 복사의 실제 내용 · Google이 가진 정보의 문의처와 보관 정책 · 자동 수집 장치 · 안전성 확보 조치(7절) · 방침 변경(8절) · 두 스토어 구독은 서로 이어지지 않음. 문의처는 7절 → 9절.
+> - ⚠️ **사용자 판단으로 남긴 것**(빈칸으로 게시하지 않으려고 넣지 않았다): ⓐ 문의 메일로 받는 이메일 주소 · 내용의 보유 기간 ⓑ 국외 이전 절(이전 국가 · 근거) ⓒ 처리의 법적 근거(법 22조③) · EEA 이용자 GDPR 안내 ⓓ 개인정보 보호책임자 성명(지금은 「개발팀」) ⓔ 4절 「같은 수준 이상으로 보호하는 제3자만 이용」 문장의 근거로 Google 광고 컨트롤러 간 데이터 보호 약관을 링크할지.
+> - ⚠️ 시행일자는 「2026년 10월 27일」이다. 배포가 다른 날이면 날짜를 고치고 지문을 다시 갱신한다. 설정 「광고 개인정보 설정」 문장이 iPhone에서 참이 되려면 AdMob에서 iOS 앱에도 UMP 메시지를 게시해야 한다(⑨).
+
 - 원문: 형제 저장소 `/Users/ryan9kim/worksoc/rezen.dev`의 `web/site/src/components/legal/BadukAiPrivacy.astro`(마지막 변경 `7ce1cbb`, 2026-10-20). 시행일자는 「2026년 9월 22일」이다. 2026-10-27에 읽은 배포본(https://rezen.dev/apps/baduk-ai/privacy/)과 내용이 같다.
 - ⚠️ **이 컴포넌트 하나가 세 곳을 그린다**: 정식 위치 `/apps/baduk-ai/privacy/`, 별칭 `/go-ai-coach/privacy/`(바둑 앱 1.6.0 이하 바이너리용), baduk-ai 레거시 호스트의 `/privacy`(`web/site/worker.js`). 그래서 고칠 문안은 **안드로이드와 iPhone을 함께** 덮어야 한다. 안드로이드 문장을 지우면 Play 신고(A-4)와 어긋난다. **더하기만** 한다.
 - ⚠️ 본문 지문 계약: `contracts/policy-text.json`의 sha256을 `scripts/check-dist.mjs`(425~447행)가 정식 위치와 별칭 두 경로에서 검사한다. 문구를 바꾸면 검사가 실패하고 새 값을 출력한다. 그 값으로 두 줄을 함께 갱신한다. 계약 주석의 「앱과 Play 신고를 먼저 맞춘 뒤」도 지킨다.
@@ -404,8 +409,9 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 - [ ] (선택) AdMob 차단 설정에서 민감 카테고리(도박 등)를 막는다. 등급과 G 요청 설정을 보강한다.
 
 **rezen.dev(형제 저장소)**
-- [ ] ⑧ ①~⑤·⑧(+⑥·⑦ 권장)을 고친다 → 지문 계약 두 줄 갱신 → 빌드·배포 → `/apps/baduk-ai/privacy/`, `/go-ai-coach/privacy/`, 레거시 호스트 `/privacy`가 모두 200이고 새 본문인지 확인한다.
-- [ ] 지원 페이지 iPhone FAQ. 출시 뒤 제품 페이지에 App Store 링크.
+- [x] ⑧을 고친다 → 지문 계약 두 줄 갱신 → 빌드(rezen.dev `7924b07`, 2026-10-27).
+- [ ] 푸시(= 배포) → `/apps/baduk-ai/privacy/`, `/go-ai-coach/privacy/`, 레거시 호스트 `/privacy`가 모두 200이고 새 본문인지 확인한다.
+- [x] 지원 페이지 iPhone FAQ(같은 커밋). 출시 뒤 제품 페이지에 App Store 링크.
 
 **코드(스레드가 할 수 있지만 사용자 승인이 먼저)**
 - [x] 「Grant one ticket」을 debug 전용으로 옮기기(⑥ — 사용자 2026-10-27).
