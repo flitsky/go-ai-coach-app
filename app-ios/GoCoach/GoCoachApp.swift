@@ -9,10 +9,11 @@ import SharedUI
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     /// 프로세스에 하나 — 플랫폼 · 시작 처리 · 엔진 묶음(안드로이드 `GoAiCoachApplication`의 짝). 장면이 다시 붙어도 같은 것을 쓴다.
-    let root = IosAppRoot(
+    let ads = GoogleAdsSource.makeFromBundle()
+    lazy var root = IosAppRoot(
         modelSource: AppleHostedModelSource.makeIfAvailable(),
         storeSource: AppStoreSubscriptionSource(),
-        adsSource: GoogleAdsSource.makeFromBundle()
+        adsSource: ads
     )
 }
 
@@ -24,8 +25,11 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         // 실행 화면이 내려간 뒤 첫 프레임까지도 앱 바탕색으로(번쩍임 방지 — Info.plist UILaunchScreen과 같은 색).
         window.backgroundColor = UIColor(named: "LaunchBackground")
-        window.rootViewController = (UIApplication.shared.delegate as! AppDelegate).root.makeViewController()
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        window.rootViewController = appDelegate.root.makeViewController()
         window.makeKeyAndVisible()
         self.window = window
+        // 창이 선 뒤에 동의 정보만 새로 묻는다(안드로이드처럼 `setContent` 뒤 — 폼은 광고 직전에).
+        appDelegate.ads?.refreshConsentInfo()
     }
 }

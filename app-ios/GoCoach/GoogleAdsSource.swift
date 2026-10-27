@@ -8,7 +8,8 @@ import UserMessagingPlatform
 ///
 /// 광고 ID는 `Info.plist`의 세 키 — 값은 빌드 설정에서 온다(`app-ios/Config/Ads.xcconfig`: Google 공식 시험 ID, 출시 구성은
 /// `Ads.local.xcconfig`(커밋하지 않는다 — 안드로이드 `local.properties`의 `admob.*` 자리)의 실제 ID). 시험 ID로는 App Store용 보관(archive)이 막힌다.
-/// ATT 창을 띄우지 않으므로 광고 식별자(IDFA)를 쓰지 않는다 — `NSUserTrackingUsageDescription`도 두지 않는다.
+/// ATT 창을 띄우지 않으므로 광고 식별자(IDFA)를 쓰지 않는다 — `NSUserTrackingUsageDescription`도 두지 않는다. 그리고 모든 요청을 **비맞춤**(`npa=1`)으로 보낸다 —
+/// IDFA가 없어도 다른 신호로 맞춤이 될 수 있어서, U-86의 「비맞춤만」을 요청에 직접 적는다([adRequest]).
 final class GoogleAdsSource: NSObject, IosAdsSource, FullScreenContentDelegate, @unchecked Sendable {
     private let rewardedUnitID: String
     private let bannerUnitID: String
@@ -34,6 +35,14 @@ final class GoogleAdsSource: NSObject, IosAdsSource, FullScreenContentDelegate, 
         MobileAds.shared.requestConfiguration.maxAdContentRating = .general
     }
 
+    /// 앱이 뜰 때 동의 정보만 새로 묻는다(폼은 띄우지 않는다 — 안드로이드 `MainActivity`의 `AdsConsentManager.refresh`와 같다).
+    /// 이것이 없으면 처음 설치한 기기에서 `canRequestAds`가 첫 보상형 광고 전까지 거짓이라 다시보기 배너가 비어 있다.
+    func refreshConsentInfo() {
+        Task { @MainActor in
+            try? await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
+        }
+    }
+
     func gatherConsent(listener: IosAdsConsentListener) {
         Task { @MainActor in
             // 매번 새로 묻는다 — 시작할 때의 확인이 끝나기 전에 광고 단추가 눌려도 공유 상태 없이 맞는다(안드로이드 `refresh`와 같은 이유).
@@ -54,7 +63,7 @@ final class GoogleAdsSource: NSObject, IosAdsSource, FullScreenContentDelegate, 
             }
             let ad: RewardedInterstitialAd
             do {
-                ad = try await RewardedInterstitialAd.load(with: rewardedUnitID, request: Request())
+                ad = try await RewardedInterstitialAd.load(with: rewardedUnitID, request: Self.adRequest())
             } catch {
                 listener.onLoadFailed(detail: error.localizedDescription)
                 return
@@ -126,10 +135,19 @@ final class GoogleAdsSource: NSObject, IosAdsSource, FullScreenContentDelegate, 
             banner.rootViewController = Self.topViewController()
             // 동의 없이는 요청하지 않는다 — 배너의 유일한 관문이다(안드로이드 `BannerAdViewAndroid`와 같다).
             if ConsentInformation.shared.canRequestAds {
-                banner.load(Request())
+                banner.load(Self.adRequest())
             }
             return banner
         }
+    }
+
+    /// 비맞춤 광고 요청(U-86) — Google의 `npa=1` 추가 매개변수.
+    private static func adRequest() -> Request {
+        let request = Request()
+        let extras = Extras()
+        extras.additionalParameters = ["npa": "1"]
+        request.register(extras)
+        return request
     }
 
     private func clearShowingAd() {
