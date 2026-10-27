@@ -9,7 +9,16 @@
 #   appassets/audio/     배경음악(#244) — 안드로이드 `res/raw/bgm_*.ogg`를 AAC(m4a)로 바꿔 싣는다(iOS의 AVAudioPlayer는 Ogg Vorbis를 못 연다).
 #                        바꾼 파일은 DerivedData에 두고 원본이 더 새로울 때만 다시 바꾼다. ffmpeg가 없으면 Debug는 음악 없이 묶고(경고 — 앱은 조용할 뿐이다),
 #                        Release는 멈춘다(출시 빌드가 음악 없이 나가지 않게).
+# 더해 광고 ID 검사(#296): App Store용 보관(archive — ACTION=install)이 Google 시험 ID(`ca-app-pub-3940256099942544`)를 들고 있으면 멈춘다 —
+# 실제 ID는 `app-ios/Config/Ads.local.xcconfig`(Ads-Release.xcconfig 머리말). 안드로이드 `verifyReleaseAdmobKeys`의 짝이다.
 set -euo pipefail
+if [ "${ACTION:-build}" = "install" ] && [ "${CONFIGURATION:-Debug}" = "Release" ]; then
+  case "${GAD_APPLICATION_ID:-}${GOCOACH_REWARDED_INTERSTITIAL_AD_UNIT_ID:-}${GOCOACH_BANNER_AD_UNIT_ID:-}" in
+    *ca-app-pub-3940256099942544*|"")
+      echo "error: App Store archive with Google test ad IDs — put the real AdMob IDs in app-ios/Config/Ads.local.xcconfig (see Ads-Release.xcconfig)"
+      exit 1 ;;
+  esac
+fi
 SRC="${SRCROOT}/../app-android/src/main"
 DST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/appassets"
 mkdir -p "$DST/drawable" "$DST/assets"

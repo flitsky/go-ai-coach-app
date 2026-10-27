@@ -51,7 +51,8 @@ internal val IosBackgroundMusicPlaylist: List<String> = listOf(
  *
  * 안드로이드와 같게 맞춘 것: 볼륨 25% · 곡을 이어 틀고 끝나면 처음으로 · 앱이 뒤로 가면 멈추고 돌아오면 이어 틂 · **다른 앱 음악이 나오고
  * 있으면 틀지 않음**(사용자가 설정에서 방금 켰을 때만 튼다 — 그때는 다른 앱 음악이 멈춘다: `SoloAmbient`) · 전화처럼 잠깐 끊기면 끝난 뒤 이어 틂.
- * iOS에만 있는 것: `SoloAmbient`라 무음 스위치를 켜면 조용하다(게임 앱의 보통 동작 — 스레드가 정한 것). 전면 광고가 아직 없어 광고 입력은 늘 거짓이다(#296).
+ * 전면 광고 동안은 멈췄다가 닫히면 이어 튼다([whileFullScreenAdShows] — 보상형 광고의 단일 깔때기 `IosAppMonetization.showRewardedAdOnce`가 부른다, #296).
+ * iOS에만 있는 것: `SoloAmbient`라 무음 스위치를 켜면 조용하다(게임 앱의 보통 동작 — 스레드가 정한 것).
  */
 @OptIn(ExperimentalForeignApi::class)
 internal class IosBackgroundMusic(
@@ -76,6 +77,16 @@ internal class IosBackgroundMusic(
             this@IosBackgroundMusic.player = null
             trackIndex = nextBackgroundMusicTrack(trackIndex, playlist.size)
             if (wantsToPlay) playCurrent()
+        }
+    }
+
+    /** 전면 광고가 떠 있는 동안 — 안드로이드 `BackgroundMusicCoordinator.whileFullScreenAdShows`와 같다. */
+    suspend fun <T> whileFullScreenAdShows(block: suspend () -> T): T {
+        isFullScreenAdShowing.value = true
+        try {
+            return block()
+        } finally {
+            isFullScreenAdShowing.value = false
         }
     }
 

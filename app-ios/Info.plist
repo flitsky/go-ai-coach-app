@@ -17,6 +17,21 @@
 	<true/>
 	<key>BAUsesAppleHosting</key>
 	<true/>
+	<!-- 광고(백로그 #296): 값은 빌드 설정(app-ios/Config/Ads*.xcconfig). ATT 창을 띄우지 않으므로 NSUserTrackingUsageDescription은 두지 않는다(U-86). -->
+	<key>GADApplicationIdentifier</key>
+	<string>$(GAD_APPLICATION_ID)</string>
+	<key>GoCoachRewardedInterstitialAdUnitID</key>
+	<string>$(GOCOACH_REWARDED_INTERSTITIAL_AD_UNIT_ID)</string>
+	<key>GoCoachBannerAdUnitID</key>
+	<string>$(GOCOACH_BANNER_AD_UNIT_ID)</string>
+	<!-- Google의 SKAdNetwork 식별자 하나(타사 구매자 목록은 넣지 않았다 — 스레드가 정함). -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

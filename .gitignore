@@ -13,6 +13,8 @@ dist/
 # Xcode(app-ios/ — 백로그 #292) — 사람마다 다른 창 · 중단점 상태
 xcuserdata/
 *.xcuserstate
+# 실제 AdMob ID(백로그 #296 — 안드로이드 local.properties의 admob.* 자리)
+app-ios/Config/Ads.local.xcconfig
 
 # Android
 local.properties

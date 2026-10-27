@@ -293,7 +293,14 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   **스레드가 정한 것**: 상품 ID `premium_basic_monthly`(안드로이드 `premium_basic` + `monthly`) · 구독 그룹 「Premium」 · 약관은 Apple 표준 EULA · 복원 실패 때 「없다」는 모른다로(강등 안 함).
   **사용자 몫**: App Store Connect에 그 ID로 자동 갱신 구독(3,900원 가격 등급 · 177개국은 안드로이드와 맞출지) · 유료 앱 계약 · 샌드박스 계정으로 실기기 확인.
 - ✅ **U-86 사용자 결정(2026-10-27)**: 수익 구조는 **안드로이드와 똑같이**(구독 + 보상형 광고 1시간 + 다시보기 배너, 구독자 제외 + UMP 동의) · ATT 창은 **띄우지 않고 비맞춤 광고만**.
-- **남은 것**: AdMob iOS SDK(보상형 · 다시보기 배너 — 개발은 시험 광고 ID) · UMP 동의 창 · 사용자 몫(AdMob에 iOS 앱 · 광고 단위 만들기).
+- **진행 ② — 광고**(2026-10-27): Google Mobile Ads 12.14 + UMP 3.1(Swift 패키지, `Package.resolved`로 고정) · Swift `GoogleAdsSource` → Kotlin `IosAdsSource` →
+  `IosAppMonetization.showRewardedAdOnce`(안드로이드와 같은 단일 깔때기: 광고 직전 동의 → 광고 동안 배경음악 멈춤) · 배너는 `BannerAdViewIos`(`UIKitView` — 세로 고정 적응형, 동의 있을 때만 요청) ·
+  요청 설정 G 등급 · ATT 없음(`NSUserTrackingUsageDescription` 없음). 광고 ID는 `app-ios/Config/Ads.xcconfig`(Google 시험 ID, 커밋) · 출시는 `Ads.local.xcconfig`(커밋 안 함 — 안드로이드 `local.properties`의 짝) ·
+  시험 ID로 App Store용 보관(archive)을 하면 `ios-bundle-resources.sh`가 멈춘다.
+  ✅ 시뮬레이터(iPhone Air): 업셀 「광고 시청으로 1시간」 → Google 시험 광고 → 닫으면 「대국 시작하기 59:58」 · 다시보기 머리 아래 시험 배너.
+  **스레드가 정한 것**: SKAdNetwork는 Google 것 하나만 · EEA 동의 디버그(안드로이드 `FORCE_EEA_CONSENT_DEBUG`)는 iOS에 두지 않았다.
+- **사용자 몫**: AdMob에 iOS 앱(`com.zenit9hub.ai.baduk`) · 보상형 전면 · 배너 단위 만들기 → 세 ID를 `app-ios/Config/Ads.local.xcconfig`에(머리말은 `Ads-Release.xcconfig`) ·
+  AdMob 「앱 연결」(App Store 등록 뒤) · UMP 메시지(EEA)를 iOS 앱에도 게시 · App Store 개인정보 라벨(광고 데이터 — #298).
 
 ### 297. **iOS 테스트 — 시뮬레이터 · 실기기 · TestFlight** (Opus / 중간) — #293 ~ #296 뒤
 

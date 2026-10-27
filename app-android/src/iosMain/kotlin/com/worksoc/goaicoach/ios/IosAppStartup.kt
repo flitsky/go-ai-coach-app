@@ -24,10 +24,10 @@ private var started = false
 /**
  * 프로세스 시작에 한 번(백로그 #294 — 이식 계획 S29) — 안드로이드 `GoAiCoachApplication.onCreate`의 짝. 지금 하는 일:
  * 앞으로 올 때마다 `AppForegroundEvents`를 알리고(콜드 스타트 포함 — 안드로이드 `ProcessLifecycleOwner.ON_START`와 같다), 그때마다 출석을
- * 확인한다(`AttendanceCheckInCoordinator`와 같은 일). 배경음악을 켠다([IosBackgroundMusic]).
+ * 확인한다(`AttendanceCheckInCoordinator`와 같은 일). 배경음악을 켠다([IosBackgroundMusic] — 광고 동안 멈추게 하려고 [IosAppRoot]가 만들어 넘긴다).
  * 개발자 모드 주기 초기화(#99)는 이보다 먼저 [applyIosDeveloperModeReset]이 한다. 하지 않는 것: 정식 릴리스 초기화(#63 — iOS에는 지울 베타 기록이 없다).
  */
-internal fun runIosAppStartup(platform: AppPlatform) {
+internal fun runIosAppStartup(platform: AppPlatform, music: IosBackgroundMusic) {
     if (started) return
     started = true
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -45,7 +45,7 @@ internal fun runIosAppStartup(platform: AppPlatform) {
         `object` = null,
         queue = NSOperationQueue.mainQueue,
     ) { _ -> AppForegroundEvents.notifyForegrounded() }
-    IosBackgroundMusic(platform.stores.backgroundMusic).start()
+    music.start()
     // 콜드 스타트도 「앞으로 왔다」다(안드로이드 `ProcessLifecycleOwner.ON_START`가 콜드 스타트에도 온다).
     scope.launch(Dispatchers.Main) { AppForegroundEvents.notifyForegrounded() }
 }

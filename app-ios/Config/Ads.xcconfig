@@ -1,0 +1,6 @@
+// 광고 ID(백로그 #296) — Google 공식 시험 ID(developers.google.com/admob/ios/test-ads). 공개 값이라 커밋한다.
+// 디버그는 늘 이 값이다 — 실제 광고 단위에 개발 중 노출 · 클릭이 쌓이면 AdMob이 계정을 제한한다(안드로이드 build.gradle.kts와 같은 이유).
+// 출시 구성은 Ads-Release.xcconfig가 실제 ID(Ads.local.xcconfig — 커밋 안 함)로 덮는다.
+GAD_APPLICATION_ID = ca-app-pub-3940256099942544~1458002511
+GOCOACH_REWARDED_INTERSTITIAL_AD_UNIT_ID = ca-app-pub-3940256099942544/6978759866
+GOCOACH_BANNER_AD_UNIT_ID = ca-app-pub-3940256099942544/2435281174
