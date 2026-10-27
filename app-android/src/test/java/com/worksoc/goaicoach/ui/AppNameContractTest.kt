@@ -88,11 +88,11 @@ class AppNameContractTest {
 
     /**
      * iOS 홈 화면 이름(백로그 #294 — `app-ios/GoCoach/<언어>.lproj/InfoPlist.strings`)이 안드로이드 런처 이름과 **언어마다** 같은지.
-     * 안드로이드 `values-zh`는 번체 기기에도 걸리므로 iOS의 `zh-Hans` · `zh-Hant`가 둘 다 그 값을 쓴다.
+     * 언어 묶음도 같게 둔다 — 안드로이드 `values-zh`는 간체 기기에만 걸리고(번체 기기는 기본 `values`), iOS도 `zh-Hans`만 둔다(번체는 개발 지역 ko).
      */
     @Test
     fun theIosHomeScreenNameIsTheAndroidLauncherNameInEveryLanguage() {
-        val androidByIos = mapOf("ko" to "values", "en" to "values-en", "ja" to "values-ja", "zh-Hans" to "values-zh", "zh-Hant" to "values-zh")
+        val androidByIos = mapOf("ko" to "values", "en" to "values-en", "ja" to "values-ja", "zh-Hans" to "values-zh")
         androidByIos.forEach { (iosLocale, androidValues) ->
             val android = resourceNameIn(androidValues)
             val ios = Regex(""""CFBundleDisplayName" = "([^"]+)";""")

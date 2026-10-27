@@ -15,6 +15,9 @@ import platform.Foundation.NSDate
 actual val isDebugBuild: Boolean = Platform.isDebugBinary
 
 /** 번들의 판 이름 · 번호. 빌드 시각은 Info.plist의 `GoCoachBuildTime`(없으면 빈 칸) — 광고가 아직 없어 늘 테스트 광고다. */
+/** iOS가 처음 나가는 판의 versionCode(1.8.4). 한 번 출시하면 바꾸지 않는다. */
+private const val IosFirstReleaseVersionCode = 10804
+
 actual val appBuildInfo: AppBuildInfo = run {
     val info = NSBundle.mainBundle.infoDictionary
     AppBuildInfo(
@@ -23,6 +26,8 @@ actual val appBuildInfo: AppBuildInfo = run {
         buildTime = info?.get("GoCoachBuildTime") as? String ?: "",
         buildType = if (isDebugBuild) "debug" else "release",
         useTestAds = true,
+        // iOS 첫 판(사용자 2026-10-27: 안드로이드와 같은 번호 1.8.4로 시작) — 「새로워진 점」은 이보다 뒤의 묶음부터.
+        firstReleaseVersionCode = IosFirstReleaseVersionCode,
     )
 }
 

@@ -52,6 +52,9 @@ interface AppPlatform {
     /** 진단 리포트의 기기 정보. */
     val debugReportPlatform: DebugReportPlatformInfo
 
+    /** 기기에 쌓인 기록이 어디로 백업되는가 — 「내 기록은 어떻게 보관되나요」가 그 플랫폼의 사실을 말한다(#294). */
+    val dataBackup: DataBackupKind
+
     /** 엔진 모델이 아직 없어 준비 화면부터 보여야 하는가(S16) — 컴포지션 첫 순간에 한 번 묻는다. */
     fun isEngineSetupRequired(): Boolean
 }

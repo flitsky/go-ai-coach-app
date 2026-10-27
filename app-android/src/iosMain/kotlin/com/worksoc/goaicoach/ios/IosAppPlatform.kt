@@ -28,6 +28,7 @@ import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.designsystem.toByteArray
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
+import com.worksoc.goaicoach.ui.foundation.DataBackupKind
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
@@ -105,6 +106,8 @@ internal class IosAppPlatform : AppPlatform {
 
     /** 엔진 묶음(`iosProcessRuntime`)과 개발자 메뉴가 같은 것을 본다. */
     val diagnosticEventLog: DiagnosticEventLogPort = KvDiagnosticEventLog(IosAppFileStore())
+
+    override val dataBackup = DataBackupKind.IosDeviceBackup
 
     override val debugReportPlatform = object : DebugReportPlatformInfo {
         override fun hapticDiagnostic(): String = IosPlayHaptics.diagnosticReport()

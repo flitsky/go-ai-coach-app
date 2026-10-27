@@ -6,7 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -22,6 +22,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -81,15 +84,20 @@ internal fun IosNoticeOverlay(notice: IosNotice) {
         }
     }
     val message = shown ?: return
+    // ⚠️ 팝업 층은 **제 사각형 안의 터치를 모두** 가져간다(포커스가 없어도) — 그래서 여백(아래 48dp · 양옆 24dp)을 팝업 안에 두지 않는다.
+    //   안에 두면 알림이 떠 있는 2~3.5초 동안 그 여백 밑의 하단 탭 · 버튼이 눌리지 않는다. 띄우기는 offset, 폭은 widthIn으로.
+    val density = LocalDensity.current
+    val maxPillWidth = with(density) { (LocalWindowInfo.current.containerSize.width.toDp() - 48.dp).coerceAtLeast(120.dp) }
+    val lift = with(density) { 48.dp.roundToPx() }
     key(message) {
-        Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(focusable = false)) {
-            Box(modifier = Modifier.safeDrawingPadding().padding(bottom = 48.dp)) {
+        Popup(alignment = Alignment.BottomCenter, offset = IntOffset(0, -lift), properties = PopupProperties(focusable = false)) {
+            Box {
                 AnimatedVisibility(visibleState = visibility, enter = fadeIn(), exit = fadeOut()) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.inverseSurface,
                         contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                        modifier = Modifier.padding(horizontal = 24.dp),
+                        modifier = Modifier.widthIn(max = maxPillWidth),
                     ) {
                         Text(
                             text = message.message,

@@ -82,3 +82,19 @@ internal fun localOnlyDataNoticePointerFor(language: UiLanguage): String =
         UiLanguage.Japanese -> "この記録はこの端末に保存されます"
         UiLanguage.ChineseSimplified -> "这些记录保存在本机"
     }
+
+/**
+ * 「내 기록은 어떻게 보관되나요」의 iOS 본문(백로그 #294 — 사용자 2026-10-27 「iOS 사실대로」). iPhone은 앱 데이터를 기기 백업(iCloud · 컴퓨터)에 담는다 —
+ * 새 iPhone으로 옮기거나 그 백업에서 복원하면 돌아오고, 앱만 지웠다 다시 설치하면 돌아오지 않는다. ⚠️ 구독 복원 문장은 iOS 결제(#296)가 생길 때 더한다(없는 것을 약속하지 않는다).
+ */
+internal fun iosLocalStorageNoticeFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean ->
+            "출석 기록·모은 캐릭터·1회권은 이 iPhone에 쌓입니다. iPhone 백업(iCloud 또는 컴퓨터)에 함께 담겨서, 새 iPhone으로 옮기거나 그 백업에서 복원하면 돌아와요. 앱만 지웠다 다시 설치하면 돌아오지 않아요."
+        UiLanguage.English ->
+            "Check-ins, characters and single-use tickets build up on this iPhone. They are part of your iPhone backup (iCloud or computer), so they come back when you move to a new iPhone or restore from that backup. Deleting and reinstalling only the app does not bring them back."
+        UiLanguage.Japanese ->
+            "出席記録・集めたキャラクター・1回券はこのiPhoneにたまります。iPhoneのバックアップ（iCloudまたはコンピュータ）に含まれるので、新しいiPhoneへの移行やそのバックアップからの復元で戻ります。アプリだけを削除して再インストールした場合は戻りません。"
+        UiLanguage.ChineseSimplified ->
+            "签到记录、收集的角色和单次券会积累在这台 iPhone 上。它们包含在 iPhone 备份（iCloud 或电脑）中，迁移到新 iPhone 或从该备份恢复时会一并恢复。仅删除并重新安装本应用则不会恢复。"
+    }

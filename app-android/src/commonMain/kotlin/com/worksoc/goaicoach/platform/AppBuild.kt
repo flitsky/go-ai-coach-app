@@ -15,6 +15,11 @@ data class AppBuildInfo(
     val useTestAds: Boolean,
     /** 디버그 빌드에서 EEA 동의 창을 억지로 띄우는가(개발자 메뉴 「광고 동의 초기화」의 부제). */
     val forceEeaConsentDebug: Boolean = false,
+    /**
+     * 이 플랫폼에 처음 출시된 판의 versionCode — 「새로워진 점」은 이보다 **뒤의** 묶음만 보인다(#294 — 사용자 2026-10-27).
+     * 안드로이드는 0(모든 묶음). iOS는 첫 판(1.8.4 = 10804) 앞의 안드로이드 이력이 iOS 사용자에게 새것이 아니고, iOS에 없는 기능(사진 분석)도 있다.
+     */
+    val firstReleaseVersionCode: Int = 0,
 )
 
 expect val appBuildInfo: AppBuildInfo

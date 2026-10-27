@@ -1,5 +1,7 @@
 package com.worksoc.goaicoach.ui.l10n
 
+import com.worksoc.goaicoach.platform.appBuildInfo
+
 /**
  * 업데이트한 뒤 보이는 「새로워진 점」(백로그 #257, 사용자 2026-10-13) — **앱에 싣는 버전별 묶음**이다(서버가 없다). 출시 노트(`work/play-store-assets/store_listing.txt`)를
  * 바탕으로 짧게 줄여 4개 언어로 적는다. 묶음이 없는 버전(작은 수정)에는 아무것도 뜨지 않는다.
@@ -294,11 +296,15 @@ internal object WhatsNewCatalog {
         },
     )
 
-    fun release(versionCode: Int): WhatsNewRelease? = releases.firstOrNull { it.versionCode == versionCode }
+    /** 이 플랫폼이 보이는 묶음 — 그 플랫폼의 첫 출시보다 뒤의 것만(`AppBuildInfo.firstReleaseVersionCode`, #294). 홈 한 줄과 설정 목록이 함께 쓴다. */
+    val platformReleases: List<WhatsNewRelease>
+        get() = releases.filter { it.versionCode > appBuildInfo.firstReleaseVersionCode }
+
+    fun release(versionCode: Int): WhatsNewRelease? = platformReleases.firstOrNull { it.versionCode == versionCode }
 
     /** 그 버전까지 실린 묶음들, 새것부터 — 설정 › 앱 정보의 「새로워진 점」이 보인다. */
     fun releasesUpTo(versionCode: Int): List<WhatsNewRelease> =
-        releases.filter { it.versionCode <= versionCode }.sortedByDescending { it.versionCode }
+        platformReleases.filter { it.versionCode <= versionCode }.sortedByDescending { it.versionCode }
 }
 
 /** 화면 이름 — 설정 › 앱 정보의 줄과 창의 제목. */

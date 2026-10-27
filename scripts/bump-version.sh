@@ -67,4 +67,10 @@ VERSION_CODE=${NEW_CODE}
 VERSION_NAME=${NEW_VERSION_NAME}
 EOF
 
+# iOS도 같은 번호(백로그 #294 — 사용자 2026-10-27): Xcode 프로젝트의 두 값을 함께 고친다(`AppVersionSyncContractTest`가 대조한다).
+PBXPROJ="$REPO_ROOT/app-ios/GoCoach.xcodeproj/project.pbxproj"
+if [[ -f "$PBXPROJ" ]]; then
+  perl -pi -e "s/MARKETING_VERSION = [0-9.]+;/MARKETING_VERSION = ${NEW_VERSION_NAME};/g; s/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = ${NEW_CODE};/g" "$PBXPROJ"
+fi
+
 echo "Version bumped: ${CURRENT_NAME} (code ${CURRENT_CODE}) -> ${NEW_VERSION_NAME} (code ${NEW_CODE})"

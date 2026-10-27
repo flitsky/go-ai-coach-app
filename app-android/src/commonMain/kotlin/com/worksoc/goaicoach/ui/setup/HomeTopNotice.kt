@@ -92,7 +92,7 @@ internal fun initialWhatsNewPending(store: WhatsNewStorePort, consumeArm: (Strin
     val fresh = lastSeen == null && store.isFreshInstall()
     if (fresh) store.markSeen(appBuildInfo.versionCode)
     return whatsNewPending(
-        available = WhatsNewCatalog.releases.map { it.versionCode },
+        available = WhatsNewCatalog.platformReleases.map { it.versionCode },
         lastSeenVersionCode = lastSeen,
         currentVersionCode = appBuildInfo.versionCode,
         isFreshInstall = fresh,

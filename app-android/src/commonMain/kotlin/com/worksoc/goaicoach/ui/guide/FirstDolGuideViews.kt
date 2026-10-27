@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -105,9 +105,10 @@ internal fun ZeroSizeOverlay(modifier: Modifier = Modifier, content: @Composable
         val placeable = measurables.first().measure(Constraints())
         val edgeMargin = AppSpacing.Space8.roundToPx()
         layout(0, 0) {
-            // 기준점(카드 우측 상단)에서 **위·왼쪽으로** 그린다. 다만 화면 왼쪽 끝을 넘으면 넘은 만큼만 오른쪽으로 민다(#294) — 대국 카드가
+            // 기준점(카드 우측 상단)에서 **위·왼쪽으로** 그린다. 다만 카드의 왼쪽 끝을 넘으면 넘은 만큼만 오른쪽으로 민다(#294) — 대국 카드가
             // 둘이면(#288) 카드가 반쪽 폭이라 말풍선(최대 260dp)이 카드보다 넓어 글머리가 화면 밖으로 잘렸다. 카드가 하나면 그대로다.
-            val anchorX = coordinates?.positionInRoot()?.x?.roundToInt()
+            // ⚠️ 화면(root) 좌표가 아니라 부모(카드 상자) 안의 좌표로 잰다 — root로 재면 홈 페이저를 넘길 때마다 다시 재어 말풍선이 카드에서 떨어진다.
+            val anchorX = coordinates?.positionInParent()?.x?.roundToInt()
             val x = if (anchorX == null) -placeable.width else maxOf(-placeable.width, edgeMargin - anchorX)
             placeable.place(x = x, y = -placeable.height)
         }

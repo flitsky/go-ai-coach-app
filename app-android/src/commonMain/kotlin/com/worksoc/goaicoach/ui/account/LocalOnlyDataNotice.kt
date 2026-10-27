@@ -20,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.foundation.DataBackupKind
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.iosLocalStorageNoticeFor
 import com.worksoc.goaicoach.ui.l10n.localOnlyDataNoticePointerFor
 
 /**
@@ -45,8 +48,14 @@ internal fun LocalOnlyDataNoticeDialog(onClose: () -> Unit) {
         title = { Text(text = strings.localOnlyDataNoticeTitle, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space8)) {
-                Text(text = strings.localOnlyDataNoticeBody)
-                Text(text = strings.localOnlyDataNoticePaidRestoreLine)
+                when (LocalAppPlatform.current.dataBackup) {
+                    DataBackupKind.GoogleAutoBackup -> {
+                        Text(text = strings.localOnlyDataNoticeBody)
+                        Text(text = strings.localOnlyDataNoticePaidRestoreLine)
+                    }
+                    // iOS(#294): 그 플랫폼의 사실 — 기기 백업 · 재설치로는 안 돌아온다. 구독 복원 문장은 iOS 결제(#296)가 생길 때.
+                    DataBackupKind.IosDeviceBackup -> Text(text = iosLocalStorageNoticeFor(strings.language))
+                }
             }
         },
         confirmButton = { TextButton(onClick = onClose) { Text(strings.close) } },

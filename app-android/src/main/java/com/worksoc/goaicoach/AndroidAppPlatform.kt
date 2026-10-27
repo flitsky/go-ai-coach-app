@@ -49,6 +49,7 @@ import com.worksoc.goaicoach.platform.debugReportBuildStamp
 import com.worksoc.goaicoach.platform.processAppUpdateCheck
 import com.worksoc.goaicoach.ui.foundation.AppPlatform
 import com.worksoc.goaicoach.ui.foundation.AppStores
+import com.worksoc.goaicoach.ui.foundation.DataBackupKind
 import com.worksoc.goaicoach.vision.SharedBoardPhotoInbox
 import java.io.File
 
@@ -98,6 +99,8 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
     override val authClient: AuthClientPort get() = AndroidAuthClient()
     override val googleIdTokens: GoogleIdTokenSource get() = GoogleCredentialManagerClient()
     override val runtimeEventLog: RuntimeEventLogPort get() = RuntimeEventLog(File(appContext.filesDir, RuntimeEventLog.FileName))
+
+    override val dataBackup = DataBackupKind.GoogleAutoBackup
 
     override val debugReportPlatform = object : DebugReportPlatformInfo {
         override fun hapticDiagnostic(): String = PlayHaptics(appContext).diagnosticReport()
