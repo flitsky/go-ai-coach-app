@@ -14,10 +14,16 @@ import platform.Foundation.NSDate
 @OptIn(ExperimentalNativeApi::class)
 actual val isDebugBuild: Boolean = Platform.isDebugBinary
 
-/** 번들의 판 이름 · 번호. 빌드 시각은 Info.plist의 `GoCoachBuildTime`(없으면 빈 칸) — 광고가 아직 없어 늘 테스트 광고다. */
 /** iOS가 처음 나가는 판의 versionCode(1.8.4). 한 번 출시하면 바꾸지 않는다. */
 private const val IosFirstReleaseVersionCode = 10804
 
+/** Google 공식 시험 광고의 게시자 번호 — `app-ios/Config/Ads.xcconfig`의 시험 ID가 모두 이것으로 시작한다. */
+private const val GoogleTestAdsPublisher = "ca-app-pub-3940256099942544"
+
+/**
+ * 번들의 판 이름 · 번호. 빌드 시각은 Info.plist의 `GoCoachBuildTime`(없으면 빈 칸).
+ * 시험 광고 여부는 번들의 AdMob 앱 ID로 판단한다(#296 — 출시 구성은 `Ads.local.xcconfig`의 실제 ID, 없으면 시험 ID) — 진단 줄 `test-ads`가 실제와 맞게.
+ */
 actual val appBuildInfo: AppBuildInfo = run {
     val info = NSBundle.mainBundle.infoDictionary
     AppBuildInfo(
@@ -25,7 +31,7 @@ actual val appBuildInfo: AppBuildInfo = run {
         versionCode = (info?.get("CFBundleVersion") as? String)?.toIntOrNull() ?: 0,
         buildTime = info?.get("GoCoachBuildTime") as? String ?: "",
         buildType = if (isDebugBuild) "debug" else "release",
-        useTestAds = true,
+        useTestAds = (info?.get("GADApplicationIdentifier") as? String)?.startsWith(GoogleTestAdsPublisher) ?: true,
         // iOS 첫 판(사용자 2026-10-27: 안드로이드와 같은 번호 1.8.4로 시작) — 「새로워진 점」은 이보다 뒤의 묶음부터.
         firstReleaseVersionCode = IosFirstReleaseVersionCode,
     )

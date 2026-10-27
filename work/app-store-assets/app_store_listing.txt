@@ -1,0 +1,664 @@
+# App Store 제품 페이지 초안: 포켓 바둑 코치 iOS 1.8.4 (백로그 #298) — 검증판
+
+2026-10-27 작성·검증. 번들 ID `com.zenit9hub.ai.baduk`, 1.8.4(빌드 10804), iPhone 전용, 세로 전용. 저장소는 읽기만 했다(HEAD `43bc9ebc`).
+
+- 같은 날 `43bc9ebc`(앱 시작 때 UMP 동의 정보 갱신, 광고 요청에 `npa=1`)가 들어갔다. 등재 글은 이 변경과 상관없다.
+- 자리(사용자 2026-10-27): 이 파일이 App Store 등재 글의 정본이다 — Play의 `work/play-store-assets/store_listing.txt` 짝. 개인정보 · 연령 · 심사 답안은 `work/plans/APP_STORE_PRIVACY_ANSWERS.md`, 출시 절차와 #297 시험표는 `work/plans/APP_STORE_LAUNCH_PLAN.md`.
+
+## 0. 요약
+
+**모든 칸이 Apple 한도 안에 든다.** 숫자는 Python `len()`으로 셌다(유니코드 코드 포인트, 설명은 줄바꿈 포함). 키워드는 UTF-8 바이트도 셌다.
+
+| 칸 | 한도 | ko | en-US | ja | zh-Hans |
+|---|---|---|---|---|---|
+| 앱 이름 | 2~30자 | 8 | 11 | 7 | 6 |
+| 부제 | 30자 | 19 | 27 | 16 | 14 |
+| 프로모션 텍스트 | 170자 | 127 | 168 | 102 | 84 |
+| 키워드 기본안(자 / UTF-8 바이트) | 100바이트 | 37자 / 91 | 99자 / 99 | 40자 / 98 | 39자 / 95 |
+| 설명 | 4000자 | 3522 | 3948 | 2985 | 2398 |
+| 구독 표시 이름 | 2~30자 | 7 | 12 | 7 | 6 |
+| 구독 설명 | 45자 | 30 | 42 | 26 | 21 |
+
+- 영어 설명은 3948자다. 줄바꿈을 두 글자(CRLF)로 세어도 3995자라 4000자 안에 든다.
+- 키워드는 4개 언어 모두 쉼표 뒤 공백이 없고, 빈 항목·중복이 없고, 모두 3자 이상이다(스크립트 확인).
+- 4개 언어 설명·프로모션·부제에 Android, Google, Google Play, Play 스토어, 사진·카메라, 로그인·계정 연동(「Apple 계정으로 청구」 안내만 있다), 가격 숫자(3,900, ₩), 알파고·AlphaGo, AdMob, 「준비 중」이 없다(스크립트 확인).
+
+**검증에서 고친 것**(자세한 근거는 6절):
+- 「착수 리뷰」를 앱 라벨 「착수 평가」로 바꿨다. 그리고 이 기능이 **무료 횟수 없이 광고 1시간이나 구독 중에만 켜진다**고 4개 언어에 적었다. 코드는 `premium.isActive`일 때만 색을 그린다(`ui/board/GoBoard.kt` 484행). 무료 3회는 형세 보기·추천 수·무르기 셋뿐이다(`shared/.../premium/state/MatchFreeUses.kt`의 `Features`).
+- 요금 안내의 「형세 보기·추천 수 **같은** AI 코칭 기능은 3회씩 무료」를 「형세 보기·추천 수·무르기는 3회씩 무료」로 고쳤다. 1회권도 형세 보기·추천 수 두 가지뿐이라고 적었다.
+- 「매일 출석하면 보상」을 고쳤다. 보상은 출석 1~7일째에 날마다, 그 뒤로는 7의 배수 날에만 있다. 연속 출석은 요구하지 않는다(`shared/.../application/attendance/AttendanceCheckIn.kt` 26·47행).
+- 「10수씩 넘기기」를 되살렸다. 초안은 확인하지 못했다고 뺐다. 그런데 명국 기보와 다시보기가 함께 쓰는 `ReplayControls`에 `ReplayFastStep = 10`이 있다(`ui/history/GameReplayScreen.kt` 408행, `ui/gamerecord/GameRecordViewer.kt` 195행).
+- 프로모션 텍스트의 「인터넷 없이」에 「AI 모델을 한 번 받은 뒤에는」을 붙였다(4개 언어). 설명의 다운로드 안내에는 유튜브 강좌도 인터넷이 필요하다고 더했다.
+- 영어 설명에 다른 세 언어에 있는 기능 줄을 맞춰 넣었다: 바둑판 여백·꽉 채우기, 10수 넘기기, 출석 규칙, 착수 평가 조건. 그래도 4000자 안에 들도록 「WHO IT'S FOR」 절은 넣지 않았다(기능 주장이 아니다).
+- 영어 키워드의 「famous games」를 「analysis」로 바꾸고 「goban」을 더했다. 「games」는 카테고리 이름이라 Apple이 낭비 항목으로 본다.
+
+**스레드가 정한 것**(사용자가 정하지 않았다. 고르거나 고쳐 주세요): 맨 끝 목록과 같다.
+
+## 1. 공통 칸(언어와 무관하거나 4개 언어에 같은 값)
+
+### 카테고리(앱 수준, 로컬라이즈 안 함)
+
+| 칸 | 제안 | 근거 |
+|---|---|---|
+| 기본 카테고리 | **게임(Games)**, 하위 카테고리 **보드(Board)**. 두 번째 하위 카테고리는 비우거나 「Strategy」 | Xcode 값이 `INFOPLIST_KEY_LSApplicationCategoryType = public.app-category.board-games`다(`app-ios/GoCoach.xcodeproj/project.pbxproj`). Games를 고르면 하위 카테고리를 1~2개 고를 수 있다 |
+| 보조 카테고리 | **교육(Education)** | Education의 정의는 「특정 기술·주제를 대화형으로 배우는 앱」이다. 바둑 배우기, 사활 풀기, 고전 사활이 여기에 맞는다 |
+
+- Xcode 분류와 ASC 분류를 맞추라는 규칙은 macOS에만 있다. 그래도 iPhone 앱은 끄지 않으면 Apple silicon Mac에도 나가므로 같은 「보드 게임」으로 맞췄다.
+- 게임을 고르면 생기는 영향:
+  - Time Allowance(스크린 타임 앱 시간) 카테고리에도 들어간다.
+  - 중국 본토에 내려면 MIIT의 ICP 비안 번호와 NPPA 게임 승인 번호가 필요하다(Apple 앱 정보 페이지, 2026-10-27 확인).
+  - 한국 GRAC 등급분류번호는 KR-19, Casino 17+ 같은 경우에만 필요하다. 이 앱은 해당하지 않는다.
+- 대안: 기본 카테고리를 교육, 보조를 게임 › 보드로 둘 수 있다. 다만 앱의 중심은 AI 대국이다. 맞지 않는 카테고리는 Apple이 바꿀 수 있다(2.3.5).
+
+### 저작권(버전 수준, 로컬라이즈 안 함)
+
+```text
+2026 <판매자 실명(Apple 개발자 계정에 등록된 본인 이름)>
+```
+
+- 형식은 「권리를 얻은 연도 + 권리자 이름」이다. © 기호는 Apple이 붙이므로 쓰지 않는다.
+- 판매자는 본인 이름이다(#298 카드, U-84·U-85).
+- 연도 2026은 가정이다. 다르면 고친다. 제출 전에 자리표시를 실제 이름으로 바꿔야 한다(2.1(a)).
+
+### URL
+
+| 칸 | 값 | 상태 |
+|---|---|---|
+| 개인정보처리방침 URL(앱 수준, 필수) | `https://rezen.dev/apps/baduk-ai/privacy/` | 앱 코드 상수와 같다(`app-android/src/commonMain/kotlin/com/worksoc/goaicoach/ui/foundation/AppLinks.kt`의 `PRIVACY_POLICY_URL`). ⚠️ **iOS 제출 전에 방침을 고쳐 배포해야 한다.** 결제 처리자 Apple, iPhone·iCloud 백업, AdMob의 iOS 사실(IDFA 미사용, ATT 없음), UMP 동의와 「광고 개인정보 옵션」이 빠져 있다(함정 60). 4개 언어 설명 끝의 링크도 이 주소다 |
+| 지원 URL(필수, 4개 언어 같은 값) | `https://rezen.dev/apps/baduk-ai/support/` | 저장소 코드에는 이 주소가 없다. 2026-10-27에 다시 읽어 확인했다: 문의 이메일 zenit9hub@gmail.com이 있고, 전화번호와 주소는 없다. Apple은 지원 URL이 현지 법이 요구하는 실제 연락처로 이어져야 한다고 한다. 한국 전자상거래법 신원 정보는 ASC › Business › Agreements › Compliance › Korean Law에 따로 넣는다. ⚠️ 이 페이지는 Google Play 링크를 걸고 있고, FAQ는 「Google Play 계정으로 다시 설치」만 말한다. iOS 문답(iPhone 백업으로 기록 되살리기, App Store 「구매 복원」)을 더하기를 권한다 |
+| 마케팅 URL(선택) | 처음에는 **비워 둔다**. 뒤에 `https://rezen.dev/apps/baduk-ai/` | 이 제품 페이지에는 지금 Google Play 링크만 있고 App Store 링크가 없다(2026-10-27 확인). #298의 「rezen.dev에 App Store 링크」를 한 뒤에 넣는다 |
+| Privacy Choices URL(선택) | 비워 둔다 | 해당하는 페이지가 없다 |
+| 라이선스(EULA) | **맞춤 EULA를 넣지 않는다**(Apple 표준 EULA 적용) | 앱이 표준 EULA를 가리킨다(`app-android/src/commonMain/kotlin/com/worksoc/goaicoach/ui/monetization/PremiumSubscriptionNotice.kt` 193행). 맞춤 EULA가 없으면 제품 페이지에 라이선스 링크가 표시되지 않는다. 그래서 4개 언어 설명 끝에 EULA URL과 방침 URL을 함께 적었다 |
+
+### 이 버전의 새로운 기능(What's New)
+
+- **4개 언어 모두 비워 둔다.** Apple 문서: 이 칸은 첫 버전에는 없고, 그 뒤 모든 버전에서 필수다(2026-10-27 확인).
+- 다음 iOS 업데이트부터는 4개 언어를 모두 채워야 한다. 그때 기준선은 iOS 1.8.4다.
+
+### 구독(로컬라이즈하지 않는 칸, 참고)
+
+| 칸 | 값 | 출처 |
+|---|---|---|
+| Product ID | `premium_basic_monthly` | `app-android/src/iosMain/kotlin/com/worksoc/goaicoach/ios/IosStore.kt`, `app-ios/StoreKit/GoCoach.storekit` |
+| 구독 그룹(참조 이름) | `Premium` | `GoCoach.storekit` |
+| 참조 이름(Reference Name, 64자 이내) | `Premium Monthly` | 스레드가 정함 |
+| 기간 | 1개월 | 시험 파일의 P1M. 심사에 낸 뒤에는 바꿀 수 없다 |
+| App Name Display Options | 앱 이름 사용 | 스레드가 정함 |
+
+- 표시 이름에는 특수문자를 쓸 수 없다. 그래서 앱 화면의 이름을 그대로 썼다: 「프리미엄 구독」 / 「Premium plan」 / 「プレミアム登録」 / 「高级订阅计划」(`ui/l10n/UiStringsPremiumSubscription.kt`의 `InactiveLabels`). DPLA는 구독 제목이 인앱 상품 이름과 같아도 된다고 한다.
+- 구독 설명은 ASC IAP 레퍼런스의 45자를 따랐다. Apple 제품 페이지 가이드는 55자라고 적는다. 짧은 쪽에 맞췄다.
+- 구독 설명의 「모든 캐릭터 해금」은 구독 전용 특전이다(광고 1시간은 캐릭터를 열지 않는다). 앱의 특전 목록과 같은 말이다(`UiStringsPremiumSubscription.kt`의 `BenefitRosterLabels`).
+
+## 2. 한국어(ko) — 기본 언어
+
+### 앱 이름
+
+```text
+포켓 바둑 코치
+```
+
+- 글자 수: **8자** (한도 2~30자)
+- 홈 화면 이름(`app-ios/GoCoach/ko.lproj/InfoPlist.strings`의 `CFBundleDisplayName`)과 같다. #291이 제안한 레코드 이름과도 같다.
+
+### 부제
+
+```text
+오프라인 AI 대국·복기·사활 풀기
+```
+
+- 글자 수: **19자** (한도 30자)
+- Play 제목의 뒷부분 「오프라인 AI 대국·복기」(#291 제안)에 「사활 풀기」(앱의 학습 메뉴 이름)를 더했다. 가격·「무료」는 넣지 않는다(2.3.7).
+
+### 프로모션 텍스트
+
+```text
+iPhone 안에서 돌아가는 KataGo AI와 대국하세요. AI 모델을 한 번 받은 뒤에는 인터넷 없이 두고, 내가 둔 수가 몇 집을 잃었는지 색으로 확인할 수 있어요. 바둑 규칙과 사활부터 명국 33판까지 한 앱에서 배워요.
+```
+
+- 글자 수: **127자** (한도 170자). 재제출 없이 언제든 고칠 수 있다. 검색에는 쓰이지 않는다.
+
+### 키워드
+
+기본안:
+
+```text
+사활문제,묘수풀이,형세판단,인공지능,접바둑,명국기보,기력측정,SGF
+```
+
+- 길이: **37자 / 91바이트(UTF-8)** · 키워드 8개 · 쉼표 뒤 공백 없음 · 모두 3자 이상
+- 이름 낱말(포켓·바둑·코치)과 부제 낱말(오프라인·AI·대국·복기·사활·풀기)은 따로 넣지 않았다. 두 글자 낱말(기보·복기·계가·입문 등)은 「키워드마다 2자 초과」 규칙 때문에 뺐다. 「접바둑」은 이름 낱말 「바둑」을 품지만 따로 검색되는 말이라 넣었다. 상표·인명(KataGo·알파고·이세돌 등)은 넣지 않았다.
+
+확장안(조건부):
+
+```text
+사활문제,묘수풀이,형세판단,인공지능,접바둑,명국기보,기력측정,승급대국,입문자,왕초보,기초행마,고전사활,기경중묘,발양론,SGF
+```
+
+- 길이: **69자 / 173바이트(UTF-8)** · 키워드 15개
+- ASC가 글자 수로 세어 받아 주면 이것으로 바꾼다. 바이트로 세면 100을 넘어 거부된다.
+
+### 설명
+
+```text
+포켓 바둑 코치는 오픈소스 바둑 엔진 KataGo를 iPhone 안에서 직접 돌리는 바둑 학습 앱입니다. 서버에 묻지 않고도 강한 AI와 대국하고, 내가 둔 수가 최선수보다 몇 집을 잃었는지 색으로 확인하며 실력을 키울 수 있습니다.
+
+※ 처음에 AI 모델(약 200MB)을 한 번 내려받습니다. 다 받기 전에 앱을 열면 엔진 준비 화면에 진행 상황이 보이고, 다 받은 뒤에는 대국과 분석이 인터넷 없이 됩니다. 광고 시청, 구독 결제, 유튜브 강좌에는 인터넷 연결이 필요합니다.
+
+[주요 기능]
+- 일반 대국: 15급부터 7단까지, 그 기력의 사람처럼 두는 다섯 캐릭터 중에서 골라 대국합니다. 상대를 고르는 것이 곧 난이도 선택입니다(급수는 AI 모델의 기준이며 공인 기력이 아닙니다)
+- 승급 대국: 내 급수의 AI와 두며, 15집 이상 이기면 오를 수 있고 3연패하면 한 단계 내려가면서 내 급수를 찾아 갑니다(20급~9단)
+- AI의 기권 제안: 형세가 크게 기울면 AI가 기권을 제안합니다. 받아서 끝내거나 계속 둘 수 있습니다
+- 상대 캐릭터 모으기: 짧은 광고로 조각을 모아(5개·10개) 두 상대를, 출석 7일째·28일째에 나머지 두 상대를 엽니다. 결제 없이 모든 상대를 열 수 있어요
+- 착수 평가: 내가 둔 수를 최선수 대비 손실집수 기준으로 진한 초록(최선)부터 빨강(큰 실수)까지 색으로 바로 알려 줍니다(광고 1시간·구독 중에 켜집니다)
+- 추천 수: 지금 국면에서 AI가 추천하는 상위 5개 후보수를 바둑판 위에 표시합니다
+- 형세 보기: 사석과 영역을 반영한 실시간 집 차이·승률과 함께, 지금 누구의 집인지 바둑판 위에 음영으로 보여 줍니다
+- 점수·승률 그래프: 대국 흐름을 한눈에 봅니다
+- 무르기: 착수를 되돌려 다른 수를 다시 검토합니다
+- 착수 방식: 누르면 바로 두는 '바로 착수'와, 자리를 잡은 뒤 '착수' 버튼으로 한 번 더 확인하는 '착수 확인'을 대국 화면에서 바로 바꿉니다
+- 대국 기록: 지금까지 둔 대국과 승률(최근 10판·최근 한 달·누적)을 봅니다
+- 대국 다시보기: 끝난 판을 수순대로 되짚고, 형세가 크게 움직인 수로 바로 건너뛰고, 형세 그래프로 판이 어디서 기울었는지 확인합니다. 지나간 국면에서도 형세 보기·추천 수를 쓸 수 있습니다
+- 복기 후 다시 두기: 아쉬웠던 그 수로 돌아가 거기서부터 다시 둘 수 있습니다
+- 명국 기보: 도사쿠·슈사쿠의 고전부터 이창호·이세돌의 대국, 2016년 인간 대 AI의 대국까지 명국 33판을 한 수씩 놓아 보고, 형세 그래프와 변곡점으로 흐름을 짚습니다. 자동 진행과 10수씩 넘기기도 되고, 「파일」 앱에 있는 SGF 기보 파일도 열 수 있습니다
+- 바둑 배우기 — 바둑 규칙: 바둑판과 첫 수 / 활로 / 단수와 따냄 / 둘 수 없는 자리 / 패 / 집과 계가 여섯 단원
+- 바둑 배우기 — 기초 행마: 이음과 끊음 / 뻗어서 달아나기 / 호구 / 한 칸 뜀 / 날일자 다섯 단원. 판 위에 한 수씩 놓아 가며 배웁니다
+- 바둑 배우기 — 사활 풀기: 판에 직접 두어 푸는 사활 문제. 기본 26문제, 중급·고급 20문제. 틀리면 붉은 점과 상대의 응수로 알려 줍니다
+- 바둑 배우기 — 유튜브 강좌: 엄선한 입문 강좌 세 편을 골라 유튜브에서 봅니다
+- 고전 사활: 『기경중묘』·『발양론』의 옛 사활 12문제를 원전의 정답 수순으로 풉니다(대국 페이지에서 바로)
+- 출석 보상: 앱을 연 날을 세어 1~7일째에는 날마다, 그 뒤로는 7일째마다 AI 코칭 1회권, 상대 캐릭터 조각, 캐릭터 같은 보상을 받습니다(연속 출석이 아니어도 됩니다)
+- 실험실: 명언을 카드로 넘겨 보는 명언록, 재미로 보는 오늘의 운세, 하루 한 번 1회권·광고 스킵권·캐릭터 조각·캐릭터 중 하나를 받는 1일 1회 뽑기(확률은 화면에 공개). 뽑기는 돈으로 살 수 없고, 광고 1편(구독 중에는 광고 없이)으로 하루 한 번 합니다
+- 앱 배경음악: 동양풍·피아노 배경음악 네 곡(맨 윗줄 오른쪽 음표 버튼으로 켜고 끕니다)
+- 착수 진동: 돌을 놓는 순간 짧은 진동(설정에서 끌 수 있습니다)
+- 바둑판: 9x9 / 13x13 / 19x19, 여백을 두고 보거나 가로 폭을 꽉 채워 크게 보기
+- 계가 방식(면적 계가·집 계가), 덤과 접바둑 설정
+- 화면 모드(시스템 따라가기·밝게·어둡게·밤 시간 자동)와 글자 크기
+- 대국 이어하기: 저장된 대국을 나중에 이어서 둡니다
+- 한국어·영어·일본어·중국어(간체) 4개 국어
+- 기록 보관: 기록은 이 iPhone에만 저장됩니다. iPhone 백업(iCloud 또는 컴퓨터)에 함께 담겨, 새 iPhone으로 옮기거나 그 백업에서 복원하면 돌아옵니다. 앱만 지웠다 다시 설치하면 돌아오지 않습니다
+
+[요금 안내]
+앱 설치와 기본 대국(착수, 계가, 접바둑 등)은 무료입니다.
+형세 보기·추천 수·무르기는 캐릭터와 두는 대국마다 3회씩 광고 없이 무료로 써 볼 수 있습니다. 더 쓰고 싶을 때는 짧은 광고를 한 번 보면 1시간 동안 AI 코칭 기능이 전부 열리고(그 1시간 안에는 새 대국을 여러 판 시작해도 계속 이용 가능), 출석으로 받은 형세 보기·추천 수 1회권으로는 광고 없이 한 번씩 쓸 수 있습니다.
+착수 평가는 무료 횟수가 없고, 이 광고 1시간이나 구독 중에 켜집니다. 무르기는 같은 광고 1시간으로도 열리고, 출석 3일째 보상으로 영구 해금됩니다.
+광고 없이 편하게 쓰고 싶다면 프리미엄 구독(1개월 단위 자동 갱신)이 있습니다. 구독 중에는 광고 없이 이용하고, AI 코칭 기능을 무제한으로 쓰며, 상대 캐릭터를 모두 고를 수 있습니다. 가격은 이 페이지의 앱 내 구입 항목과 앱의 구독 화면에 표시됩니다.
+광고: 1시간 이용·캐릭터 조각·운세 갱신·1일 1회 뽑기의 광고는 직접 눌렀을 때만 나오고, 대국 다시보기 화면에는 배너 광고가 있습니다(구독 중에는 나오지 않습니다).
+
+[구독 안내]
+- 프리미엄 구독: 1개월 단위, 해지하기 전까지 자동 갱신됩니다
+- 결제는 구매를 확정할 때 Apple 계정으로 청구됩니다
+- 해지는 App Store 구독 관리에서 언제든 할 수 있습니다
+- 이미 구독했다면 앱의 구독 화면에서 「구매 복원」을 누르세요
+- 이용약관(Apple 표준 EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+- 개인정보처리방침: https://rezen.dev/apps/baduk-ai/privacy/
+
+[이런 분께 추천합니다]
+- 바둑을 처음 배우는 입문자부터, 자신의 실수를 구체적으로 짚어 줄 코치가 필요한 중급자까지
+- 인터넷 서버에 기대지 않고 기기에서 바로 AI 분석을 받고 싶은 분
+- 규칙부터 차근차근 배우고 싶은 분 — 바둑판과 첫 수부터 앱 안에서 시작할 수 있습니다
+
+[차별점]
+- 서버 API 호출이 아닌 기기 안의 KataGo 엔진 — 모델을 받은 뒤에는 오프라인에서도 대국·분석이 됩니다
+- 좋다·나쁘다가 아닌 "최선수 대비 손실집수" 기준의 색상 피드백으로 어떤 수가 왜 아쉬웠는지 바로 이해합니다
+- 유료로만 얻는 상대나 기능이 하나도 없습니다 — 구독은 같은 것을 광고 없이 더 편하게 쓰는 길입니다
+```
+
+- 글자 수: **3522자** (줄바꿈 포함, 한도 4000자)
+
+### 이 버전의 새로운 기능
+
+- **비워 둔다.** 첫 버전에는 이 칸이 없다.
+
+### 구독 현지화(App Store Connect › 구독)
+
+| 칸 | 값 | 글자 수 | 한도 |
+|---|---|---|---|
+| 구독 그룹 표시 이름 | 프리미엄 | 4 | 공식 한도 못 찾음 |
+| 구독 표시 이름 | 프리미엄 구독 | 7 | 2~30자 |
+| 구독 설명 | 모든 캐릭터 해금, AI 코칭 무제한, 광고 없이 이용 | 30 | 45자 |
+
+## 3. 영어(en-US)
+
+### 앱 이름
+
+```text
+Go AI Coach
+```
+
+- 글자 수: **11자** (한도 2~30자)
+- 홈 화면 이름(`app-ios/GoCoach/en.lproj/InfoPlist.strings`)과 같다. Play 영어 본문(`work/play-store-assets/store_listing.txt`)은 「Pocket Go Coach」라고 쓴다. 기기에 보이는 이름과 맞추려고 「Go AI Coach」를 골랐다(스레드가 정함).
+- 이름이 이미 쓰이고 있으면 대안: `Go AI Coach - Baduk` (19자). 홈 화면 이름을 앞에 그대로 둔다.
+
+### 부제
+
+```text
+Offline Baduk play & review
+```
+
+- 글자 수: **27자** (한도 30자)
+- 「Go」는 이름에 있어 「Baduk」을 부제에 넣었다(스레드가 정함).
+
+### 프로모션 텍스트
+
+```text
+Play a KataGo AI on your iPhone, offline after a one-time model download, and see in color how many points each move lost. Learn the rules, then replay 33 famous games.
+```
+
+- 글자 수: **168자** (한도 170자).
+
+### 키워드
+
+기본안:
+
+```text
+weiqi,igo,tsumego,life and death,handicap,komi,sgf,kifu,analysis,lessons,rules,tutor,beginner,goban
+```
+
+- 길이: **99자 / 99바이트** · 키워드 14개 · 쉼표 뒤 공백 없음 · 모두 3자 이상
+- 이름 낱말(go·ai·coach)과 부제 낱말(offline·baduk·play·review)은 넣지 않았다. 카테고리 이름(games·board·strategy·puzzle)과 「app」도 넣지 않았다(Apple 권고: 낭비). 상표 「KataGo」는 넣지 않았다.
+
+### 설명
+
+```text
+Go AI Coach is a Go (Baduk / Weiqi) learning app built on KataGo, the open-source engine, running on your iPhone, not a server. Play a strong AI and see, in color, how many points each move lost.
+
+Note: the AI models (about 200 MB) download once, with progress on the engine setup screen; then play and analysis work offline. Ads, the subscription and YouTube lessons need a connection.
+
+[WHAT'S INSIDE]
+- Normal Match: five characters from 15 kyu to 7 dan, each playing like a person of that strength (ranks follow the AI model, not a certified rating)
+- Rank Match: win by 15 points or more to move up, lose three in a row to move down (20 kyu to 9 dan)
+- The AI offers to resign when far behind; accept or play on
+- Collect opponents: two with shards from short ads, two from check-in (days 7 and 28), all without paying
+- Move review (ad hour or Premium): each move shaded from deep green to red by the points it lost
+- Top moves: the engine's five best candidates on the board
+- Evaluation: score difference, win rate, territory shading and a score graph
+- Undo, and two ways to place a stone: play on tap, or pick a point and confirm
+- Game history with win rate (last 10, last month, all time)
+- Replay: step through finished games, jump to the biggest swings, check past positions, play on from the move you regret
+- Famous Games: 33 games, from Dosaku and Shusaku to Lee Changho, Lee Sedol and the 2016 human-versus-AI match, with score graph, turning points, auto play and 10-move jumps. Open your own SGF files from the Files app
+- Learn Go: rules (6 lessons), basic shapes (5), life-and-death problems (26 basic, 20 intermediate and advanced) and three beginner videos that open on YouTube
+- Classic Life & Death: 12 problems from Gokyo Shumyo and Hatsuyoron
+- Check-in rewards: days 1 to 7, then every 7th day (no streak needed): tickets, shards, characters and more
+- Lab: a Quote book, Today's fortune (just for fun) and a Daily draw with the odds on screen. The draw can't be bought: one ad a day (none with Premium)
+- Background music (four tracks) and vibration, both can be turned off
+- 9x9, 13x13 and 19x19 boards, with a margin or edge to edge; area or territory scoring; komi and handicap
+- System, light, dark or night-hours theme; text size
+- Resume a saved game
+- Korean, English, Japanese and Simplified Chinese
+- Records stay on this iPhone and in its backup (iCloud or computer), so a new iPhone or a restore brings them back; reinstalling only the app does not
+
+[WHAT IT COSTS]
+Installing and playing (stones, scoring, handicap and all) is free.
+
+Evaluation, top moves and undo are free three times each in every game against a character, no ad needed. After that, one short ad opens every coaching feature for a full hour, or an evaluation or top-moves ticket from check-in covers one use. Move review has no free uses: it works in the ad hour or with Premium. Undo also becomes permanent as the day-3 check-in reward.
+
+Premium (monthly, auto-renewing) removes ads, lifts every coaching limit and makes every opponent available. The price is shown under In-App Purchases on this page and in the app.
+
+Ads play only when you tap for them (the hour, shards, fortune refresh, daily draw). The Replay screen shows a banner ad, never to subscribers.
+
+[SUBSCRIPTION]
+- Premium plan: 1 month, renews automatically until cancelled
+- Payment is charged to your Apple Account when you confirm the purchase
+- Cancel any time in App Store subscriptions
+- Already subscribed? Tap Restore Purchases on the subscription screen
+- Terms of Use (Apple standard EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+- Privacy Policy: https://rezen.dev/apps/baduk-ai/privacy/
+
+[WHY IT'S DIFFERENT]
+- A real KataGo engine on your device, not an API call
+- Feedback in points lost against the best move, not a verdict of good or bad
+- No opponent or feature is paid-only; Premium is an ad-free shortcut to the same things
+```
+
+- 글자 수: **3948자** (줄바꿈 포함, 한도 4000자. 줄바꿈을 두 글자로 세어도 3995자)
+- 다른 세 언어의 「이런 분께 추천합니다」 절은 한도 때문에 넣지 않았다. 기능 주장은 4개 언어가 같다.
+
+### 이 버전의 새로운 기능
+
+- **비워 둔다.** 첫 버전에는 이 칸이 없다.
+
+### 구독 현지화(App Store Connect › 구독)
+
+| 칸 | 값 | 글자 수 | 한도 |
+|---|---|---|---|
+| 구독 그룹 표시 이름 | Premium | 7 | 공식 한도 못 찾음 |
+| 구독 표시 이름 | Premium plan | 12 | 2~30자 |
+| 구독 설명 | All characters, unlimited coaching, no ads | 42 | 45자 |
+
+## 4. 일본어(ja)
+
+### 앱 이름
+
+```text
+囲碁AIコーチ
+```
+
+- 글자 수: **7자** (한도 2~30자)
+- 홈 화면 이름(`app-ios/GoCoach/ja.lproj/InfoPlist.strings`)과 같다.
+- 이름이 이미 쓰이고 있으면 대안: `囲碁AIコーチ - 対局と検討` (15자).
+
+### 부제
+
+```text
+オフラインでAI対局・検討・詰碁
+```
+
+- 글자 수: **16자** (한도 30자)
+- 앱의 일본어 UI 낱말(対局 · 詰碁)에 바둑 용어 「検討」(복기)를 더했다(스레드가 정함).
+
+### 프로모션 텍스트
+
+```text
+iPhoneの中で動くKataGo AIと対局。AIモデルを一度受け取ればネットなしで打て、自分の一手が何目損したかを色で確認できます。ルール・基本の形・詰碁から名局33局まで、ひとつのアプリで学べます。
+```
+
+- 글자 수: **102자** (한도 170자).
+
+### 키워드
+
+기본안:
+
+```text
+詰め碁,棋譜並べ,形勢判断,置き碁,人工知能,棋力判定,初心者,碁経衆妙,SGF
+```
+
+- 길이: **40자 / 98바이트(UTF-8)** · 키워드 9개 · 쉼표 뒤 공백 없음 · 모두 3자 이상
+- 이름 낱말(囲碁·AI·コーチ)과 부제 낱말(オフライン·対局·検討·詰碁)은 되풀이하지 않았다. 「詰め碁」는 부제 「詰碁」의 다른 표기라 넣었다. 두 글자 낱말(棋譜·名局·整地 등)은 뺐다.
+
+확장안(조건부):
+
+```text
+詰め碁,棋譜並べ,形勢判断,置き碁,人工知能,棋力判定,昇級対局,初心者,ルール,基本の形,古典詰碁,碁経衆妙,発陽論,名局棋譜,SGF
+```
+
+- 길이: **68자 / 170바이트(UTF-8)** · 키워드 15개. ASC가 글자 수로 세어 받아 주면 이것으로 바꾼다.
+
+### 설명
+
+```text
+囲碁AIコーチは、オープンソースの囲碁エンジンKataGoをiPhoneの中で直接動かす囲碁学習アプリです。サーバーに頼らずに強いAIと対局し、自分の一手が最善手より何目損したかを色で確かめながら上達できます。
+
+※最初に一度だけAIモデル（約200MB）をダウンロードします。終わる前にアプリを開くとエンジン準備画面に進み具合が表示され、終わったあとは対局も解析もインターネットなしで使えます。広告の視聴、定期購入の購入、YouTube講座にはインターネット接続が必要です。
+
+【主な機能】
+・通常対局：15級から7段まで、その棋力の人のように打つ5人のキャラクターから相手を選んで対局します。相手選びがそのまま難易度選びです（級位はAIモデルの基準で、公認の棋力ではありません）
+・昇級対局：自分の級位のAIと打ち、15目以上勝てば昇級でき、3連敗すると1段階下がりながら自分の級位を探します（20級〜9段）
+・AIの投了提案：形勢が大きく傾くとAIが投了を申し出ます。受けて終えることも、打ち続けることもできます
+・対戦相手を集める：短い広告でかけらを集めて（5個・10個）2人を、出席7日目・28日目に残りの2人を解放します。課金なしですべての相手を解放できます
+・着手評価：自分の手を最善手との目数の損で、濃い緑（最善）から赤（大悪手）まで色ですぐに表示します（広告1時間・プレミアム登録中に使えます）
+・候補手：今の局面でAIが勧める上位5つの候補手を盤上に表示します
+・形勢判断：死石と地を反映したリアルタイムの目差・勝率と、どこが誰の地かを盤上の陰影で表示します
+・スコアグラフ：対局の流れをひと目で確認できます
+・待った：着手を戻して別の手を検討できます
+・着手方法：タップですぐ打つ「即時着手」と、場所を決めてから「着手」ボタンで確かめる「着手確認」を対局画面で切り替えられます
+・対局記録：これまでの対局と勝率（直近10局・直近1か月・通算）を確認できます
+・リプレイ：終わった対局を手順どおりにたどり、形勢が大きく動いた手へすぐ移動し、形勢グラフでどこで傾いたかを確かめます。過去の局面でも形勢判断・候補手を使えます
+・打ち直し：悔いの残る手に戻って、そこから打ち直せます
+・名局の棋譜：道策・秀策の古典から李昌鎬・李世乭の対局、2016年の人間対AIの対局まで、名局33局を一手ずつ並べ、形勢グラフと転換点で流れをつかみます。自動再生と10手送りに加え、「ファイル」アプリにあるSGF棋譜も開けます
+・囲碁を学ぶ — 囲碁のルール：碁盤と最初の一手／呼吸点（ダメ）／アタリと石を取る／打てない場所／コウ／地と計算の6単元
+・囲碁を学ぶ — 基本の形：つなぎと切り／伸びて逃げる／カケツギ（虎の口）／一間トビ／ケイマの5単元。盤上に一手ずつ置きながら学びます
+・囲碁を学ぶ — 詰碁を解く：盤に直接打って解く詰碁。基本26問、中級・上級20問。間違えると赤い点と相手の応手で知らせます
+・囲碁を学ぶ — YouTube講座：厳選した入門講座3本をYouTubeで見られます
+・古典詰碁：『碁経衆妙』『発陽論』の古典詰碁12問を原典の正解手順で解きます（対局ページからすぐ）
+・出席報酬：アプリを開いた日を数え、1〜7日目は毎日、その後は7日目ごとに、AIコーチングの1回券、キャラクターのかけら、キャラクターなどがもらえます（連続でなくてもかまいません）
+・実験室：名言をカードでめくる名言録、遊びで見る今日の運勢、1回券・広告スキップ券・かけら・キャラクターのどれかが当たる1日1回くじ（確率は画面に表示）。くじはお金では買えず、広告1本（プレミアム登録中は広告なし）で1日1回引けます
+・アプリのBGM：東洋風・ピアノのBGM 4曲（画面いちばん上の右にある音符ボタンでオン・オフ）
+・着手の振動：石を置いた瞬間の短い振動（設定でオフにできます）
+・碁盤：9路・13路・19路、余白ありの表示と横幅いっぱいの表示
+・計算方法（面積計算・地の計算）、コミと置き石の設定
+・画面モード（システムに合わせる・ライト・ダーク・夜間自動）と文字サイズ
+・対局の再開：保存した対局をあとから続けられます
+・韓国語・英語・日本語・中国語（簡体字）の4言語に対応
+・記録の保存：記録はこのiPhoneにだけ保存されます。iPhoneのバックアップ（iCloudまたはコンピュータ）に含まれるので、新しいiPhoneへの移行やそのバックアップからの復元で戻ります。アプリだけを削除して再インストールした場合は戻りません
+
+【料金について】
+アプリのインストールと基本の対局（着手、整地、置き石など）は無料です。
+形勢判断・候補手・待ったは、キャラクターとの対局ごとに3回ずつ、広告なしで無料で試せます。もっと使いたいときは、短い広告を1本見ると1時間AIコーチング機能がすべて開き（その1時間内なら新しい対局を何局始めても使えます）、出席でもらえる形勢判断・候補手の1回券なら広告なしで1回ずつ使えます。
+着手評価には無料回数がなく、この広告1時間かプレミアム登録中に使えます。待ったは同じ広告1時間でも開き、出席3日目の報酬で永久に解放されます。
+広告なしで快適に使いたい方には、プレミアム登録（1か月ごとの自動更新サブスクリプション）があります。登録中は広告なしで、AIコーチング機能を無制限に使え、すべての対戦相手を選べます。価格はこのページのApp内課金の欄と、アプリの登録画面に表示されます。
+広告について：1時間の開放・かけら・運勢の更新・1日1回くじの広告は自分でタップしたときだけ流れます。対局記録のリプレイ画面にはバナー広告があります（プレミアム登録中は表示されません）。
+
+【定期購入について】
+・プレミアム登録：1か月ごと、解約するまで自動的に更新されます
+・お支払いは購入の確定時にApple Accountに請求されます
+・解約はApp Storeの定期購入からいつでもできます
+・登録済みの方は、アプリの登録画面で「購入を復元」を押してください
+・利用規約（Apple標準EULA）：https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+・プライバシーポリシー：https://rezen.dev/apps/baduk-ai/privacy/
+
+【こんな方におすすめ】
+・囲碁を始めたばかりの方から、自分のミスを具体的に指摘してくれるコーチがほしい中級者まで
+・サーバーに頼らず、端末ですぐにAI解析を受けたい方
+・ルールから一歩ずつ学びたい方。碁盤と最初の一手からアプリの中で始められます
+
+【ここが違う】
+・サーバーAPIの呼び出しではなく端末内のKataGoエンジン。モデルを受け取ったあとはオフラインでも対局・解析できます
+・良し悪しの判定ではなく「最善手との目数の損」で色分けするので、どの手がなぜ惜しかったのかがすぐにわかります
+・お金を払わないと手に入らない相手や機能はありません。プレミアム登録は同じものを広告なしでより快適に使う方法です
+```
+
+- 글자 수: **2985자** (줄바꿈 포함, 한도 4000자)
+
+### 이 버전의 새로운 기능
+
+- **비워 둔다.** 첫 버전에는 이 칸이 없다.
+
+### 구독 현지화(App Store Connect › 구독)
+
+| 칸 | 값 | 글자 수 | 한도 |
+|---|---|---|---|
+| 구독 그룹 표시 이름 | プレミアム | 5 | 공식 한도 못 찾음 |
+| 구독 표시 이름 | プレミアム登録 | 7 | 2~30자 |
+| 구독 설명 | 全キャラクター解放、AIコーチング使い放題、広告なし | 26 | 45자 |
+
+## 5. 중국어 간체(zh-Hans)
+
+### 앱 이름
+
+```text
+围棋AI教练
+```
+
+- 글자 수: **6자** (한도 2~30자)
+- 홈 화면 이름(`app-ios/GoCoach/zh-Hans.lproj/InfoPlist.strings`)과 같다.
+- 이름이 이미 쓰이고 있으면 대안: `围棋AI教练 - 离线对弈` (13자).
+
+### 부제
+
+```text
+离线AI对弈·复盘·死活练习
+```
+
+- 글자 수: **14자** (한도 30자)
+- 앱의 중국어 UI 낱말(对弈 · 死活练习)에 「复盘」(복기)을 더했다(스레드가 정함).
+
+### 프로모션 텍스트
+
+```text
+与在iPhone上运行的KataGo AI对弈。下载一次AI模型后即可离线下棋，并用颜色查看每一手损失了几目。从规则、基础行棋、死活到33局名局，都能在一个应用里学习。
+```
+
+- 글자 수: **84자** (한도 170자).
+
+### 키워드
+
+기본안:
+
+```text
+死活题,名局打谱,形势判断,让子棋,人工智能,棋力测试,初学者,发阳论,SGF
+```
+
+- 길이: **39자 / 95바이트(UTF-8)** · 키워드 9개 · 쉼표 뒤 공백 없음 · 모두 3자 이상
+- 이름 낱말(围棋·AI·教练)과 부제 낱말(离线·对弈·复盘·死活练习)은 되풀이하지 않았다. 경쟁 앱 이름(弈城·野狐 등)과 AI 이름(绝艺 등)은 넣을 수 없다(2.3.7). 두 글자 낱말(棋谱·打谱·贴目 등)은 뺐다. 고전 책 이름은 앱 UI 표기(《碁经众妙》《发阳论》, `ui/l10n/UiStringsStudyCategories.kt`)를 따랐다.
+
+확장안(조건부):
+
+```text
+死活题,名局打谱,形势判断,让子棋,人工智能,棋力测试,升级对局,初学者,入门教程,基础行棋,古典死活,碁经众妙,发阳论,对局分析,SGF
+```
+
+- 길이: **69자 / 173바이트(UTF-8)** · 키워드 15개. ASC가 글자 수로 세어 받아 주면 이것으로 바꾼다.
+
+### 설명
+
+```text
+围棋AI教练是一款在iPhone上直接运行开源围棋引擎KataGo的围棋学习应用。无需依赖服务器，就能与强大的AI对弈，并用颜色看到自己的每一手比最佳着法损失了几目，在对局中提高棋力。
+
+※首次使用时需要下载一次AI模型（约200MB）。下载完成前打开应用，引擎准备画面会显示进度；下载完成后，对弈和分析无需联网。观看广告、购买订阅和观看YouTube讲座需要联网。
+
+【主要功能】
+• 普通对局：从15级到7段，从五个按该棋力像人一样下棋的角色中选择对手。选对手就是选难度（级位以AI模型为准，并非官方认证的棋力）
+• 升级对局：与自己级位的AI对弈，赢15目以上可以升级，三连败则降一级，逐步找到自己的级位（20级至9段）
+• AI认输提议：形势大幅倾斜时，AI会提议认输。可以接受并结束，也可以继续下
+• 收集对手：用短广告收集碎片（5个、10个）解锁两位对手，签到第7天、第28天解锁另外两位。无需付费即可解锁全部对手
+• 着法评价：按与最佳着法相比损失的目数，从深绿（最佳）到红（严重失误）用颜色即时反馈（在广告1小时或订阅期间可用）
+• 推荐着法：在棋盘上显示AI对当前局面推荐的前5个候选着法
+• 形势判断：反映死子与地域的实时目差和胜率，并在棋盘上用阴影显示各处归属
+• 得分图：一眼看清整局走势
+• 悔棋：撤回落子，研究其他着法
+• 落子方式：在对局画面中随时切换“直接落子”（点按即下）和“落子确认”（选好位置后再按“落子”按钮）
+• 对局记录：查看以往对局与胜率（最近10局、最近一个月、累计）
+• 回放：按手顺回看已结束的对局，直接跳到形势大幅变化的一手，用形势图找出棋局在哪里倾斜。过去的局面也能使用形势判断和推荐着法
+• 复盘后重下：回到令人遗憾的那一手，从那里重新下
+• 名局棋谱：从道策、秀策的古典名局到李昌镐、李世石的对局，再到2016年的人机对局，共33局名局可一手一手打谱，并通过形势图和转折点把握走势。支持自动播放和每次跳10手，也能打开“文件”App中的SGF棋谱
+• 学围棋——围棋规则：棋盘与第一手／气／打吃与提子／不能落子的地方／打劫／围地与数目，共六个单元
+• 学围棋——基础行棋：连与断／长出逃跑／虎口／单关跳／小飞，共五个单元，在棋盘上一手一手地学习
+• 学围棋——死活练习：直接在棋盘上落子解答的死活题。基础26题，中级、高级20题。答错时会用红点和对方的应手提示
+• 学围棋——YouTube讲座：在YouTube观看精选的三部入门讲座
+• 古典死活：按原典正解手顺解答《碁经众妙》《发阳论》的12道古典死活题（可从对局页面直接进入）
+• 签到奖励：按打开应用的天数计算，第1至7天每天、之后每满7天，可获得AI辅导单次券、角色碎片、角色等奖励（不必连续签到）
+• 实验室：用卡片翻看的名言录、仅供娱乐的今日运势，以及每天一次抽取单次券、免广告券、角色碎片或角色之一的每日一抽（概率显示在画面上）。每日一抽不能用钱购买，每天看一个广告即可抽一次（订阅期间无需看广告）
+• 应用背景音乐：东方风格与钢琴背景音乐共四首（点按最上方一行右侧的音符按钮开关）
+• 落子振动：落子瞬间的短暂振动（可在设置中关闭）
+• 棋盘：9路、13路、19路，可留白显示或铺满屏幕宽度
+• 计分规则（数子法、数目法）、贴目与让子设置
+• 画面模式（跟随系统、浅色、深色、夜间自动）与字体大小
+• 继续对局：稍后接着下已保存的对局
+• 支持韩语、英语、日语、简体中文四种语言
+• 记录保存：记录只保存在这台iPhone上。记录包含在iPhone备份（iCloud或电脑）中，迁移到新iPhone或从该备份恢复时会一并恢复；仅删除并重新安装本应用则不会恢复
+
+【费用说明】
+安装应用和基本对局（落子、数子、让子等）完全免费。
+形势判断、推荐着法和悔棋，在每局与角色的对局中各可免费使用3次，无需看广告。想多用时，看一个短广告即可在1小时内解锁全部AI辅导功能（这1小时内开始多局新对局也能继续使用），签到获得的形势判断、推荐着法单次券可不看广告使用一次。
+着法评价没有免费次数，可在这1小时广告解锁或订阅期间使用。悔棋也可用同样的广告1小时解锁，签到第3天的奖励可永久解锁。
+如果想无广告地轻松使用，可以选择高级订阅计划（按月自动续订）。订阅期间无广告，AI辅导功能不限次数，所有对手角色均可选择。价格显示在本页面的“App 内购买项目”和应用的订阅画面中。
+关于广告：1小时解锁、角色碎片、运势刷新、每日一抽的广告只在您主动点按时播放；对局记录的回放画面中有横幅广告（订阅期间不显示）。
+
+【订阅说明】
+• 高级订阅计划：1个月，在您取消订阅之前将自动续订
+• 确认购买时将向您的Apple账户收费
+• 您可随时在App Store的订阅管理中取消
+• 已订阅的用户，请在应用的订阅画面点按“恢复购买”
+• 使用条款（Apple标准EULA）：https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+• 隐私政策：https://rezen.dev/apps/baduk-ai/privacy/
+
+【推荐给这些人】
+• 从刚开始学围棋的入门者，到需要教练具体指出失误的中级棋手
+• 希望不依赖服务器、直接在设备上获得AI分析的人
+• 想从规则开始一步步学习的人——从棋盘与第一手开始，在应用内就能学起
+
+【与众不同之处】
+• 不是调用服务器API，而是在设备上运行KataGo引擎——下载模型后离线也能对弈和分析
+• 不是简单判定好坏，而是以“与最佳着法相比损失的目数”进行颜色反馈，直观理解哪一手为何可惜
+• 没有只能付费获得的对手或功能——订阅只是以无广告的方式更轻松地使用同样的内容
+```
+
+- 글자 수: **2398자** (줄바꿈 포함, 한도 4000자)
+
+### 이 버전의 새로운 기능
+
+- **비워 둔다.** 첫 버전에는 이 칸이 없다.
+
+### 구독 현지화(App Store Connect › 구독)
+
+| 칸 | 값 | 글자 수 | 한도 |
+|---|---|---|---|
+| 구독 그룹 표시 이름 | 高级版 | 3 | 공식 한도 못 찾음 |
+| 구독 표시 이름 | 高级订阅计划 | 6 | 2~30자 |
+| 구독 설명 | 解锁所有角色，无限使用AI辅导功能，无广告 | 21 | 45자 |
+
+## 6. Play 글(`work/play-store-assets/store_listing.txt`)에서 바꾼 곳과 근거
+
+경로의 `ui/…`는 `app-android/src/commonMain/kotlin/com/worksoc/goaicoach/ui/…`, `shared/…`는 `shared/src/commonMain/kotlin/com/worksoc/goaicoach/…`다.
+
+| Play 글 | App Store 글 | 근거 |
+|---|---|---|
+| 「바둑판 사진 분석」 줄(ko·en) | 뺐다(4개 언어) | `IosAppPlatform.boardScan = null`(`app-android/src/iosMain/kotlin/com/worksoc/goaicoach/ios/IosAppPlatform.kt`). 2.3.1(a)는 없는 기능의 광고를 금지한다 |
+| 「기기 백업: Google 계정 백업이 켜져 있으면…」 | 「iPhone 백업(iCloud 또는 컴퓨터)에 담겨 새 iPhone·복원 때 돌아오고, 앱만 다시 설치하면 돌아오지 않는다」 | 앱의 iOS 안내 문구와 같은 말이다(`ui/l10n/UiStringsUserProfile.kt`의 `iosLocalStorageNoticeFor`). 2.3.10 |
+| 「해지는 Play 스토어의 구독 관리에서」 | 「App Store 구독 관리에서」 | `ui/l10n/UiStringsPremiumSubscription.kt`의 `AppStoreCancelNotices`. 2.3.10 |
+| 「프리미엄 구독(월 3,900원)」 | 숫자를 빼고 「가격은 이 페이지의 앱 내 구입 항목과 앱의 구독 화면에 표시」 | Apple 권고: 설명에 구체적 가격을 쓰지 않는다. 기본 언어(한국어) 글은 맞는 현지화가 없는 나라에서도 보인다. Play 영어 글이 이미 쓰는 방식이다 |
+| 「유튜브 강좌: 앱 안에서 골라 바로 시청」 | 「골라 유튜브에서 봅니다」 | 코드는 YouTube 주소를 앱 밖으로 연다(`ui/study/StudyVideoListScreen.kt`의 `uriHandler.openUri`). 앱의 강좌 소개 문구와도 같다(`ui/l10n/UiStringsStudyCategories.kt`) |
+| 「인터넷 없이도」, 「오프라인」 | 설명 첫머리에 「AI 모델(약 200MB)을 한 번 내려받는다. 다 받기 전에 열면 엔진 준비 화면에 진행 상황이 보인다. 광고·구독 결제·유튜브 강좌에는 인터넷이 필요하다」. 프로모션 텍스트에도 「모델을 한 번 받은 뒤에는」을 붙였다 | Background Assets 팩 katago-models, prefetch(`scripts/ios-package-model-pack.sh`, `app-ios/GoCoach/AppleHostedModelSource.swift`). 진행률은 `app-android/src/iosMain/kotlin/com/worksoc/goaicoach/ios/IosEngineModels.kt`(onProgress)와 `ui/setup/EngineSetupGate.kt`. 4.2.3(ii)는 크기를 알리라고 한다. 제품 페이지의 「Up to」 크기에는 이 팩이 들어가지 않는다 |
+| 「착수 리뷰: … 색으로 즉시 피드백」 | 「착수 평가: … (광고 1시간·구독 중에 켜집니다)」 | 앱 라벨은 「착수 평가」다(`ui/l10n/UiStringsKo.kt`의 `moveReviewToggle`). 색은 `premium.isActive`일 때만 그린다(`ui/board/GoBoard.kt` 484행). 1회권이 없고(`shared/.../application/consumable/ConsumableItem.kt` 95행) 무료 3회 대상도 아니다 |
+| 요금 안내 「형세 보기·추천 수 같은 AI 코칭 기능은 … 3회씩 무료」 | 「형세 보기·추천 수·무르기는 … 3회씩 무료」, 「착수 평가는 무료 횟수 없이 광고 1시간이나 구독 중」 | `shared/.../application/premium/state/MatchFreeUses.kt`(`PerMatch = 3`, `Features` = 형세·추천·무르기). 무료 3회는 캐릭터와 두는 일반 대국에만 있다(승급 대국 제외, `shared/.../application/botcharacter/BotCharacterPerk.kt`의 `isFreeUseMatch`) |
+| 「출석 보상: 매일 접속하면 …」, 캐릭터 「매일 출석해서(7일차·28일차)」 | 「앱을 연 날을 세어 1~7일째에는 날마다, 그 뒤로는 7일째마다 …(연속 출석이 아니어도 됩니다)」, 「출석 7일째·28일째」 | `shared/.../application/attendance/AttendanceCheckIn.kt` 47행 `isRewardedTier`(1~7일째, 그 뒤 7의 배수 날), 26행 「연속 출석 요구가 없다」. 보상표는 `AttendanceRewardPolicy.kt` |
+| 승급 대국 「이기면 오르고 연패하면 내려가」 | 「15집 이상 이기면 오를 수 있고 3연패하면 한 단계 내려가」 | `shared/.../application/rankmeasure/RankMeasure.kt` 261~268행(15집마다 한 단계를 고를 수 있다) |
+| 명국 기보 「알파고 대국까지」 | 「2016년 인간 대 AI의 대국까지」 | 상표가 든 말이다. 내용은 같다(`app-android/src/main/assets/game-records/2016-alphago-lee-sedol-*.sgf`). 이름·부제·키워드에도 넣지 않았다 |
+| 명국 기보 「자동 진행과 10수씩 넘기기」 | 그대로 둔다(초안은 뺐다가 되살렸다) | `ui/history/GameReplayScreen.kt` 408행 `ReplayFastStep = 10`, 명국 기보 화면도 같은 `ReplayControls`를 쓴다(`ui/gamerecord/GameRecordViewer.kt` 195행). 자동 진행은 같은 파일 85행 |
+| 「가지고 있는 SGF 파일 열기」 | 「「파일」 앱에 있는 SGF 기보 파일」 | `app-android/src/iosMain/kotlin/com/worksoc/goaicoach/ui/gamerecord/SgfFilePickerIos.kt`(UIDocumentPicker) |
+| 본문 끝 키워드 나열(바둑, Go, Baduk…) | 뺐다. 키워드 칸으로 옮겼다 | Apple 권고: 설명에 키워드를 채워 넣지 않는다. 2.3.7 |
+| 간단한 설명의 「무료」 | 부제에 가격 관련 말을 넣지 않았다 | 2.3.7: 이름·부제에 가격을 넣지 않는다 |
+| (없음) | 「구독 안내」 블록: 이름·1개월·자동 갱신, Apple 계정 청구, App Store 구독 관리에서 해지, 「구매 복원」, 이용약관(Apple 표준 EULA) URL, 개인정보처리방침 URL | Apple 구독 페이지: 「앱과 App Store 메타데이터 모두에」 약관·방침 링크. 앱 안 결제 화면에도 구매 복원·EULA·방침 링크가 있다(`ui/monetization/PremiumSubscriptionNotice.kt`의 `AppStorePurchaseLinks`). 맞춤 EULA가 없으면 제품 페이지에 라이선스 링크가 보이지 않는다 |
+| (없음) | 광고 한 줄: 보상형 광고는 직접 눌렀을 때만, 다시보기 화면에 배너, 구독 중에는 없음 | 배너는 `ui/history/GameReplayScreen.kt` 222행 `SubscriptionAwareBannerAd` 한 곳뿐이다. 보상형 광고를 부르는 곳은 운세·뽑기·캐릭터 조각·업셀이다 |
+| 1일 1회 뽑기 「(확률 공개)」 | 「뽑기는 돈으로 살 수 없고, 광고 1편(구독 중에는 광고 없이)으로 하루 한 번」을 더했다 | `shared/.../application/dailydraw/DailyDraw.kt`, `ui/monetization/DailyDrawCard.kt` |
+| 「화면 모드」 | 「…와 글자 크기」를 더했다 | `ui/settings/SettingsScreen.kt`(`FontScaleSettingsPanel`) |
+| 영어 본문의 앱 이름 「Pocket Go Coach」 | 「Go AI Coach」 | 홈 화면 이름(`app-ios/GoCoach/en.lproj/InfoPlist.strings`)과 맞췄다 |
+| 영어 「colour」 | 「color」 | en-US 표기 |
+
+그대로 둔 줄(코드로 iOS에서 확인함): 일반 대국(캐릭터 다섯, `shared/.../application/botcharacter/BotCharacterCatalog.kt`), AI 기권 제안(받기·계속 두기, `ui/play/AiResignationOfferHost.kt`), 캐릭터 모으기(조각 5·10, 출석 7·28), 추천 수 상위 5개(`shared/.../application/analysis/AnalysisSession.kt`의 `LightweightTopMoveCandidateCount = 5`), 착수 평가 색 진한 초록~빨강(`ui/designsystem/GoBoardPalette.kt`의 `MoveReviewPalette`), 형세 보기, 점수·승률 그래프, 무르기, 착수 방식, 대국 기록 승률(최근 10판·최근 한 달·누적, `ui/l10n/UiStringsWinRate.kt`), 다시보기·변곡점·다시 두기, 명국 33판, 바둑 배우기, 고전 사활, 실험실, 배경음악 4곡, 착수 진동 토글(`ui/setup/KaTrainUxPanels.kt`), 판 크기와 「바둑판 최대」, 계가(면적·집), 덤, 접바둑, 화면 모드 넷(`shared/.../shared/policy/DisplayTheme.kt`), 이어하기, 4개 국어.
+
+숫자는 저장소에서 다시 셌다: 사활 기본 26(다섯 단원 5·5·6·5·5)·중급 10·고급 10(`shared/.../shared/content/LifeAndDeathProblems.kt`), 고전 12(기경중묘 5·발양론 7, `LifeAndDeathClassicProblems.kt`), 명국 SGF 33개(`app-android/src/main/assets/game-records`, `scripts/ios-bundle-resources.sh`가 그대로 싣는다), 규칙 6단원·행마 5단원(`ui/l10n/UiStringsStudyRules.kt`, `UiStringsStudyShapes.kt`), 유튜브 3편(`ui/study/StudyVideoListScreen.kt`), 배경음악 4곡(`app-android/src/main/res/raw`의 `bgm_*.ogg`, iOS는 m4a로 바꿔 싣는다).
+
+설명에 쓰지 않은 것:
+- 「준비 중」 자리표시(나만의 명언 추가, 별자리별·띠별 운세)
+- 숨은 개발자 모드
+- 꺼진 닉네임 줄
+- 「로그인 없이」(Play에서 2026-09-22에 판매 문구로 쓰지 않기로 정했다)
+- 2인 대국, AI 자동 대국, 최대 탐색 시간(있지만 등재 글에서 다루지 않았다)
+
+## 7. 제출 전에 정할 것·확인할 것(등재 글에 걸린 것만)
+
+1. **개인정보처리방침 고쳐 배포하기.** 4개 언어 설명이 이 주소를 링크한다. 결제(Apple), iPhone·iCloud 백업, AdMob의 iOS 사실, UMP 동의 철회 방법을 넣어야 한다. 방침이 앱보다 늦으면 위반이다(함정 60). 원문은 형제 저장소 rezen.dev의 `web/site/src/components/legal/BadukAiPrivacy.astro`다.
+2. **지원 페이지에 iOS 문답 더하기.** 지금 FAQ는 Google Play 계정 재설치만 말한다.
+3. **이름이 쓰일 수 있는지 확인하기.** 이름은 ASC에 레코드나 현지화를 만들 때 처음 확인된다. 「Go AI Coach」는 흔한 말이라 이미 쓰이고 있을 수 있다. 대안 이름은 3~5절에 있다.
+4. **키워드 한도 확인하기.** ASC 필드 문서는 「up to 100 bytes」와 「each greater than two characters」라고 적는다(2026-10-27 확인). 한글·가나·한자 1자를 UTF-8 3바이트로 세는지는 공식 문서에 없다. 그래서 기본안은 UTF-8로도 100바이트 안에 들게 했다(ko 91 · en 99 · ja 98 · zh 95). ASC 입력란이 받아 주면 확장안으로 바꾼다.
+5. **한국 스토어프런트의 영어.** 한국 스토어프런트가 지원하는 언어는 Korean과 English (U.K.)다. en-US 현지화는 한국에서 보이지 않는다. 한국의 영어 기기 사용자에게 영어 글을 보이려면 English (U.K.) 현지화를 더하고 en-US 글을 복사해 넣는다.
+6. **중국 본토 배포 여부 정하기.** ICP 비안 번호와 NPPA 게임 승인 번호가 없으면 Pricing and Availability에서 중국 본토를 빼야 한다.
+7. **Mac과 Vision Pro 공개 여부 정하기.** iPhone 앱은 끄지 않으면 Apple silicon Mac과 Vision Pro에도 나간다. 설명은 「iPhone」이라고 적었다.
+8. **스크린샷 다시 찍기.** Play 스크린샷은 안드로이드 화면이고 07_boardscan은 iOS에 없는 기능이다. 아이폰 크기로 다시 찍는다. 착수 평가·형세 보기가 찍힌 컷은 2.3.2에 따라 광고 1시간·구독 기능이라고 알 수 있어야 한다.
+9. **Play 등재 글에도 같은 부정확이 있다.** 승급 대국 「이기면 오르고」, 「매일 접속하면 1회권과 조각을 지급」, 착수 리뷰가 무료 3회에 드는 것처럼 읽히는 요금 안내. 이 문서는 고치지 않았다.
+
+## 8. 출처
+
+- Apple, App Store Connect 버전 정보(키워드 「each greater than two characters」 「up to 100 bytes」, 프로모션 170자, 설명 4000자, What's New는 첫 버전에 없음, 지원 URL, 저작권): https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information (2026-10-27 확인)
+- Apple, 앱 정보(이름 2~30자, 부제 30자, 중국 본토 ICP와 게임 NPPA 승인 번호, 한국 GRAC): https://developer.apple.com/help/app-store-connect/reference/app-information/app-information (2026-10-27 확인)
+- Apple, 제품 페이지 가이드(설명에 키워드·가격을 넣지 않음, 키워드 규칙): https://developer.apple.com/app-store/product-page/
+- Apple, App Review Guidelines 2.1·2.3.1·2.3.2·2.3.5·2.3.7·2.3.10·4.2.3·5.1.1: https://developer.apple.com/app-store/review/guidelines/
+- Apple, 구독(앱과 메타데이터 모두에 약관·방침 링크): https://developer.apple.com/app-store/subscriptions/
+- Apple, 맞춤 EULA(넣지 않으면 표준 EULA, 제품 페이지에 링크 없음): https://developer.apple.com/help/app-store-connect/manage-app-information/provide-a-custom-license-agreement
+- Apple, IAP·구독 정보(표시 이름 2~30자, 설명 45자): https://developer.apple.com/help/app-store-connect/reference/in-app-purchases-and-subscriptions/in-app-purchase-information
+- Apple, App Store 현지화(한국 스토어프런트의 언어): https://developer.apple.com/help/app-store-connect/reference/app-information/app-store-localizations
+- Apple, Mac 공개 관리: https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-macs-with-apple-silicon
+- Apple 표준 EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+- 지원 페이지(2026-10-27 WebFetch, 요약 모델 경유): https://rezen.dev/apps/baduk-ai/support/ , 제품 페이지: https://rezen.dev/apps/baduk-ai/
+
+## 스레드가 정한 것(사용자가 정하지 않음)
+
+- 앱 이름 4개를 홈 화면 이름(InfoPlist.strings)과 같게 썼다. 특히 영어는 Play 영어 본문의 「Pocket Go Coach」가 아니라 「Go AI Coach」다.
+- 이름이 이미 쓰일 때의 대안 이름 셋(en 「Go AI Coach - Baduk」, ja 「囲碁AIコーチ - 対局と検討」, zh 「围棋AI教练 - 离线对弈」).
+- 부제 4개. ko는 #291 제안 「오프라인 AI 대국·복기」에 「사활 풀기」를 더했다. en은 「Baduk」을 넣었다.
+- 프로모션 텍스트 4개의 내용과, 「모델을 한 번 받은 뒤에는」을 붙인 것.
+- 키워드 4세트, UTF-8 100바이트 안에 드는 기본안과 글자 수용 확장안의 두 단 구성, 영어의 「analysis」「goban」.
+- 설명의 구성과 문장 전체(4개 언어), 영어에서 「WHO IT'S FOR」 절을 뺀 것.
+- 설명에 가격 숫자를 쓰지 않고 「앱 내 구입 항목과 앱의 구독 화면에 표시」로 둔 것.
+- 맞춤 EULA를 넣지 않고 Apple 표준 EULA를 쓰며, 설명 끝에 EULA URL과 개인정보처리방침 URL을 넣은 것. 「24시간 전 해지」 문장은 넣지 않은 것.
+- 모델 크기를 「약 200MB」(97.9MB + 99.1MB 반올림)로 적은 것.
+- 카테고리: 게임 › 보드, 보조 교육.
+- 저작권 「2026 <판매자 실명>」의 연도 2026.
+- 지원 URL로 https://rezen.dev/apps/baduk-ai/support/ 를 쓰고, 마케팅 URL과 Privacy Choices URL을 비워 둔 것.
+- 구독 그룹 표시 이름(프리미엄/Premium/プレミアム/高级版), 구독 표시 이름(앱 라벨 그대로), 구독 설명 4개, 참조 이름 「Premium Monthly」, App Name Display Options 「앱 이름 사용」.
+- 「알파고」 대신 「2016년 인간 대 AI의 대국」으로 쓴 것. KataGo와 실존 기사 이름(도사쿠·슈사쿠·이창호·이세돌)은 설명에 남기고 키워드에서는 뺀 것.
+- 승급 대국을 「15집 이상 이기면 오를 수 있고 3연패하면 한 단계 내려간다」로 쓴 것(코드 규칙의 요약).
+- 착수 평가 줄에 「광고 1시간·구독 중에 켜집니다」를 붙이고, 요금 안내에 무료 횟수가 없다고 적은 것.
+- 출석 보상을 「1~7일째 날마다, 그 뒤 7일째마다, 연속 아니어도 됨」으로 적은 것.
+- 영어 현지화를 en-US로 둔 것(English (U.K.) 추가는 미정).
+- 중국어 글에 앱 UI 표기 「碁经众妙」를 쓴 것.
+- 「준비 중」 항목, 개발자 모드, 닉네임 줄, 「로그인 없이」, 2인 대국·AI 자동 대국을 설명에서 뺀 것.

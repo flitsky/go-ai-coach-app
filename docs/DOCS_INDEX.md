@@ -46,6 +46,7 @@
 | `work/knowhow-docs/` | AI 스레드 협업 방법론(코드베이스 비종속 이식용 가이드) | 표준 문서, 새 프로젝트로 복사해 이식 | "작업 방법론 문서" |
 | `work/artwork/` | 봇 캐릭터 **원화**(768px PNG 5장, 2026-09-06 사용자 제공) | 자산 원본. 앱에 들어가는 것은 여기서 `scripts/make-bot-avatars.py`가 뽑은 투명 WebP다 — 원화를 갈면 그 스크립트를 다시 돌린다 | "기능별 마스터플랜" |
 | `work/play-store-assets/` | Play Console 업로드 자산의 **git 추적 정본** — 스크린샷·앱 아이콘·피처 그래픽·`store_listing.txt` | 2026-09-13에 저장소 루트 `design-handoff/`(라운드별 스냅샷 방식)에서 이 경로로 통합했다. 버전 이력은 git이 기본이고, 필요하면 날짜 붙인 폴더/파일을 추가한다(사용자 결정). ⚠️ **`AppNameContractTest`가 이 경로를 실제로 읽는다** | "루트 자산 폴더의 흡수" |
+| `work/app-store-assets/` | **App Store** 업로드 자산 — 지금은 등재 글 `app_store_listing.txt`(4개 언어) 하나(2026-10-27, 사용자 「Play 짝으로 셋」). 스크린샷은 아이폰 크기로 찍으면 여기에 둔다 | `work/play-store-assets/`의 짝. 출시 절차 · 답안지는 `work/plans/APP_STORE_*.md` | "스토어 등록 자산" |
 | `docs/engine/measurements/` | 엔진 성능·매치 raw/summary 로그 | 데이터, 구조 고정. **깊이 규칙 적용 대상 밖** | "데이터 로그" |
 | `engine-lab/` (저장소 **루트**) | **엔진 실험실**(백로그 #214, 2026-10-03) — 맥에서 파이썬으로 KataGo를 시험하는 곳. 공용 패키지·실험·국면 세트·옛 벤치마크 러너·원격 분석 서버 | 앱과 **엄격히 분리** — 앱 코드를 import하지 않고, 앱 값은 대응표 한 곳에 두어 앱 소스와 대조하는 테스트가 지킨다. 실험 결과는 원자료까지 커밋. 규칙·지도는 `engine-lab/README.md`. **문서 구조 정책(깊이·개수) 적용 대상 밖** — 코드 폴더다 | "엔진 딥다이브·검증" |
 
@@ -190,6 +191,8 @@
 | --- | --- |
 | `GOOGLE_PLAY_LAUNCH_PLAN.md` | 위 원칙을 Google Play 초도 버전 발행에 구체적으로 적용한 전략·기능별 정책·체크리스트. **§0이 정식 출시 최종 체크리스트다(2026-08-31 전면 갱신, 백로그 #54)** — 출시 관련 작업을 시작하는 스레드는 이 절부터 읽을 것. ⚠️ §0은 **현재 상태**이고 그 아래 날짜별 '갱신 기록'은 히스토리다. 둘이 어긋나면 §0이 옳다 |
 | `PLAY_CONSOLE_PRIVACY_ANSWERS.md` | 위 §0의 **A-2(개인정보처리방침 URL)·A-3(IARC 콘텐츠 등급)·A-4(데이터 보안)** 를 **콘솔 앞에 앉아 그대로 채울 수 있게** 정리한 답안지(2026-09-06). 답마다 코드 근거가 붙어 있고, 코드로 알 수 없는 것은 ⚠️로 갈라 뒀다. ⚠️ **§0은 진척, 이쪽은 답이다** — 겹쳐 적지 말 것. ⚠️ 답의 절반이 **기능 플래그 셋이 꺼져 있다는 사실**에 기대므로 **#18·#26 착수 시 함께 열 것** |
+| `APP_STORE_LAUNCH_PLAN.md` | **iOS(App Store) 출시**의 짝(2026-10-27 신설, 사용자 「Play 짝으로 셋」) — §0 지금 어디까지 · §1 처음 한 번의 절차(계정 · 콘솔 · archive · TestFlight · 제출 · **승인 뒤 손으로 출시**) · §2 **#297 TestFlight 실기 시험표**. ⚠️ 진척은 백로그 #293 ~ #298 카드가 정본이고 이쪽은 절차와 시험표다 |
+| `APP_STORE_PRIVACY_ANSWERS.md` | App Store Connect 답안지(2026-10-27) — 앱 개인정보(Google SDK 몫 7종) · 개인정보 매니페스트 · 연령 등급 · 수출 규정 · 콘텐츠 권한 · 심사 메모 · 가격과 국가 · **제출 전에 고칠 방침 문안**. `PLAY_CONSOLE_PRIVACY_ANSWERS.md`의 iOS판이고, 답마다 코드 · 공식 문서 근거가 붙어 있다. ⚠️ 답이 「ATT 없음 · `npa=1` · 앱 코드에 네트워크 없음」 같은 전제에 기댄다(머리 표) — 그것이 바뀌면 다시 답한다 |
 | `PREMIUM_MODE.md` | 프리미엄/수익화 모드 마스터플랜(광고 1시간 활성화, 영구 결제). Step별 진행 로그가 계속 append됨 |
 | `LOGIN_AND_ACCOUNT_SYSTEM.md` | 최초 실행 온보딩 + 계정 시스템(Firebase 익명/Google/이메일 인증) 마스터플랜. [LAYER_6_SESSION_CONTINUITY.md](./architecture/LAYER_6_SESSION_CONTINUITY.md)(6계층 세션/연속성)의 실행 문서 |
 | `UX_IMPROVEMENT.md` | UX 개편(보드 스케일링, 패널, 직접 착수 흐름) 마스터플랜 **v1.0.0 와이어프레임은 이 문서 부록 A**로 합쳐졌다(2026-09-06) |
@@ -199,12 +202,13 @@
 **사실상 완결(갱신 정지)** 로 확인됐고, `UX_IMPROVEMENT.md`는 본문이 현재 화면과 어긋난다
 (그 문서 머리말이 항목별로 적어 두었다). 봉인 판단은 출시 이후로 미뤄 둔 상태다.
 
-## 스토어 등록 자산 (`work/play-store-assets/`)
+## 스토어 등록 자산 (`work/play-store-assets/` · `work/app-store-assets/`)
 
 | 위치 | 용도 |
 | --- | --- |
 | `work/play-store-assets/README.md` | Play Console 시각적 애셋(스크린샷·앱 아이콘·피처 그래픽) 캡처 조건과 갱신 이력 |
 | `work/play-store-assets/store_listing.txt` | Play 등록정보 원문 — 앱 이름·설명·요금 안내·출시 노트 |
+| `work/app-store-assets/app_store_listing.txt` | **App Store** 등재 글 정본(2026-10-27, 4개 언어 — 이름 · 부제 · 프로모션 · 키워드 · 설명 · 구독 현지화 · 카테고리 · URL). Play 글을 iOS 사실로 고쳐 옮겼고(사진 분석 · Google · 가격 숫자 없음), 칸마다 글자 수를 셌다. 스크린샷은 아직 없다 |
 
 ⚠️ **2026-09-13에 저장소 루트 `design-handoff/`(외부 디자이너 핸드오프용 export/import 채널)를
 없애고 이 경로로 흡수했다** — 디자이너 채널은 2026-08-11 발송 이후 회신이 없어 사실상 죽어 있었고,
