@@ -167,50 +167,6 @@ internal fun DeveloperTestSection(
 
         Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
-        // 1회권 한 장 지급 — 출석 1일차가 30장을 주므로 한 장은 경제에 영향이 없다.
-        // ⚠️ **`consumables.refresh()`를 반드시 함께 부른다.** `runConsumableGrant`는
-        // 저장소에 **직접** 쓰고 화면 사본은 나가는 것만 알기 때문에(그 KDoc이 못박고
-        // 있다) 빠뜨리면 마이 페이지가 옛 재고를 계속 보여준다.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = strings.settingsDevGrantTicketTitle,
-                    fontSize = AppTextSize.Text14,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = strings.settingsDevGrantTicketSubtitle,
-                    fontSize = AppTextSize.Text12,
-                    color = MaterialTheme.colorScheme.secondary,
-                )
-            }
-            TextButton(
-                onClick = {
-                    val store = platform.stores.consumables
-                    // ⚠️ **`PremiumOnce`(광고 스킵권)는 여기 두지 않는다**(2026-09-05).
-                    // 이 버튼은 1차라 **release 빌드에 그대로 실린다**(함정 11번). 형세·추천
-                    // 1회권은 1일차 출석이 30장씩 주는 것이라 경제에 영향이 없지만,
-                    // 광고 스킵권은 **광고가 사는 바로 그 재화**다(4·7일차 보상). 결제가
-                    // 파킹된 지금 광고가 유일한 수익원이라, 반복해서 누를 수 있는 스킵권
-                    // 발행기를 출시하는 앱에 넣는 셈이 된다.
-                    // · 필요하면 2차(debug 전용)에서 만들 것 — 기준은 #77의 *"무엇을 저장하는가"*.
-                    listOf(
-                        ConsumableCatalog.EvalOnce,
-                        ConsumableCatalog.TopMovesOnce,
-                    ).forEach { item -> runConsumableGrant(item, amount = 1, consumableStore = store) }
-                    consumables.refresh()
-                },
-            ) {
-                Text(strings.settingsDevGrantAction)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(AppSpacing.Space16))
-
         // 읽기 전용 ③ — **진단 로그를 앱 안에서 본다**(백로그 #79). `DiagnosticEventLog`가
         // 계속 쌓고 있는데 앱에서 볼 길이 없어, 폰만 손에 있으면 확인이 불가능했다.
         // ⚠️ 화면을 새로 만들지 않고 다이얼로그로 둔 이유는 셸 라인 예산이다(함정 3번).
@@ -278,6 +234,47 @@ internal fun DeveloperTestSection(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.error,
             )
+
+            // 1회권 한 장 지급 — ⚠️ **2차(debug 전용)다**(사용자 2026-10-27). 1차였을 때는 release에 그대로 실려, 버전 10탭만 하면
+            // 누를 때마다 형세 · 추천 1회권이 늘었다 — 구독이 파는 기능을 돈 없이 계속 쓰는 길이었다(App Store 심사 2.5.19 · 3.1.1,
+            // `APP_STORE_PRIVACY_ANSWERS.md` ⑥). 안드로이드 출시 빌드에서도 함께 빠진다.
+            // ⚠️ **`consumables.refresh()`를 반드시 함께 부른다.** `runConsumableGrant`는
+            // 저장소에 **직접** 쓰고 화면 사본은 나가는 것만 알기 때문에(그 KDoc이 못박고
+            // 있다) 빠뜨리면 마이 페이지가 옛 재고를 계속 보여준다.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = strings.settingsDevGrantTicketTitle,
+                        fontSize = AppTextSize.Text14,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = strings.settingsDevGrantTicketSubtitle,
+                        fontSize = AppTextSize.Text12,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+                TextButton(
+                    onClick = {
+                        val store = platform.stores.consumables
+                        // ⚠️ **`PremiumOnce`(광고 스킵권)는 여기 두지 않는다**(2026-09-05) — 광고가 사는 바로 그 재화다(4·7일차 보상).
+                        // 1차였을 때 release에 실리지 않게 뺐고, 2차로 옮긴 지금도 형세 · 추천 두 가지만 준다(기준은 #77의 *"무엇을 저장하는가"*).
+                        listOf(
+                            ConsumableCatalog.EvalOnce,
+                            ConsumableCatalog.TopMovesOnce,
+                        ).forEach { item -> runConsumableGrant(item, amount = 1, consumableStore = store) }
+                        consumables.refresh()
+                    },
+                ) {
+                    Text(strings.settingsDevGrantAction)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(AppSpacing.Space16))
 
             // ⚠️ **영구 활성화 토글이 여기 있었다 — 버튼으로 바꿨다**(백로그 #78,
             // 2026-09-03 사용자 결정). 그 토글은 `PremiumSource.Purchase`를 저장소에

@@ -88,7 +88,7 @@
 - 사용자에게 연결되지 않은 데이터: 진단(충돌, 기타 진단)
 - 사용자를 추적하는 데 사용되는 데이터: **없음**
 
-### ⚠️ 기기 ID의 「추적」: 사용자가 정할 것(새 미결 결정 U-87 제안)
+### 기기 ID의 「추적」 — ✅ U-87 사용자 결정(2026-10-27): ⓐ 「추적 = 아니오」(U-86 유지)
 
 **사실**
 - GMA 12.14.0 매니페스트는 Device ID를 tracking=true로 선언한다. ATT 허락 여부에 따라 달라지는 변형은 없다.
@@ -100,7 +100,7 @@
 
 | 길 | ASC 답 | 앱에 필요한 것 | 근거와 한계 |
 | --- | --- | --- | --- |
-| **ⓐ U-86 유지(권장, 제가 정한 것)** | Device ID 「추적 = **아니오**」 | 이미 됐다: ATT 없음 + `npa=1`(`43bc9ebc`). 선택으로 더 보탤 수 있다: `MobileAds.shared.requestConfiguration.publisherPrivacyPersonalizationState = .disabled`(Publisher Privacy Treatment, Beta, 12.14 헤더에 있음), `setPublisherFirstPartyIDEnabled(false)`(코드 변경, 승인 필요) | U-86과 맞는 유일한 답이다. **한계**: 이 답이 Apple 정의상 참이라고 판정한 Apple·Google 공식 문서는 없다. Xcode Privacy Report는 계속 tracking=true를 보여 준다. `npa=1`이나 PPT가 공개 항목을 줄인다고 쓴 Google 문서도 없다. 반려되면 심사 회신에 위 사실(ATT 없음, IDFA 0, `npa=1`, 추적 도메인 없음)을 낸다 |
+| **ⓐ U-86 유지 — ✅ 사용자 결정(2026-10-27)** | Device ID 「추적 = **아니오**」 | 이미 됐다: ATT 없음 + `npa=1`(`43bc9ebc`). 선택으로 더 보탤 수 있다: `MobileAds.shared.requestConfiguration.publisherPrivacyPersonalizationState = .disabled`(Publisher Privacy Treatment, Beta, 12.14 헤더에 있음), `setPublisherFirstPartyIDEnabled(false)`(코드 변경, 승인 필요) | U-86과 맞는 유일한 답이다. **한계**: 이 답이 Apple 정의상 참이라고 판정한 Apple·Google 공식 문서는 없다. Xcode Privacy Report는 계속 tracking=true를 보여 준다. `npa=1`이나 PPT가 공개 항목을 줄인다고 쓴 Google 문서도 없다. 반려되면 심사 회신에 위 사실(ATT 없음, IDFA 0, `npa=1`, 추적 도메인 없음)을 낸다 |
 | ⓑ ATT 추가 | Device ID 「추적 = **예**」 | `NSUserTrackingUsageDescription`, `ATTrackingManager.requestTrackingAuthorization`, 방침 수정. **U-86을 뒤집는다** | 매니페스트와 그대로 일치한다. 대신 ATT 창이 하나 늘고 U-86과 어긋난다 |
 | ✗ 하지 말 것 | 「추적 예」로 답하고 ATT 없이 제출 | — | 위 포럼에서 반려가 보고된 조합이다 |
 
@@ -203,17 +203,17 @@ otool -L "$A/GoCoach" | grep -iE "AppTrackingTransparency"   # 나오면 안 된
 | | Horror/Fear Themes | **None** | — |
 | | Alcohol, Tobacco, or Drug Use or References | **None** | 운세 368개·명언 174개에 술 관련 내용이 없다(「술술」, 『술이기』 같은 낱말뿐) |
 | Medical or Wellness | Medical or Treatment Information | **None** | 진단·치료·약 안내가 없다 |
-| | **Health or Wellness Topics** | ⚠️ **사용자가 정할 것. 정의를 글자대로 읽으면 「예」** | 정의: 「Content that provides self-care or lifestyle recommendations. May include: calorie tracking, dieting advice, or exercise recommendations」. 운세 368개 중 약 11개가 생활 습관을 권한다: g-15(짧은 산책), g-19(따뜻한 차), g-70(좋아하는 음식 천천히), g-71(물 한 잔), g-79(기지개), g-87(간단한 요리), g-92(허리 펴고 걷기), g-141(몸부터 움직이기), s-5(큰 결정은 하룻밤 자고), s-18(일과 휴식의 균형), s-38(일찍 잠자리에)(`ui/l10n/DailyFortuneCatalog.kt`). 초안의 「돈·건강·연애를 단정하지 않게 지었다」는 이 정의에 대한 답이 되지 못한다. 아래 「선택지」 참고 |
+| | **Health or Wellness Topics** | ✅ **예**(사용자 2026-10-27 — 정의대로, 전 세계 9+) | 정의: 「Content that provides self-care or lifestyle recommendations. May include: calorie tracking, dieting advice, or exercise recommendations」. 운세 368개 중 약 11개가 생활 습관을 권한다: g-15(짧은 산책), g-19(따뜻한 차), g-70(좋아하는 음식 천천히), g-71(물 한 잔), g-79(기지개), g-87(간단한 요리), g-92(허리 펴고 걷기), g-141(몸부터 움직이기), s-5(큰 결정은 하룻밤 자고), s-18(일과 휴식의 균형), s-38(일찍 잠자리에)(`ui/l10n/DailyFortuneCatalog.kt`). 초안의 「돈·건강·연애를 단정하지 않게 지었다」는 이 정의에 대한 답이 되지 못한다. 아래 「선택지」 참고 |
 | Sexuality or Nudity | Mature or Suggestive Themes · Sexual Content or Nudity · Graphic Sexual Content and Nudity | **None**(셋 다) | 캐릭터 다섯은 판다·돌하르방·소년·거북·부엉이 그림이다 |
 | Violence | Cartoon or Fantasy · Realistic · Prolonged Graphic or Sadistic · Guns or Other Weapons | **None**(넷 다) | 바둑 대국과 학습뿐이다. 돌을 따내는 것은 게임 규칙이다 |
 | Chance-Based Activities | Gambling | **아니요** | 실제 돈이나 현금으로 바꿀 수 있는 재화를 거는 일이 없다 |
 | | Simulated Gambling | **None** | 정의: 「Betting or wagering without using real money…」. 뽑기·운세에는 사용자가 거는 재화가 없다. 광고를 봐도 잃는 것이 없다(`DailyDraw.kt`, `application/dailyfortune/DailyFortune.kt`) |
 | | Contests | **None**(제가 정한 것) | 정의: 「Events that allow users to compete with one another for rankings, rewards, or the achievement of personal goals」. 랭킹·리더보드·사용자 간 보상 경쟁이 없다. 승급 대국은 AI 상대로 자기 급수를 찾는 기능이고, 출석 보상은 고정표다(`application/attendance/AttendanceRewardPolicy.kt`). 같은 기기 2인 대국은 순위·보상이 걸린 행사가 아니라고 봤다. 보수적으로 **Infrequent**로 답해도 등급은 같다(전 세계 4+, 한국 All, 브라질 A6 < 광고의 A12) |
-| | **Loot Boxes** | ⚠️ **아니요(권장, 사용자가 확정)** | 정의: 「Virtual containers that provide players with randomized virtual items **for purchase**」. 1일 1회 뽑기는 **돈으로 살 수 없다**. 광고 1편(구독자는 광고 없이)으로 24시간에 한 번이고, 구독해도 횟수가 늘지 않는다. 확률은 카드에 상품마다 늘 적는다(합 100, `dailyDrawOdds`). 상품은 앱 안 소모품·캐릭터뿐이라 현금 가치·거래가 없다. ⚠️ 「구독자는 광고 없이 뽑는다」를 구매로 볼 여지는 사용자 판단이다 |
+| | **Loot Boxes** | ✅ **아니요**(사용자 2026-10-27 확정) | 정의: 「Virtual containers that provide players with randomized virtual items **for purchase**」. 1일 1회 뽑기는 **돈으로 살 수 없다**. 광고 1편(구독자는 광고 없이)으로 24시간에 한 번이고, 구독해도 횟수가 늘지 않는다. 확률은 카드에 상품마다 늘 적는다(합 100, `dailyDrawOdds`). 상품은 앱 안 소모품·캐릭터뿐이라 현금 가치·거래가 없다. ⚠️ 「구독자는 광고 없이 뽑는다」를 구매로 볼 여지는 사용자 판단이다 |
 | Additional Information | Age Categories and Override | **Not Applicable**(제가 정한 것) | Made for Kids로 내지 않는다(승인 뒤 되돌릴 수 없다). 더 높은 등급으로 올릴 이유도 없다 |
 | | Age Suitability URL | 비움(제가 정한 것) | 선택 항목 |
 
-### Health or Wellness Topics 선택지(⚠️ 사용자가 정할 것)
+### Health or Wellness Topics 선택지 — ✅ 사용자 결정(2026-10-27): ⓐ 「예」(9+)
 
 | 선택 | 결과 | 비용 |
 | --- | --- | --- |
@@ -319,16 +319,15 @@ One draw per 24 hours, after one rewarded ad (no ad for subscribers; a subscript
 Game records, settings and progress are stored only on the iPhone (and in the user's own iPhone backup). The Privacy Policy opens from Settings and from both purchase dialogs.
 ```
 
-⚠️ **숨은 개발자 메뉴(2.5.19 · 3.1.1): 사용자가 정할 것**
+**숨은 개발자 메뉴(2.5.19 · 3.1.1)** — ✅ 사용자 결정(2026-10-27): 「1회권 받기」를 2단(debug 전용)으로 옮겼다
 
 - 사실: 출시 빌드에서도 설정의 버전 글자를 10번 누르면 확인 창이 뜨고, 확인하면 1단 개발자 메뉴가 열린다(`ui/settings/SettingsScreen.kt` 76·287~300행, `ui/settings/DeveloperTestSection.kt`). 켤 때 기존 데이터가 지워지고, 켠 동안 3시간마다 새로 설치한 상태로 돌아간다(확인 창 문구).
-- 1단에 실린 것: 빌드 정보, **「Grant one ticket」(누를 때마다 형세 1회권 1장 + 추천 1회권 1장, 횟수 제한 없음)**, 진단 로그 보기, AI 착수 지연, 엔진 성능 측정, 기동 그림 후보, 끄기(데이터 초기화).
+- 1단에 실린 것(출시 빌드): 빌드 정보, 진단 로그 보기, AI 착수 지연, 엔진 성능 측정, 기동 그림 후보, 끄기(데이터 초기화). **「Grant one ticket」은 2단(debug 전용)으로 옮겼다**(안드로이드도 함께 — `DeveloperSectionTierContractTest`가 그 자리를 지킨다). 옮기기 전에는 누를 때마다 형세 · 추천 1회권이 횟수 제한 없이 늘었다.
 - 2단(광고 본 것으로 프리미엄 1시간 등)은 `isDebugBuild && …`로 막혀 있다. iOS `isDebugBuild = Platform.isDebugBinary`이고, Xcode Release 구성은 `embedAndSignAppleFrameworkForXcode`로 release Kotlin 프레임워크를 묶으므로 닿지 않는다(`app-android/src/iosMain/kotlin/com/worksoc/goaicoach/platform/AppPlatformActualsIos.kt` 15행, `project.pbxproj` 242행).
-- ⚠️ 초안의 7번 줄 "It does not unlock paid features."는 **사실이 아니다**. 1회권 버튼을 반복해 누르면 구독이 파는 기능(형세 보기·추천 수)을 돈 없이 계속 쓸 수 있다.
-- **권장(제가 정한 것): 출시 빌드에서 1단 메뉴를 막거나, 적어도 「Grant one ticket」을 2단(debug 전용)으로 옮긴다**(코드 변경, 승인 필요). 막지 않으면 아래 줄을 메모에 더한다(사실대로 쓴 문안).
+- 옮긴 뒤에는 1단 메뉴가 유료 기능을 열지 않는다. 메뉴 자체는 남으므로 아래 줄을 메모에 더한다(사실대로 쓴 문안).
 
 ```
-7. Developer menu: tapping the version text in Settings 10 times opens a confirmation, then a QA menu: build info, diagnostic log, AI move delay, engine benchmark, splash previews, and a button that adds one Eval and one Top-moves ticket per tap. Turning the menu on or off erases local data.
+7. Developer menu: tapping the version text in Settings 10 times opens a confirmation, then a QA menu: build info, diagnostic log, AI move delay, engine benchmark and splash previews. It does not unlock paid features. Turning the menu on or off erases local data.
 ```
 
 ⚠️ **4.2.3(ii)(첫 실행에 받을 리소스는 크기를 알리고 먼저 묻는다)**: 앱은 약 197MB라는 크기를 어디에도 보여 주지 않는다. 모델 팩은 시스템이 설치·업데이트 때 받는 prefetch이고(`scripts/ios-package-model-pack.sh` 28행), 제품 페이지의 「Up to」 크기에는 essential 팩만 들어간다. 그래서 위 메모 2번에 크기를 적었다. 엔진 준비 화면이나 설명에도 크기를 적을지는 사용자가 정한다(코드 변경이면 승인 필요).
@@ -386,8 +385,8 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 - [ ] 개인 계정 가입(U-85). Account Holder가 **Paid Applications Agreement**에 서명하고 세금·은행 정보를 넣는다. 서명 전에는 샌드박스 구매도 안 된다.
 - [ ] Business › Agreements › Compliance › **Korean Law**: 전자상거래법 신원 정보(개인은 이메일 등). EU를 넣으면 **DSA trader** 상태도 신고한다.
 - [ ] 앱 레코드: 이름 「포켓 바둑 코치」, 기본 언어 한국어, 번들 ID, SKU `pocket-baduk-coach-ios`(#291 제안값).
-- [ ] **App Privacy**(①): 7개 유형, 성능 데이터 연결 여부, Device ID 추적 답(⚠️ 길 ⓐ/ⓑ 결정), 방침 URL, Publish.
-- [ ] **연령 등급**(③): Health or Wellness Topics(ⓐ/ⓑ/ⓒ) 결정, Loot Boxes 「아니요」 확정, Contests None/Infrequent 확정.
+- [ ] **App Privacy**(①): 7개 유형, 성능 데이터 연결 여부, Device ID 추적 「아니오」(U-87 ⓐ), 방침 URL, Publish.
+- [ ] **연령 등급**(③): Health or Wellness 「예」 · Loot Boxes 「아니요」(둘 다 사용자 2026-10-27) · Contests None(제가 정한 것 — Infrequent여도 등급은 같다). 예상 등급 전 세계 9+.
 - [ ] **콘텐츠 권한**(⑤): Yes와 권리 체크. 캐릭터 그림 출처 확인.
 - [ ] 저작권 `2026 <본인 이름>`, 카테고리, 지원 URL(필수), 마케팅 URL(선택).
 - [ ] **가격·배포**(⑦): 무료, 국가, Mac·Vision Pro 끄기, 출시 방식, Small Business Program.
@@ -409,8 +408,8 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 - [ ] 지원 페이지 iPhone FAQ. 출시 뒤 제품 페이지에 App Store 링크.
 
 **코드(스레드가 할 수 있지만 사용자 승인이 먼저)**
-- [ ] 출시 빌드에서 1단 개발자 메뉴 막기, 또는 「Grant one ticket」을 debug 전용으로 옮기기(⑥ ⚠️).
-- [ ] (Health or Wellness ⓑ를 고르면) 운세 약 11개를 생활 권유 없는 글로 바꾸기(③).
+- [x] 「Grant one ticket」을 debug 전용으로 옮기기(⑥ — 사용자 2026-10-27).
+- ~~운세 약 11개 고치기~~ — 사용자가 「예」(9+)를 골라 필요 없다(③).
 - [ ] (선택) PPT `.disabled`·first-party ID 끄기(① 길 ⓐ의 보강).
 - [ ] `PrivacyInfo.xcprivacy` 머리말 주석 고치기(②).
 - [ ] 음악 CC BY 고지의 「Ogg Vorbis」 문구를 플랫폼 중립으로(⑤).

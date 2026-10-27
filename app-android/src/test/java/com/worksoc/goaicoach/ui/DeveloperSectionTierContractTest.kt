@@ -232,15 +232,21 @@ class DeveloperSectionTierContractTest {
     }
 
     /**
-     * 1회권 지급은 1차에 있어도 되지만(출석 1일차가 30장을 준다) ⚠️ **`refresh()`를 함께 불러야
-     * 한다** — `runConsumableGrant`는 저장소에 직접 쓰고 화면 사본은 나가는 것만 알기 때문이다.
+     * 1회권 지급은 ⚠️ **2차(debug 전용)에만 있다**(사용자 2026-10-27) — 1차에 있던 때는 출시 빌드에서 버전 10탭만 하면
+     * 누를 때마다 형세 · 추천 1회권이 늘어, 구독이 파는 기능을 돈 없이 계속 쓰는 길이었다(App Store 심사 2.5.19 · 3.1.1).
+     * 그리고 ⚠️ **`refresh()`를 함께 불러야 한다** — `runConsumableGrant`는 저장소에 직접 쓰고 화면 사본은 나가는 것만 알기 때문이다.
      * 백로그 #65가 프리미엄에서 같은 함정을 밟았다.
      */
     @Test
-    fun grantingATicketRefreshesTheScreenCopy() {
+    fun grantingATicketIsDebugOnlyAndRefreshesTheScreenCopy() {
+        val advancedTier = settings.indexOf("isDebugBuild && isAdvancedDeveloperModeEnabled")
         val grant = settings.indexOf("runConsumableGrant(item, amount = 1, consumableStore = store)")
-        val refresh = settings.indexOf("consumables.refresh()")
+        val refresh = settings.indexOf("consumables.refresh()", startIndex = grant)
         assertTrue("1회권 지급 호출을 찾지 못했다.", grant >= 0)
+        assertTrue(
+            "1회권 지급이 2차(debug 전용) 블록 밖에 있다 — 출시 빌드에서 돈 없이 1회권을 찍어 내는 길이 된다(2026-10-27).",
+            advancedTier in 0 until grant,
+        )
         assertTrue(
             "지급 뒤 재고를 되읽지 않는다 — 마이 페이지가 옛 재고를 계속 보여준다(#65와 같은 함정).",
             refresh > grant,
