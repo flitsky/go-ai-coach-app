@@ -6,9 +6,38 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		29200000000000000000B00A /* AssetDownloader.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 29200000000000000000B001 /* AssetDownloader.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		29200000000000000000B00C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29200000000000000000A001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 29200000000000000000B003;
+			remoteInfo = AssetDownloader;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		29200000000000000000B00B /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				29200000000000000000B00A /* AssetDownloader.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		29200000000000000000A005 /* GoCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		29200000000000000000A011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		29200000000000000000B001 /* AssetDownloader.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = AssetDownloader.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -17,10 +46,22 @@
 			path = GoCoach;
 			sourceTree = "<group>";
 		};
+		29200000000000000000B002 /* AssetDownloader */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AssetDownloader;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		29200000000000000000A009 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		29200000000000000000B005 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -34,6 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				29200000000000000000A004 /* GoCoach */,
+				29200000000000000000B002 /* AssetDownloader */,
 				29200000000000000000A011 /* Info.plist */,
 				29200000000000000000A003 /* Products */,
 			);
@@ -43,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				29200000000000000000A005 /* GoCoach.app */,
+				29200000000000000000B001 /* AssetDownloader.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -59,10 +102,12 @@
 				29200000000000000000A009 /* Frameworks */,
 				29200000000000000000A00A /* Resources */,
 				29200000000000000000A0F1 /* Bundle Android Resources */,
+				29200000000000000000B00B /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				29200000000000000000B00D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				29200000000000000000A004 /* GoCoach */,
@@ -73,6 +118,28 @@
 			productName = GoCoach;
 			productReference = 29200000000000000000A005 /* GoCoach.app */;
 			productType = "com.apple.product-type.application";
+		};
+		29200000000000000000B003 /* AssetDownloader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 29200000000000000000B007 /* Build configuration list for PBXNativeTarget "AssetDownloader" */;
+			buildPhases = (
+				29200000000000000000B004 /* Sources */,
+				29200000000000000000B005 /* Frameworks */,
+				29200000000000000000B006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				29200000000000000000B002 /* AssetDownloader */,
+			);
+			name = AssetDownloader;
+			packageProductDependencies = (
+			);
+			productName = AssetDownloader;
+			productReference = 29200000000000000000B001 /* AssetDownloader.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -85,6 +152,9 @@
 				LastUpgradeCheck = 2710;
 				TargetAttributes = {
 					29200000000000000000A006 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					29200000000000000000B003 = {
 						CreatedOnToolsVersion = 27.1;
 					};
 				};
@@ -107,12 +177,20 @@
 			projectRoot = "";
 			targets = (
 				29200000000000000000A006 /* GoCoach */,
+				29200000000000000000B003 /* AssetDownloader */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		29200000000000000000A00A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		29200000000000000000B006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -170,7 +248,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		29200000000000000000B004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		29200000000000000000B00D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 29200000000000000000B003 /* AssetDownloader */;
+			targetProxy = 29200000000000000000B00C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		29200000000000000000A00D /* Debug */ = {
@@ -189,7 +282,7 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -209,7 +302,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -221,6 +314,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_ENTITLEMENTS = GoCoach.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 10804;
 				ENABLE_PREVIEWS = NO;
@@ -268,6 +362,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CODE_SIGN_ENTITLEMENTS = GoCoach.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 10804;
 				ENABLE_PREVIEWS = NO;
@@ -311,6 +406,52 @@
 			};
 			name = Release;
 		};
+		29200000000000000000B008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = AssetDownloader.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10804;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "AssetDownloader-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = AssetDownloader;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.8.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk.AssetDownloader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		29200000000000000000B009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = AssetDownloader.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 10804;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "AssetDownloader-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = AssetDownloader;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.8.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk.AssetDownloader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -328,6 +469,15 @@
 			buildConfigurations = (
 				29200000000000000000A00F /* Debug */,
 				29200000000000000000A010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		29200000000000000000B007 /* Build configuration list for PBXNativeTarget "AssetDownloader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				29200000000000000000B008 /* Debug */,
+				29200000000000000000B009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

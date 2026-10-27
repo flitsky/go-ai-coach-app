@@ -4,6 +4,8 @@
 #   appassets/drawable/  비트맵(webp · jpg) — `painterFor`가 이름으로 읽는다. 벡터(XML)는 `scripts/ios-vector-drawables.py`가 코드로 옮긴다.
 #   appassets/assets/    안드로이드 `assets/` 그대로(기보 · 참고 대국) — `BundledAssets`가 같은 상대 경로로 읽는다.
 #                        더해 `licenses/aboutlibraries-ios.json` — iOS의 오픈소스 목록(`:ios-licenses`가 앞 단계 Gradle에서 만든다).
+#   appassets/katago/    엔진 설정 둘(gtp_learning.cfg · analysis_learning.cfg) — 안드로이드처럼 앱에 싣고, 모델 둘은 Apple 호스팅 팩으로 받는다(#293).
+#                        원본은 `make prepare-friend-assets`가 채우는 app-android/src/friend/assets/katago/(gitignore). Release는 없으면 멈춘다.
 #   appassets/audio/     배경음악(#244) — 안드로이드 `res/raw/bgm_*.ogg`를 AAC(m4a)로 바꿔 싣는다(iOS의 AVAudioPlayer는 Ogg Vorbis를 못 연다).
 #                        바꾼 파일은 DerivedData에 두고 원본이 더 새로울 때만 다시 바꾼다. ffmpeg가 없으면 Debug는 음악 없이 묶고(경고 — 앱은 조용할 뿐이다),
 #                        Release는 멈춘다(출시 빌드가 음악 없이 나가지 않게).
@@ -15,6 +17,17 @@ cp -f "$SRC"/res/drawable-nodpi/*.webp "$SRC"/res/drawable/*.jpg "$DST/drawable/
 rsync -a --delete "$SRC/assets/" "$DST/assets/"
 mkdir -p "$DST/assets/licenses"
 cp -f "${SRCROOT}/../ios-licenses/build/ios-licenses/aboutlibraries-ios.json" "$DST/assets/licenses/"
+
+CFG_SRC="$SRC/../friend/assets/katago"
+mkdir -p "$DST/katago"
+if [ -f "$CFG_SRC/gtp_learning.cfg" ] && [ -f "$CFG_SRC/analysis_learning.cfg" ]; then
+  cp -f "$CFG_SRC/gtp_learning.cfg" "$CFG_SRC/analysis_learning.cfg" "$DST/katago/"
+elif [ "${CONFIGURATION:-Debug}" = "Release" ]; then
+  echo "error: KataGo configs missing in $CFG_SRC — run 'make prepare-friend-assets' (Release builds must bundle them)"
+  exit 1
+else
+  echo "warning: KataGo configs missing in $CFG_SRC — the simulator uses GOCOACH_KATAGO_* instead"
+fi
 
 mkdir -p "$DST/audio"
 FFMPEG="$(command -v ffmpeg || true)"

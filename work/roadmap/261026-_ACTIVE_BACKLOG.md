@@ -204,7 +204,13 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
 - **스레드가 정한 것**(사용자 확인 전): ① 새 모듈 대신 `:engine-android`를 **제자리에서** KMP로(내부 공개 범위 · 엔진 테스트 25파일을 그대로 두려고) — 모듈 이름 `:engine-katago`로 바꾸기는 따로 남겼다(기계적 · 참조 41곳)
   ② JSON은 org.json 대신 `kotlinx-serialization-json` 1.10.0(새 의존성 — 앱에도 실린다), 쿼리 JSON의 **키 순서만** 바뀐다(KataGo는 보지 않는다 — 골든의 순서만 고쳤다)
   ③ 옛 엔진을 기다리는 상한 30초 · iOS 파이프 풀 8스레드 ④ 엔진 공용 코드에는 「JVM 전용 API 금지」 계약만 걸고 계층 목록에는 넣지 않았다(한 패키지에 1 · 2계층).
-- **다음**: 앱 화면이 이 엔진을 쓰게(#294와 함께 — 모델 · 설정 파일을 앱에 싣는 길) → 실기기 라이브러리(`build-katago-ios.sh iphoneos`)와 아이폰 속도(개발자 가입 뒤) → 백엔드(Eigen이 느리면 Metal · CoreML 포크) → 모델 싣기 방식.
+- **진행 ③ — 모델 받기(Apple 호스팅 Background Assets)**(2026-10-27 — 사용자: 설치 뒤 받기 · 최소 iOS 26): 최소 iOS **26.1**(26.0.x의 `url(for:)` 결함 — 스레드가 정함) ·
+  받기 확장 `AssetDownloader`(ExtensionKit) · 앱 그룹 `group.com.zenit9hub.ai.baduk` · Info.plist BA 키 · `AppleHostedModelSource.swift`(Kotlin `IosEngineModelSource` 구현 — 안드로이드 PAD와 같은
+  받기 화면 · 다시 시도) · 설정 둘은 앱에, 모델 둘은 팩 `katago-models`에(`make ios-package-model-pack` → 197MB `.aar`). 실기기 라이브러리 · 서명 없는 기기용 Release 링크까지 확인.
+  ⚠️ **받기 자체는 아직 못 돌려 봤다** — Apple 호스팅 팩은 서명 팀이 있어야 하고 시뮬레이터 시험이 깨져 있다(Xcode 26.5 알려진 문제). 시뮬레이터는 맥의 모델 파일로 돈다.
+- **사용자 몫(개발자 가입 뒤)**: ① Xcode에서 두 타깃(GoCoach · AssetDownloader)의 Signing에 팀 선택(자동 서명 — 앱 그룹이 등록된다) ② App Store Connect에 앱 기록(`com.zenit9hub.ai.baduk`)
+  ③ `make ios-package-model-pack` → Transporter로 `app-ios/build/asset-packs/katago-models.aar` 올리기 ④ 내부 TestFlight로 실기기 설치 → 엔진 준비 화면에서 받기 → 대국 ⑤ 첫 심사에 팩 판을 같은 제출로.
+- **다음**: 실기기에서 받기 · 아이폰 속도(개발자 가입 뒤) → 백엔드(Eigen이 느리면 Metal · CoreML 포크).
 
 ### 294. **iOS 화면 — 1.8.4의 화면을 iOS에** (Opus / 최대) — #292 뒤 · U-83 · U-84의 답을 딛는다 · 착수 2026-10-27(사용자 2026-10-26 밤: *"내 의사 결정을 기다리지 말고 … iOS앱을 최대한 안드로이드 앱 수준으로"* — 계정 연동 등 사용자 작업은 미루고 에뮬레이터로 확인 가능한 것 전부)
 

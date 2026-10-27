@@ -10,6 +10,13 @@
 		<key>UIColorName</key>
 		<string>LaunchBackground</string>
 	</dict>
+	<!-- 엔진 모델 팩(백로그 #293): Apple이 호스팅하는 관리형 Background Assets. 그룹은 두 .entitlements와 같은 값. 다른 BA 키는 두지 않는다(Apple 문서). -->
+	<key>BAAppGroupID</key>
+	<string>group.com.zenit9hub.ai.baduk</string>
+	<key>BAHasManagedAssetPacks</key>
+	<true/>
+	<key>BAUsesAppleHosting</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

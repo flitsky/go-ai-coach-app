@@ -92,6 +92,8 @@ private suspend fun downloadOnce(source: IosEngineModelSource, tracker: EngineDo
     source.startDownload(
         object : IosEngineModelDownloadListener {
             override fun onProgress(bytesDownloaded: Long, totalBytes: Long) {
+                // 진행은 다른 스레드에서 온다 — 끝난 뒤 늦게 온 소식이 「완료」를 「받는 중」으로 되돌리지 않게.
+                if (!continuation.isActive) return
                 val percent = if (totalBytes > 0) ((bytesDownloaded * 100) / totalBytes).toInt().coerceIn(0, 100) else 0
                 tracker.updateStatus(EngineDownloadStatus.Downloading(bytesDownloaded, totalBytes, percent))
             }

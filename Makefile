@@ -76,7 +76,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe ios-prebuild-engine-device ios-ensure-engine-device ios-build-device-release ios-run-release
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe ios-prebuild-engine-device ios-ensure-engine-device ios-build-device-release ios-run-release ios-package-model-pack
 
 help:
 	@echo "=========================================================================="
@@ -106,6 +106,7 @@ help:
 	@echo "  make ios-prebuild-engine-device - Build KataGo as a static library for iPhones (app-ios/build/katago/iphoneos/)"
 	@echo "  make ios-build-device-release   - Release build for iPhones without signing (checks compile + link; no Apple account)"
 	@echo "  make ios-run-release     - Release build on the simulator, install & launch (debug-only paths off, like the store build)"
+	@echo "  make ios-package-model-pack - Package the two KataGo models as the Apple-hosted asset pack (app-ios/build/asset-packs/)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
 	@echo "                             (needs a connected device; NOT part of make test, NOT wired into make release)"
 	@echo "  make test-remote-analysis-server - Check run-katago-remote-analysis-server.py's query builder"
@@ -227,6 +228,10 @@ ios-ensure-engine-device:
 
 ios-build-device-release: ios-ensure-engine-device
 	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Release -destination 'generic/platform=iOS' -derivedDataPath $(IOS_DERIVED) CODE_SIGNING_ALLOWED=NO build
+
+# 엔진 모델 팩(백로그 #293 — Apple이 호스팅하는 Background Assets) — 안드로이드 PAD 팩과 같은 두 모델을 묶는다. 올리기는 사용자가(App Store Connect).
+ios-package-model-pack:
+	./scripts/ios-package-model-pack.sh "$(FRIEND_MODEL_PATH)" "$(FRIEND_HUMAN_MODEL_PATH)"
 
 # 출시와 같은 Release 구성을 시뮬레이터에서 — 디버그에서만 도는 길(광고 보상 흉내 · 개발자 메뉴)이 꺼진 채로 본다(#297 「디버그에서 됐다고 릴리스에서 된다고 보지 않는다」).
 IOS_APP_RELEASE := $(IOS_DERIVED)/Build/Products/Release-iphonesimulator/GoCoach.app

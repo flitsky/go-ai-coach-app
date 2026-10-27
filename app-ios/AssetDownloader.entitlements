@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 앱과 모델 팩 확장이 같은 앱 그룹을 써야 한다(Info.plist의 BAAppGroupID와 같은 값 — 다르면 AssetPackManager가 앱을 멈춘다). -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.zenit9hub.ai.baduk</string>
+	</array>
+</dict>
+</plist>

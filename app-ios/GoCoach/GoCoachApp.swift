@@ -9,7 +9,7 @@ import SharedUI
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     /// 프로세스에 하나 — 플랫폼 · 시작 처리 · 엔진 묶음(안드로이드 `GoAiCoachApplication`의 짝). 장면이 다시 붙어도 같은 것을 쓴다.
-    let root = IosAppRoot(modelSource: nil)
+    let root = IosAppRoot(modelSource: AppleHostedModelSource.makeIfAvailable())
 }
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {

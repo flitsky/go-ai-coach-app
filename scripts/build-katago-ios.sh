@@ -18,7 +18,7 @@ BUILD_ROOT="${BUILD_ROOT:-/tmp/go-ai-coach-katago-ios-build}"
 KATAGO_VERSION="${KATAGO_VERSION:-1.16.4}"
 EIGEN_VERSION="${EIGEN_VERSION:-3.4.0}"
 # 앱의 배포 대상과 같게 둔다(`app-ios/GoCoach.xcodeproj` — 지금은 자리표시 값, #293이 정한다).
-DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-26.0}"
+DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-26.1}"
 
 case "$SDK" in
   iphonesimulator|iphoneos) ;;
