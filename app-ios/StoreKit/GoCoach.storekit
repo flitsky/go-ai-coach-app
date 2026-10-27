@@ -1,0 +1,60 @@
+{
+  "identifier" : "6B1F2A90",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "ko_KR",
+    "_storefront" : "KOR",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21000001",
+      "localizations" : [
+
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "3900",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6700000001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "모든 캐릭터 · 모든 기능 · 광고 없음",
+              "displayName" : "프리미엄",
+              "locale" : "ko"
+            }
+          ],
+          "productID" : "premium_basic_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium monthly",
+          "subscriptionGroupID" : "21000001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

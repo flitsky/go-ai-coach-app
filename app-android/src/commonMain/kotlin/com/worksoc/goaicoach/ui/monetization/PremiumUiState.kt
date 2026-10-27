@@ -56,6 +56,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.premiumStaleSubscriptionBodyFor
@@ -117,6 +118,10 @@ internal data class PremiumUiState(
         AdRewardOutcome.NotRewarded(AdRewardFailureReason.Unavailable)
     },
     val purchasePremium: suspend () -> PurchaseOutcome = {
+        PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
+    },
+    /** 사용자가 누른 「구매 복원」(App Store 결제 화면만 — #296). 시작 때의 조용한 복원은 [PremiumPurchaseRestoreEffect]가 따로 한다. */
+    val restorePurchases: suspend () -> PurchaseOutcome = {
         PurchaseOutcome.NotPurchased(PurchaseFailureReason.Unavailable)
     },
     /**
@@ -193,6 +198,11 @@ internal fun buildPremiumUiState(
     },
     purchasePremium = {
         val (outcome, nextState) = monetization.performPremiumPurchase(diagnosticEventLog)
+        nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
+        outcome
+    },
+    restorePurchases = {
+        val (outcome, nextState) = monetization.performPremiumPurchaseUserRestore(diagnosticEventLog, premiumState)
         nextState?.let { onStateChanged(store.saveMergingClaimedFeatures(it)) }
         outcome
     },
@@ -549,7 +559,7 @@ private fun StaleSubscriptionNoticeDialog(onDismiss: () -> Unit) {
         title = { Text(premiumStaleSubscriptionTitleFor(strings.language)) },
         // ⚠️ 고정 높이를 쓰지 않는다(함정 9) — 네 언어 중 가장 긴 문단이 글꼴 배율 1.3에서
         // 두 줄이 더 늘어난다.
-        text = { Text(premiumStaleSubscriptionBodyFor(strings.language)) },
+        text = { Text(premiumStaleSubscriptionBodyFor(strings.language, LocalAppPlatform.current.store)) },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(strings.close) }
         },

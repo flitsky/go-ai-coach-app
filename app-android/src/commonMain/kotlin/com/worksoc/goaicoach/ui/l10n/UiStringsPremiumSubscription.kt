@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.premium.app.PurchaseFailureNotice
 import com.worksoc.goaicoach.application.premium.app.failureNotice
 import com.worksoc.goaicoach.application.premium.port.BillingPeriod
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
+import com.worksoc.goaicoach.platform.AppStoreKind
 
 /**
  * 구독 고지가 쓰는 문구(백로그 #159). 구조는 `UiStringsAppUpdate.kt`와 같다 — 화면 한 조각이
@@ -169,6 +170,54 @@ private val CancelNotices: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "您可随时在 Play 商店的订阅管理中取消。",
 )
 
+/** iOS(#296) — [CancelNotices]와 같은 말을 App Store 이름으로. */
+private val AppStoreCancelNotices: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "해지는 App Store 구독 관리에서 합니다.",
+    UiLanguage.English to "Cancel any time in App Store subscriptions.",
+    UiLanguage.Japanese to "解約はApp Storeの定期購入からできます。",
+    UiLanguage.ChineseSimplified to "您可随时在 App Store 的订阅管理中取消。",
+)
+
+/**
+ * App Store 결제 화면의 한 줄(#296 — 심사가 요구한다: 구매 복원 수단 · 이용약관 · 개인정보처리방침 링크). 안드로이드는 그리지 않는다 —
+ * Play는 복원을 앱 시작마다 스스로 하고(`PremiumPurchaseRestoreEffect`), 복원 단추를 요구하지 않는다.
+ * 이용약관은 Apple 표준 EULA다(앱이 따로 약관을 두지 않는다 — 스레드가 정함).
+ */
+private val RestoreActions: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "구매 복원",
+    UiLanguage.English to "Restore Purchases",
+    UiLanguage.Japanese to "購入を復元",
+    UiLanguage.ChineseSimplified to "恢复购买",
+)
+
+private val TermsOfUseLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "이용약관(EULA)",
+    UiLanguage.English to "Terms of Use (EULA)",
+    UiLanguage.Japanese to "利用規約（EULA）",
+    UiLanguage.ChineseSimplified to "使用条款（EULA）",
+)
+
+private val RestoredMessages: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "구독을 다시 찾았어요.",
+    UiLanguage.English to "Your subscription is restored.",
+    UiLanguage.Japanese to "サブスクリプションを復元しました。",
+    UiLanguage.ChineseSimplified to "已恢复您的订阅。",
+)
+
+private val NothingToRestoreMessages: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "이 Apple 계정에서 구독을 찾지 못했어요.",
+    UiLanguage.English to "No subscription found for this Apple Account.",
+    UiLanguage.Japanese to "このApple Accountにサブスクリプションが見つかりません。",
+    UiLanguage.ChineseSimplified to "未在此 Apple 账户中找到订阅。",
+)
+
+private val RestoreUnavailableMessages: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "지금은 구독을 확인할 수 없어요. 잠시 후 다시 시도해 주세요.",
+    UiLanguage.English to "Couldn't check your subscription right now. Please try again later.",
+    UiLanguage.Japanese to "現在サブスクリプションを確認できません。しばらくしてからお試しください。",
+    UiLanguage.ChineseSimplified to "目前无法确认订阅，请稍后再试。",
+)
+
 private val PriceLoadingLabels: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "가격을 불러오는 중…",
     UiLanguage.English to "Loading the price…",
@@ -208,8 +257,20 @@ internal fun premiumSubscriptionSubscribeActionFor(language: UiLanguage): String
 internal fun premiumSubscriptionAutoRenewNoticeFor(language: UiLanguage): String =
     AutoRenewNotices.getValue(language)
 
-internal fun premiumSubscriptionCancelNoticeFor(language: UiLanguage): String =
-    CancelNotices.getValue(language)
+internal fun premiumSubscriptionCancelNoticeFor(language: UiLanguage, store: AppStoreKind): String = when (store) {
+    AppStoreKind.GooglePlay -> CancelNotices.getValue(language)
+    AppStoreKind.AppleAppStore -> AppStoreCancelNotices.getValue(language)
+}
+
+internal fun premiumSubscriptionRestoreActionFor(language: UiLanguage): String = RestoreActions.getValue(language)
+
+internal fun premiumSubscriptionTermsOfUseFor(language: UiLanguage): String = TermsOfUseLabels.getValue(language)
+
+internal fun premiumSubscriptionRestoredMessageFor(language: UiLanguage): String = RestoredMessages.getValue(language)
+
+internal fun premiumSubscriptionNothingToRestoreMessageFor(language: UiLanguage): String = NothingToRestoreMessages.getValue(language)
+
+internal fun premiumSubscriptionRestoreUnavailableMessageFor(language: UiLanguage): String = RestoreUnavailableMessages.getValue(language)
 
 internal fun premiumSubscriptionPriceLoadingFor(language: UiLanguage): String =
     PriceLoadingLabels.getValue(language)
@@ -296,11 +357,25 @@ private val StaleSubscriptionBodies: Map<UiLanguage, String> = mapOf(
         "请连接网络后重新打开应用以恢复订阅。",
 )
 
+/** iOS(#296) — [StaleSubscriptionBodies]와 같은 말을 App Store 이름으로(시제도 같다). */
+private val AppStoreStaleSubscriptionBodies: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "App Store 구독 정보를 사흘 넘게 가져오지 못해 프리미엄 기능이 꺼졌습니다. " +
+        "인터넷에 연결한 뒤 앱을 다시 열어 주세요.",
+    UiLanguage.English to "We couldn't reach the App Store for over three days, so premium is now off. " +
+        "Connect to the internet and reopen the app.",
+    UiLanguage.Japanese to "3日以上App Storeに接続できなかったため、プレミアムをオフにしました。" +
+        "ネットに接続してアプリを開き直してください。",
+    UiLanguage.ChineseSimplified to "超过三天未能连接 App Store，高级功能已关闭。" +
+        "请连接网络后重新打开应用以恢复订阅。",
+)
+
 internal fun premiumStaleSubscriptionTitleFor(language: UiLanguage): String =
     StaleSubscriptionTitles.getValue(language)
 
-internal fun premiumStaleSubscriptionBodyFor(language: UiLanguage): String =
-    StaleSubscriptionBodies.getValue(language)
+internal fun premiumStaleSubscriptionBodyFor(language: UiLanguage, store: AppStoreKind): String = when (store) {
+    AppStoreKind.GooglePlay -> StaleSubscriptionBodies.getValue(language)
+    AppStoreKind.AppleAppStore -> AppStoreStaleSubscriptionBodies.getValue(language)
+}
 
 /**
  * **결제가 끝나지 않은 사유별 안내**(백로그 #178). 무엇을 언제 쓸지는

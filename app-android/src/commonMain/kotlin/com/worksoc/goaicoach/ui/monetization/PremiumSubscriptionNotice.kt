@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,13 +33,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.worksoc.goaicoach.application.premium.port.PremiumProductInfo
+import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
+import com.worksoc.goaicoach.platform.AppStoreKind
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
@@ -49,6 +55,8 @@ import com.worksoc.goaicoach.ui.designsystem.PremiumGoldDeep
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldLight
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
+import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
+import com.worksoc.goaicoach.ui.foundation.PRIVACY_POLICY_URL
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveLabelFor
@@ -63,10 +71,15 @@ import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionCancelNoticeFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionInactiveLabelFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionInactiveTaglineFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionManageActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionNothingToRestoreMessageFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceLineFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceLoadingFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceUnavailableFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionRestoreActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionRestoreUnavailableMessageFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionRestoredMessageFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionSubscribeActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionTermsOfUseFor
 import com.worksoc.goaicoach.ui.l10n.purchaseFailureMessageFor
 import kotlinx.coroutines.launch
 
@@ -139,6 +152,7 @@ internal fun PremiumSubscriptionNoticeBlock(
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalUiStrings.current
+    val platform = LocalAppPlatform.current
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
@@ -166,11 +180,60 @@ internal fun PremiumSubscriptionNoticeBlock(
         // 같은 이유로 문장을 끊었다(붙이면 한국어·영어는 공백 하나, 일본어·중국어는 공백 없이
         // 이어야 하는 함정이 생긴다).
         Text(
-            text = premiumSubscriptionCancelNoticeFor(strings.language),
+            text = premiumSubscriptionCancelNoticeFor(strings.language, platform.store),
             fontSize = AppTextSize.Text13,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // App Store 심사가 결제 화면에 요구하는 줄(#296) — 두 결제 지점이 이 블록을 함께 쓰므로 여기 한 곳에 둔다. 안드로이드는 그리지 않는다.
+        if (platform.store == AppStoreKind.AppleAppStore) AppStorePurchaseLinks()
     }
+}
+
+/** Apple 표준 이용약관(EULA) — 앱이 따로 약관을 두지 않아 App Store가 정한 것을 가리킨다(#296 — 스레드가 정함). */
+private const val AppleStandardEulaUrl = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/"
+
+/**
+ * App Store 결제 화면의 「구매 복원」 · 이용약관 · 개인정보처리방침(#296).
+ * 복원은 **누를 때만** App Store와 맞춘다(Apple 계정 암호를 물을 수 있어서 — 시작 때의 조용한 확인은 [PremiumPurchaseRestoreEffect]가 한다).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AppStorePurchaseLinks() {
+    val strings = LocalUiStrings.current
+    val premium = LocalPremiumUiState.current
+    val platform = LocalAppPlatform.current
+    val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
+    var restoring by remember { mutableStateOf(false) }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
+        PurchaseLinkText(premiumSubscriptionRestoreActionFor(strings.language), enabled = !restoring) {
+            restoring = true
+            scope.launch {
+                val outcome = premium.restorePurchases()
+                restoring = false
+                platform.notice.show(restoreMessageFor(outcome, strings.language), long = true)
+            }
+        }
+        PurchaseLinkText(premiumSubscriptionTermsOfUseFor(strings.language)) { uriHandler.openUri(AppleStandardEulaUrl) }
+        PurchaseLinkText(strings.settingsPrivacyPolicyLabel) { uriHandler.openUri(PRIVACY_POLICY_URL) }
+    }
+}
+
+private fun restoreMessageFor(outcome: PurchaseOutcome, language: UiLanguage): String = when {
+    outcome == PurchaseOutcome.Purchased -> premiumSubscriptionRestoredMessageFor(language)
+    (outcome as? PurchaseOutcome.NotPurchased)?.reason == PurchaseFailureReason.NotFound -> premiumSubscriptionNothingToRestoreMessageFor(language)
+    else -> premiumSubscriptionRestoreUnavailableMessageFor(language)
+}
+
+@Composable
+private fun PurchaseLinkText(text: String, enabled: Boolean = true, onClick: () -> Unit) {
+    Text(
+        text = text,
+        fontSize = AppTextSize.Text12,
+        color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        textDecoration = TextDecoration.Underline,
+        modifier = Modifier.clickable(enabled = enabled, onClick = onClick).padding(vertical = AppSpacing.Space4),
+    )
 }
 
 /**

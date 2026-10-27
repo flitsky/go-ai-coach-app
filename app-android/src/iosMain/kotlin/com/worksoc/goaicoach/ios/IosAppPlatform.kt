@@ -14,6 +14,7 @@ import com.worksoc.goaicoach.kv.iosAppStores
 import com.worksoc.goaicoach.kv.iosWipeToFreshInstall
 import com.worksoc.goaicoach.persistence.ReferenceGameAssetPath
 import com.worksoc.goaicoach.persistence.ReferenceGameBoardSize
+import com.worksoc.goaicoach.platform.AppStoreKind
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.AppUpdateStatus
 import com.worksoc.goaicoach.platform.BoardScanEntry
@@ -108,6 +109,8 @@ internal class IosAppPlatform(private val modelSource: IosEngineModelSource? = n
     val diagnosticEventLog: DiagnosticEventLogPort = KvDiagnosticEventLog(IosAppFileStore())
 
     override val dataBackup = DataBackupKind.IosDeviceBackup
+
+    override val store = AppStoreKind.AppleAppStore
 
     override val debugReportPlatform = object : DebugReportPlatformInfo {
         override fun hapticDiagnostic(): String = IosPlayHaptics.diagnosticReport()

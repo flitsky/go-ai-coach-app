@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach.ui
 
+import com.worksoc.goaicoach.platform.AppStoreKind
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.premiumStaleSubscriptionBodyFor
 import com.worksoc.goaicoach.ui.l10n.premiumStaleSubscriptionTitleFor
@@ -54,7 +55,8 @@ class PremiumSubscriptionCopyWidthTest {
     /** 다이얼로그에서 접히는 고지 문장들 — 상한은 느슨하고, 균형만 본다. */
     private val wrappingBudget = mapOf<String, (UiLanguage) -> String>(
         "AutoRenewNotices" to ::premiumSubscriptionAutoRenewNoticeFor,
-        "CancelNotices" to ::premiumSubscriptionCancelNoticeFor,
+        "CancelNotices" to { premiumSubscriptionCancelNoticeFor(it, AppStoreKind.GooglePlay) },
+        "AppStoreCancelNotices" to { premiumSubscriptionCancelNoticeFor(it, AppStoreKind.AppleAppStore) },
         "PriceUnavailableLabels" to ::premiumSubscriptionPriceUnavailableFor,
     )
 
@@ -115,7 +117,8 @@ class PremiumSubscriptionCopyWidthTest {
         val cap = 130
         val paragraphs = mapOf<String, (UiLanguage) -> String>(
             "StaleSubscriptionTitles" to ::premiumStaleSubscriptionTitleFor,
-            "StaleSubscriptionBodies" to ::premiumStaleSubscriptionBodyFor,
+            "StaleSubscriptionBodies" to { premiumStaleSubscriptionBodyFor(it, AppStoreKind.GooglePlay) },
+            "AppStoreStaleSubscriptionBodies" to { premiumStaleSubscriptionBodyFor(it, AppStoreKind.AppleAppStore) },
         )
         paragraphs.forEach { (name, getter) ->
             UiLanguage.entries.forEach { language ->

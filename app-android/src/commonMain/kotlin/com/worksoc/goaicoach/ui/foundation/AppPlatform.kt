@@ -5,6 +5,7 @@ import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.debugreport.ClipboardPort
 import com.worksoc.goaicoach.application.runtime.RuntimeEventLogPort
 import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.AppStoreKind
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
@@ -54,6 +55,9 @@ interface AppPlatform {
 
     /** 기기에 쌓인 기록이 어디로 백업되는가 — 「내 기록은 어떻게 보관되나요」가 그 플랫폼의 사실을 말한다(#294). */
     val dataBackup: DataBackupKind
+
+    /** 앱을 파는 스토어 — 구독 문구의 스토어 이름 · App Store 결제 화면의 복원 · 약관 줄(#296). */
+    val store: AppStoreKind
 
     /** 엔진 모델이 아직 없어 준비 화면부터 보여야 하는가(S16) — 컴포지션 첫 순간에 한 번 묻는다. */
     fun isEngineSetupRequired(): Boolean

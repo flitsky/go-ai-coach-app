@@ -35,6 +35,7 @@ import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.platform.AndroidAuthClient
 import com.worksoc.goaicoach.platform.AndroidClipboardPort
 import com.worksoc.goaicoach.platform.AndroidUserNoticePort
+import com.worksoc.goaicoach.platform.AppStoreKind
 import com.worksoc.goaicoach.platform.AppUpdateCheck
 import com.worksoc.goaicoach.platform.BoardScanEntry
 import com.worksoc.goaicoach.platform.BundledAssets
@@ -101,6 +102,8 @@ internal class AndroidAppPlatform(context: Context) : AppPlatform {
     override val runtimeEventLog: RuntimeEventLogPort get() = RuntimeEventLog(File(appContext.filesDir, RuntimeEventLog.FileName))
 
     override val dataBackup = DataBackupKind.GoogleAutoBackup
+
+    override val store = AppStoreKind.GooglePlay
 
     override val debugReportPlatform = object : DebugReportPlatformInfo {
         override fun hapticDiagnostic(): String = PlayHaptics(appContext).diagnosticReport()

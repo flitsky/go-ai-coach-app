@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui
 import com.worksoc.goaicoach.application.premium.port.BillingPeriod
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.platform.AppStoreKind
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionActiveLabelFor
@@ -16,10 +17,15 @@ import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionCancelNoticeFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionInactiveLabelFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionInactiveTaglineFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionManageActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionNothingToRestoreMessageFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceLineFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceLoadingFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionPriceUnavailableFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionRestoreActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionRestoreUnavailableMessageFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionRestoredMessageFor
 import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionSubscribeActionFor
+import com.worksoc.goaicoach.ui.l10n.premiumSubscriptionTermsOfUseFor
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -63,7 +69,13 @@ class PremiumSubscriptionNoticeContractTest {
         "premiumSubscriptionManageAction" to ::premiumSubscriptionManageActionFor,
         "premiumSubscriptionSubscribeAction" to ::premiumSubscriptionSubscribeActionFor,
         "premiumSubscriptionAutoRenewNotice" to ::premiumSubscriptionAutoRenewNoticeFor,
-        "premiumSubscriptionCancelNotice" to ::premiumSubscriptionCancelNoticeFor,
+        "premiumSubscriptionCancelNotice" to { premiumSubscriptionCancelNoticeFor(it, AppStoreKind.GooglePlay) },
+        "premiumSubscriptionCancelNotice(App Store)" to { premiumSubscriptionCancelNoticeFor(it, AppStoreKind.AppleAppStore) },
+        "premiumSubscriptionRestoreAction" to ::premiumSubscriptionRestoreActionFor,
+        "premiumSubscriptionTermsOfUse" to ::premiumSubscriptionTermsOfUseFor,
+        "premiumSubscriptionRestoredMessage" to ::premiumSubscriptionRestoredMessageFor,
+        "premiumSubscriptionNothingToRestoreMessage" to ::premiumSubscriptionNothingToRestoreMessageFor,
+        "premiumSubscriptionRestoreUnavailableMessage" to ::premiumSubscriptionRestoreUnavailableMessageFor,
         "premiumSubscriptionPriceLoading" to ::premiumSubscriptionPriceLoadingFor,
         "premiumSubscriptionPriceUnavailable" to ::premiumSubscriptionPriceUnavailableFor,
         "premiumSubscriptionBenefitsTitle" to ::premiumSubscriptionBenefitsTitleFor,

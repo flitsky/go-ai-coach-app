@@ -20,6 +20,9 @@ internal class AndroidAppMonetization(private val context: Context) : AppMonetiz
     override suspend fun performPremiumPurchaseRestore(diagnosticEventLog: DiagnosticEventLogPort, currentState: PremiumState) =
         performPremiumPurchaseRestore(context, diagnosticEventLog, currentState)
 
+    override suspend fun performPremiumPurchaseUserRestore(diagnosticEventLog: DiagnosticEventLogPort, currentState: PremiumState) =
+        performPremiumPurchaseRestore(context, diagnosticEventLog, currentState)
+
     override suspend fun performPremiumAdGrant(diagnosticEventLog: DiagnosticEventLogPort, currentState: PremiumState) =
         performPremiumAdGrant(context, diagnosticEventLog, currentState)
 

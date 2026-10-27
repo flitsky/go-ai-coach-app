@@ -21,6 +21,15 @@ interface AppMonetization {
         currentState: PremiumState = PremiumState(),
     ): Pair<PurchaseOutcome, PremiumState?>
 
+    /**
+     * 사용자가 누른 「구매 복원」(#296 — App Store 결제 화면에만 있다). iOS는 App Store와 맞춘 뒤(`AppStore.sync` — 암호를 물을 수 있다) 묻고,
+     * 안드로이드는 그 단추가 없어 [performPremiumPurchaseRestore]와 같다.
+     */
+    suspend fun performPremiumPurchaseUserRestore(
+        diagnosticEventLog: DiagnosticEventLogPort,
+        currentState: PremiumState,
+    ): Pair<PurchaseOutcome, PremiumState?>
+
     suspend fun performPremiumAdGrant(
         diagnosticEventLog: DiagnosticEventLogPort,
         currentState: PremiumState = PremiumState(),
