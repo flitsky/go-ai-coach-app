@@ -54,7 +54,7 @@ import platform.posix.uname
 import platform.posix.utsname
 
 /** iOS의 [AppPlatform](백로그 #294 — S1). 루트(`MainViewController`)가 하나 만들어 넣는다. 기능은 웨이브마다 는다. */
-internal class IosAppPlatform : AppPlatform {
+internal class IosAppPlatform(private val modelSource: IosEngineModelSource? = null) : AppPlatform {
     override val notice = IosNotice()
     override val clipboard: ClipboardPort = IosClipboard()
     override val stores: AppStores = iosAppStores
@@ -125,7 +125,8 @@ internal class IosAppPlatform : AppPlatform {
     }
 
     // 모델은 앱과 함께 싣는다(시뮬레이터는 맥의 모델 경로) — 받기 화면이 필요 없다.
-    override fun isEngineSetupRequired(): Boolean = false
+    // 모델을 받아야 하면 엔진 준비 화면부터(안드로이드 `isEngineSetupRequired`와 같은 뜻 — 받는 동안 조작법을 보여 준다).
+    override fun isEngineSetupRequired(): Boolean = modelSource != null && locateIosModelFiles(modelSource) == null
 
     override val debugArmFiles = DebugArmFiles { name -> isDebugBuild && consumeDocumentsFile(name) }
 }

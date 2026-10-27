@@ -10,10 +10,8 @@ import com.worksoc.goaicoach.kv.KvPositionAnalysisCacheStore
 import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSApplicationSupportDirectory
-import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSNumber
-import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLIsExcludedFromBackupKey
@@ -31,30 +29,22 @@ import platform.Foundation.NSUserDomainMask
  * 하나만 만든다 — [IosAppRoot]가(Swift `AppDelegate`가 프로세스에 하나 든다) 한 번(안드로이드는 `GoAiCoachApplication`이 쥔다, #110). 전역 object로 두지 않는다:
  * 컴포즈 상태를 든 전역은 셸 원장이 막는다(`ShellStateLedgerContractTest`).
  */
-internal fun iosProcessRuntime(diagnosticEventLog: DiagnosticEventLogPort): GoCoachProcessRuntime = GoCoachProcessRuntime(
+internal fun iosProcessRuntime(diagnosticEventLog: DiagnosticEventLogPort, modelSource: IosEngineModelSource?): GoCoachProcessRuntime = GoCoachProcessRuntime(
     diagnosticEventLog = diagnosticEventLog,
     positionAnalysisCacheStore = KvPositionAnalysisCacheStore(IosAppFileStore()),
-    createBootstrap = { createIosEngineBootstrap() },
+    createBootstrap = { createIosEngineBootstrap(modelSource) },
     remoteEngineUrl = null,
 )
 
 @OptIn(ExperimentalForeignApi::class)
-private fun createIosEngineBootstrap(): EngineBootstrap {
-    val env = NSProcessInfo.processInfo.environment
-    fun envPath(name: String): String? = (env[name] as? String)?.takeIf { it.isNotBlank() && NSFileManager.defaultManager.fileExistsAtPath(it) }
-    val bundled = NSBundle.mainBundle.resourcePath?.let { "$it/appassets/katago" }
-    fun bundledPath(file: String): String? = bundled?.let { "$it/$file" }?.takeIf { NSFileManager.defaultManager.fileExistsAtPath(it) }
-    val model = envPath("GOCOACH_KATAGO_MODEL") ?: bundledPath("model.bin.gz")
-    val humanModel = envPath("GOCOACH_KATAGO_HUMAN_MODEL") ?: bundledPath("human.bin.gz")
-    val config = envPath("GOCOACH_KATAGO_CONFIG") ?: bundledPath("gtp_learning.cfg")
-    val analysisConfig = envPath("GOCOACH_KATAGO_ANALYSIS_CONFIG") ?: bundledPath("analysis_learning.cfg")
-    val missing = listOfNotNull("model".takeIf { model == null }, "human model".takeIf { humanModel == null }, "config".takeIf { config == null })
-    if (missing.isNotEmpty()) {
+private suspend fun createIosEngineBootstrap(modelSource: IosEngineModelSource?): EngineBootstrap {
+    val files = locateIosModelFiles(modelSource) ?: modelSource?.let { awaitIosModelPack(it) }
+    if (files == null) {
         return EngineBootstrap(
             coreApi = IosEngineCoreApiFactory.stub(),
             mode = EngineMode.Stub,
             displayName = "Stub (iOS)",
-            diagnostic = "iOS engine not configured — missing ${missing.joinToString()} (set GOCOACH_KATAGO_* or bundle appassets/katago).",
+            diagnostic = "iOS engine not configured — no model files (set GOCOACH_KATAGO_*, bundle appassets/katago, or download the model pack).",
         )
     }
     val support = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, true).firstOrNull() as? String
@@ -66,10 +56,10 @@ private fun createIosEngineBootstrap(): EngineBootstrap {
     NSURL.fileURLWithPath(workDirectory, isDirectory = true).setResourceValue(NSNumber(bool = true), forKey = NSURLIsExcludedFromBackupKey, error = null)
     val processConfig = KataGoProcessConfig(
         executablePath = "katago",
-        modelPath = model!!,
-        configPath = config!!,
-        analysisConfigPath = analysisConfig,
-        humanModelPath = humanModel,
+        modelPath = files.model,
+        configPath = files.config,
+        analysisConfigPath = files.analysisConfig,
+        humanModelPath = files.humanModel,
         // 안드로이드 `EngineBootstrap.kt`의 기동 인자와 같게.
         startupOverrides = mapOf(
             "numSearchThreads" to "1",
@@ -86,6 +76,6 @@ private fun createIosEngineBootstrap(): EngineBootstrap {
         coreApi = IosEngineCoreApiFactory.inProcess(processConfig, workDirectory),
         mode = EngineMode.LocalProcess,
         displayName = "KataGo (in-process)",
-        diagnostic = "in-process KataGo; model=${model.substringAfterLast('/')} human=${humanModel?.substringAfterLast('/')}",
+        diagnostic = "in-process KataGo; model=${files.model.substringAfterLast('/')} human=${files.humanModel.substringAfterLast('/')}",
     )
 }
