@@ -28,12 +28,12 @@ internal fun fortuneDrawPromptFor(language: UiLanguage): String = when (language
     UiLanguage.ChineseSimplified -> "凭你按下那一刻的气运，抽出今日运势。"
 }
 
-/** 하루의 첫 운세를 뽑는 단추(무료). */
+/** 하루의 첫 운세를 뽑는 단추 — 무료임을 단추에 적는다(#299, 사용자 2026-10-29: 첫 뽑기부터 광고를 봐야 하나 하는 오해가 없게). */
 internal fun fortuneDrawButtonFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "오늘의 운세 뽑기"
-    UiLanguage.English -> "Draw today's fortune"
-    UiLanguage.Japanese -> "今日の運勢を引く"
-    UiLanguage.ChineseSimplified -> "抽取今日运势"
+    UiLanguage.Korean -> "오늘의 운세 뽑기 (무료)"
+    UiLanguage.English -> "Draw today's fortune (free)"
+    UiLanguage.Japanese -> "今日の運勢を引く（無料）"
+    UiLanguage.ChineseSimplified -> "抽取今日运势（免费）"
 }
 
 /** 둘째 칸 — 별자리별 운세(준비 중). */

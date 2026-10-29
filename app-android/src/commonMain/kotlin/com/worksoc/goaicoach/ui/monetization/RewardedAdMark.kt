@@ -7,5 +7,5 @@ package com.worksoc.goaicoach.ui.monetization
  */
 internal const val RewardedAdMark = "📺"
 
-/** [label] 앞에 [RewardedAdMark]를 단다 — 광고를 볼 때([withAd])만. */
-internal fun rewardedAdButtonText(label: String, withAd: Boolean): String = if (withAd) "$RewardedAdMark $label" else label
+/** [label] 앞에 [RewardedAdMark]를 단다 — 광고를 볼 때([withAd])만. 사이는 두 칸이다 — 한 칸이면 넓은 이모지에 글자가 붙어 보인다(사용자 2026-10-29). */
+internal fun rewardedAdButtonText(label: String, withAd: Boolean): String = if (withAd) "$RewardedAdMark  $label" else label
