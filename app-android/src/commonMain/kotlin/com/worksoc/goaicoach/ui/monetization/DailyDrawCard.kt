@@ -92,7 +92,7 @@ import kotlinx.coroutines.launch
 /**
  * 실험실 「1일 1회 뽑기」의 카드(백로그 #283, 사용자 2026-10-23) — 규칙은 shared `application/dailydraw/DailyDraw.kt` 한 곳이고, 여기는 그것을 모양으로 옮긴다.
  *
- * - 뽑을 수 있음: 초록 테두리 알약 「▶ 광고 보고 뽑기」(구독자는 「▶ 뽑기」 — 광고 없이). 광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99).
+ * - 뽑을 수 있음: 초록 테두리 알약 「📺 광고 보고 뽑기」(광고 표시는 [RewardedAdMark], #299 · 구독자는 「뽑기」 — 광고 없이). 광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99).
  * - 광고 · 뽑는 중: 도는 표시(두 번 누를 수 없다).
  * - **쿨타임**: 뽑은 때부터 24시간 — 지나간 만큼 차오르는 고리와 남은 시간(시:분:초, 1초마다). 눌리지 않는다.
  * - 차례(#289, 사용자 2026-10-24): 위에 **상품 그림 30% · 확률 70%**, 그 **아래에 뽑기 단추** · 쿨타임.
@@ -187,7 +187,7 @@ internal fun DailyDrawCard(modifier: Modifier = Modifier) {
                     border = BorderStroke(AppBorderWidth.Emphasis, colors.primary),
                 ) {
                     Text(
-                        text = "▶ " + dailyDrawButtonFor(language, withAd),
+                        text = rewardedAdButtonText(dailyDrawButtonFor(language, withAd), withAd),
                         fontSize = AppTextSize.Text15,
                         fontWeight = FontWeight.Bold,
                         color = colors.primary,

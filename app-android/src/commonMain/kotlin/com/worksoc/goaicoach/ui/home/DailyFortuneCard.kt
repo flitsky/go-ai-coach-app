@@ -67,6 +67,7 @@ import com.worksoc.goaicoach.ui.l10n.quoteLocaleTag
 import com.worksoc.goaicoach.ui.l10n.studyComingSoonFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.rememberAppMonetization
+import com.worksoc.goaicoach.ui.monetization.rewardedAdButtonText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -74,8 +75,8 @@ import kotlinx.coroutines.launch
  * 실험실 「오늘의 운세」의 카드(백로그 #276, 사용자 2026-10-23) — 규칙은 shared `application/dailyfortune/DailyFortune.kt` 한 곳이고, 여기는 그것을 모양으로 옮긴다.
  *
  * 사용자가 정한 구성(*"띠, 별자리 운세는 선택의 허들이 있으니, 우선 랜덤 운세 먼저"*) — 한 카드에 세 칸:
- * 1. **랜덤 운세** — 설정 없이 「▶ 오늘의 운세 뽑기」를 누른 순간의 타임스탬프로 368개 중 하나. 뽑은 운세는 그날 내내 남는다.
- *    그 아래 갱신 줄: 내러티브 한 줄(「한 수로 판이 바뀌듯 …」) → 「▶ 광고 보고 운 바꾸기」(구독자는 「▶ 운 바꾸기」 — 광고 없이) → 「오늘 남은 기회 n/3」.
+ * 1. **랜덤 운세** — 설정 없이 「오늘의 운세 뽑기」(무료라 앞에 아무 표시도 없다, #299)를 누른 순간의 타임스탬프로 368개 중 하나. 뽑은 운세는 그날 내내 남는다.
+ *    그 아래 갱신 줄: 내러티브 한 줄(「한 수로 판이 바뀌듯 …」) → 「📺 광고 보고 운 바꾸기」(광고 표시는 [RewardedAdMark] · 구독자는 「운 바꾸기」 — 광고 없이) → 「오늘 남은 기회 n/3」.
  *    광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99). 끝까지 보지 않았거나 광고가 없으면 운은 그대로다. 새 운세는 옅어졌다 나타난다(스레드가 정한 것).
  * 2. **별자리별 운세** · 3. **띠별 운세** — 근거 데이터가 없어 「(준비 중)」(사용자: 데이터 확보가 미비하면). 제목 줄 오른쪽의 「별자리 설정하기 (준비 중)」은 흐린 글자이고 눌리지 않는다
  *    (실험실의 「아직 없는 것은 누를 것처럼 두지 않는다」 — 명언록의 「+ 나만의 명언 추가 (준비 중)」과 같은 모양). 길은 아이디어 I-7.
@@ -124,7 +125,7 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
             )
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 FortunePill(
-                    text = "▶ " + fortuneDrawButtonFor(language),
+                    text = fortuneDrawButtonFor(language),
                     onClick = {
                         // 누른 순간 — 이 타임스탬프가 오늘의 운세를 정한다(사용자 2026-10-23).
                         val now = currentEpochMillis()
@@ -161,7 +162,7 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp, color = colors.primary)
                     } else {
                         FortunePill(
-                            text = "▶ " + fortuneRefreshButtonFor(language, withAd),
+                            text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd), withAd),
                             onClick = {
                                 busy = true
                                 scope.launch {
