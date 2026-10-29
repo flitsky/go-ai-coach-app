@@ -17,21 +17,21 @@ class DailyFortuneTest {
     fun theFirstDrawOfTheDayUsesTheTapTimestamp() {
         val drawn = assertNotNull(drawDailyFortune(DailyFortuneProgress(), Today, Tap, Pool))
         assertEquals(Today, drawn.day)
-        assertEquals(fortuneIndexAt(Tap, Pool, excluding = null), drawn.fortuneIndex)
+        assertEquals(fortuneIndexAt(Tap, Pool), drawn.fortuneIndex)
         assertEquals(0, drawn.refreshesUsed)
         assertEquals(drawn.fortuneIndex, drawn.todaysIndex(Today, Pool))
     }
 
     @Test
     fun differentMomentsDrawAcrossThePool() {
-        val picks = (0L until 2_000L).map { fortuneIndexAt(Tap + it * 997, Pool, excluding = null) }.toSet()
+        val picks = (0L until 2_000L).map { fortuneIndexAt(Tap + it * 997, Pool) }.toSet()
         assertTrue(picks.size > Pool / 2, "누른 순간이 달라도 고르는 글이 몇 개에 몰린다: ${picks.size}")
         assertTrue(picks.all { it in 0 until Pool })
     }
 
     @Test
     fun theSameMomentDrawsTheSameFortune() {
-        assertEquals(fortuneIndexAt(Tap, Pool, null), fortuneIndexAt(Tap, Pool, null))
+        assertEquals(fortuneIndexAt(Tap, Pool), fortuneIndexAt(Tap, Pool))
     }
 
     @Test
@@ -66,9 +66,47 @@ class DailyFortuneTest {
 
     @Test
     fun aRefreshThatLandsOnTheSameFortuneMovesOn() {
-        val same = fortuneIndexAt(Tap, Pool, excluding = null)
-        assertEquals((same + 1) % Pool, fortuneIndexAt(Tap, Pool, excluding = same))
-        assertEquals(0, fortuneIndexAt(Tap, 1, excluding = 0), "글이 하나뿐이면 그대로")
+        val same = fortuneIndexAt(Tap, Pool)
+        assertEquals((same + 1) % Pool, fortuneIndexAt(Tap, Pool, excluding = setOf(same)))
+        assertEquals(0, fortuneIndexAt(Tap, 1, excluding = setOf(0)), "글이 하나뿐이면 그대로")
+    }
+
+    @Test
+    fun refreshesStackTheEarlierFortunesInTheOrderSeen() {
+        var progress = drawDailyFortune(DailyFortuneProgress(), Today, Tap, Pool)!!
+        assertEquals(listOf(progress.fortuneIndex!!), progress.todaysIndices(Today, Pool))
+        repeat(DailyFortuneMaxRefreshes) { time ->
+            val before = progress.todaysIndices(Today, Pool)
+            progress = refreshDailyFortune(progress, Today, Tap + (time + 1) * 1_000L, Pool)!!
+            val after = progress.todaysIndices(Today, Pool)
+            assertEquals(before + progress.fortuneIndex!!, after, "앞의 운세는 차례대로 남고 새 운세가 끝에 붙는다")
+        }
+        val all = progress.todaysIndices(Today, Pool)
+        assertEquals(1 + DailyFortuneMaxRefreshes, all.size)
+        assertEquals(all.size, all.toSet().size, "하루에 같은 운세가 두 번 나오지 않는다")
+    }
+
+    @Test
+    fun aRefreshSkipsEveryFortuneSeenToday() {
+        val first = fortuneIndexAt(Tap, Pool)
+        val seenToday = setOf(first, (first + 1) % Pool, (first + 2) % Pool)
+        assertEquals((first + 3) % Pool, fortuneIndexAt(Tap, Pool, excluding = seenToday))
+        assertEquals(fortuneIndexAt(Tap, 2), fortuneIndexAt(Tap, 2, excluding = setOf(0, 1)), "글을 다 봤으면 고른 그대로")
+    }
+
+    @Test
+    fun aNewDayStartsWithoutYesterdaysFortunes() {
+        val yesterday = DailyFortuneProgress(day = Today - 1, fortuneIndex = 3, refreshesUsed = 2, earlierIndices = listOf(1, 2))
+        assertEquals(emptyList(), yesterday.todaysIndices(Today, Pool))
+        val drawn = drawDailyFortune(yesterday, Today, Tap, Pool)!!
+        assertEquals(emptyList(), drawn.earlierIndices)
+        assertEquals(listOf(drawn.fortuneIndex!!), drawn.todaysIndices(Today, Pool))
+    }
+
+    @Test
+    fun storedFortunesThatNoLongerExistAreLeftOut() {
+        val stored = DailyFortuneProgress(day = Today, fortuneIndex = 4, refreshesUsed = 2, earlierIndices = listOf(Pool + 1, 2))
+        assertEquals(listOf(2, 4), stored.todaysIndices(Today, Pool))
     }
 
     @Test

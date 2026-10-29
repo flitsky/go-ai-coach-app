@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneProgress
 import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneStorePort
 
 /**
- * 실험실 「오늘의 운세」의 진행도(백로그 #276) — 그날 뽑은 랜덤 운세(카탈로그 순번)와 갱신 횟수. 판정은 shared의 `DailyFortune.kt` 한 곳이다.
+ * 실험실 「오늘의 운세」의 진행도(백로그 #276) — 그날 뽑은 랜덤 운세(카탈로그 순번) · 갱신 횟수 · 운을 바꾸기 전에 본 운세들(#299). 판정은 shared의 `DailyFortune.kt` 한 곳이다.
  *
  * 기기에만 남는다(사용자 2026-10-23 — 로그인 없음). 받는 개인정보가 없어 개인정보처리방침 · 데이터 보안 양식에 적을 것이 없다(함정 60).
  * 지웠다 다시 깔면 안드로이드 자동 백업으로 돌아온다(`shared_prefs`는 제외 규칙에 걸리지 않는다 — `DailyQuoteStore`와 같다).
@@ -22,6 +22,7 @@ internal class DailyFortuneStore(context: Context) : DailyFortuneStorePort {
         day = prefs.getLong(DayKey, NoValue).takeIf { it != NoValue },
         fortuneIndex = prefs.getInt(FortuneIndexKey, NoIndex).takeIf { it != NoIndex },
         refreshesUsed = prefs.getInt(RefreshesUsedKey, 0),
+        earlierIndices = prefs.getString(EarlierIndicesKey, null).toIndices(),
     )
 
     override fun save(progress: DailyFortuneProgress) {
@@ -29,14 +30,20 @@ internal class DailyFortuneStore(context: Context) : DailyFortuneStorePort {
             putLong(DayKey, progress.day ?: NoValue)
             putInt(FortuneIndexKey, progress.fortuneIndex ?: NoIndex)
             putInt(RefreshesUsedKey, progress.refreshesUsed)
+            putString(EarlierIndicesKey, progress.earlierIndices.joinToString(","))
         }
     }
+
+    private fun String?.toIndices(): List<Int> = this?.split(",")?.mapNotNull { it.trim().toIntOrNull() }.orEmpty()
 
     private companion object {
         const val PrefsName = "go_ai_coach_daily_fortune"
         const val DayKey = "day"
         const val FortuneIndexKey = "fortune_index"
         const val RefreshesUsedKey = "refreshes_used"
+
+        /** 그날 앞서 본 운세의 순번들, 쉼표로 이어서(#299 — 1.8.5에서 더한 키, 없으면 빈 목록). */
+        const val EarlierIndicesKey = "earlier_indices"
         const val NoValue = -1L
         const val NoIndex = -1
     }

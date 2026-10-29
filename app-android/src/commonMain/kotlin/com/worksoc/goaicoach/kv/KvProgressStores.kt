@@ -47,12 +47,14 @@ internal class KvDailyFortuneStore(factory: KeyValueStoreFactory) : DailyFortune
         day = kv.getLong("day", -1L).takeIf { it != -1L },
         fortuneIndex = kv.getInt("fortune_index", -1).takeIf { it != -1 },
         refreshesUsed = kv.getInt("refreshes_used", 0),
+        earlierIndices = kv.getString("earlier_indices")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }.orEmpty(),
     )
 
     override fun save(progress: DailyFortuneProgress) {
         kv.putLong("day", progress.day ?: -1L)
         kv.putInt("fortune_index", progress.fortuneIndex ?: -1)
         kv.putInt("refreshes_used", progress.refreshesUsed)
+        kv.putString("earlier_indices", progress.earlierIndices.joinToString(","))
     }
 }
 

@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.home
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +12,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -31,12 +32,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.MillisPerUtcDay
 import com.worksoc.goaicoach.application.attendance.utcDayIndex
+import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneMaxRefreshes
 import com.worksoc.goaicoach.application.dailyfortune.drawDailyFortune
 import com.worksoc.goaicoach.application.dailyfortune.refreshDailyFortune
 import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
@@ -77,7 +82,8 @@ import kotlinx.coroutines.launch
  * 사용자가 정한 구성(*"띠, 별자리 운세는 선택의 허들이 있으니, 우선 랜덤 운세 먼저"*) — 한 카드에 세 칸:
  * 1. **랜덤 운세** — 설정 없이 「오늘의 운세 뽑기 (무료)」(앞에 표시 없이 무료임을 적는다, #299)를 누른 순간의 타임스탬프로 368개 중 하나. 뽑은 운세는 그날 내내 남는다.
  *    그 아래 갱신 줄: 내러티브 한 줄(「한 수로 판이 바뀌듯 …」) → 「📺 광고 보고 운 바꾸기」(광고 표시는 [RewardedAdMark] · 구독자는 「운 바꾸기」 — 광고 없이) → 「오늘 남은 기회 n/3」.
- *    광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99). 끝까지 보지 않았거나 광고가 없으면 운은 그대로다. 새 운세는 옅어졌다 나타난다(스레드가 정한 것).
+ *    광고는 `showRewardedAdOnce`(동의 · 배경음악, 함정 99). 끝까지 보지 않았거나 광고가 없으면 운은 그대로다.
+ *    운을 바꿔도 앞의 운세는 남는다(#299, 사용자 2026-10-29) — 그날의 운세를 옆으로 넘겨 보고, 제목이 「랜덤 운세 (2/3)」처럼 지금 쪽/개수를 말한다(하나면 숫자 없이). 바꾸면 새 쪽으로 넘어간다.
  * 2. **별자리별 운세** · 3. **띠별 운세** — 근거 데이터가 없어 「(준비 중)」(사용자: 데이터 확보가 미비하면). 제목 줄 오른쪽의 「별자리 설정하기 (준비 중)」은 흐린 글자이고 눌리지 않는다
  *    (실험실의 「아직 없는 것은 누를 것처럼 두지 않는다」 — 명언록의 「+ 나만의 명언 추가 (준비 중)」과 같은 모양). 길은 아이디어 I-7.
  * 맨 아래 「운세는 재미로 보세요.」 점수 · 등급은 어디에도 없다.
@@ -113,9 +119,14 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
             .padding(AppSpacing.Space16),
         verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
-        FortuneBlockTitle(fortuneRandomTitleFor(language))
-        val shownIndex = progress.todaysIndex(today, poolSize)
-        if (shownIndex == null) {
+        // 오늘 본 운세들(#299) — 한 쪽에 하나, 새로 바꾼 운세가 맨 끝 쪽이다. 바꾸면 그 쪽으로 넘어간다.
+        val todays = progress.todaysIndices(today, poolSize)
+        val pagerState = rememberPagerState(initialPage = (todays.size - 1).coerceAtLeast(0)) { todays.size }
+        LaunchedEffect(todays.size) {
+            if (todays.isNotEmpty()) pagerState.animateScrollToPage(todays.lastIndex)
+        }
+        FortuneBlockTitle(fortuneRandomTitleFor(language) + fortunePageCount(pagerState.currentPage, todays.size))
+        if (todays.isEmpty()) {
             Text(
                 text = keepWordsWhole(fortuneDrawPromptFor(language), language),
                 fontSize = AppTextSize.Text14,
@@ -139,9 +150,16 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
                 )
             }
         } else {
-            Crossfade(targetState = shownIndex, label = "dailyFortune") { index ->
+            HorizontalPager(
+                state = pagerState,
+                pageSpacing = AppSpacing.Space16,
+                verticalAlignment = Alignment.Top,
+                // 그날의 쪽(최대 4)을 모두 그려 둔다 — 높이가 가장 긴 운세로 정해져, 넘길 때 카드가 출렁이지 않는다.
+                beyondViewportPageCount = DailyFortuneMaxRefreshes,
+                modifier = Modifier.fillMaxWidth().nestedScroll(FortuneFlingStaysInside),
+            ) { page ->
                 Text(
-                    text = keepWordsWhole(DailyFortuneCatalog.fortunes[index].textFor(language), language),
+                    text = keepWordsWhole(DailyFortuneCatalog.fortunes[todays[page]].textFor(language), language),
                     fontSize = AppTextSize.Text16,
                     color = colors.onSurface,
                     style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
@@ -265,3 +283,16 @@ private fun FortunePill(text: String, onClick: () -> Unit) {
 }
 
 private val RefreshButtonMinHeight = 48.dp
+
+/**
+ * 운세를 넘긴 튕김의 남은 힘이 바깥(홈의 세 페이지)까지 넘기지 않게 한다(#299 — 맨 앞 쪽으로 튕기면 운세가 넘어간 뒤 홈이 「대국」으로 넘어갔다).
+ * 운세가 그 튕김으로 움직였을 때(`consumed`가 있을 때)만 남은 힘을 여기서 끝낸다 — 운세가 하나뿐이거나 끝 쪽에서 바깥으로 미는 것은 지금처럼 홈을 넘긴다.
+ */
+private val FortuneFlingStaysInside = object : NestedScrollConnection {
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+        if (consumed.x != 0f) available.copy(y = 0f) else Velocity.Zero
+}
+
+/** 제목 뒤의 「 (2/3)」 — 지금 보는 쪽/그날의 운세 개수(#299). 하나뿐이면 아무것도 붙이지 않는다. */
+private fun fortunePageCount(currentPage: Int, count: Int): String =
+    if (count > 1) " (${currentPage.coerceIn(0, count - 1) + 1}/$count)" else ""
