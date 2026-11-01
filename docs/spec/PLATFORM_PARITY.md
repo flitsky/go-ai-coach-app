@@ -32,22 +32,22 @@ iOS 전용 `app-android/src/iosMain` 44(Kotlin) + `app-ios/`(Swift · C++ · 설
 | 영역 | 안드로이드 | iOS | 근거 | 갈리는 자리 |
 | --- | --- | --- | --- | --- |
 | 바둑판 사진 분석 | 있음 — 홈 카메라 단추 · 실험실 타일 · 공유로 받기 | **없음** — 단추 · 타일이 감춰진다 | U-84 | `IosAppPlatform.kt`가 `boardScan`을 null로 두고, 홈(`GoCoachHomeScreen.kt`) · 실험실(`HomeLabPage.kt`)이 그것을 보고 감춘다 |
-| 대상 기기 · 회전 | 폰 · 태블릿 — 큰 화면(sw≥600dp)은 회전한다 | iPhone만(iPad는 다음 판) · 세로 고정 | U-84 | `MainActivity.kt`(회전 정책) · `project.pbxproj` `TARGETED_DEVICE_FAMILY = 1` |
-| 최소 OS | Android 8.0 | iOS 26.1 | 사용자 2026-10-27(최소 26) · 26.1은 스레드(26.0.x 결함) | `IPHONEOS_DEPLOYMENT_TARGET` |
-| 로그인 | 꺼져 있다(코드는 있다 — Firebase) | 없다 — 온보딩을 건너뛰고 기기 식별자만 만든다 | #294 스레드 | `OnboardingSlotIos.kt` · `AccountSettingsSlotIos.kt` |
+| 대상 기기 · 회전 | 폰 · 태블릿 — 큰 화면(sw≥600dp)은 회전한다 | iPhone만(iPad는 다음 판) · 세로 고정 · Mac · Vision Pro 스토어에는 내지 않는다 | U-84 · 사용자 2026-11-01 | `MainActivity.kt`(회전 정책) · `project.pbxproj` `TARGETED_DEVICE_FAMILY = 1` |
+| 최소 OS | Android 8.0 | iOS 26.1 | 사용자 2026-10-27(최소 26) · 26.1은 26.0.x 결함 때문(2026-11-01 확인) | `IPHONEOS_DEPLOYMENT_TARGET` |
+| 로그인 | 꺼져 있다(코드는 있다 — Firebase) | 없다 — 온보딩을 건너뛰고 기기 식별자만 만든다 | #294(2026-11-01 확인) | `OnboardingSlotIos.kt` · `AccountSettingsSlotIos.kt` |
 | 엔진 모델 받기 | Play 자산 팩(PAD) — 앱을 처음 열 때 | Apple 호스팅 Background Assets — 설치 · 업데이트 때부터 | 사용자 2026-10-27 | `AppleHostedModelSource.swift` |
-| 엔진 실행 | KataGo를 **별도 프로세스**로 · 멈추면 강제 종료 | KataGo를 **앱 안 스레드**로 · 멈추면 입력 파이프를 닫고 응답을 비운다 | 사용자 2026-10-26(두 쪽 모두 대국용과 분석용을 함께 띄운다) · 멈춤 처리는 스레드 | `LocalKataGoProcessRuntime.kt` · `InProcessKataGoRuntime.kt` · `KataGoBridge.cpp` |
-| 구독 | Google Play `premium_basic` | App Store `premium_basic_monthly`(그룹 「Premium」) · **「구매 복원」 단추는 iOS만** · 약관은 Apple 표준 EULA | U-86 · 상품 ID와 약관은 스레드 | `AppStoreSubscriptionSource.swift` · 문구는 `AppStoreKind` |
+| 엔진 실행 | KataGo를 **별도 프로세스**로 · 멈추면 강제 종료 | KataGo를 **앱 안 스레드**로 · 멈추면 입력 파이프를 닫고 응답을 비운다 | 사용자 2026-10-26(두 쪽 모두 대국용과 분석용을 함께 띄운다) · 멈춤 처리는 2026-11-01 확인 | `LocalKataGoProcessRuntime.kt` · `InProcessKataGoRuntime.kt` · `KataGoBridge.cpp` |
+| 구독 | Google Play `premium_basic` | App Store `premium_basic_monthly`(그룹 「Premium」) · **「구매 복원」 단추는 iOS만** · 약관은 Apple 표준 EULA | U-86 · 상품 ID와 약관은 2026-11-01 확인 | `AppStoreSubscriptionSource.swift` · 문구는 `AppStoreKind` |
 | 광고 | 기기 설정 · 동의에 따라 맞춤 광고 · 광고 SDK의 자체 초기화 장치가 앱 시작 때 돈다(앱 코드의 초기화는 두 쪽 모두 첫 광고 때) | **비맞춤만**(`npa=1`) · 추적 허용 창(ATT) 없음 · SDK는 첫 광고 때 시작 | U-86 · U-87 | `AndroidRewardedInterstitialAdClient.kt` · `GoogleAdsSource.swift` |
-| 광고 동의(UMP) | 앱 시작마다 확인 · EEA 강제 디버그 있음 | 앱 시작마다 확인 · EEA 강제 디버그 **없음** | #296 스레드 | `FORCE_EEA_CONSENT_DEBUG`(안드로이드 빌드 설정) |
+| 광고 동의(UMP) | 앱 시작마다 확인 · EEA 강제 디버그 있음 | 앱 시작마다 확인 · EEA 강제 디버그 **없음** | #296(2026-11-01 확인) | `FORCE_EEA_CONSENT_DEBUG`(안드로이드 빌드 설정) |
 | 기기 백업 | Google 자동 백업(엔진 폴더 · 웹뷰만 뺀다) | iCloud · 컴퓨터 백업(엔진 폴더만 뺀다) | #186 · #294 | `backup_rules.xml` · `IosProcessRuntime.kt` |
 | 보관 안내 문구 | Google 백업 · Play 복원 | iOS 사실대로 | 사용자 2026-10-27 | `iosLocalStorageNoticeFor`(`UiStringsUserProfile.kt`) |
 | 진동 | 시스템 설정을 따르지 않는다(#36) | iOS 「시스템 햅틱」을 따른다 — 꺼져 있으면 울리지 않는다 | 사용자 2026-10-27 | `IosAppPlatform.kt` |
-| 배경음악 | ogg · 오디오 포커스 | m4a(빌드 때 ffmpeg 96kbps) · 무음 스위치면 조용 | #294 스레드 | `IosBackgroundMusic.kt` |
-| 앱 업데이트 알림 · 스토어 링크 | Play 인앱 업데이트 · 스토어 링크 | 없다(감춘다) — App Store ID가 생기면 다시 본다 | 이식 계획(스레드) | `StoreListingIos.kt` |
-| 「새로워진 점」 | 모든 판 | iOS 첫 출시 판 **뒤의 판만** | #294 스레드 | `AppPlatformActualsIos.kt`의 첫 출시 판 상수 · `platformReleases` |
-| 짧은 알림 | 토스트 | 화면 위에 겹쳐 띄운다(약 2초 · 3.5초) | 이식 계획(스레드) | `IosNotice.kt` |
-| 출시 초기화(베타 기록 지우기) | 있다 | 없다(지울 베타 기록이 없다) | #294 스레드 | — |
+| 배경음악 | ogg · 오디오 포커스 | m4a(빌드 때 ffmpeg 96kbps) · 무음 스위치면 조용 | #294(2026-11-01 확인) | `IosBackgroundMusic.kt` |
+| 앱 업데이트 알림 · 스토어 링크 | Play 인앱 업데이트 · 스토어 링크 | 없다(감춘다) — App Store ID가 생기면 다시 본다 | App Store ID가 아직 없다(출시 전) | `StoreListingIos.kt` |
+| 「새로워진 점」 | 모든 판 | iOS 첫 출시 판 **뒤의 판만** | #294(2026-11-01 확인) | `AppPlatformActualsIos.kt`의 첫 출시 판 상수 · `platformReleases` |
+| 짧은 알림 | 토스트 | 화면 위에 겹쳐 띄운다(약 2초 · 3.5초) | 이식 계획(2026-11-01 확인) | `IosNotice.kt` |
+| 출시 초기화(베타 기록 지우기) | 있다 | 없다(지울 베타 기록이 없다) | #294(2026-11-01 확인) | — |
 | 진단 로그 복사 | 클립보드 | 클립보드 — Handoff가 켜져 있으면 같은 Apple 계정 기기에도 잠시 담긴다 | Apple 기능 | 방침 1절 |
 | 연령 · 개인정보 신고 | Play: 대상 연령 13세 이상(함정 52 · 54) · 데이터 보안은 대략적 위치 · 앱 상호작용 · 진단(충돌 기록 없음) · 기기 ID | App Store: 9+(Health or Wellness — 사용자 2026-10-27) · 앱 개인정보는 충돌 기록까지 | 두 답안지 | `PLAY_CONSOLE_PRIVACY_ANSWERS.md` · `APP_STORE_PRIVACY_ANSWERS.md` |
 
@@ -66,7 +66,7 @@ iOS 전용 `app-android/src/iosMain` 44(Kotlin) + `app-ios/`(Swift · C++ · 설
 | 첫 출시 판 상수가 10804(1.8.4)다 — iOS가 1.8.5 뒤로 처음 나가면, 1.8.5 묶음이 더해질 때 설정의 「새로워진 점」 목록에 iOS 사용자가 겪지 않은 변경이 보인다 | iOS | 첫 출시 판이 정해질 때 고친다 | `AppPlatformActualsIos.kt` |
 | 모델 받기 전에 크기를 묻지 않는다(심사 4.2.3) | iOS | 사용자 물음 | `APP_STORE_LAUNCH_PLAN.md` 열린 물음 6 |
 | 아이폰이 영어여도 앱은 한국어로 시작한다 — 영어 심사자 | 둘 다(심사는 iOS) | 사용자 물음 | 열린 물음 3 |
-| Mac · Vision Pro 스토어에 자동으로 나간다 | iOS | 사용자 물음 | 열린 물음 5 |
+| 앱 아이콘이 임시본이다(스토어용 512px를 1024px로 키움) | iOS | 원본을 사용자가 준다(2026-11-01) | `AppIcon-1024.png` |
 | 실기기에서 아직 안 돌려 본 것 — 모델 받기 · 아이폰 속도 · 실제 광고 · 샌드박스 구독 | iOS | 개발자 가입 뒤 | #293 · #296 · #297 |
 
 ---

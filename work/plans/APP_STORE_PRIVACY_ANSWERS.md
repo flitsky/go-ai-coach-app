@@ -334,7 +334,7 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 
 ---
 
-## ⑦ 가격 · 배포 국가(**제안**, 사용자가 정한다 — 이 절 전체가 제가 정한 것)
+## ⑦ 가격 · 배포 국가(✅ 2026-11-01 사용자 확정 — Small Business Program만 「가입하지 않는다」, 나머지는 아래 제안대로. 정본은 `DECISIONS.md` §5)
 
 | 항목 | 제안 | 근거 · 주의 |
 | --- | --- | --- |
@@ -345,7 +345,7 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 | 배포 국가 | 안드로이드 프로덕션 177개국(`GOOGLE_PLAY_LAUNCH_PLAN.md`)에 맞춰 **「모든 국가 및 지역」에서 시작하고 중국 본토만 뺀다** | Apple 스토어프런트는 175개다. ⚠️ 중국 본토는 ICP 신고 번호가 필요하고, 게임 카테고리면 게임 판호도 필요한 것으로 안다(확인 필요). ⚠️ EU를 넣으면 DSA trader 상태를 신고해야 한다. trader면 주소·전화·이메일이 EU 제품 페이지에 공개된다 |
 | Mac(Apple silicon) · Apple Vision Pro | **끔** | 따로 끄지 않으면 자동으로 나간다(https://developer.apple.com/help/app-store-connect/manage-your-apps-availability/manage-availability-of-iphone-and-ipad-apps-on-macs-with-apple-silicon). 아이폰·세로 전용이고 두 기기에서는 시험하지 않았다 |
 | 출시 방식 | **수동 출시** | 승인 뒤 AdMob 「앱 연결」, rezen.dev App Store 링크, 방침 배포를 확인하고 내보낸다. #298 「착수 때 물을 것」 항목이다 |
-| App Store Small Business Program | **가입** | 개인 개발자, 연 100만 달러 미만이면 수수료 15%(https://developer.apple.com/app-store/small-business-program/) |
+| App Store Small Business Program | ~~가입~~ → **가입하지 않는다**(사용자 2026-11-01) | 개인 개발자, 연 100만 달러 미만이면 수수료 15%(https://developer.apple.com/app-store/small-business-program/) |
 | 카테고리(참고) | 1차 **Games › Board**(필요하면 Strategy), 2차 **Education** | 빌드의 `LSApplicationCategoryType = public.app-category.board-games`와 맞는다. Games면 한국 지역 등급(③)과 Time Allowance가 적용된다 |
 
 ---
@@ -394,7 +394,7 @@ Game records, settings and progress are stored only on the iPhone (and in the us
 - [ ] **연령 등급**(③): Health or Wellness 「예」 · Loot Boxes 「아니요」(둘 다 사용자 2026-10-27) · Contests None(제가 정한 것 — Infrequent여도 등급은 같다). 예상 등급 전 세계 9+.
 - [ ] **콘텐츠 권한**(⑤): Yes와 권리 체크. 캐릭터 그림 출처 확인.
 - [ ] 저작권 `2026 <본인 이름>`, 카테고리, 지원 URL(필수), 마케팅 URL(선택).
-- [ ] **가격·배포**(⑦): 무료, 국가, Mac·Vision Pro 끄기, 출시 방식, Small Business Program.
+- [ ] **가격·배포**(⑦ — 값은 2026-11-01 확정): 무료, 국가, Mac·Vision Pro 끄기, 출시 방식. Small Business Program은 가입하지 않는다.
 - [ ] **구독**: 그룹 「Premium」(그룹 표시 이름 로컬라이즈) → 상품 `premium_basic_monthly`(참조 이름, 1개월, ₩3,900, 표시 이름·설명 최소 한 언어, **심사용 스크린샷**, 심사 메모) → 첫 버전 제출에 함께 넣는다(Add for Review).
 - [ ] **모델 팩** `katago-models` 업로드(Transporter, `xcrun altool --upload-asset-pack` 등) → 처리 메일 → 첫 버전 제출에 **같이** 넣는다(Distribution › Asset Packs › Add for Review). 베타 패키징 도구로 만든 팩은 심사에 넣을 수 없다. 팩을 Archive하면 ID를 다시 쓸 수 없다.
 - [ ] 빌드: 두 타깃(GoCoach, AssetDownloader)의 서명 팀, 실제 AdMob ID를 `app-ios/Config/Ads.local.xcconfig`에 넣고 archive(시험 ID면 `scripts/ios-bundle-resources.sh`가 멈춘다). Generate Privacy Report로 ①을 대조한다.
