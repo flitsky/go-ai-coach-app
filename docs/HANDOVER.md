@@ -260,3 +260,5 @@ git branch -a --no-merged main
 | 계층마다 지금 위치·지키는 테스트·남은 일 | [`docs/architecture/`](./architecture/)의 `LAYER_1_…` ~ `LAYER_7_…`, `COMPOSITION_ROOT.md` |
 | 엔진 탐색 모드·레벨 매핑 | [`ENGINE.md`](./ENGINE.md) |
 | 기능 유/무료 정책 | [`FEATURE_ACCESS_PRINCIPLES.md`](./spec/FEATURE_ACCESS_PRINCIPLES.md) |
+| 지금 유효한 결정 — 같은 제안이 올라오면 여기가 답 | [`DECISIONS.md`](./spec/DECISIONS.md) |
+| 안드로이드와 iOS의 차이 · 짝 코드 | [`PLATFORM_PARITY.md`](./spec/PLATFORM_PARITY.md) |
