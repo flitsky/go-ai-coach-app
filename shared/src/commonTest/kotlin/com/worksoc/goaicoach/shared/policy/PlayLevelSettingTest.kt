@@ -126,16 +126,18 @@ class PlayLevelSettingTest {
 
     @Test
     fun stageIsClampedToGroupRange() {
-        val setting = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 10)
+        val setting = PlayLevelSetting(PlayLevelGroup.FastBeginner, level = 99)
 
-        assertEquals(5, setting.safeLevel)
+        // 빠른 초급은 열 단계다(#301 — 캐릭터 열 명). 10단계(화점 5단)는 5 ~ 9단 구간이라 이름이 「초고수」다.
+        assertEquals(10, setting.safeLevel)
         assertEquals("빠른 초급 · 초고수", setting.displayLabel)
     }
 
     @Test
     fun tierLabelDropsTheGroupNameForTheCharacterPicker() {
+        // 6 ~ 10단계(#301 — 18 · 12 · 6 · 3급 · 5단)는 제 급수가 든 구간의 이름이다.
         assertEquals(
-            listOf("초보", "하수", "중수", "고수", "초고수"),
+            listOf("초보", "하수", "중수", "고수", "초고수", "초보", "하수", "중수", "중수", "초고수"),
             (1..PlayLevelGroup.FastBeginner.maxLevel).map { level ->
                 PlayLevelSetting(PlayLevelGroup.FastBeginner, level).tierLabel
             },
@@ -272,6 +274,8 @@ class PlayLevelSettingTest {
     fun onlyTheTopFastBeginnerTierSearchesDeeperWhenItPlays() {
         assertEquals(listOf(16, 16, 16, 16, 32), (1..5).map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).aiMoveVisits })
         assertEquals(listOf(false, false, false, false, true), (1..5).map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).searchesDeeperThanItsGroup })
+        // 사이에 더한 다섯(#301)은 제 급수의 구간을 따른다 — 18 · 12 · 6 · 3급은 16방문, 5단(화점)은 5 ~ 9단 구간이라 32방문(폴백에서만).
+        assertEquals(listOf(16, 16, 16, 16, 32), (6..10).map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).aiMoveVisits })
         PlayLevelGroup.entries.filter { it != PlayLevelGroup.FastBeginner }.forEach { group ->
             (1..group.maxLevel).forEach { level -> assertEquals(group.visits, PlayLevelSetting(group, level).aiMoveVisits, "$group $level") }
         }

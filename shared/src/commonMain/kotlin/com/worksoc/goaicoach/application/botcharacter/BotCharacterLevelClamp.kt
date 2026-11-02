@@ -32,6 +32,9 @@ data class BotLevelClamp(
  * 1단계는 [BotUnlockSource.Default]라 항상 쓸 수 있으므로, 조각/출석을 하나도 안 모은
  * 사용자에게도 대체 상대는 반드시 존재한다.
  *
+ * 「이하」는 **세기의 차례**다([BotCharacterCatalog.ladderIndexOf]) — 단계 번호가 아니다(#301: 6 ~ 10단계는 처음 다섯의 사이사이에
+ * 더한 캐릭터라 번호와 세기가 어긋난다). 그래서 잠긴 꼬북(3단)은 판다가 아니라 바로 아래의 무료 상대(삼삼 3급 등)로 내려간다.
+ *
  * @return 낮춰야 하면 그 판정, 그대로 둬도 되면 `null`. 캐릭터가 대응되지 않는 레벨
  *   (초급/중급/고급 그룹 — 카탈로그에 없다)도 `null`이라 건드리지 않는다.
  */
@@ -44,15 +47,15 @@ fun clampToOwnedBotCharacter(
     // ⚠️ **구독자는 내려갈 이유가 없다**(#157) — 로스터 전체가 열려 있으므로 이 함수가
     // 낮추면 구독을 사고도 상대가 강등된다.
     if (collection.isAvailable(current, subscriptionActive)) return null
-    val currentTier = current.tierWithinGroup ?: return null
+    val currentIndex = BotCharacterCatalog.ladderIndexOf(current) ?: return null
 
-    val target = BotCharacterCatalog.all
+    val target = BotCharacterCatalog.fastBeginnerRoster
         .filter { candidate ->
             candidate.linkedPlayLevel == current.linkedPlayLevel &&
-                (candidate.tierWithinGroup ?: return@filter false) <= currentTier &&
+                (BotCharacterCatalog.ladderIndexOf(candidate) ?: return@filter false) <= currentIndex &&
                 collection.isAvailable(candidate, subscriptionActive)
         }
-        .maxByOrNull { candidate -> candidate.tierWithinGroup ?: 0 }
+        .maxByOrNull { candidate -> BotCharacterCatalog.ladderIndexOf(candidate) ?: -1 }
         ?: return null
 
     val level = target.toPlayLevelSetting() ?: return null

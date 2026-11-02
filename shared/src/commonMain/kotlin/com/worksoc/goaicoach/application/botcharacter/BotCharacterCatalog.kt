@@ -7,8 +7,8 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
  * 봇 캐릭터 카탈로그 — "어떤 캐릭터가 존재하고 각각이 어느 AI 레벨에 대응하는가"의 단일 출처.
  * 사용자가 무엇을 수집했는지는 [BotCollectionState]가 따로 들고 있고, 이 객체는 상태가 없다.
  *
- * Phase 1 범위는 [PlayLevelGroup.FastBeginner]의 5단계(초보~초고수)뿐이다 — 7.1절대로 이 5단계가
- * 곧 캐릭터 5종이 된다. `초급`/`중급`/`고급` 그룹은 현재 대국 셋업 UI에서 숨겨져 있어(대국장
+ * 범위는 [PlayLevelGroup.FastBeginner]뿐이다 — 단계 하나가 곧 캐릭터 하나다. 처음에는 5단계 · 5종이었고,
+ * 2026-11-02(백로그 #301)에 그 사이사이로 다섯을 더해 **열 명이 18급 ~ 7단**을 맡는다. `초급`/`중급`/`고급` 그룹은 현재 대국 셋업 UI에서 숨겨져 있어(대국장
  * 로드맵 예정) 캐릭터화 대상이 아니며, 그래서 [forPlayLevel]은 그 그룹들에 대해 `null`을 준다.
  *
  * 캐릭터 이름/설명은 "바둑 도장" 콘셉트로 확정됐다(백로그 #9, 2026-08-24) — 입문생에서 관장까지
@@ -26,7 +26,15 @@ import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 object BotCharacterCatalog {
 
     /**
-     * [PlayLevelGroup.FastBeginner] 5단계에 1:1로 대응하는 캐릭터 5종(티어 오름차순).
+     * [PlayLevelGroup.FastBeginner] 단계에 1:1로 대응하는 캐릭터 열 명 — **이 목록의 차례가 곧 세기의 차례다**(약한 쪽부터).
+     * 화면(상대 고르기 · 내 캐릭터)의 차례와 「더 약한 상대」 판정([ladderIndexOf])이 이 차례를 쓴다.
+     *
+     * ⚠️ **단계 번호(`tier`)는 세기 순서가 아니다**(#301) — 1 ~ 5는 처음 다섯, 6 ~ 10은 그 사이사이로 더한 다섯이다. 번호가 곧 저장 형식이라
+     * (설정 · 이어하기 · 대국 기록의 단계, 보유 캐릭터의 id `fast_beginner_N`) 급수 순으로 다시 매기면 이미 저장된 상대가 조용히 바뀐다.
+     * 이 차례가 급수와 어긋나지 않는지는 `BotCharacterCatalogTest`가 `fastBeginnerRank`로 본다.
+     *
+     * **새 다섯(6 ~ 10)은 무료**다(설치하면 바로 — 사용자 2026-11-02). 사범 화점(5단)은 매판 광고 1편 또는 광고 스킵권 1장을 받기로
+     * 정했다(U-89) — 그 관문은 아직 없다(#301의 다음 단계).
      *
      * **획득 경로는 2026-08-24 재확정본(7장 표)을 따르며, 티어 오름차순이 아니다 — 의도된 배치다.**
      * 무료 사용자는 1단계(기본)와 3단계(출석 4일차)를 갖게 되고 그 사이의 2단계가 비어 있는데,
@@ -40,17 +48,37 @@ object BotCharacterCatalog {
      * 항목이 가져간다 — 지금 이 카탈로그만으로는 2·4·5단계를 실제로 열 방법이 아직 없다.
      */
     val fastBeginnerRoster: List<BotCharacter> = listOf(
-        // 1단계 — 기본 제공. 설치 즉시 잠금 없이 쓸 수 있는 유일한 캐릭터다.
+        // 6단계 — 문하생 초롱이(18급, #301). 무료.
+        fastBeginnerCharacter(
+            tier = 6,
+            unlockSource = BotUnlockSource.Default,
+        ),
+        // 1단계 — 문하생 판다(15급). 기본 제공 — 새로 설치한 사람의 처음 상대다(U-92 — 18급이 생겨도 옮기지 않는다).
         fastBeginnerCharacter(
             tier = 1,
             unlockSource = BotUnlockSource.Default,
         ),
-        // 2단계 — 광고 5회 조각 누적(#11).
+        // 7단계 — 문하생 반수선(12급, #301). 무료.
+        fastBeginnerCharacter(
+            tier = 7,
+            unlockSource = BotUnlockSource.Default,
+        ),
+        // 2단계 — 문하생 돌뫼(9급). 광고 5회 조각 누적(#11).
         fastBeginnerCharacter(
             tier = 2,
             unlockSource = BotUnlockSource.AdShards(required = 5),
         ),
-        // 3단계 — 출석 4일차 보상. 무료 사용자가 얻는 두 번째 캐릭터다(5단계도 28일차 출석이다).
+        // 8단계 — 문하생 한수선(6급, #301). 무료.
+        fastBeginnerCharacter(
+            tier = 8,
+            unlockSource = BotUnlockSource.Default,
+        ),
+        // 9단계 — 문하생 삼삼(3급, #301). 무료.
+        fastBeginnerCharacter(
+            tier = 9,
+            unlockSource = BotUnlockSource.Default,
+        ),
+        // 3단계 — 수제자 반상(1급). 출석 보상(5단계도 28일차 출석이다).
         fastBeginnerCharacter(
             tier = 3,
             // ⚠️ 4일차 → **7일차**로 옮겼다(#55, 2026-08-31 확정표). 도장판 UX에서 1~6일차 행은
@@ -58,12 +86,17 @@ object BotCharacterCatalog {
             // 이미 4일차에 받은 사용자는 그대로 보유한다.
             unlockSource = BotUnlockSource.Attendance(tier = WeeklyRewardCycleTier),
         ),
-        // 4단계 — 광고 10회 조각 누적(#11).
+        // 4단계 — 사범 꼬북(3단). 광고 10회 조각 누적(#11).
         fastBeginnerCharacter(
             tier = 4,
             unlockSource = BotUnlockSource.AdShards(required = 10),
         ),
-        // 5단계 — 개별 구매 전용(#18). 광고로도 출석으로도 열리지 않는다.
+        // 10단계 — 사범 화점(5단, #301). 무료 — 매판 광고 관문(U-89)은 아직 없다.
+        fastBeginnerCharacter(
+            tier = 10,
+            unlockSource = BotUnlockSource.Default,
+        ),
+        // 5단계 — 관장 천원(7단). 28일차 출석(아래 [TopCharacterAttendanceTier]).
         fastBeginnerCharacter(
             tier = 5,
             unlockSource = BotUnlockSource.Attendance(tier = TopCharacterAttendanceTier),
@@ -74,6 +107,13 @@ object BotCharacterCatalog {
     val all: List<BotCharacter> = fastBeginnerRoster
 
     fun byId(id: BotCharacterId): BotCharacter? = all.firstOrNull { character -> character.id == id }
+
+    /**
+     * 세기의 차례에서 이 캐릭터의 자리(0 = 가장 약한 초롱이) — 카탈로그에 없으면 `null`. 「더 약한 상대」를 고를 때
+     * 단계 번호 대신 이것을 쓴다(#301 — 번호는 세기 순서가 아니다).
+     */
+    fun ladderIndexOf(character: BotCharacter): Int? =
+        fastBeginnerRoster.indexOfFirst { candidate -> candidate.id == character.id }.takeIf { index -> index >= 0 }
 
     /**
      * 이 AI 레벨 설정에 대응하는 캐릭터를 돌려준다. 범위를 벗어난 `level`은

@@ -88,11 +88,11 @@ data class DailyDrawResult(
     val substituteGrants: List<AttendanceReward.Consumable> = emptyList(),
 )
 
-/** 조각 · 광고 캐릭터가 갈 캐릭터 — 아직 갖지 않은 조각 길 캐릭터 중 가장 낮은 등급. 다 가졌으면 `null`. */
+/** 조각 · 광고 캐릭터가 갈 캐릭터 — 아직 갖지 않은 조각 길 캐릭터 중 가장 약한 쪽(세기의 차례 — 단계 번호가 아니다, #301). 다 가졌으면 `null`. */
 fun dailyDrawCharacterTarget(collection: BotCollectionState): BotCharacter? =
     BotCharacterCatalog.all
         .filter { character -> character.unlockSource is BotUnlockSource.AdShards && !collection.isClaimed(character.id) }
-        .minByOrNull { character -> character.tierWithinGroup ?: Int.MAX_VALUE }
+        .minByOrNull { character -> BotCharacterCatalog.ladderIndexOf(character) ?: Int.MAX_VALUE }
 
 /**
  * 캐릭터 상품이 가리키는 캐릭터 — 반상 · 천원은 늘 그 캐릭터(이미 가졌어도), 광고 캐릭터는 [dailyDrawCharacterTarget](다 가졌으면 `null`).

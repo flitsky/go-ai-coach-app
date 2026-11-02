@@ -21,7 +21,8 @@ enum class PlayLevelGroup(
     FastBeginner(
         label = "빠른 초급",
         shortLabel = "FB",
-        maxLevel = 5,
+        // 캐릭터 열 명(백로그 #301) — 단계 번호와 세기의 순서가 다르다: [fastBeginnerRank]
+        maxLevel = 10,
         difficulty = DifficultyProfile.Beginner,
         visits = 16,
         timeMillis = SearchTimeProfile.B16.defaultMillis,
@@ -84,7 +85,7 @@ enum class PlayLevelGroup(
     /**
      * AI가 [level] 단계로 **둘 때** 쓰는 방문 수(백로그 #215) — 그룹의 [visits]와 다를 수 있다.
      *
-     * 빠른 초급의 맨 위 단계(초고수, 5~9단 구간)만 [FastBeginnerTopTierAiMoveVisits]로 더 깊이 읽는다(사용자 2026-10-05·06:
+     * 빠른 초급의 맨 위 구간(초고수, 5~9단 — [fastBeginnerFallbackTier]가 5인 캐릭터)만 [FastBeginnerTopTierAiMoveVisits]로 더 깊이 읽는다(사용자 2026-10-05·06:
      * 고수는 16방문 그대로, 초고수는 32방문). 방문을 다 쓰려면 시간이 든다 — 「최대 탐색 시간 제한」이 짧으면 거기서 잘린다
      * (S23: 32방문이 13줄 8.8초 · 19줄 15.4초). 그래서 설정 화면이 제한을 늘려 보라고 안내한다([PlayLevelSetting.searchesDeeperThanItsGroup]).
      *
@@ -94,7 +95,7 @@ enum class PlayLevelGroup(
      * 탐색하지 않는다(`humanPlayStyle`). 사람 모델을 못 쓰는 엔진(원격·파일 없음)에서만 이 방문 수로 탐색한다.
      */
     fun aiMoveVisits(level: Int): Int =
-        if (this == FastBeginner && level.coerceIn(1, maxLevel) == maxLevel) FastBeginnerTopTierAiMoveVisits else visits
+        if (this == FastBeginner && fastBeginnerFallbackTier(level) == FastBeginnerTopTier) FastBeginnerTopTierAiMoveVisits else visits
 
     fun defaultAnalysisLimit(): AnalysisLimit =
         AnalysisLimit(
@@ -110,7 +111,8 @@ enum class PlayLevelGroup(
     fun selectionPolicy(level: Int): MoveSelectionPolicy {
         val safeLevel = level.coerceIn(1, maxLevel)
         return when (this) {
-            FastBeginner -> when (safeLevel) {
+            // 단계 번호가 아니라 그 캐릭터의 구간으로 고른다 — 6 ~ 10단계는 사이사이에 더한 캐릭터다(백로그 #301).
+            FastBeginner -> when (fastBeginnerFallbackTier(safeLevel)) {
                 1 -> MoveSelectionPolicy.BucketedTierSelection(
                     worstPercent = 100,
                     midPercent = 0,
@@ -253,7 +255,39 @@ data class PlayLevelSetting(
 }
 
 /**
- * 급수가 속한 **캐릭터 구간**의 단계(1~5) — 캐릭터 5명이 맡는 범위 그대로다(U-59: 12~18급 · 6~12급 · 1~6급 · 1~5단 · 5~9단).
+ * 빠른 초급 단계마다 그 캐릭터가 두는 **급수**(백로그 #301) — 단계 → 급수의 한 곳이다. 사람 모델 프로필(`humanPlayStyle`)과
+ * 세기의 순서(캐릭터 카탈로그의 차례 · 잠긴 상대 낮추기)가 모두 여기서 나온다.
+ *
+ * ⚠️ **단계 번호는 저장 형식이라 세기 순서가 아니다.** 1 ~ 5는 처음 다섯(판다 15급 · 돌뫼 9급 · 반상 1급 · 꼬북 3단 · 천원 7단),
+ * 6 ~ 10은 2026-11-02에 그 사이사이로 더한 다섯(초롱이 18급 · 반수선 12급 · 한수선 6급 · 삼삼 3급 · 화점 5단)이다.
+ * 급수 순으로 번호를 다시 매기면 이미 저장된 상대가 조용히 바뀐다 — 저장 포맷에 버전 필드가 없다(`PlayerSetupJsonCodec`, 함정 1 · 69).
+ * 급수는 사람 모델의 공식 프로필 그대로다(`DECISIONS.md` §2 — 일부러 더 약하게 만들지 않는다).
+ */
+fun fastBeginnerRank(level: Int): KgsRank =
+    when (level.coerceIn(1, PlayLevelGroup.FastBeginner.maxLevel)) {
+        1 -> KgsRank.kyu(15)
+        2 -> KgsRank.kyu(9)
+        3 -> KgsRank.kyu(1)
+        4 -> KgsRank.dan(3)
+        5 -> KgsRank.dan(7)
+        6 -> KgsRank.kyu(18)
+        7 -> KgsRank.kyu(12)
+        8 -> KgsRank.kyu(6)
+        9 -> KgsRank.kyu(3)
+        else -> KgsRank.dan(5)
+    }
+
+/**
+ * 빠른 초급 단계가 속한 **구간**(1 ~ 5) — 사람 모델을 못 쓰는 엔진의 폴백 고르는 법과 방문 수가 이것으로 갈린다.
+ * 처음 다섯은 제 번호와 같고(15급 → 1 … 7단 → 5), 사이에 더한 다섯은 제 급수가 든 구간을 빌린다([customRankFallbackTier]).
+ */
+fun fastBeginnerFallbackTier(level: Int): Int = customRankFallbackTier(fastBeginnerRank(level))
+
+/** 빠른 초급의 맨 위 구간(초고수, 5 ~ 9단) — [FastBeginnerTopTierAiMoveVisits]로 더 깊이 읽는다. */
+const val FastBeginnerTopTier: Int = 5
+
+/**
+ * 급수가 속한 **캐릭터 구간**의 단계(1~5) — 처음 캐릭터 5명이 맡던 범위 그대로다(U-59: 12~18급 · 6~12급 · 1~6급 · 1~5단 · 5~9단).
  * 구간이 맞닿는 급수(12급·6급·5단)는 **센 쪽 캐릭터**에 넣고, 캐릭터 범위 밖인 19·20급은 초보에 넣는다.
  *
  * 쓰는 곳이 둘이다 — 사람 모델이 없을 때의 폴백 고르는 법([PlayLevelGroup.selectionPolicy])과, 캐릭터가 없는 이 상대에게

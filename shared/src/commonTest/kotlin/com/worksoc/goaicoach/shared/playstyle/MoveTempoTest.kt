@@ -82,6 +82,11 @@ class MoveTempoTest {
             listOf(2_000L, 2_500L, 3_000L, 4_000L, 5_000L),
             (1..5).map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).moveTempo()?.ownMillis },
         )
+        // 사이사이에 더한 다섯(#301 — 6 ~ 10단계). 세기의 차례로 늘어놓으면 템포가 줄지 않는다(초롱이는 판다와 같은 2초).
+        val ladder = listOf(6, 1, 7, 2, 8, 9, 3, 4, 10, 5)
+        val tempos = ladder.map { level -> PlayLevelSetting(PlayLevelGroup.FastBeginner, level).moveTempo()!!.ownMillis }
+        assertEquals(listOf(2_000L, 2_000L, 2_250L, 2_500L, 2_750L, 2_900L, 3_000L, 4_000L, 4_500L, 5_000L), tempos)
+        assertEquals(tempos.sorted(), tempos)
         PlayLevelGroup.entries
             .filter { group -> group != PlayLevelGroup.FastBeginner }
             .forEach { group -> assertNull(PlayLevelSetting(group, 1).moveTempo(), "$group") }

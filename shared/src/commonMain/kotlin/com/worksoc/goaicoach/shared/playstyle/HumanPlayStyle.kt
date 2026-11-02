@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.shared.policy.customRank
+import com.worksoc.goaicoach.shared.policy.fastBeginnerRank
 
 /**
  * 5계층 — **캐릭터가 사람처럼 두는 기풍**(백로그 #215). 캐릭터의 성향을 담는 도메인(#212)의 첫 칸이다.
@@ -36,12 +37,15 @@ data class HumanPlayStyle(
  *
  * **캐릭터 다섯이 모두 사람 모델로 둔다**(사용자 2026-10-06, 폰에서 둬 본 뒤 정한 값):
  * 문하생 판다 **15급** · 문하생 돌뫼 **9급** · 수제자 반상 **1급** · 사범 꼬북 **3단** · 관장 천원 **7단**.
+ * 2026-11-02(백로그 #301)에 그 사이사이로 다섯을 더했다 — 문하생 초롱이 **18급** · 문하생 반수선 **12급** · 문하생 한수선 **6급** ·
+ * 문하생 삼삼 **3급** · 사범 화점 **5단**. 단계마다의 급수는 [fastBeginnerRank] 한 곳에 있다(단계 번호는 세기 순서가 아니다).
  * 숨겨 둔 다른 그룹(초급·중급·고급)은 예전 방식 그대로다.
  *
  * ⚠️ 2026-10-05에는 고수·초고수를 **주 모델 탐색**(16·32방문)으로 두기로 했었다 — 그 탐색은 9단 프로필을 전승으로 이기는 세기라
  * (실험실 E2b) 「3단」·「7단」이라는 수준이 될 수 없다. 그래서 사람 모델이 실패해도 이 길로 바꿔 두지 않는다(U-80).
  * `PlayLevelGroup.aiMoveVisits`는 사람 모델이 없는 엔진(개발용 원격 엔진)에서만 쓰인다.
- * ⚠️ 값을 바꿀 때는 구간([HumanPlayStyle.weakestRank]~[HumanPlayStyle.strongestRank]) 안에서 — 구간은 U-59가 정했다.
+ * ⚠️ 값을 바꿀 때는 구간([HumanPlayStyle.weakestRank]~[HumanPlayStyle.strongestRank]) 안에서. 구간은 U-59가 다섯 명으로 정했고(18 ~ 12급 · 12 ~ 6급 ·
+ * 6 ~ 1급 · 1 ~ 5단 · 5 ~ 9단), 열 명이 되며(#301) 이웃과 겹치지 않게 18급 ~ 9단을 다시 나눴다(스레드가 정한 것 — 사용자 확인 전).
  */
 fun PlayLevelSetting.humanPlayStyle(): HumanPlayStyle? {
     // 급수를 직접 정한 상대(승급 대국, 백로그 #219) — 그 급수의 공식 프로필 그대로 둔다. 구간이 한 칸이다.
@@ -50,12 +54,18 @@ fun PlayLevelSetting.humanPlayStyle(): HumanPlayStyle? {
         return HumanPlayStyle(profile = rank.profile, weakestRank = label, strongestRank = label)
     }
     if (group != PlayLevelGroup.FastBeginner) return null
+    val profile = fastBeginnerRank(safeLevel).profile
     return when (safeLevel) {
-        1 -> HumanPlayStyle(profile = "rank_15k", weakestRank = "18k", strongestRank = "12k")
-        2 -> HumanPlayStyle(profile = "rank_9k", weakestRank = "12k", strongestRank = "6k")
-        3 -> HumanPlayStyle(profile = "rank_1k", weakestRank = "6k", strongestRank = "1k")
-        4 -> HumanPlayStyle(profile = "rank_3d", weakestRank = "1d", strongestRank = "5d")
-        5 -> HumanPlayStyle(profile = "rank_7d", weakestRank = "5d", strongestRank = "9d")
+        6 -> HumanPlayStyle(profile = profile, weakestRank = "18k", strongestRank = "17k") // 초롱이 18급
+        1 -> HumanPlayStyle(profile = profile, weakestRank = "16k", strongestRank = "14k") // 판다 15급
+        7 -> HumanPlayStyle(profile = profile, weakestRank = "13k", strongestRank = "11k") // 반수선 12급
+        2 -> HumanPlayStyle(profile = profile, weakestRank = "10k", strongestRank = "8k") // 돌뫼 9급
+        8 -> HumanPlayStyle(profile = profile, weakestRank = "7k", strongestRank = "5k") // 한수선 6급
+        9 -> HumanPlayStyle(profile = profile, weakestRank = "4k", strongestRank = "3k") // 삼삼 3급
+        3 -> HumanPlayStyle(profile = profile, weakestRank = "2k", strongestRank = "1k") // 반상 1급
+        4 -> HumanPlayStyle(profile = profile, weakestRank = "1d", strongestRank = "3d") // 꼬북 3단
+        10 -> HumanPlayStyle(profile = profile, weakestRank = "4d", strongestRank = "5d") // 화점 5단
+        5 -> HumanPlayStyle(profile = profile, weakestRank = "6d", strongestRank = "9d") // 천원 7단
         else -> null
     }
 }

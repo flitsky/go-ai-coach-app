@@ -33,7 +33,9 @@ class AppParityTest(unittest.TestCase):
 
     def test_fast_beginner_tiers(self) -> None:
         text = source("play_level")
-        marker = "FastBeginner -> when (safeLevel)"
+        # 앱은 단계 번호가 아니라 그 단계의 구간(1 ~ 5)으로 고른다 — 캐릭터가 열 명이 되며(백로그 #301) 6 ~ 10단계가 사이에 섰다.
+        # 버킷 다섯(`ap.TIERS`)은 그 구간의 것이라 그대로다.
+        marker = "FastBeginner -> when (fastBeginnerFallbackTier(safeLevel))"
         start = text.index(marker)
         # ⚠️ "Beginner -> when"은 "FastBeginner -> when" 안에도 있다 — 그 표지 **뒤**에서 찾는다.
         block = text[start : text.index("Beginner -> when (safeLevel)", start + len(marker))]
