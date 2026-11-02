@@ -301,7 +301,8 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
     배치는 **두 안의 스크린샷으로 고르게** 한다(착수 뒤).
   - 스토어 글이 「15급부터 7단까지 … 다섯 캐릭터」라고 적는다 — `work/play-store-assets/store_listing.txt` 16 · 90줄, `work/app-store-assets/app_store_listing.txt` 148 · 606줄(함정 51). iOS도 같은 코드라 함께 바뀐다(`PLATFORM_PARITY.md`).
 - 🔗 #220(인공지능 캐릭터 — 「관장 천원 다음」)은 그대로 열 명 뒤다 · #155 · #167(얼굴 · 표정)의 그림이 열 명 몫으로 는다.
-- **그림**: 새 다섯은 **사용자가 준비한다**(`DECISIONS.md` §1) — 지금 다섯과 같은 규격(768×768 불투명 PNG → `scripts/make-bot-avatars.py` → `drawable-nodpi/bot_fast_beginner_6` ~ `_10.webp` — 같은 캔버스 · 알파를 `BotCharacterAvatarTest`가 본다).
+- **그림**: 새 다섯은 **사용자가 준비한다**(`DECISIONS.md` §1) — 이미지 생성 에이전트에게 줄 요청서 `work/artwork/NEW_CHARACTERS_IMAGE_BRIEF.md`(반수선 · 삼삼 · 화점의 모습 권고 · 공통 화풍 · 규격 · 영어 프롬프트).
+  ⚠️ 초롱이 · 한수선을 가져올 장기 앱 그림은 화풍이 다르다(2D 굵은 외곽선 · 어두운 배경 · 1024px · 한수선은 장기 말) — 요청서 6절 — 지금 다섯과 같은 규격(768×768 불투명 PNG → `scripts/make-bot-avatars.py` → `drawable-nodpi/bot_fast_beginner_6` ~ `_10.webp` — 같은 캔버스 · 알파를 `BotCharacterAvatarTest`가 본다).
   받기 전에는 자리표시 그림으로 만들고 받으면 갈아 끼운다 — **자리표시 그림으로는 번들을 만들지 않는다**(스레드가 정한 것). 공용 화면은 이름표 `ui/designsystem/AppImage.kt`(`bot_fast_beginner_1` ~ `_5`)로 부르고 플랫폼마다 그 이름을 그림에 잇는다 — iOS 쪽 잇기(`scripts/ios-bundle-resources.sh`)는 착수 때 본다.
 - **단계**(커밋을 나누는 자리 — 스레드의 안): ① 카탈로그 · 번호 6 ~ 10 · 급수 순 차례(shared + 테스트, 동작은 아직 다섯) ② 새 다섯의 세기 · 템포 · 구간 + 이름 · 설명 4개 언어 → 무료로 열기 ③ 5단 한 판 값(창 · 스킵권 · 경계 · 안내)
   ④ 화면 배치(내 정보 줄 · 상대 고르기 — 두 안의 스크린샷) ⑤ 그림 갈아 끼우기 ⑥ 스토어 글 두 벌 · 「새로워진 점」 · `FEATURE_ACCESS_PRINCIPLES.md` §8 · iOS 시뮬레이터 한 바퀴. 게이트에 `make engine-lab-test`(세기 값) · `make test-ios`(shared)를 더한다.
