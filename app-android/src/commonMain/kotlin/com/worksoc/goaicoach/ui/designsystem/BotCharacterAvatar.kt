@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +53,16 @@ internal fun botAvatarRes(character: BotCharacter): AppImage? =
     }
 
 /**
+ * **그림을 기다리는 캐릭터**의 그림 이름(백로그 #301 — 사이에 더한 다섯의 그림은 사용자가 준비한다). 이 캐릭터들은 그림 대신 빈 원판을
+ * 그린다(큰 카드에는 「No image」). 그림이 없는 것이 실수가 아니라 기다리는 중이라는 것을 **한 곳에** 적어 두어, 그림 파일을 지키는
+ * `BotCharacterAvatarTest`가 이 목록만 빼고 본다.
+ *
+ * ⚠️ 그림이 오면 리소스를 넣고 [botAvatarRes] · [AllBotAvatarRes] · `AppImage`에 더한 뒤 **여기서 뺀다** — 그림이 생겼는데 이 목록에 남아
+ * 있으면 같은 시험이 잡는다. ⚠️ **이 목록이 비어 있지 않은 채로 출시 번들을 만들지 않는다**(#301 카드).
+ */
+internal val BotAvatarRefsAwaitingArtwork: Set<String> = (6..10).map { tier -> "bot_fast_beginner_$tier" }.toSet()
+
+/**
  * [botAvatarRes]가 아는 그림 **전부**를 카탈로그 순서대로 늘어놓은 것. 스플래시(백로그 #125)가
  * 캐릭터 도메인을 통째로 끌어오지 않고 그림만 쓰기 위한 자리다.
  *
@@ -65,6 +76,9 @@ internal val AllBotAvatarRes: List<AppImage> = listOf(
     AppImage.bot_fast_beginner_4,
     AppImage.bot_fast_beginner_5,
 )
+
+/** 그림 없는 캐릭터의 원판에 「No image」를 적는 가장 작은 크기 — 그보다 작으면 빈 원판만. */
+private val NoImageLabelMinSize: Dp = 56.dp
 
 /**
  * 조각 진행도(백로그 #50). [required]조각 중 [acquired]조각을 모았다는 뜻이고, 그만큼이
@@ -143,7 +157,17 @@ internal fun BotCharacterAvatar(
                 Modifier
                     .size(size)
                     .background(placeholderColor),
-            )
+                contentAlignment = Alignment.Center,
+            ) {
+                // 그림을 기다리는 캐릭터(#301 — 새 다섯의 그림은 사용자가 준비한다). 큰 카드에서만 그렇다고 적는다 — 작은 얼굴에는 글자가 안 들어간다.
+                if (size >= NoImageLabelMinSize) {
+                    Text(
+                        text = "No image",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         } else {
             val painter = painterFor(res)
             Canvas(Modifier.size(size)) {

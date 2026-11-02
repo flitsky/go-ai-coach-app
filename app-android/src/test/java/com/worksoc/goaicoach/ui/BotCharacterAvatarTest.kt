@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import com.worksoc.goaicoach.ui.designsystem.BotAvatarRefsAwaitingArtwork
 import com.worksoc.goaicoach.ui.designsystem.shardSweepDegrees
 import java.io.File
 import org.junit.Assert.assertEquals
@@ -44,8 +45,20 @@ class BotCharacterAvatarTest {
     }
 
     @Test
+    fun charactersAwaitingArtworkReallyHaveNoPictureYet() {
+        // 그림을 기다리는 캐릭터(#301)는 카탈로그에 있고, 정말로 그림 파일이 없어야 한다 — 그림을 넣고 목록에서 빼는 것을 잊으면 여기서 깨진다.
+        val refs = BotCharacterCatalog.all.mapNotNull { it.avatarRef }.toSet()
+        assertTrue("카탈로그에 없는 그림 이름: ${BotAvatarRefsAwaitingArtwork - refs}", refs.containsAll(BotAvatarRefsAwaitingArtwork))
+        val arrived = BotAvatarRefsAwaitingArtwork.filter { ref -> avatarFile(ref) != null }
+        assertTrue("그림이 왔는데 기다리는 목록에 남아 있다: $arrived", arrived.isEmpty())
+    }
+
+    /** 그림이 있어야 하는 캐릭터 — 그림을 기다리는 캐릭터([BotAvatarRefsAwaitingArtwork], #301)를 뺀 전부. */
+    private fun drawnCharacters() = BotCharacterCatalog.all.filter { it.avatarRef !in BotAvatarRefsAwaitingArtwork }
+
+    @Test
     fun everyAvatarReferenceResolvesToADrawableFile() {
-        val missing = BotCharacterCatalog.all.filter { character ->
+        val missing = drawnCharacters().filter { character ->
             avatarFile(character.avatarRef) == null
         }
         assertTrue(
@@ -65,7 +78,7 @@ class BotCharacterAvatarTest {
      */
     @Test
     fun allAvatarsShareTheSameCanvasSize() {
-        val sizes = BotCharacterCatalog.all.map { character ->
+        val sizes = drawnCharacters().map { character ->
             val file = avatarFile(character.avatarRef)
             assertTrue("그림 파일이 없다: ${character.avatarRef}", file != null)
             character.id.raw to webpCanvasSize(file!!)
@@ -101,7 +114,7 @@ class BotCharacterAvatarTest {
     @Test
     fun avatarResolverListsEveryCatalogReference() {
         val source = RepoPaths.uiFile("BotCharacterAvatar.kt").readContractSource()
-        val unlisted = BotCharacterCatalog.all.filter { character ->
+        val unlisted = drawnCharacters().filter { character ->
             !source.contains("\"${character.avatarRef}\" -> AppImage.${character.avatarRef}")
         }
         assertTrue("botAvatarRes에 빠진 캐릭터: ${unlisted.map { it.id.raw }}", unlisted.isEmpty())

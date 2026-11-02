@@ -5,7 +5,7 @@ import com.worksoc.goaicoach.application.botcharacter.BotCharacterId
 import com.worksoc.goaicoach.shared.playstyle.humanPlayStyle
 
 /**
- * 봇 캐릭터 5종의 **표시 이름과 소개 문구**(백로그 #32, 이름 체계는 이후 도장 서열 개편으로 교체).
+ * 봇 캐릭터의 **표시 이름과 소개 문구**(백로그 #32, 이름 체계는 이후 도장 서열 개편으로 교체 · #301에서 다섯을 더해 열 명).
  *
  * ## 왜 도메인이 아니라 여기 있는가
  *
@@ -35,6 +35,11 @@ import com.worksoc.goaicoach.shared.playstyle.humanPlayStyle
  * 바둑 용어(각각 돌무더기·바둑판·바둑판 중심점)라서 서열 개편 전 번역을 그대로 재사용한다 —
  * `Cairn`(돌뫼)·`Goban`(반상)·`Tengen`(천원)은 영어 바둑 커뮤니티가 실제로 쓰는 말이고,
  * 일본어·중국어는 한자어가 그대로 대응한다(반상=盤面/盘面, 천원=天元/天元).
+ *
+ * 열 명이 되며(#301) 더한 다섯도 같은 규칙이다 — 초롱이는 등불(`Lantern` · 提灯 · 灯笼), 삼삼 · 화점은 바둑 용어(`San-san` · 三々 · 三三,
+ * `Hoshi` · 星 · 星位). 반수선 · 한수선은 장기 앱의 캐릭터 이름이라 영어는 소리대로, 일본어 · 중국어는 「반 수 · 한 수의 신선」으로
+ * 읽어 半手仙 · 一手仙으로 적었다(스레드가 정한 것 — 사용자 확인 전). 칭호는 급수가 정한다: 급은 문하생, 1급만 수제자, 단은 사범,
+ * 최고수가 관장(`DECISIONS.md` §1).
  *
  * ⚠️ 새 캐릭터를 카탈로그에 추가하면 **네 언어 모두** 여기에 줄을 더해야 한다.
  * `UiStringsBotCharacterTest`가 카탈로그 전 종 × 전 언어를 훑어 빠진 것을 잡는다.
@@ -70,6 +75,36 @@ private val BotCharacterNames: Map<String, Map<UiLanguage, String>> = mapOf(
         UiLanguage.Japanese to "館長 天元",
         UiLanguage.ChineseSimplified to "馆长 天元",
     ),
+    "fast_beginner_6" to mapOf(
+        UiLanguage.Korean to "문하생 초롱이",
+        UiLanguage.English to "Lantern the Pupil",
+        UiLanguage.Japanese to "門下生 提灯",
+        UiLanguage.ChineseSimplified to "门生 灯笼",
+    ),
+    "fast_beginner_7" to mapOf(
+        UiLanguage.Korean to "문하생 반수선",
+        UiLanguage.English to "Bansuseon the Pupil",
+        UiLanguage.Japanese to "門下生 半手仙",
+        UiLanguage.ChineseSimplified to "门生 半手仙",
+    ),
+    "fast_beginner_8" to mapOf(
+        UiLanguage.Korean to "문하생 한수선",
+        UiLanguage.English to "Hansuseon the Pupil",
+        UiLanguage.Japanese to "門下生 一手仙",
+        UiLanguage.ChineseSimplified to "门生 一手仙",
+    ),
+    "fast_beginner_9" to mapOf(
+        UiLanguage.Korean to "문하생 삼삼",
+        UiLanguage.English to "San-san the Pupil",
+        UiLanguage.Japanese to "門下生 三々",
+        UiLanguage.ChineseSimplified to "门生 三三",
+    ),
+    "fast_beginner_10" to mapOf(
+        UiLanguage.Korean to "사범 화점",
+        UiLanguage.English to "Hoshi the Instructor",
+        UiLanguage.Japanese to "師範 星",
+        UiLanguage.ChineseSimplified to "师父 星位",
+    ),
 )
 
 /**
@@ -79,6 +114,8 @@ private val BotCharacterNames: Map<String, Map<UiLanguage, String>> = mapOf(
  * 사실이 아니게 됐다 — 관장 천원의 *"언제나 최선의 수만 둡니다"*(지금은 7단 프로필), 돌뫼의 *"절반쯤은 제대로 둡니다"*.
  * **급수 숫자를 여기 적지 않는다** — 숫자는 `HumanPlayStyle.rank`에서 읽어 따로 보인다. 여기 적으면 밸런스 패치 때 갈린다.
  * ⚠️ **1단계를 얕잡아 말하지 않는다**(2026-08-31 사용자 지시 — `UiStringsBotCharacterTest.theEntryOpponentIsNeverIntroducedAsWeak`).
+ *   열 명이 된 뒤(#301) 그 시험은 **가장 약한 초롱이**를 본다.
+ * ⚠️ **이웃과의 세기 차이를 약속하지 않는다**(#301 — 「판다보다 훨씬 쉽다」 같은 말). 실험실 E4에서 17 ~ 11급 프로필은 거의 갈리지 않았다.
  */
 private val BotCharacterDescriptions: Map<String, Map<UiLanguage, String>> = mapOf(
     "fast_beginner_1" to mapOf(
@@ -110,6 +147,36 @@ private val BotCharacterDescriptions: Map<String, Map<UiLanguage, String>> = map
         UiLanguage.English to "The strongest in the dojo. Sees the whole board like a high dan.",
         UiLanguage.Japanese to "道場最強。高段者の感覚で盤全体を見ます。",
         UiLanguage.ChineseSimplified to "道场最强。以高段的眼光纵观全局。",
+    ),
+    "fast_beginner_6" to mapOf(
+        UiLanguage.Korean to "바둑판 앞에 처음 앉은 사람처럼 둡니다. 부담 없이 한 판 두어 보세요.",
+        UiLanguage.English to "Plays like someone sitting at the board for the very first time. Enjoy a relaxed game.",
+        UiLanguage.Japanese to "初めて碁盤の前に座った人のように打ちます。気軽に一局どうぞ。",
+        UiLanguage.ChineseSimplified to "像第一次坐到棋盘前的人一样下棋。轻松来下一局吧。",
+    ),
+    "fast_beginner_7" to mapOf(
+        UiLanguage.Korean to "규칙에 익숙해져 한 수씩 실력을 쌓아 가는 중이에요.",
+        UiLanguage.English to "Comfortable with the rules and building up skill one move at a time.",
+        UiLanguage.Japanese to "ルールに慣れ、一手ずつ力をつけているところです。",
+        UiLanguage.ChineseSimplified to "已熟悉规则，正一步一步积累实力。",
+    ),
+    "fast_beginner_8" to mapOf(
+        UiLanguage.Korean to "한 수 앞을 내다보기 시작했습니다. 싸움을 피하지 않아요.",
+        UiLanguage.English to "Has started to see a move ahead. Doesn't shy away from a fight.",
+        UiLanguage.Japanese to "一手先が見え始めました。戦いを避けません。",
+        UiLanguage.ChineseSimplified to "开始能看到下一步了。从不回避战斗。",
+    ),
+    "fast_beginner_9" to mapOf(
+        UiLanguage.Korean to "도장 문하생 가운데 으뜸. 작은 실수도 놓치지 않아요.",
+        UiLanguage.English to "The top pupil in the dojo. Small slips won't get past it.",
+        UiLanguage.Japanese to "道場の門下生で一番の腕前。小さなミスも見逃しません。",
+        UiLanguage.ChineseSimplified to "道场门生中的佼佼者。小小的失误也逃不过它的眼睛。",
+    ),
+    "fast_beginner_10" to mapOf(
+        UiLanguage.Korean to "차분하고 정확하게, 판 전체의 흐름을 이끕니다.",
+        UiLanguage.English to "Calm and precise, it steers the flow of the whole board.",
+        UiLanguage.Japanese to "落ち着いて正確に、盤全体の流れをリードします。",
+        UiLanguage.ChineseSimplified to "沉稳精准，掌控全盘的走势。",
     ),
 )
 

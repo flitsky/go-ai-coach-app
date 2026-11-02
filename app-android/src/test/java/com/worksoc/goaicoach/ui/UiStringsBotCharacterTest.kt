@@ -183,12 +183,16 @@ class UiStringsBotCharacterTest {
     @Test
     fun theStrengthLineSaysTheRankEachCharacterPlaysAt() {
         val roster = BotCharacterCatalog.fastBeginnerRoster
+        // 열 명, 세기의 차례(#301).
         assertEquals(
-            listOf("15급 수준", "9급 수준", "1급 수준", "3단 수준", "7단 수준"),
+            listOf("18급 수준", "15급 수준", "12급 수준", "9급 수준", "6급 수준", "3급 수준", "1급 수준", "3단 수준", "5단 수준", "7단 수준"),
             roster.map { botCharacterStrengthFor(UiLanguage.Korean, it) },
         )
         assertEquals(
-            listOf("about 15 kyu", "about 9 kyu", "about 1 kyu", "about 3 dan", "about 7 dan"),
+            listOf(
+                "about 18 kyu", "about 15 kyu", "about 12 kyu", "about 9 kyu", "about 6 kyu",
+                "about 3 kyu", "about 1 kyu", "about 3 dan", "about 5 dan", "about 7 dan",
+            ),
             roster.map { botCharacterStrengthFor(UiLanguage.English, it) },
         )
         UiLanguage.entries.forEach { language ->

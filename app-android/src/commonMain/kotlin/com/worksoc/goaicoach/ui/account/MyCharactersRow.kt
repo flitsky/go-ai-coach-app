@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui.account
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -65,17 +66,22 @@ internal fun MyCharactersRow(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
-            // 얼굴 다섯은 한 덩어리로 촘촘히 — 360dp 폭에서 제목이 밀리지 않게 한다.
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                roster.forEach { character ->
-                    val available = bots.isAvailable(character)
-                    BotCharacterAvatar(
-                        character = character,
-                        size = 24.dp,
-                        available = available,
-                        // 조각 경로는 모은 만큼만 색이 돈다 — 출석 도장판·픽커 카드와 같은 그림(#50).
-                        reveal = if (available) null else shardRevealOf(character, bots.shardsFor(character)),
-                    )
+            // 얼굴은 한 덩어리로 촘촘히 — 360dp 폭에서 제목이 밀리지 않게 한다. 열 명(#301)은 한 줄에 안 들어가 다섯씩 두 줄로 세운다
+            // (임시 — 배치는 두 안의 스크린샷으로 사용자가 고른다, #301 ④).
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                roster.chunked(FacesPerLine).forEach { line ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        line.forEach { character ->
+                            val available = bots.isAvailable(character)
+                            BotCharacterAvatar(
+                                character = character,
+                                size = 24.dp,
+                                available = available,
+                                // 조각 경로는 모은 만큼만 색이 돈다 — 출석 도장판·픽커 카드와 같은 그림(#50).
+                                reveal = if (available) null else shardRevealOf(character, bots.shardsFor(character)),
+                            )
+                        }
+                    }
                 }
             }
             Text(
@@ -100,3 +106,6 @@ internal fun MyCharactersRow(modifier: Modifier = Modifier) {
         title = myCharactersTitleFor(language),
     )
 }
+
+/** 「내 캐릭터」 줄의 한 줄에 세우는 얼굴 수 — 처음 다섯이 한 줄이었다(360dp에서 제목이 밀리지 않는 폭). */
+private const val FacesPerLine: Int = 5

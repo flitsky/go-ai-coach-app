@@ -33,6 +33,7 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.policy.PlayLevelGroup
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.customRank
+import com.worksoc.goaicoach.shared.policy.fastBeginnerFallbackTier
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -1490,9 +1491,12 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> group.label
         }
 
-    /** `빠른 초급` 1~5단계의 친근한 이름(초보~초고수). AI 선택 드롭다운과 대국 요약에서 쓴다. */
+    /**
+     * `빠른 초급` 단계의 친근한 이름(초보~초고수) — 단계가 속한 **구간**(1 ~ 5)으로 고른다(#301: 6 ~ 10단계는 사이에 더한 캐릭터다).
+     * AI 선택 드롭다운과 대국 요약에서 쓴다.
+     */
     fun fastBeginnerTierLabel(level: Int): String =
-        when (level.coerceIn(1, PlayLevelGroup.FastBeginner.maxLevel)) {
+        when (fastBeginnerFallbackTier(level)) {
             1 -> when (language) {
                 UiLanguage.Korean -> "초보"
                 UiLanguage.English -> "Novice"
