@@ -1,0 +1,279 @@
+{
+ "cells": {
+  "13|rank_18k|rank_15k": {
+   "size": 13,
+   "weak": "rank_18k",
+   "strong": "rank_15k",
+   "gap": 3,
+   "games": 10,
+   "strongWins": 8,
+   "strongWinRate": 0.8,
+   "ci95": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "meanStrongLead": 30.037012960000002,
+   "meanMoves": 115.8
+  },
+  "13|rank_18k|rank_12k": {
+   "size": 13,
+   "weak": "rank_18k",
+   "strong": "rank_12k",
+   "gap": 6,
+   "games": 10,
+   "strongWins": 8,
+   "strongWinRate": 0.8,
+   "ci95": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "meanStrongLead": 34.83968824,
+   "meanMoves": 109.5
+  },
+  "13|rank_15k|rank_12k": {
+   "size": 13,
+   "weak": "rank_15k",
+   "strong": "rank_12k",
+   "gap": 3,
+   "games": 10,
+   "strongWins": 9,
+   "strongWinRate": 0.9,
+   "ci95": [
+    0.5958436145024278,
+    0.9821242504842788
+   ],
+   "meanStrongLead": 6.0197861926,
+   "meanMoves": 109
+  },
+  "13|rank_15k|rank_9k": {
+   "size": 13,
+   "weak": "rank_15k",
+   "strong": "rank_9k",
+   "gap": 6,
+   "games": 10,
+   "strongWins": 10,
+   "strongWinRate": 1.0,
+   "ci95": [
+    0.7224598312333834,
+    1.0
+   ],
+   "meanStrongLead": 36.546313932,
+   "meanMoves": 113
+  },
+  "13|rank_12k|rank_9k": {
+   "size": 13,
+   "weak": "rank_12k",
+   "strong": "rank_9k",
+   "gap": 3,
+   "games": 10,
+   "strongWins": 8,
+   "strongWinRate": 0.8,
+   "ci95": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "meanStrongLead": 20.41862231,
+   "meanMoves": 114.1
+  },
+  "13|rank_12k|rank_6k": {
+   "size": 13,
+   "weak": "rank_12k",
+   "strong": "rank_6k",
+   "gap": 6,
+   "games": 10,
+   "strongWins": 9,
+   "strongWinRate": 0.9,
+   "ci95": [
+    0.5958436145024278,
+    0.9821242504842788
+   ],
+   "meanStrongLead": 28.0365437994,
+   "meanMoves": 113.6
+  },
+  "13|rank_9k|rank_6k": {
+   "size": 13,
+   "weak": "rank_9k",
+   "strong": "rank_6k",
+   "gap": 3,
+   "games": 10,
+   "strongWins": 8,
+   "strongWinRate": 0.8,
+   "ci95": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "meanStrongLead": 14.4188977785,
+   "meanMoves": 140.6
+  },
+  "13|rank_9k|rank_3k": {
+   "size": 13,
+   "weak": "rank_9k",
+   "strong": "rank_3k",
+   "gap": 6,
+   "games": 10,
+   "strongWins": 10,
+   "strongWinRate": 1.0,
+   "ci95": [
+    0.7224598312333834,
+    1.0
+   ],
+   "meanStrongLead": 49.09320733,
+   "meanMoves": 128.7
+  },
+  "13|rank_6k|rank_3k": {
+   "size": 13,
+   "weak": "rank_6k",
+   "strong": "rank_3k",
+   "gap": 3,
+   "games": 10,
+   "strongWins": 8,
+   "strongWinRate": 0.8,
+   "ci95": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "meanStrongLead": 29.304443497,
+   "meanMoves": 129.9
+  },
+  "13|rank_6k|rank_1k": {
+   "size": 13,
+   "weak": "rank_6k",
+   "strong": "rank_1k",
+   "gap": 5,
+   "games": 10,
+   "strongWins": 10,
+   "strongWinRate": 1.0,
+   "ci95": [
+    0.7224598312333834,
+    1.0
+   ],
+   "meanStrongLead": 42.501845805,
+   "meanMoves": 115.2
+  },
+  "13|rank_3k|rank_1k": {
+   "size": 13,
+   "weak": "rank_3k",
+   "strong": "rank_1k",
+   "gap": 2,
+   "games": 10,
+   "strongWins": 6,
+   "strongWinRate": 0.6,
+   "ci95": [
+    0.3126695474501864,
+    0.8318224187964902
+   ],
+   "meanStrongLead": 9.896756647,
+   "meanMoves": 137.8
+  },
+  "13|rank_3k|rank_3d": {
+   "size": 13,
+   "weak": "rank_3k",
+   "strong": "rank_3d",
+   "gap": 5,
+   "games": 10,
+   "strongWins": 9,
+   "strongWinRate": 0.9,
+   "ci95": [
+    0.5958436145024278,
+    0.9821242504842788
+   ],
+   "meanStrongLead": 63.674718575,
+   "meanMoves": 133.2
+  },
+  "13|rank_1k|rank_3d": {
+   "size": 13,
+   "weak": "rank_1k",
+   "strong": "rank_3d",
+   "gap": 3,
+   "games": 10,
+   "strongWins": 6,
+   "strongWinRate": 0.6,
+   "ci95": [
+    0.3126695474501864,
+    0.8318224187964902
+   ],
+   "meanStrongLead": 23.266199604,
+   "meanMoves": 128.5
+  },
+  "13|rank_1k|rank_5d": {
+   "size": 13,
+   "weak": "rank_1k",
+   "strong": "rank_5d",
+   "gap": 5,
+   "games": 10,
+   "strongWins": 10,
+   "strongWinRate": 1.0,
+   "ci95": [
+    0.7224598312333834,
+    1.0
+   ],
+   "meanStrongLead": 26.027915411,
+   "meanMoves": 137
+  },
+  "13|rank_3d|rank_5d": {
+   "size": 13,
+   "weak": "rank_3d",
+   "strong": "rank_5d",
+   "gap": 2,
+   "games": 10,
+   "strongWins": 7,
+   "strongWinRate": 0.7,
+   "ci95": [
+    0.39677321997956516,
+    0.892210712513788
+   ],
+   "meanStrongLead": 9.989918121999999,
+   "meanMoves": 138.9
+  },
+  "13|rank_3d|rank_7d": {
+   "size": 13,
+   "weak": "rank_3d",
+   "strong": "rank_7d",
+   "gap": 4,
+   "games": 10,
+   "strongWins": 8,
+   "strongWinRate": 0.8,
+   "ci95": [
+    0.49015684672072335,
+    0.9433190520193067
+   ],
+   "meanStrongLead": 6.7430783051,
+   "meanMoves": 125.4
+  },
+  "13|rank_5d|rank_7d": {
+   "size": 13,
+   "weak": "rank_5d",
+   "strong": "rank_7d",
+   "gap": 2,
+   "games": 10,
+   "strongWins": 6,
+   "strongWinRate": 0.6,
+   "ci95": [
+    0.3126695474501864,
+    0.8318224187964902
+   ],
+   "meanStrongLead": 11.960768305999999,
+   "meanMoves": 133.4
+  }
+ },
+ "bySize": {
+  "13": {
+   "games": 170,
+   "strongWins": 140,
+   "strongWinRate": 0.8235294117647058
+  }
+ },
+ "ladder": [
+  "rank_18k",
+  "rank_15k",
+  "rank_12k",
+  "rank_9k",
+  "rank_6k",
+  "rank_3k",
+  "rank_1k",
+  "rank_3d",
+  "rank_5d",
+  "rank_7d"
+ ],
+ "span": 2
+}

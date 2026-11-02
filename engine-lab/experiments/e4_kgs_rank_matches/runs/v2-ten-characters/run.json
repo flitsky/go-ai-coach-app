@@ -1,0 +1,44 @@
+{
+ "experiment": "e4_kgs_rank_matches",
+ "label": "v2-ten-characters",
+ "startedAt": "2026-11-03T00:12:26",
+ "args": {
+  "name": "v2-ten-characters",
+  "sizes": "13",
+  "ladder": "rank_18k,rank_15k,rank_12k,rank_9k,rank_6k,rank_3k,rank_1k,rank_3d,rank_5d,rank_7d",
+  "games": 10,
+  "span": 2,
+  "recipe": "R2-tail",
+  "judge_visits": 400,
+  "seed": 216
+ },
+ "appCommit": "260be332+lab-dirty",
+ "python": "3.11.9",
+ "machine": "Darwin arm64 darwin-arm64",
+ "katago": "/opt/homebrew/bin/katago",
+ "engineVersions": {
+  "gtp": "1.16.4+b18c384nbt-s9996M+b18c384nbt-humanv0",
+  "judge": "1.16.4 <omitted>"
+ },
+ "models": {
+  "main": {
+   "path": "/opt/homebrew/Cellar/katago/1.16.4/share/katago/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+   "sha256": "9d7a6afed8ff5b74894727e156f04f0cd36060a24824892008fbb6e0cba51f1d"
+  },
+  "human": {
+   "path": "/Users/ryan9kim/worksoc/katago/models/b18c384nbt-humanv0.bin.gz",
+   "sha256": "637746e44f0efe00ad1245a50aa9bbf0716efe364c43965ead97bd6835d84ab5"
+  }
+ },
+ "configs": {
+  "gtp": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/gtp_learning.cfg",
+   "sha256": "fb620cb846d1080688006f0ba56babb527eeff1f64c472656de6509efde5876d"
+  },
+  "analysis": {
+   "path": "/Users/ryan9kim/worksoc/katago/config/katago/analysis_learning.cfg",
+   "sha256": "8338f3d110067fa1fa2f9cd41f6de2cf1ed0e0f2a0115d93a369299254763ada"
+  }
+ },
+ "finishedAt": "2026-11-03T00:31:37"
+}
