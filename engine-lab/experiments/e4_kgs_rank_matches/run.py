@@ -10,6 +10,8 @@
 
     python3 engine-lab/experiments/e4_kgs_rank_matches/run.py --name v1          # 처음·이어하기 같은 명령
     python3 engine-lab/experiments/e4_kgs_rank_matches/run.py --name v1 --games 20   # 판을 늘려 이어서
+
+`--span 2`면 이웃만이 아니라 **두 칸 위까지** 짝을 짓는다(백로그 #301 — 사용자 2026-11-03: *"2개 급수까지만"* — 18:15 · 18:12 · 15:12 …).
 """
 from __future__ import annotations
 
@@ -70,6 +72,7 @@ def main() -> int:
     parser.add_argument("--sizes", default="9,13,19")
     parser.add_argument("--ladder", default=DEFAULT_LADDER, help="약한 쪽부터, 이웃한 둘씩 짝이 된다")
     parser.add_argument("--games", type=int, default=10, help="짝·판 크기마다 판 수")
+    parser.add_argument("--span", type=int, default=1, help="사다리에서 몇 칸 위까지 짝을 짓나(1 = 이웃만)")
     parser.add_argument("--recipe", default="R2-tail")
     parser.add_argument("--judge-visits", type=int, default=400)
     parser.add_argument("--seed", type=int, default=216)
@@ -77,7 +80,8 @@ def main() -> int:
 
     sizes = [int(s) for s in args.sizes.split(",") if s]
     ladder = [p for p in args.ladder.split(",") if p]
-    pairs = list(zip(ladder, ladder[1:]))
+    # 약한 쪽 차례로, 그 위 `--span`칸까지 — span 1이면 예전처럼 이웃끼리만
+    pairs = [(ladder[i], ladder[j]) for i in range(len(ladder)) for j in range(i + 1, min(len(ladder), i + 1 + args.span))]
     recipe = human.RECIPES[args.recipe]
 
     run = RunDir(EXPERIMENT, args.name, vars(args), resume=True)
@@ -191,15 +195,15 @@ def summarize(rows: list[dict], sizes: list[int], pairs: list[tuple[str, str]], 
     for size, picked in by_size.items():
         wins = sum(1 for r in picked if r["strongWon"])
         totals[str(size)] = {"games": len(picked), "strongWins": wins, "strongWinRate": wins / len(picked) if picked else None}
-    summary = {"cells": cells, "bySize": totals, "ladder": [p for pair in pairs for p in pair][:: 2] + [pairs[-1][1]] if pairs else []}
+    summary = {"cells": cells, "bySize": totals, "ladder": [p for p in args.ladder.split(",") if p], "span": args.span}
 
     def short(profile: str) -> str:
         return profile.replace("rank_", "")
 
     lines = [
-        "# E4 결과 — KGS 급수 설정(사람 모델) 이웃끼리, 판 크기별",
+        "# E4 결과 — KGS 급수 설정(사람 모델)끼리, 판 크기별",
         "",
-        f"- 사다리: {' → '.join(short(p) for p in summary['ladder'])} (이웃한 둘이 한 짝). 짝·판 크기마다 목표 {args.games}판, 흑백 번갈아.",
+        f"- 사다리: {' → '.join(short(p) for p in summary['ladder'])} (사다리에서 {args.span}칸 위까지가 한 짝). 짝·판 크기마다 목표 {args.games}판, 흑백 번갈아.",
         f"- 선수: 사람 모델 1회 평가 + {args.recipe}. 판정: 주 모델 {args.judge_visits}방문 점수. 덤 {ap.DEFAULT_KOMI}, {ap.DEFAULT_RULES}.",
         "- 칸 = **센 쪽(높은 급수)의 승률** (승/판, 평균 점수차). 이름값대로면 50%보다 크다 — 3급 차는 대략 70%대가 기대값(리서치 §5.3.2, 급당 약 64 Elo).",
         "",
