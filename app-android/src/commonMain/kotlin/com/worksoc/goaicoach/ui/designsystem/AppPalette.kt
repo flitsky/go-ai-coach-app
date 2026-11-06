@@ -85,6 +85,27 @@ internal object HomeTabBarPalette {
 }
 
 /**
+ * 종이 질감의 색 한 벌(백로그 #303 — 대국 페이지 맨 위의 명언, 사용자 2026-11-06: *"명언록의 배경에 적합하게 … 너무 튀지는 않게 종이 질감 등으로"*).
+ * 밝은 쪽은 페이지 크림(`background` `#F6F1E7`)보다 한 단 밝은 미색 종이에 옅은 갈색 결, 어두운 쪽은 페이지(`#1A1815`)와 카드(`#24211D`) 사이의
+ * 따뜻한 먹색 종이에 옅은 밝은 결이다. 값은 스레드가 정했다(사용자 확인 전) — 그림은 [paperTexture].
+ */
+internal object PaperPalette {
+    val Base: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Color(0xFF27231E) else Color(0xFFFBF7EE)
+
+    /** 종이 결(점 · 짧은 섬유)의 색 — 알파까지 여기서 정한다. */
+    val Grain: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Color(0x14FFF3DC) else Color(0x1A6B4F2A)
+
+    /** 종이의 가장자리 선. */
+    val Edge: Color
+        @Composable @ReadOnlyComposable
+        get() = if (LocalAppDarkTheme.current) Color(0xFF3A342C) else Color(0xFFE6DBC6)
+}
+
+/**
  * 사용자 아바타 원. ⚠️ [Backgrounds]는 **전부 흰 글자([Initial])가 읽히는 어두운 색이다** — 밝은 색을
  * 더하면 원 안 글자가 사라진다.
  */
