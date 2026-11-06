@@ -104,6 +104,11 @@ val appVersionName: String = versionProperties.getProperty("VERSION_NAME") ?: "0
 android {
     namespace = "com.worksoc.goaicoach"
     compileSdk = 36
+    // ⚠️ **NDK를 엔진과 같은 판으로 고정한다**(2026-11-06, 1.8.5 번들에서 발견) — 패키징 때 `.so`를 벗기는 strip 도구를 AGP가 이 NDK에서 꺼낸다.
+    // 고정하지 않으면 AGP 기본값(8.13 → 27.0.12077973)을 찾는데, 그 판이 이 맥에서 2026-10-27에 사라져 **조용히 벗기지 못하고**
+    // (`Unable to strip … missing strip tool` — 경고뿐) 디버그 정보째 실렸다: libkatago.so 74MB, AAB +12MB, 번들에 네이티브 심볼 없음.
+    // 엔진도 이 판으로 빌드한다(`scripts/build-katago-android-spike.sh`의 `NDK_VERSION`) — 둘을 함께 바꾼다. r28로 올리지 말 것(그 스크립트의 ⚠️).
+    ndkVersion = "27.1.12297006"
 
     // 두 모델을 번들 밖으로 빼는 PAD 에셋 팩(백로그 #245)
     assetPacks += setOf(":katago_model_pack", ":katago_human_pack")
