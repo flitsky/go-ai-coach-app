@@ -38,8 +38,8 @@ class SubscriptionRosterWiringContractTest {
     @Test
     fun theLevelClampAlsoKnowsAboutTheSubscription() {
         assertTrue(
-            "강등 판정이 구독을 모른다 — 구독자의 상대가 낮춰진다(#157).",
-            setup.contains("clampToOwnedBotCharacter(side.playLevel, bots.collection, bots.subscriptionActive)"),
+            "강등 판정이 구독을 모른다 — 구독자의 상대가 낮춰진다(#157). 보이는 목록도 함께 넘긴다 — 가린 캐릭터로 내려가지 않게(#303 먼저 · #301 가림).",
+            setup.contains("clampToOwnedBotCharacter(side.playLevel, bots.collection, bots.subscriptionActive, roster = offeredFastBeginnerRoster())"),
         )
     }
 

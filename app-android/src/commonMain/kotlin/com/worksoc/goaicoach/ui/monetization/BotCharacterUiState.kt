@@ -57,6 +57,7 @@ import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseOutcome
 import com.worksoc.goaicoach.platform.AppMonetization
 import com.worksoc.goaicoach.platform.AppNotice
+import com.worksoc.goaicoach.platform.isDebugBuild
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -257,6 +258,14 @@ internal fun buildBotCharacterUiState(monetization: AppMonetization): BotCharact
  * 1개 쌓인다. 필요 수를 채우는 순간 영구 획득으로 넘어간다. 유료 캐릭터(#18)는 아직 진입점이
  * 없어 안내까지가 전부다.
  */
+/**
+ * 사용자에게 **고르라고 내놓는** 캐릭터 — 상대 고르기 · 내 정보의 「내 캐릭터」 · 잠긴 상대 낮추기가 이것 하나를 본다(#303 먼저 · #301 가림, 사용자 2026-11-06).
+ * 출시 빌드는 처음 다섯([BotCharacterCatalog.firstFive])이고, 디버그 빌드나 [FeatureFlags.isAddedCharactersEnabled]가 켜지면 열 명이다.
+ */
+internal fun offeredFastBeginnerRoster(
+    showAddedFive: Boolean = FeatureFlags.isAddedCharactersEnabled || isDebugBuild,
+): List<BotCharacter> = if (showAddedFive) BotCharacterCatalog.fastBeginnerRoster else BotCharacterCatalog.firstFive
+
 @Composable
 internal fun BotCharacterPickerDialog(
     selected: BotCharacter?,
@@ -292,7 +301,7 @@ internal fun BotCharacterPickerDialog(
         modifier = Modifier.fillMaxWidth(0.94f),
         title = { Text(title ?: strings.botPickerTitle) },
         text = {
-            val roster = BotCharacterCatalog.fastBeginnerRoster
+            val roster = offeredFastBeginnerRoster()
             // ⓐ 완화책(#49): 지금 상대의 자리에서 연다. 0번에서 열면 5단계를 쓰는 사람이
             // 매번 네 번 넘겨야 해서, 세로 목록보다 느려지는 것이 그대로 체감된다.
             val initialPage = roster.indexOfFirst { it.id == selected?.id }.coerceAtLeast(0)

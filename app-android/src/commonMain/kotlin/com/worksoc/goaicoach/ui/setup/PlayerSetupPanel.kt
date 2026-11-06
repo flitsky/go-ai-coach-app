@@ -57,6 +57,7 @@ import com.worksoc.goaicoach.ui.l10n.deepSearchingCharacterHintFor
 import com.worksoc.goaicoach.ui.l10n.rankedOpponentLabelFor
 import com.worksoc.goaicoach.ui.monetization.BotCharacterRosterHost
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
+import com.worksoc.goaicoach.ui.monetization.offeredFastBeginnerRoster
 import kotlinx.coroutines.delay
 
 @Composable
@@ -258,7 +259,7 @@ private fun PlayerSetupSideRow(
             // `onSideChange` 경로를 그대로 타므로 자동 저장까지 함께 따라간다.
             // ⚠️ 구독자는 강등하지 않는다(#157) — 로스터 전체가 열려 있는데 낮추면
             // 구독을 사고도 상대가 약해진다.
-            val clamp = clampToOwnedBotCharacter(side.playLevel, bots.collection, bots.subscriptionActive)
+            val clamp = clampToOwnedBotCharacter(side.playLevel, bots.collection, bots.subscriptionActive, roster = offeredFastBeginnerRoster())
             val latestClamp by rememberUpdatedState(clamp)
             val latestSide by rememberUpdatedState(side)
             // ⚠️ 키를 `Unit`으로 두는 것이 중요하다. `clamp != null` 같은 조건을 키로 쓰면 클램프가

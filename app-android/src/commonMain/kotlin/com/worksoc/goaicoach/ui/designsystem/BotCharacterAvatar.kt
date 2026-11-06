@@ -58,7 +58,8 @@ internal fun botAvatarRes(character: BotCharacter): AppImage? =
  * `BotCharacterAvatarTest`가 이 목록만 빼고 본다.
  *
  * ⚠️ 그림이 오면 리소스를 넣고 [botAvatarRes] · [AllBotAvatarRes] · `AppImage`에 더한 뒤 **여기서 뺀다** — 그림이 생겼는데 이 목록에 남아
- * 있으면 같은 시험이 잡는다. ⚠️ **이 목록이 비어 있지 않은 채로 출시 번들을 만들지 않는다**(#301 카드).
+ * 있으면 같은 시험이 잡는다. ⚠️ **이 목록이 비어 있지 않은 채로 `FeatureFlags.isAddedCharactersEnabled`를 켜지 않는다** — 그 깃발이 꺼진 출시 빌드는
+ * 이 캐릭터들을 보이지 않으므로(사용자 2026-11-06 — #303 먼저) 번들을 만들어도 된다.
  */
 internal val BotAvatarRefsAwaitingArtwork: Set<String> = (6..10).map { tier -> "bot_fast_beginner_$tier" }.toSet()
 

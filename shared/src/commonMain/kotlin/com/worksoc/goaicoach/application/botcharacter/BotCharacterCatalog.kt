@@ -103,6 +103,12 @@ object BotCharacterCatalog {
         ),
     )
 
+    /**
+     * **처음 다섯**(판다 15급 · 돌뫼 9급 · 반상 1급 · 꼬북 3단 · 천원 7단 — 단계 1 ~ 5, 세기의 차례). #301의 새 다섯을 가린 출시가
+     * 보이는 목록이다(사용자 2026-11-06: #303을 먼저 내보내려고 — 앱의 `FeatureFlags.isAddedCharactersEnabled`).
+     */
+    val firstFive: List<BotCharacter> = fastBeginnerRoster.filter { character -> (character.tierWithinGroup ?: 0) in 1..5 }
+
     /** 현재 존재하는 모든 캐릭터. 다른 그룹이 캐릭터화되면 여기에 합친다. */
     val all: List<BotCharacter> = fastBeginnerRoster
 

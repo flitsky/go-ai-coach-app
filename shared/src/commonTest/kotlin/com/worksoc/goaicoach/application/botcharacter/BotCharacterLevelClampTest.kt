@@ -80,6 +80,28 @@ class BotCharacterLevelClampTest {
     }
 
     @Test
+    fun withOnlyTheFirstFiveOfferedTheClampNeverLandsOnAHiddenCharacter() {
+        // #301의 새 다섯을 가린 출시(사용자 2026-11-06 — #303 먼저): 보이는 것은 처음 다섯뿐이다. 잠긴 꼬북(3단)은 가린 무료 삼삼(3급)이 아니라
+        // 예전처럼 판다로 내려간다.
+        val firstFive = BotCharacterCatalog.firstFive
+        val clamp = clampToOwnedBotCharacter(level(4), BotCollectionState(), roster = firstFive)
+
+        assertEquals(characterAt(1), clamp?.to)
+    }
+
+    @Test
+    fun aHiddenCharacterLeftInTheSavedSeatMovesToAnOfferedOne() {
+        // 디버그 빌드에서 삼삼(3급 — 9단계, 무료)을 골라 둔 기기에 가린 출시를 덮어 깔면 — 무료여도 보이지 않으니 보이는 것 가운데로 내린다.
+        // 삼삼 아래에서 보이는 것은 돌뫼(9급, 잠김)와 판다 — 판다로.
+        val clamp = clampToOwnedBotCharacter(level(9), BotCollectionState(), roster = BotCharacterCatalog.firstFive)
+
+        assertEquals(characterAt(9), clamp?.from)
+        assertEquals(characterAt(1), clamp?.to)
+        // 구독자도 내려간다 — 보이지 않는 캐릭터는 구독으로 열리는 캐릭터가 아니다. 구독자에게는 돌뫼(9급)가 열려 있어 그쪽이 가장 높다.
+        assertEquals(characterAt(2), clampToOwnedBotCharacter(level(9), BotCollectionState(), subscriptionActive = true, roster = BotCharacterCatalog.firstFive)?.to)
+    }
+
+    @Test
     fun levelsWithoutACharacterAreLeftAlone() {
         // 초급/중급/고급 그룹은 카탈로그에 캐릭터가 없다 — 획득 개념 자체가 없으므로 건드리지
         // 않는다(코드가 보존돼 있고 대국장 로드맵에서 되살아날 수 있다).

@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.botcharacter.BotCharacterCatalog
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -32,6 +31,7 @@ import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.myCharactersTitleFor
 import com.worksoc.goaicoach.ui.monetization.BotCharacterRosterHost
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
+import com.worksoc.goaicoach.ui.monetization.offeredFastBeginnerRoster
 
 /**
  * 내 정보의 「내 캐릭터」 줄(#256, 사용자 2026-10-13) — 다섯 얼굴(가진 것은 색, 못 가진 것은 흑백·조각 진행)과 「가진 수/전체」.
@@ -45,7 +45,7 @@ internal fun MyCharactersRow(modifier: Modifier = Modifier) {
     val language = LocalUiStrings.current.language
     val bots = LocalBotCharacterUiState.current
     var showRoster by remember { mutableStateOf(false) }
-    val roster = BotCharacterCatalog.fastBeginnerRoster
+    val roster = offeredFastBeginnerRoster()
     val owned = roster.count { bots.isAvailable(it) }
 
     Surface(

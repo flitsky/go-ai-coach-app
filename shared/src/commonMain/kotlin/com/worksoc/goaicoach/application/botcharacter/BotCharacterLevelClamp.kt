@@ -35,6 +35,9 @@ data class BotLevelClamp(
  * 「이하」는 **세기의 차례**다([BotCharacterCatalog.ladderIndexOf]) — 단계 번호가 아니다(#301: 6 ~ 10단계는 처음 다섯의 사이사이에
  * 더한 캐릭터라 번호와 세기가 어긋난다). 그래서 잠긴 꼬북(3단)은 판다가 아니라 바로 아래의 무료 상대(삼삼 3급 등)로 내려간다.
  *
+ * [roster]는 **지금 사용자에게 보이는 캐릭터**다 — 새 다섯을 가린 출시(#303 먼저, 사용자 2026-11-06)에서는 처음 다섯뿐이라, 가린 무료 캐릭터로
+ * 내려가지 않는다. 보이지 않는 캐릭터를 가리키는 저장값(가린 캐릭터를 디버그 빌드에서 골라 둔 기기)도 보이는 것 가운데로 내린다.
+ *
  * @return 낮춰야 하면 그 판정, 그대로 둬도 되면 `null`. 캐릭터가 대응되지 않는 레벨
  *   (초급/중급/고급 그룹 — 카탈로그에 없다)도 `null`이라 건드리지 않는다.
  */
@@ -42,14 +45,15 @@ fun clampToOwnedBotCharacter(
     playLevel: PlayLevelSetting,
     collection: BotCollectionState,
     subscriptionActive: Boolean = false,
+    roster: List<BotCharacter> = BotCharacterCatalog.fastBeginnerRoster,
 ): BotLevelClamp? {
     val current = BotCharacterCatalog.forPlayLevel(playLevel) ?: return null
     // ⚠️ **구독자는 내려갈 이유가 없다**(#157) — 로스터 전체가 열려 있으므로 이 함수가
-    // 낮추면 구독을 사고도 상대가 강등된다.
-    if (collection.isAvailable(current, subscriptionActive)) return null
+    // 낮추면 구독을 사고도 상대가 강등된다. 다만 보이지 않는 캐릭터는 구독자에게도 없는 캐릭터다.
+    if (current in roster && collection.isAvailable(current, subscriptionActive)) return null
     val currentIndex = BotCharacterCatalog.ladderIndexOf(current) ?: return null
 
-    val target = BotCharacterCatalog.fastBeginnerRoster
+    val target = roster
         .filter { candidate ->
             candidate.linkedPlayLevel == current.linkedPlayLevel &&
                 (BotCharacterCatalog.ladderIndexOf(candidate) ?: return@filter false) <= currentIndex &&

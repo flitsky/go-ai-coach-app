@@ -44,6 +44,12 @@ class BotCharacterCatalogTest {
     }
 
     @Test
+    fun theFirstFiveAreTheOriginalRosterInLadderOrder() {
+        // #301을 가린 출시가 보이는 목록(사용자 2026-11-06) — #301 전의 다섯과 같은 차례다.
+        assertEquals((1..5).map { "fast_beginner_$it" }, BotCharacterCatalog.firstFive.map { it.id.raw })
+    }
+
+    @Test
     fun characterIdsAreUniqueAndStable() {
         val ids = BotCharacterCatalog.all.map { it.id.raw }
 
