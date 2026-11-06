@@ -21,6 +21,27 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.8.5 — #303 대국 페이지 맨 위의 명언 · 운세(사용자 2026-11-06) · #299 운세 · 뽑기 단추(바꾼 운세가 쌓인다 · 광고 단추의 📺). #301의 새 캐릭터는 가려 두었다 — 적지 않는다.
+        WhatsNewRelease(versionCode = 10805, versionName = "1.8.5") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "대국 페이지 맨 위에 오늘의 명언과 오늘의 운세가 늘 있어요. 운세는 거기서 바로 열고, 새로고침 단추로 바꿀 수 있어요.",
+                    "운을 바꿔도 앞의 운세가 남아 실험실에서 넘겨 볼 수 있어요. 광고를 보는 단추에는 📺가 붙어요.",
+                )
+                UiLanguage.English -> listOf(
+                    "Today's quote and Today's fortune now sit at the top of the Play page. Open your fortune right there, and tap refresh to change it.",
+                    "Changed fortunes stay, so you can swipe through today's in the Lab. Buttons that play an ad show 📺.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "対局ページの一番上に、今日の名言と今日の運勢がいつも並びます。運勢はその場で開き、更新ボタンで変えられます。",
+                    "運を変えても前の運勢が残り、実験室でめくって見られます。広告を見るボタンには📺が付きます。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "对弈页面顶部常驻今日名言和今日运势。运势可以在那里直接打开，点刷新按钮即可改运。",
+                    "改运后之前的运势也会保留，可在实验室翻看。需要看广告的按钮会带有📺。",
+                )
+            }
+        },
         // 1.8.4 — #290 학습 메뉴 나누기(사용자 2026-10-24 — 1.8.3 뒤에 더해 1.8.4로 낸다). 1.7.0에서 오는 사람에게는 1.8.0 ~ 1.8.3 묶음과 함께 뜬다.
         WhatsNewRelease(versionCode = 10804, versionName = "1.8.4") { language ->
             when (language) {

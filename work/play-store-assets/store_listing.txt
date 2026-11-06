@@ -137,7 +137,7 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
 ⚠️ **등록정보에 없는 언어의 태그를 넣지 말 것.** ✅ **2026-09-24에 영어 등록정보를 열었으므로
    지금은 `<ko-KR>`과 `<en-US>` 둘 다 유효하고, 둘 다 넣어야 한다** — 등록정보에 있는 언어의
    출시 노트가 비면 그 언어권 사용자에게 변경 내용이 안 보인다.
-⚠️ **언어당 500자 이내.** 지금(1.8.4): 한국어 492자 · 영어 498자.
+⚠️ **언어당 500자 이내.** 지금(1.8.5): 한국어 207자 · 영어 330자.
 
 ⚠️ **원칙 — 버전이 바뀌어도 그대로다.**
    · 출시 노트는 변경 이력이 아니라 *"당신에게 무엇이 달라지는가"* 다 — 내부 정리·테스트·로그는 넣지 않는다.
@@ -148,45 +148,32 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.8.4 (versionCode 10804, 2026-10-24) ────────
+──────── 지금 붙여넣을 것 — 1.8.5 (versionCode 10805, 2026-11-06) ────────
 
-✅ **기준선은 1.7.0**(프로덕션 10700 — 버전을 올린 날 2026-10-22, 같은 날 승격 확인). 1.8.0 ~ 1.8.3은 인터널에만 올라갔고 **마켓 정식 릴리즈는 1.8.4를 테스트한 뒤 정한다**
-   (사용자 2026-10-24: *"1.7.0 이후 변경사항을 모두 아우르는 출시 노트"* → *"이걸 수정한 뒤 1.8.4 버전 aab"*) — 그래서 이 본문은 1.7.0 뒤의 전부다(1.8.3의 것에 #290을 더했다).
-   #280 세 페이지 홈 · #281 움직임 · 명언록 · #276 오늘의 운세 · #283 1일 1회 뽑기 · #282 야간 모드의 어두운 바둑판 · #286 「일반 대국」 · 승급 대국 설정 기억 ·
-   #287 「이전 대국 이어하기」의 둘째 줄 · #288 대국 페이지(2열 대국 카드 · 2열 메뉴 칸) · #289 뽑기에 출석 캐릭터 · 가진 캐릭터는 7일 단위 보상으로(출석도 같다) ·
-   #290 학습 메뉴 — 「바둑 배우기」(규칙 · 행마 · 사활 풀기 · 유튜브)와 대국 페이지의 「고전 사활」. 1.7.0에는 사활이 「학습 하기」 페이지에 있었다.
-   적지 않은 것: 「준비 중」인 별자리별 · 띠별 운세와 「나만의 명언 추가」(함정 51) · 뽑기의 확률 숫자(화면에 있다) · 운세 글의 수(368) · 개인정보처리방침 주소 바뀜(PR #7) · 학습 이름 줄임 ·
-   대국 카드를 밀면 도는 손맛(앱 안 「새로워진 점」에만) · 구독 카드 · 창의 「광고 없이 이용」 줄(문구) · 운세 「누르는 순간 뽑는다」(한도 — 1.8.3까지 있던 말).
-   영어는 한도에 맞추려 명언록을 머리 줄에 넣고 뽑기 상품을 「tickets」로 묶고 출석 캐릭터 · 대체 지급을 뺐다(화면에 있다) · 「Rank Match remembers your setup」으로 줄였다.
-   앱 안 「새로워진 점」은 1.8.0 ~ 1.8.4 묶음 다섯(1.7.0에서 오는 사람에게는 다섯이 함께 뜬다, `UiStringsWhatsNew.kt`).
-⚠️ 언어당 500자 이내 — 지금: 한국어 492자 · 영어 498자. 본문은 스레드가 쓴 초안이다(2026-10-24) — 콘솔에 붙이기 전에 사용자가 본다.
-⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.8.4가 나간 뒤의 기준선은 1.8.4다.
-   지난 본문: 1.7.0 `git show 2f46ba3f:work/play-store-assets/store_listing.txt` · 1.6.0 `git show 8b43c159:work/play-store-assets/store_listing.txt` · 1.5.1 `git show f41e3dab:work/play-store-assets/store_listing.txt` · 1.4.0 `git show feb22b53:work/play-store-assets/store_listing.txt`
+✅ **기준선은 1.8.4**(프로덕션 10804 — 2026-10-24). 이 본문은 1.8.4 뒤에 사용자에게 달라진 것만이다:
+   #303 대국 페이지 맨 위의 명언 · 운세(명언은 닫지 못하고 두 줄 · 운세는 여는 단추와 새로고침 → 광고 확인 창) · #299 운세 · 뽑기 단추(바꾼 운세가 쌓여 넘겨 본다 · 광고 단추의 📺 · 「오늘의 운세 뽑기 (무료)」).
+   적지 않은 것: #301의 새 캐릭터 다섯(출시 빌드에서 가려 두었다 — `FeatureFlags.isAddedCharactersEnabled = false`, 함정 51) · iOS 이식의 리팩터링(사용자에게 달라지는 것 없음 — 그래서 인터널에서 한 바퀴) ·
+   개발자 1단 메뉴의 「1회권 받기」가 출시 빌드에서 빠진 것(#298) · 명언 종이 질감 · 운세 전문 창(화면에 있다).
+   앱 안 「새로워진 점」은 1.8.5 묶음 하나(`UiStringsWhatsNew.kt`).
+⚠️ 언어당 500자 이내 — 지금: 한국어 207자 · 영어 330자. 본문은 스레드가 쓴 초안이다(2026-11-06) — 콘솔에 붙이기 전에 사용자가 본다.
+⚠️ **다음 버전에는 이 본문을 그대로 두지 말 것** — 1.8.5가 나간 뒤의 기준선은 1.8.5다.
+   지난 본문: 1.8.4 `git show 1d674559:work/play-store-assets/store_listing.txt` · 1.7.0 `git show 2f46ba3f:work/play-store-assets/store_listing.txt` · 1.6.0 `git show 8b43c159:work/play-store-assets/store_listing.txt`
 
 <ko-KR>
-홈이 세 페이지로 새로워지고, 실험실에 「오늘의 운세」와 「1일 1회 뽑기」가 생겼습니다.
+대국 페이지 맨 위에서 오늘의 명언과 오늘의 운세를 바로 만나요.
 
-· 새 홈: 내 정보 ‹ 대국 › 실험실을 옆으로 넘기거나 아래 탭으로 오가요. 움직임도 더 부드러워졌어요
-· 대국 페이지: 「일반 대국」(옛 「캐릭터 대국」)과 「승급 대국」 카드가 나란히 서요
-· 학습: 「바둑 배우기」에 규칙 · 행마 · 사활 풀기를, 「고전 사활」에 옛 사활집을 모았어요
-· 오늘의 운세: 광고를 보면 하루 3번까지 운을 바꿀 수 있어요(구독 중에는 광고 없이)
-· 1일 1회 뽑기: 광고 1편으로 하루 한 번 — 1회권, 스킵권, 캐릭터 조각, 캐릭터(출석 캐릭터 포함, 가진 캐릭터면 7일 단위 보상) 중 하나 · 확률은 화면에 공개
-· 명언록: 명언을 카드로 넘겨 봐요
-· 「이전 대국 이어하기」에 어떤 판인지(상대 · 내 돌 · 판 크기 · 수) 보여요
-· 승급 대국이 지난번에 고른 진영과 판 크기를 기억해요
-· 야간 모드에서는 바둑판도 한 단 어두워져요
+· 오늘의 명언: 대국 페이지 맨 위에 늘 있어요
+· 오늘의 운세: 명언 바로 아래에서 바로 열어 보고, 새로고침 단추로 운을 바꿀 수 있어요(광고 1편 · 구독 중에는 광고 없이 · 하루 3번)
+· 운을 바꿔도 앞의 운세가 남아 실험실에서 넘겨 볼 수 있어요
+· 광고를 보는 단추에는 📺 표시가 붙어요
 </ko-KR>
 <en-US>
-New: a three-page home; Today's fortune, a Daily draw and a Quote book in the Lab.
+Today's quote and fortune, right at the top of the Play page.
 
-· New home: My info ‹ Play › Lab. Smoother motion
-· Normal Match (was Character Match) beside Rank Match
-· Learn Go: rules, shapes, life & death; Classic Life & Death on Play
-· Today's fortune: an ad changes your luck, up to 3 a day (Premium: no ads)
-· Daily draw: one ad a day for tickets, a shard or a character (odds shown)
-· Resume names the game
-· Rank Match remembers your setup
-· A darker board in dark mode
+· Today's quote is always at the top of the Play page
+· Open Today's fortune just below it, and tap refresh to change your luck (one ad; Premium: no ads; up to 3 a day)
+· Changed fortunes stay, so you can swipe through them in the Lab
+· Buttons that play an ad show 📺
 </en-US>
 
 ──────────────────────────────────────────────
