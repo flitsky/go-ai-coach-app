@@ -94,6 +94,23 @@ internal fun fortuneRefreshInviteFor(language: UiLanguage): String = when (langu
     UiLanguage.ChineseSimplified -> "就像一手棋能改变整盘棋，今天的运势也能由你亲手改写。"
 }
 
+/**
+ * 운 바꾸기 창(#303)의 두 줄 — [fortuneRefreshInviteFor]를 **첫 쉼표 뒤**에서 줄을 바꾼다(사용자 2026-11-06: *"콤마 뒤에 개행해서 가독성 높이기"*).
+ * 문장은 실험실 카드와 한 벌이다 — 나누는 자리만 언어마다(영어는 쉼표 대신 줄표 뒤). 나눌 자리를 못 찾으면 그대로 한 덩어리다.
+ */
+internal fun fortuneRefreshInviteTwoLinesFor(language: UiLanguage): String {
+    val text = fortuneRefreshInviteFor(language)
+    val mark = when (language) {
+        UiLanguage.Korean -> ", "
+        UiLanguage.English -> " — "
+        UiLanguage.Japanese -> "、"
+        UiLanguage.ChineseSimplified -> "，"
+    }
+    val at = text.indexOf(mark)
+    if (at < 0) return text
+    return text.substring(0, at) + mark.trimEnd() + "\n" + text.substring(at + mark.length)
+}
+
 /** 오늘 남은 갱신 횟수 — 「오늘 남은 기회 2/3」. */
 internal fun fortuneRefreshesLeftFor(language: UiLanguage, left: Int): String = when (language) {
     UiLanguage.Korean -> "오늘 남은 기회 $left/$DailyFortuneMaxRefreshes"

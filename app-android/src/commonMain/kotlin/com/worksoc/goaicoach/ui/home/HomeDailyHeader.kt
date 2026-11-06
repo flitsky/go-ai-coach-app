@@ -8,14 +8,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -52,7 +56,7 @@ import com.worksoc.goaicoach.ui.l10n.fortuneDrawPromptFor
 import com.worksoc.goaicoach.ui.l10n.fortuneForFunFor
 import com.worksoc.goaicoach.ui.l10n.fortuneOpenShortFor
 import com.worksoc.goaicoach.ui.l10n.fortuneRefreshButtonFor
-import com.worksoc.goaicoach.ui.l10n.fortuneRefreshInviteFor
+import com.worksoc.goaicoach.ui.l10n.fortuneRefreshInviteTwoLinesFor
 import com.worksoc.goaicoach.ui.l10n.fortuneRefreshesDoneFor
 import com.worksoc.goaicoach.ui.l10n.fortuneRefreshesLeftFor
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
@@ -145,40 +149,18 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
     }
 
     if (showRefresh) {
-        val left = state.refreshesLeft
-        AlertDialog(
-            onDismissRequest = { showRefresh = false },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space16),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = keepWordsWhole(if (left > 0) fortuneRefreshInviteFor(language) else fortuneRefreshesDoneFor(language), language),
-                        fontSize = AppTextSize.Text15,
-                        color = colors.onSurface,
-                        textAlign = TextAlign.Center,
-                        style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
-                    )
-                    if (left > 0) {
-                        StripPill(
-                            text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd), withAd),
-                            large = true,
-                            onClick = {
-                                showRefresh = false
-                                scope.launch {
-                                    state.refresh(withAd, monetization::showRewardedAdOnce) { reason ->
-                                        platform.notice.show(fortuneAdFailedFor(language, reason))
-                                    }
-                                }
-                            },
-                        )
-                        Text(text = fortuneRefreshesLeftFor(language, left), fontSize = AppTextSize.Text12, color = colors.secondary)
+        FortuneRefreshDialog(
+            refreshesLeft = state.refreshesLeft,
+            withAd = withAd,
+            onRefresh = {
+                showRefresh = false
+                scope.launch {
+                    state.refresh(withAd, monetization::showRewardedAdOnce) { reason ->
+                        platform.notice.show(fortuneAdFailedFor(language, reason))
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showRefresh = false }) { Text(LocalUiStrings.current.close) } },
+            onClose = { showRefresh = false },
         )
     }
 
@@ -203,6 +185,55 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
             },
             confirmButton = { TextButton(onClick = { showWhole = false }) { Text(LocalUiStrings.current.close) } },
         )
+    }
+}
+
+/**
+ * 운 바꾸기 창(#303) — 광고를 볼지 여기서 마지막으로 정한다: 두 줄 안내(「한 수로 판이 바뀌듯,」 ↵ 「오늘의 운도 …」) → 「📺 광고 보고 운 바꾸기」(구독자는 광고 없이)
+ * → 오늘 남은 기회 → 닫기. 오늘의 갱신을 다 썼으면 「오늘은 운을 충분히 바꿨어요 …」와 닫기뿐이다.
+ *
+ * 기본 `AlertDialog`의 모서리 · 바탕색 · 그림자를 그대로 쓰되 안쪽 간격은 여기서 정한다 — 기본 창은 글과 단추 줄 사이에 큰 여백을 붙여
+ * 창이 세로로 늘어져 보였다(사용자 2026-11-06: *"「오늘 남은 기회 3/3」 텍스트 위 아래의 여백을 현재의 절반으로"* — 위 약 24 → 12dp, 아래 약 40 → 20dp).
+ */
+@Composable
+private fun FortuneRefreshDialog(refreshesLeft: Int, withAd: Boolean, onRefresh: () -> Unit, onClose: () -> Unit) {
+    val language = LocalUiStrings.current.language
+    val colors = MaterialTheme.colorScheme
+    Dialog(onDismissRequest = onClose) {
+        Surface(
+            shape = AlertDialogDefaults.shape,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
+            modifier = Modifier.widthIn(min = 280.dp, max = 560.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(start = AppSpacing.Space24, end = AppSpacing.Space24, top = AppSpacing.Space24, bottom = AppSpacing.Space8),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = keepWordsWhole(
+                        if (refreshesLeft > 0) fortuneRefreshInviteTwoLinesFor(language) else fortuneRefreshesDoneFor(language),
+                        language,
+                    ),
+                    fontSize = AppTextSize.Text15,
+                    color = colors.onSurface,
+                    textAlign = TextAlign.Center,
+                    style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (refreshesLeft > 0) {
+                    Spacer(modifier = Modifier.height(AppSpacing.Space16))
+                    StripPill(text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd), withAd), large = true, onClick = onRefresh)
+                    Spacer(modifier = Modifier.height(AppSpacing.Space4))
+                    Text(text = fortuneRefreshesLeftFor(language, refreshesLeft), fontSize = AppTextSize.Text12, color = colors.secondary)
+                } else {
+                    Spacer(modifier = Modifier.height(AppSpacing.Space8))
+                }
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    TextButton(onClick = onClose) { Text(LocalUiStrings.current.close) }
+                }
+            }
+        }
     }
 }
 
