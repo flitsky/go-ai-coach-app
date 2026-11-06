@@ -98,7 +98,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   모양 · 움직임(#281 A안): Material3 **1.4.0**(Compose BOM `2025.11.01` — Expressive 부품은 1.5.0 정식 때) · 스프링은 `ui/designsystem/AppMotion.kt`(M3 Expressive 값) 한 곳 ·
   누르면 모양이 바뀌는 카드 · 탭 알약 하나 · 옆 페이지의 예측 뒤로가기 · 큰 화면 600dp. 내 정보 급수 패널은 늘 펼친 채(접기 없음).
   내 정보 · 설정의 구성과 이름은 `DECISIONS.md` §1(옛 「서 있는 답」). (← #229 · #262 · #265 · #276)
-- **홈 한 줄 안내 자리**(대국 페이지 맨 위): 엔진 받기 > 새로워진 점 > 새 버전 알림 > 오늘의 한 줄 명언(#273 — 출석 팝업 뒤 · ✕는 그날만) — 차례는 `ui/setup/HomeTopNotice.kt`의 `homeTopNoticeOf` 한 곳.
+- **대국 페이지 맨 위**(#303): 명언(두 줄 · ✕ 없음 — `ui/home/HomeDailyQuote.kt`) + 오늘의 운세(두 줄 — `ui/home/HomeDailyHeader.kt`, 상태는 실험실 카드와 하나 `DailyFortuneState`) → 한 줄 안내(엔진 받기 > 새로워진 점 > 새 버전 — 있을 때만, 차례는 `ui/setup/HomeTopNotice.kt`의 `homeTopNoticeOf` 한 곳).
   명언은 `ui/l10n/DailyQuoteCatalog.kt`(174개 · 장 다섯), 차례·본 기록은 `DailyQuoteStore`(본 날은 적지 않는다), 고르기는 shared `application/dailyquote/` · 실험실의 명언록이 같은 차례를 넘겨 본다. (← #262 · I-6)
 - **엔진과 캐릭터**: 모델 둘(주 모델 b18 · 사람 모델)을 PAD 팩으로 싣고, 신경망은 한 번에 하나만 올린다. 캐릭터 다섯은 그 급수의 사람처럼 둔다 —
   판다 15급 · 돌뫼 9급 · 반상 1급 · 꼬북 3단 · 천원 7단(`shared/playstyle/HumanPlayStyle.kt`, 사람 정책 평가 1회).
@@ -134,9 +134,15 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   - **명언** — ✕로 없애지 못한다 · **늘 2줄 높이로 고정** · 출처는 늘 그 2줄의 **오른쪽 아래** · 명언이 길면 「…」로 줄인 뒤 출처 · 배경은 명언록에 맞게, 지금 화면에서 튀지 않게 **종이 질감** 등.
   - **오늘의 운세** — 명언 바로 아래 **2줄 고정** 자리. 아직 안 봤으면 운세 안내 글 + 오른쪽 끝에 여는 단추, 본 뒤에는 지금 운세 + 갱신 단추.
 - **딛는 사실**: 한 줄 안내 자리는 `ui/setup/HomeTopNotice.kt`의 `homeTopNoticeOf`(엔진 받기 > 새로워진 점 > 새 버전 > 명언 — 명언은 출석 팝업 뒤 · ✕는 그날만, #273) ·
-  명언 줄 `ui/setup/HomeDailyQuote.kt` · 자리 높이 예약 `homeTopNoticeSlotHeight`(#288 — 대국 카드가 늘 같은 자리에서 시작) · 운세는 실험실 카드 `ui/home/DailyFortuneCard.kt`가 상태를 혼자 든다 · 규칙 shared `application/dailyfortune/` ·
+  명언 줄 `ui/setup/HomeDailyQuote.kt`(→ #303에서 `ui/home/`으로 옮겼다 — UI 층 규칙: `ui.home`은 같은 층의 `ui.setup`을 부르지 못한다) · 자리 높이 예약 `homeTopNoticeSlotHeight`(#288 — 대국 카드가 늘 같은 자리에서 시작) · 운세는 실험실 카드 `ui/home/DailyFortuneCard.kt`가 상태를 혼자 든다 · 규칙 shared `application/dailyfortune/` ·
   명언 고르기 shared `application/dailyquote/`(✕로 닫은 날 `dismissedDay`는 저장 필드라 남긴다 — 함정 69). 운세 글 한국어 중앙값 44자 — 두 줄이면 절반쯤 잘린다.
 - ⚠️ 운세를 두 페이지(대국 · 실험실)가 보이므로 **상태는 하나**(한쪽에서 뽑거나 바꾸면 다른 쪽도 같다). 광고는 `showRewardedAdOnce`(함정 99) · 📺는 `RewardedAdMark.kt` 한 곳.
+- **진행**(2026-11-06) — ⏳ 폰 확인 전: 맨 위 고정 자리 `HomeDailyHeader`(명언 종이 `HomeDailyQuote.kt` + 운세 줄) · 운세 상태 하나 `DailyFortuneState`(실험실 카드도 이것으로) · 종이 `PaperTexture.kt` · `PaperPalette`.
+  에뮬레이터: 명언 두 줄 · 오른쪽 아래 말한 이 · 열어보기 → 운세(두 줄 「…」) → 글을 누르면 전문 창 → 「📺 운 바꾸기」 테스트 광고 끝까지 → 새 운세(실험실 카드도 같은 운세) · 어두운 모드 ·
+  명언 174개 깔기(`debug-quote-sweep`): 한국어 · 영어(360dp) 모두 「…」 없이 들어간다 — 일부러 긴 명언 하나로 「…」와 말한 이 자리를 봤다.
+- **스레드가 정한 것**(사용자 확인 전 — 카드를 닫을 때 `DECISIONS.md` §7로): ① 엔진 받기 · 새로워진 점 · 새 버전 안내는 고정 자리 **아래**, **있을 때만** 자리를 차지한다(그때 카드가 그만큼 내려간다 — 전에는 그 자리를 명언 높이로 늘 비워 두었다, #288)
+  ② 운세 글을 누르면 전문 창(오늘 남은 기회 · 「재미로 보세요」 함께) ③ 짧은 단추 이름 「열어보기」 · 「📺 운 바꾸기」(실험실의 「광고 보고 운 바꾸기」 대신 — 📺는 그대로) · 다 바꿨으면 흐린 「내일 또」(4개 언어)
+  ④ 운세 줄 앞에 「오늘의 운세」 이름을 붙인다 ⑤ 글 크기 13sp · 종이 색과 결의 진하기(`PaperPalette`) · 말한 이는 폭의 70%까지(넘으면 그쪽도 「…」) ⑥ 명언은 이제 출석 팝업을 기다리지 않는다(늘 있으므로).
 
 ### 301. **캐릭터 다섯 더 — 열 명이 18급 ~ 7단을 촘촘히, 새 다섯은 무료** (Opus / 높음) — ⏸️ #303이 앞섰다(사용자 2026-11-06) · ⭐ 사용자(2026-11-02): 최우선 · ✅ 정의 끝(2026-11-02 — U-89 ~ U-92) · 착수 2026-11-03(사용자: *"No image 상태로 캐릭터 선택하고 플레이도 해볼 수 있게 내부 구현은 진행"*) · 그림 다섯은 사용자가 준비
 
