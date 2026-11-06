@@ -143,11 +143,3 @@ internal fun fortuneOpenShortFor(language: UiLanguage): String = when (language)
     UiLanguage.Japanese -> "開く"
     UiLanguage.ChineseSimplified -> "打开"
 }
-
-/** 운세 줄(#303)에서 오늘의 갱신을 다 썼을 때 단추 자리에 남는 흐린 글자 — 스레드가 정한 표기. */
-internal fun fortuneTomorrowShortFor(language: UiLanguage): String = when (language) {
-    UiLanguage.Korean -> "내일 또"
-    UiLanguage.English -> "Tomorrow"
-    UiLanguage.Japanese -> "また明日"
-    UiLanguage.ChineseSimplified -> "明天再来"
-}

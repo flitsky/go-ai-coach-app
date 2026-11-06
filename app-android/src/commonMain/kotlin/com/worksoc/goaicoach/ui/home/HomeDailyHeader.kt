@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,6 +36,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -47,8 +52,9 @@ import com.worksoc.goaicoach.ui.l10n.fortuneDrawPromptFor
 import com.worksoc.goaicoach.ui.l10n.fortuneForFunFor
 import com.worksoc.goaicoach.ui.l10n.fortuneOpenShortFor
 import com.worksoc.goaicoach.ui.l10n.fortuneRefreshButtonFor
+import com.worksoc.goaicoach.ui.l10n.fortuneRefreshInviteFor
+import com.worksoc.goaicoach.ui.l10n.fortuneRefreshesDoneFor
 import com.worksoc.goaicoach.ui.l10n.fortuneRefreshesLeftFor
-import com.worksoc.goaicoach.ui.l10n.fortuneTomorrowShortFor
 import com.worksoc.goaicoach.ui.l10n.keepWordsWhole
 import com.worksoc.goaicoach.ui.l10n.labFortuneTitleFor
 import com.worksoc.goaicoach.ui.l10n.quoteLocaleTag
@@ -77,7 +83,9 @@ internal fun HomeDailyHeader(fortune: DailyFortuneState, modifier: Modifier = Mo
 /**
  * 오늘의 운세 줄(#303) — 늘 두 줄. 왼쪽은 「오늘의 운세」 이름과 글, 오른쪽 끝은 단추 하나:
  * - 아직 안 뽑았으면 — 운세 안내 글(실험실과 같은 「누르는 순간의 기운으로 …」) + 「열어보기」(무료 — 누른 순간이 운세를 정한다).
- * - 뽑았으면 — 지금 운세(길면 두 줄에서 「…」) + 「📺 운 바꾸기」(구독자는 광고 없이 「운 바꾸기」) · 오늘의 갱신 3번을 다 썼으면 흐린 「내일 또」.
+ * - 뽑았으면 — 지금 운세(길면 두 줄에서 「…」) + **작은 새로고침 아이콘**(사용자 2026-11-06: *"운바꾸기 버튼이 운세를 너무 많이 가리네 … 갱신 이모지만 우측 끝에 간결히"*).
+ *   누르면 창에서 광고를 볼지 마지막으로 정한다 — 「한 수로 판이 바뀌듯 …」 아래 「📺 광고 보고 운 바꾸기」(구독자는 광고 없이 「운 바꾸기」) · 오늘 남은 기회.
+ *   오늘의 갱신 3번을 다 썼으면 아이콘이 흐려지고, 누르면 같은 창이 「오늘은 운을 충분히 바꿨어요 …」를 말한다.
  * 운세 글을 누르면 전문 창이 열린다 — 운세 글은 한국어 중앙값 44자라 두 줄이면 절반쯤은 잘린다.
  */
 @Composable
@@ -89,6 +97,7 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
     val withAd = !LocalPremiumUiState.current.isPurchased
     val scope = rememberCoroutineScope()
     var showWhole by remember { mutableStateOf(false) }
+    var showRefresh by remember { mutableStateOf(false) }
     val current = state.current
     val body = current?.textFor(language) ?: fortuneDrawPromptFor(language)
     val shape = RoundedCornerShape(AppRadius.Corner8)
@@ -125,21 +134,52 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
                 when {
                     state.busy -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = colors.primary)
                     current == null -> StripPill(text = fortuneOpenShortFor(language), onClick = state::draw)
-                    state.refreshesLeft > 0 -> StripPill(
-                        // 줄이 좁아 실험실의 「광고 보고 운 바꾸기」 대신 짧은 이름에 📺만 단다(광고 표시는 `RewardedAdMark` 한 곳).
-                        text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd = false), withAd),
-                        onClick = {
-                            scope.launch {
-                                state.refresh(withAd, monetization::showRewardedAdOnce) { reason ->
-                                    platform.notice.show(fortuneAdFailedFor(language, reason))
-                                }
-                            }
-                        },
+                    else -> RefreshIconButton(
+                        dimmed = state.refreshesLeft <= 0,
+                        contentDescription = fortuneRefreshButtonFor(language, withAd = false),
+                        onClick = { showRefresh = true },
                     )
-                    else -> Text(text = fortuneTomorrowShortFor(language), fontSize = AppTextSize.Text12, color = colors.outline)
                 }
             }
         }
+    }
+
+    if (showRefresh) {
+        val left = state.refreshesLeft
+        AlertDialog(
+            onDismissRequest = { showRefresh = false },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space16),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = keepWordsWhole(if (left > 0) fortuneRefreshInviteFor(language) else fortuneRefreshesDoneFor(language), language),
+                        fontSize = AppTextSize.Text15,
+                        color = colors.onSurface,
+                        textAlign = TextAlign.Center,
+                        style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
+                    )
+                    if (left > 0) {
+                        StripPill(
+                            text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd), withAd),
+                            large = true,
+                            onClick = {
+                                showRefresh = false
+                                scope.launch {
+                                    state.refresh(withAd, monetization::showRewardedAdOnce) { reason ->
+                                        platform.notice.show(fortuneAdFailedFor(language, reason))
+                                    }
+                                }
+                            },
+                        )
+                        Text(text = fortuneRefreshesLeftFor(language, left), fontSize = AppTextSize.Text12, color = colors.secondary)
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showRefresh = false }) { Text(LocalUiStrings.current.close) } },
+        )
     }
 
     if (showWhole && current != null) {
@@ -166,9 +206,32 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
     }
 }
 
-/** 운세 줄의 작은 초록 테두리 알약 — 실험실 운세 카드의 단추와 같은 모양을 두 줄 높이에 맞게 줄였다. */
+/**
+ * 운세 줄 오른쪽 끝의 새로고침 아이콘(#303) — 운세 글을 가리지 않게 작게. [dimmed]면 오늘의 갱신을 다 쓴 것이라 흐리게 그린다(눌리기는 한다 — 창이 이유를 말한다).
+ * 이모지(🔄) 대신 앱의 초록 아이콘을 쓴다 — 안드로이드의 그 이모지는 파란 네모라 이 줄에서 튄다(스레드가 정한 것).
+ */
 @Composable
-private fun StripPill(text: String, onClick: () -> Unit) {
+private fun RefreshIconButton(dimmed: Boolean, contentDescription: String, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val tint = if (dimmed) colors.outline else colors.primary
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = colors.surface,
+        border = BorderStroke(AppBorderWidth.Emphasis, tint.copy(alpha = if (dimmed) 0.5f else 1f)),
+        modifier = Modifier.size(RefreshIconButtonSize),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(imageVector = Icons.Default.Refresh, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+private val RefreshIconButtonSize = 36.dp
+
+/** 운세 줄의 작은 초록 테두리 알약 — 실험실 운세 카드의 단추와 같은 모양을 두 줄 높이에 맞게 줄였다. [large]는 창 안의 단추(실험실 카드와 같은 크기). */
+@Composable
+private fun StripPill(text: String, onClick: () -> Unit, large: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
@@ -178,11 +241,15 @@ private fun StripPill(text: String, onClick: () -> Unit) {
     ) {
         Text(
             text = text,
-            fontSize = AppTextSize.Text13,
+            fontSize = if (large) AppTextSize.Text15 else AppTextSize.Text13,
             fontWeight = FontWeight.Bold,
             color = colors.primary,
             maxLines = 1,
-            modifier = Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space6),
+            modifier = if (large) {
+                Modifier.padding(horizontal = AppSpacing.Space20, vertical = AppSpacing.Space10)
+            } else {
+                Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space6)
+            },
         )
     }
 }
