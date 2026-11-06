@@ -23,12 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,13 +34,7 @@ import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import com.worksoc.goaicoach.application.attendance.MillisPerUtcDay
-import com.worksoc.goaicoach.application.attendance.utcDayIndex
 import com.worksoc.goaicoach.application.dailyfortune.DailyFortuneMaxRefreshes
-import com.worksoc.goaicoach.application.dailyfortune.drawDailyFortune
-import com.worksoc.goaicoach.application.dailyfortune.refreshDailyFortune
-import com.worksoc.goaicoach.application.premium.port.AdRewardOutcome
-import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -73,7 +62,6 @@ import com.worksoc.goaicoach.ui.l10n.studyComingSoonFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.rememberAppMonetization
 import com.worksoc.goaicoach.ui.monetization.rewardedAdButtonText
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -88,28 +76,16 @@ import kotlinx.coroutines.launch
  *    (실험실의 「아직 없는 것은 누를 것처럼 두지 않는다」 — 명언록의 「+ 나만의 명언 추가 (준비 중)」과 같은 모양). 길은 아이디어 I-7.
  * 맨 아래 「운세는 재미로 보세요.」 점수 · 등급은 어디에도 없다.
  *
- * ⚠️ 날이 바뀌는 때(UTC 자정 — 한국 오전 9시)에 화면을 열어 두고 있어도 「뽑기」로 돌아간다 — 다음 자정까지 기다렸다 오늘을 다시 읽는다.
- * ⚠️ 시계는 `System.currentTimeMillis`를 직접 읽는다 — 출석과 같다(함정 12).
+ * 상태(뽑은 운세 · 남은 갱신 · 광고 중 · 날 바뀜)는 [DailyFortuneState] 하나이고 대국 페이지 맨 위의 운세 줄(#303)과 나눠 쓴다 — 한쪽에서 뽑거나 바꾸면 여기도 따라온다.
  */
 @Composable
-internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
+internal fun DailyFortuneCard(state: DailyFortuneState, modifier: Modifier = Modifier) {
     val platform = LocalAppPlatform.current
     val monetization = rememberAppMonetization()
     val language = LocalUiStrings.current.language
     val colors = MaterialTheme.colorScheme
     val withAd = !LocalPremiumUiState.current.isPurchased
-    val store = remember(platform) { platform.stores.dailyFortune }
-    val poolSize = DailyFortuneCatalog.fortunes.size
-    var progress by remember(store) { mutableStateOf(store.load()) }
-    var today by remember { mutableLongStateOf(utcDayIndex(currentEpochMillis())) }
-    var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-
-    LaunchedEffect(today) {
-        val untilNextDay = (today + 1) * MillisPerUtcDay - currentEpochMillis()
-        delay(untilNextDay.coerceAtLeast(1_000))
-        today = utcDayIndex(currentEpochMillis())
-    }
 
     Column(
         modifier = modifier
@@ -120,7 +96,7 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
     ) {
         // 오늘 본 운세들(#299) — 한 쪽에 하나, 새로 바꾼 운세가 맨 끝 쪽이다. 바꾸면 그 쪽으로 넘어간다.
-        val todays = progress.todaysIndices(today, poolSize)
+        val todays = state.todays
         val pagerState = rememberPagerState(initialPage = (todays.size - 1).coerceAtLeast(0)) { todays.size }
         LaunchedEffect(todays.size) {
             if (todays.isNotEmpty()) pagerState.animateScrollToPage(todays.lastIndex)
@@ -137,16 +113,8 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 FortunePill(
                     text = fortuneDrawButtonFor(language),
-                    onClick = {
-                        // 누른 순간 — 이 타임스탬프가 오늘의 운세를 정한다(사용자 2026-10-23).
-                        val now = currentEpochMillis()
-                        val day = utcDayIndex(now)
-                        drawDailyFortune(store.load(), day, now, poolSize)?.let { drawn ->
-                            store.save(drawn)
-                            progress = drawn
-                        }
-                        today = day
-                    },
+                    // 누른 순간 — 이 타임스탬프가 오늘의 운세를 정한다(사용자 2026-10-23).
+                    onClick = state::draw,
                 )
             }
         } else {
@@ -166,7 +134,7 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            val left = progress.refreshesLeftOn(today)
+            val left = state.refreshesLeft
             if (left > 0) {
                 Text(
                     text = keepWordsWhole(fortuneRefreshInviteFor(language), language),
@@ -176,28 +144,16 @@ internal fun DailyFortuneCard(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Box(modifier = Modifier.fillMaxWidth().heightIn(min = RefreshButtonMinHeight), contentAlignment = Alignment.Center) {
-                    if (busy) {
+                    if (state.busy) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp, color = colors.primary)
                     } else {
                         FortunePill(
                             text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd), withAd),
                             onClick = {
-                                busy = true
                                 scope.launch {
-                                    val outcome = if (withAd) monetization.showRewardedAdOnce() else null
-                                    if (outcome is AdRewardOutcome.NotRewarded) {
-                                        platform.notice.show(fortuneAdFailedFor(language, outcome.reason))
-                                    } else {
-                                        // 광고를 본 뒤의 순간으로 다시 뽑는다 — 광고를 보는 사이 날이 바뀌었으면 갱신이 아니라 새 날의 뽑기가 남는다.
-                                        val now = currentEpochMillis()
-                                        val day = utcDayIndex(now)
-                                        refreshDailyFortune(store.load(), day, now, poolSize)?.let { refreshed ->
-                                            store.save(refreshed)
-                                            progress = refreshed
-                                        }
-                                        today = day
+                                    state.refresh(withAd, monetization::showRewardedAdOnce) { reason ->
+                                        platform.notice.show(fortuneAdFailedFor(language, reason))
                                     }
-                                    busy = false
                                 }
                             },
                         )

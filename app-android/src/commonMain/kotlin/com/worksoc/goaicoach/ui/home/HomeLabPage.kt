@@ -68,7 +68,7 @@ import kotlin.random.Random
  * ⚠️ 아직 없는 실험은 눌리지 않는다 — 누를 것처럼 보이는 모양(타일 · 단추)으로 두지 않는다(학습 허브의 U-16과 같은 결). 스토어 글에는 적지 않는다(함정 51).
  */
 @Composable
-internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun HomeLabPage(dailyFortune: DailyFortuneState, onBoardScanClick: () -> Unit, modifier: Modifier = Modifier) {
     val strings = LocalUiStrings.current
     val language = strings.language
     // 가로 여백은 줄마다 준다 — 명언록의 넘기기만은 화면 끝까지 닿아야 양옆 카드가 잘리지 않고 보인다(#281).
@@ -84,7 +84,7 @@ internal fun HomeLabPage(onBoardScanClick: () -> Unit, modifier: Modifier = Modi
         Spacer(modifier = Modifier.height(AppSpacing.Space4))
         // 오늘의 운세(#276, 사용자 2026-10-23) — 랜덤 운세(누른 순간으로 뽑기 · 광고로 하루 3번 갱신) · 별자리별 · 띠별(준비 중). 규칙은 shared `DailyFortune.kt`.
         LabSectionHeader(title = labFortuneTitleFor(language))
-        DailyFortuneCard(modifier = Modifier.padding(horizontal = AppSpacing.Space16))
+        DailyFortuneCard(state = dailyFortune, modifier = Modifier.padding(horizontal = AppSpacing.Space16))
         Spacer(modifier = Modifier.height(AppSpacing.Space4))
         // 1일 1회 뽑기(#283, 사용자 2026-10-23) — 광고 1편(구독자는 광고 없이)으로 하루 한 번. 규칙은 shared `DailyDraw.kt`, 카드는 `ui.monetization`.
         LabSectionHeader(title = dailyDrawTitleFor(language))

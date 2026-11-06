@@ -237,6 +237,8 @@ internal fun GoCoachHomeScreen(
 
     // 지금 페이지는 이 화면이 든다 — 셸에 두면 셸 상태 원장에 한 칸이 는다(함정 3). 홈을 떠날 때 잃지 않게 [HomePageMemory]에 적어 둔다.
     val pagerState = rememberPagerState(initialPage = HomePageMemory.page.ordinal) { HomePage.entries.size }
+    // 오늘의 운세 — 대국 페이지 맨 위의 운세 줄과 실험실의 운세 카드가 이 하나를 나눠 쓴다(#303 — 한쪽에서 뽑거나 바꾸면 다른 쪽도 같다).
+    val dailyFortune = rememberDailyFortuneState()
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page -> HomePageMemory.page = HomePage.entries[page] }
     }
@@ -302,9 +304,10 @@ internal fun GoCoachHomeScreen(
                                 onBasicsClick = onBasicsClick,
                                 onBoardScanClick = onBoardScanClick,
                                 playerSetup = playerSetup,
+                                dailyFortune = dailyFortune,
                                 topNotice = topNotice,
                             )
-                            HomePage.Lab -> HomeLabPage(onBoardScanClick = onBoardScanClick)
+                            HomePage.Lab -> HomeLabPage(dailyFortune = dailyFortune, onBoardScanClick = onBoardScanClick)
                         }
                     }
                 }
@@ -470,7 +473,8 @@ private fun HomeTopBarLogo(
 private val HomeTopBarLogoSize = 38.dp
 
 /**
- * 가운데 페이지 「대국」(#280 → #288, 사용자 2026-10-24) — 한 줄 안내(오늘의 명언) → 이어하기 → **2열 대국 카드**(일반 대국 · 승급 대국)
+ * 가운데 페이지 「대국」(#280 → #288, 사용자 2026-10-24 → #303, 2026-11-06) — **명언 · 운세의 고정 자리**(두 줄씩) → 한 줄 안내(엔진 받기 · 새로워진 점 · 새 버전 — 있을 때만)
+ * → 이어하기 → **2열 대국 카드**(일반 대국 · 승급 대국)
  * → **가는 메뉴 줄 넷**(대국 기록 · 명국 기보 · 사활 풀기 · 기초 학습) → 오른쪽 아래 카메라 단추(바둑판 사진 분석).
  * 두는 메뉴와 아닌 메뉴의 위계는 색이 아니라 **크기**다(「서 있는 답」 #237) — 2열 카드는 키가 크고, 나머지는 글자 한 줄이다.
  */
@@ -487,6 +491,7 @@ private fun HomePlayPage(
     onBasicsClick: () -> Unit,
     onBoardScanClick: () -> Unit,
     playerSetup: PlayerSetup,
+    dailyFortune: DailyFortuneState,
     topNotice: @Composable (Modifier) -> Unit,
 ) {
     val strings = LocalUiStrings.current
@@ -507,18 +512,12 @@ private fun HomePlayPage(
             .padding(horizontal = AppSpacing.Space16, vertical = AppSpacing.Space8),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255) · 오늘의 한 줄 명언(#273). 차례는 `homeTopNoticeOf` 한 곳이 정한다.
-        // **자리를 늘 비워 둔다**(#288, 사용자 2026-10-24: *"위에 한두줄이 항상 존재한다는 가정하에 여백을 두고 계산된 위치에서 시작"*) — 안내가 무엇이든,
-        // 없든 대국 카드는 같은 자리에서 시작한다(#128 ③의 표적 원칙). 높이는 [homeTopNoticeSlotHeight]. 그보다 큰 안내(큰 글꼴의 세 줄 등)만 카드를 민다.
-        // (전에는 메뉴가 남는 세로의 가운데에 서서, 안내 높이의 반만큼 카드가 오르내렸다.)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = homeTopNoticeSlotHeight()),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            topNotice(Modifier.padding(top = AppSpacing.Space4))
-        }
+        // 맨 위의 고정 자리 — 오늘의 명언(두 줄) + 오늘의 운세(두 줄)(#303, 사용자 2026-11-06). 늘 있고 줄 수로 높이가 고정이라 대국 카드는 늘 같은 자리에서
+        // 시작한다(#288 — *"위에 한두줄이 항상 존재한다는 가정하에 … 계산된 위치에서 시작"*, #128 ③의 표적 원칙). 전에는 그 자리를 명언 높이로 비워 두었다.
+        HomeDailyHeader(fortune = dailyFortune, modifier = Modifier.padding(top = AppSpacing.Space4))
+        // 한 줄 안내 — 엔진 팩을 받는 동안(#248) · 새로워진 점(#257) · 새 버전이 있을 때(#255). 차례는 `homeTopNoticeOf` 한 곳이 정한다. **있을 때만** 자리를 차지한다 —
+        // 그때는 카드가 그만큼 내려간다(스레드가 정한 것 — 고정 자리가 생겨 빈 자리를 따로 두지 않는다).
+        topNotice(Modifier.padding(top = AppSpacing.Space8))
         Spacer(modifier = Modifier.height(AppSpacing.Space12))
 
         // 대국 카드 둘은 **한 줄에 나란히** 선다(#288, 사용자 2026-10-24) — 왼쪽이 「일반 대국」(「서 있는 답」 #239 — 첫 카드), 오른쪽이 「승급 대국」.
@@ -1226,15 +1225,6 @@ private const val MenuTilePressedScale = 0.95f
  */
 private const val ResumeBreathScale = 1.02f
 private const val ResumeBreathMillis = 1200
-
-/**
- * 대국 페이지 맨 위 안내 자리의 높이(#288) — **두 줄짜리 오늘의 명언**이 들어가는 높이: 위 여백 4dp + 위아래 안쪽 여백 6dp씩 + 글 두 줄(줄 높이 24sp — 명언 줄이 물려받는 본문 줄 높이).
- * 줄 높이를 sp로 더하므로 글꼴을 키운 사람에게도 두 줄이 들어간다. 한 줄 알림(44dp) · 엔진 받기(진행 막대 포함 50dp) · 명언 한 줄(48dp)은 모두 이 안에 든다. 스레드가 정했다.
- */
-@Composable
-private fun homeTopNoticeSlotHeight(): Dp = with(LocalDensity.current) { AppSpacing.Space4 + AppSpacing.Space6 * 2 + (HomeTopNoticeLineHeight * 2).toDp() }
-
-private val HomeTopNoticeLineHeight = 24.sp
 
 /** 대국 페이지의 메뉴 칸 하나 — 이름과 누르면 갈 곳. */
 internal class HomeMenuRow(val title: String, val onClick: () -> Unit)

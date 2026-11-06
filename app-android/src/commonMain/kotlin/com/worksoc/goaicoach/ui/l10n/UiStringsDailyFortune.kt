@@ -132,3 +132,22 @@ internal fun fortuneAdFailedFor(language: UiLanguage, reason: AdRewardFailureRea
         AdRewardFailureReason.Unavailable,
         -> dailyDrawAdFailedFor(language, reason)
     }
+
+/**
+ * 대국 페이지 맨 위 운세 줄(#303)의 오른쪽 끝 단추 — 오늘의 첫 운세를 연다(무료라 광고 표시 없음 — `RewardedAdMark`).
+ * 사용자의 말 「운세를 열어보는 버튼」. 줄이 두 줄로 좁아 실험실의 「오늘의 운세 뽑기 (무료)」보다 짧게 — 스레드가 정한 표기.
+ */
+internal fun fortuneOpenShortFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "열어보기"
+    UiLanguage.English -> "Open"
+    UiLanguage.Japanese -> "開く"
+    UiLanguage.ChineseSimplified -> "打开"
+}
+
+/** 운세 줄(#303)에서 오늘의 갱신을 다 썼을 때 단추 자리에 남는 흐린 글자 — 스레드가 정한 표기. */
+internal fun fortuneTomorrowShortFor(language: UiLanguage): String = when (language) {
+    UiLanguage.Korean -> "내일 또"
+    UiLanguage.English -> "Tomorrow"
+    UiLanguage.Japanese -> "また明日"
+    UiLanguage.ChineseSimplified -> "明天再来"
+}

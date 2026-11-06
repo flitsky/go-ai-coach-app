@@ -54,21 +54,10 @@ class HomeTopNoticeTest {
         )
     }
 
-    /** #273 — 오늘의 한 줄 명언은 맨 끝이다(사용자 2026-10-20: 업데이트 알림이 사라진 뒤에). 알릴 것이 하나라도 있으면 기다린다. */
+    /** #303 — 오늘의 명언은 이 자리를 떠나 대국 페이지 맨 위에 늘 있다(사용자 2026-11-06). 알릴 것이 없으면 이 자리는 빈다. */
     @Test
-    fun theDailyQuoteTakesTheSlotOnlyAfterEveryNoticeIsGone() {
-        fun slot(engine: EngineDownloadStatus, update: AppUpdateStatus, updateDismissed: Boolean, whatsNew: Boolean) =
-            homeTopNoticeOf(engine, update, updateDismissed, whatsNewPending = whatsNew, dailyQuoteWanted = true)
-
-        assertEquals(HomeTopNoticeKind.EngineDownload, slot(EngineDownloadStatus.Downloading(1L, 2L, 50), AppUpdateStatus.UpToDate, false, whatsNew = false))
-        assertEquals(HomeTopNoticeKind.WhatsNew, slot(EngineDownloadStatus.Completed, AppUpdateStatus.UpToDate, false, whatsNew = true))
-        assertEquals(HomeTopNoticeKind.AppUpdate, slot(EngineDownloadStatus.Idle, AppUpdateStatus.Available, false, whatsNew = false))
-        assertEquals("업데이트 알림을 ✕로 닫으면 그 자리에 뜬다", HomeTopNoticeKind.DailyQuote, slot(EngineDownloadStatus.Idle, AppUpdateStatus.Available, true, whatsNew = false))
-        assertEquals(HomeTopNoticeKind.DailyQuote, slot(EngineDownloadStatus.Completed, AppUpdateStatus.UpToDate, false, whatsNew = false))
-        assertEquals(
-            "명언을 원하지 않으면(출석 팝업 전 · 오늘 닫음 · 실을 명언 없음) 자리는 빈다",
-            HomeTopNoticeKind.None,
-            homeTopNoticeOf(EngineDownloadStatus.Completed, AppUpdateStatus.UpToDate, updateDismissed = false, dailyQuoteWanted = false),
-        )
+    fun theSlotIsEmptyWhenNothingNeedsSaying() {
+        assertEquals(HomeTopNoticeKind.None, homeTopNoticeOf(EngineDownloadStatus.Completed, AppUpdateStatus.UpToDate, updateDismissed = false))
+        assertEquals("업데이트 알림을 ✕로 닫아도 명언이 들어오지 않는다", HomeTopNoticeKind.None, homeTopNoticeOf(EngineDownloadStatus.Idle, AppUpdateStatus.Available, updateDismissed = true))
     }
 }
