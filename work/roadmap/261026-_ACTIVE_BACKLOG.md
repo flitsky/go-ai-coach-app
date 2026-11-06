@@ -137,6 +137,7 @@ python3 scripts/check-backlog-done-lines.py  # 완료 줄을 적었으면
   명언 줄 `ui/setup/HomeDailyQuote.kt`(→ #303에서 `ui/home/`으로 옮겼다 — UI 층 규칙: `ui.home`은 같은 층의 `ui.setup`을 부르지 못한다) · 자리 높이 예약 `homeTopNoticeSlotHeight`(#288 — 대국 카드가 늘 같은 자리에서 시작) · 운세는 실험실 카드 `ui/home/DailyFortuneCard.kt`가 상태를 혼자 든다 · 규칙 shared `application/dailyfortune/` ·
   명언 고르기 shared `application/dailyquote/`(✕로 닫은 날 `dismissedDay`는 저장 필드라 남긴다 — 함정 69). 운세 글 한국어 중앙값 44자 — 두 줄이면 절반쯤 잘린다.
 - ⚠️ 운세를 두 페이지(대국 · 실험실)가 보이므로 **상태는 하나**(한쪽에서 뽑거나 바꾸면 다른 쪽도 같다). 광고는 `showRewardedAdOnce`(함정 99) · 📺는 `RewardedAdMark.kt` 한 곳.
+- 📦 **1.8.5 번들에 실렸다**(2026-11-06 — 인터널 전, `GOOGLE_PLAY_LAUNCH_PLAN.md` §0) · 사용자 폰(디버그)에서 봤다 · 운 바꾸기는 새로고침 아이콘 → 확인 창(쉼표 뒤 줄바꿈 · 여백 절반).
 - **진행**(2026-11-06) — ⏳ 폰 확인 전: 맨 위 고정 자리 `HomeDailyHeader`(명언 종이 `HomeDailyQuote.kt` + 운세 줄) · 운세 상태 하나 `DailyFortuneState`(실험실 카드도 이것으로) · 종이 `PaperTexture.kt` · `PaperPalette`.
   에뮬레이터: 명언 두 줄 · 오른쪽 아래 말한 이 · 열어보기 → 운세(두 줄 「…」) → 글을 누르면 전문 창 → 「📺 운 바꾸기」 테스트 광고 끝까지 → 새 운세(실험실 카드도 같은 운세) · 어두운 모드 ·
   명언 174개 깔기(`debug-quote-sweep`): 한국어 · 영어(360dp) 모두 「…」 없이 들어간다 — 일부러 긴 명언 하나로 「…」와 말한 이 자리를 봤다.
