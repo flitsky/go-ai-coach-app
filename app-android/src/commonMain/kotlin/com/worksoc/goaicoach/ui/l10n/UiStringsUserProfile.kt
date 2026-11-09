@@ -85,7 +85,7 @@ internal fun localOnlyDataNoticePointerFor(language: UiLanguage): String =
 
 /**
  * 「내 기록은 어떻게 보관되나요」의 iOS 본문(백로그 #294 — 사용자 2026-10-27 「iOS 사실대로」). iPhone은 앱 데이터를 기기 백업(iCloud · 컴퓨터)에 담는다 —
- * 새 iPhone으로 옮기거나 그 백업에서 복원하면 돌아오고, 앱만 지웠다 다시 설치하면 돌아오지 않는다. ⚠️ 구독 복원 문장은 iOS 결제(#296)가 생길 때 더한다(없는 것을 약속하지 않는다).
+ * 새 iPhone으로 옮기거나 그 백업에서 복원하면 돌아오고, 앱만 지웠다 다시 설치하면 돌아오지 않는다. 구독 복원 문장은 [iosPaidRestoreLineFor].
  */
 internal fun iosLocalStorageNoticeFor(language: UiLanguage): String =
     when (language) {
@@ -97,4 +97,21 @@ internal fun iosLocalStorageNoticeFor(language: UiLanguage): String =
             "出席記録・集めたキャラクター・1回券はこのiPhoneにたまります。iPhoneのバックアップ（iCloudまたはコンピュータ）に含まれるので、新しいiPhoneへの移行やそのバックアップからの復元で戻ります。アプリだけを削除して再インストールした場合は戻りません。"
         UiLanguage.ChineseSimplified ->
             "签到记录、收集的角色和单次券会积累在这台 iPhone 上。它们包含在 iPhone 备份（iCloud 或电脑）中，迁移到新 iPhone 或从该备份恢复时会一并恢复。仅删除并重新安装本应用则不会恢复。"
+    }
+
+/**
+ * 「내 기록은 어떻게 보관되나요」의 iOS 구독 복원 문장 — 안드로이드 `localOnlyDataNoticePaidRestoreLine`의 짝(App Store 결제 #296).
+ * 앱은 시작할 때마다 같은 Apple 계정의 구독을 조용히 확인하고, 보이지 않으면 「구독하기」 창의 「구매 복원」이 App Store와 맞춘다(`IosStore.kt`).
+ * 단추 이름은 그 창의 문구(`UiStringsPremiumSubscription.kt`)와 같게 적는다.
+ */
+internal fun iosPaidRestoreLineFor(language: UiLanguage): String =
+    when (language) {
+        UiLanguage.Korean ->
+            "프리미엄 구독 중이라면 걱정하지 않으셔도 돼요. 같은 Apple 계정으로 로그인한 iPhone에서 앱을 열면 구독을 확인해 모든 기능을 다시 열어 드립니다. 보이지 않으면 「구독하기」 창의 「구매 복원」을 눌러 주세요."
+        UiLanguage.English ->
+            "With a Premium subscription there is nothing to worry about. Open the app on an iPhone signed in with the same Apple Account and it checks your subscription and unlocks every feature again. If it does not show, tap Restore Purchases in the Subscribe window."
+        UiLanguage.Japanese ->
+            "プレミアム購読中なら心配はいりません。同じApple Accountでサインインした iPhone でアプリを開くと、購読を確認してすべての機能を再び開きます。表示されない場合は「登録する」画面の「購入を復元」を押してください。"
+        UiLanguage.ChineseSimplified ->
+            "如果您正在订阅高级版，则无需担心。在登录同一 Apple 账户的 iPhone 上打开应用，应用会确认订阅并重新解锁所有功能。如果没有显示，请在“立即订阅”窗口中点按“恢复购买”。"
     }
