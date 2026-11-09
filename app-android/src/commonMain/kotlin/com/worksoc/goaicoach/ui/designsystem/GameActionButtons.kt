@@ -5,16 +5,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -172,6 +175,8 @@ internal fun ActionButton(
     mark: String? = null,
     premiumLocked: Boolean = false,
     premiumFeature: Boolean = false,
+    // 글자 대신 그림(다시보기의 ⏮ ⏭ — `ReplayStepIcons.kt`). [label]은 그 그림의 설명으로 남는다.
+    icon: ImageVector? = null,
 ) {
     FilledTonalButton(
         onClick = onClick,
@@ -185,9 +190,16 @@ internal fun ActionButton(
         ),
         border = premiumBorderOr(null, premiumFeature, premiumLocked),
     ) {
-        ActionButtonText(label = label, mark = mark)
+        if (icon != null) {
+            Icon(imageVector = icon, contentDescription = label, modifier = Modifier.size(ActionButtonIconSize))
+        } else {
+            ActionButtonText(label = label, mark = mark)
+        }
     }
 }
+
+/** 그림 단추의 그림 크기 — 이웃한 `◀◀` `◀` 글자(labelSmall)의 세모 높이와 맞춘다. */
+private val ActionButtonIconSize = 16.dp
 
 /**
  * 형세 보기·추천 수 버튼의 내용. **ON/OFF 뱃지를 두지 않는다**(2026-08-29 사용자 확정) —

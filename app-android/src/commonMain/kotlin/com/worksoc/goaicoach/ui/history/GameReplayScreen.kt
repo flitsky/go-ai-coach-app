@@ -59,6 +59,8 @@ import com.worksoc.goaicoach.ui.designsystem.ActionButtonMinHeight
 import com.worksoc.goaicoach.ui.designsystem.ActionButtonShape
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.ReplaySkipToFirstIcon
+import com.worksoc.goaicoach.ui.designsystem.ReplaySkipToLastIcon
 import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
@@ -481,6 +483,7 @@ internal fun ReplayControls(
                 enabled = moveNumber > 0,
                 onClick = { onMoveNumberChange(0) },
                 modifier = Modifier.weight(1f),
+                icon = ReplaySkipToFirstIcon,
             )
             // ⚠️ 빨리 감기는 ⏪⏩가 아니라 ◀◀ ▶▶다 — ⏪⏩는 안드로이드에서 컬러 이모지로 그려져 옆의 ◀ ▶와 생김새가 어긋난다.
             ActionButton(
@@ -512,6 +515,7 @@ internal fun ReplayControls(
                 enabled = moveNumber < lastMoveNumber,
                 onClick = { onMoveNumberChange(lastMoveNumber) },
                 modifier = Modifier.weight(1f),
+                icon = ReplaySkipToLastIcon,
             )
         }
 
