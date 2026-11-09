@@ -478,6 +478,7 @@ git show <커밋해시>^:docs/archive/<경로>/<파일명>.md > <파일명>.md
 | 위치 | 용도 |
 | --- | --- |
 | `work/history/THREAD_HISTORY.md` | 프로젝트 대화와 작업 히스토리 누적 기록. 계속 append되는 진행 중인 로그이며, archive(=더 이상 유효하지 않음)와는 성격이 다르다 |
+| `work/history/261110_IOS_1_8_5_RELEASE_CHECK_REPORT.md` | **2026-11-10 작업 리포트**(사용자 요청 — 이름 앞 날짜로 구별) — iOS 1.8.5 출시 코드 점검과 안드로이드 · iOS 화면 짝 비교: 고친 9건 · 기각 6건 · 남은 차이 · 스레드가 정한 것 · 커밋. 그날의 요약이고 정본은 `PLATFORM_PARITY.md` · `DECISIONS.md` · git이다 |
 | `work/history/baas_solutions_comparison.md` | 2026-07-30 이전 초기 조사 — BaaS 후보 비교. 결론은 `LOGIN_AND_ACCOUNT_SYSTEM.md`가 이어받았다. **요약/딥다이브 체계 밖의 일회성 리서치**라 최상위가 아닌 여기에 둔다(백로그 #58) |
 
 ⚠️ 초기 조사 둘 중 `baduk_app_architecture_recommendation.md`는 2026-09-23에 **삭제**했다 — Firestore SGF 스키마·Remote Config A/B·단품 결제가 전부 채택되지 않았거나 뒤집힌 축이었고, 살아 있던 사실 하나(Spark Plan 무료 할당량은 프로젝트 단위로 독립 적용된다)는 `LOGIN_AND_ACCOUNT_SYSTEM.md` 1.1.1절로 옮겼다. 원문은 git 히스토리에 있다.
