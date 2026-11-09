@@ -1013,6 +1013,9 @@ internal fun MenuCard(
                     }
                 }
                 // 이름은 두 줄로 접는다(「일반 / 대국」 — 사용자의 카드 구성). 큰 글꼴 배율 · 긴 언어에서 한 줄이 반 폭을 넘으면 글자를 줄인다(20 → 14sp).
+                // ⚠️ 줄은 이미 나눠 두었으니 저절로 줄바꿈하지 않는다(softWrap = false) — 켜 두면 넘친 줄이 단어 중간에서 꺾여(「Norma / l」 — iOS 글꼴이 넓어
+                // 기본 크기에서도 그랬다, 2026-11-10) 넘친 것으로 잡히지 않아 글자를 줄이지 않았다. 끄면 폭이 넘칠 때 줄어든다.
+                // ⚠️ 넘침은 말줄임이 아니라 자르기다 — softWrap = false에 말줄임을 쓰면 Compose가 줄 수를 1로 묶어 둘째 줄이 사라진다.
                 BasicText(
                     text = twoLineCardTitle(title),
                     style = TextStyle(
@@ -1021,8 +1024,9 @@ internal fun MenuCard(
                         lineHeight = MenuCardTitleLineHeight,
                         textAlign = TextAlign.Center,
                     ),
+                    softWrap = false,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    overflow = TextOverflow.Clip,
                     autoSize = TextAutoSize.StepBased(minFontSize = AppTextSize.Text14, maxFontSize = AppTextSize.Text20),
                     modifier = Modifier
                         .weight(1f)
