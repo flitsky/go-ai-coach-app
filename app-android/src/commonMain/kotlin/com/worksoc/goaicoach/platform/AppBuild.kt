@@ -17,7 +17,7 @@ data class AppBuildInfo(
     val forceEeaConsentDebug: Boolean = false,
     /**
      * 이 플랫폼에 처음 출시된 판의 versionCode — 「새로워진 점」은 이보다 **뒤의** 묶음만 보인다(#294 — 사용자 2026-10-27).
-     * 안드로이드는 0(모든 묶음). iOS는 첫 판(1.8.4 = 10804) 앞의 안드로이드 이력이 iOS 사용자에게 새것이 아니고, iOS에 없는 기능(사진 분석)도 있다.
+     * 안드로이드는 0(모든 묶음). iOS는 첫 판(1.8.5 = 10805 — 사용자 2026-11-10)까지의 안드로이드 이력이 iOS 사용자에게 새것이 아니고, iOS에 없는 기능(사진 분석)도 있다.
      */
     val firstReleaseVersionCode: Int = 0,
 )

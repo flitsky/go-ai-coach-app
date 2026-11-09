@@ -60,6 +60,5 @@ else
 fi
 
 # 빌드 시각 — 안드로이드 `BuildConfig.BUILD_TIME`과 같은 형식(`yyyy-MM-dd HH:mm`). 대국 화면 왼쪽 위의 `v261027.0430`이 이것이다(`appBuildInfo`).
-PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
-/usr/libexec/PlistBuddy -c "Delete :GoCoachBuildTime" "$PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :GoCoachBuildTime string $(date '+%Y-%m-%d %H:%M')" "$PLIST"
+# Info.plist에 넣지 않는다 — 이 단계 뒤의 Info.plist 처리가 덮어써 키가 사라졌다(2026-11-10 확인). 묶음의 파일로 싣는다(줄바꿈 없이).
+printf '%s' "$(date '+%Y-%m-%d %H:%M')" > "$DST/build-time.txt"

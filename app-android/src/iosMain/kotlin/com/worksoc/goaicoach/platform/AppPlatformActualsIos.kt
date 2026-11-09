@@ -4,24 +4,31 @@ import kotlin.experimental.ExperimentalNativeApi
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSBundle
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitHour
 import platform.Foundation.NSCalendarUnitMinute
 import platform.Foundation.NSCalendarUnitSecond
 import platform.Foundation.NSDate
+import platform.Foundation.NSString
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.stringWithContentsOfFile
 
 @OptIn(ExperimentalNativeApi::class)
 actual val isDebugBuild: Boolean = Platform.isDebugBinary
 
-/** iOS가 처음 나가는 판의 versionCode(1.8.4). 한 번 출시하면 바꾸지 않는다. */
-private const val IosFirstReleaseVersionCode = 10804
+/**
+ * iOS가 처음 나가는 판의 versionCode(1.8.5 — 사용자 2026-11-10: 애플 첫 릴리스는 1.8.5로). 한 번 출시하면 바꾸지 않는다.
+ * 첫 제출 전에 안드로이드가 판을 더 올리면 이 값도 그 판으로 — 안 그러면 iOS 사용자가 겪지 않은 판의 「새로워진 점」이 보인다.
+ */
+private const val IosFirstReleaseVersionCode = 10805
 
 /** Google 공식 시험 광고의 게시자 번호 — `app-ios/Config/Ads.xcconfig`의 시험 ID가 모두 이것으로 시작한다. */
 private const val GoogleTestAdsPublisher = "ca-app-pub-3940256099942544"
 
 /**
- * 번들의 판 이름 · 번호. 빌드 시각은 Info.plist의 `GoCoachBuildTime`(없으면 빈 칸).
+ * 번들의 판 이름 · 번호. 빌드 시각은 묶음의 `appassets/build-time.txt`(`scripts/ios-bundle-resources.sh` — 없으면 빈 칸).
  * 시험 광고 여부는 번들의 AdMob 앱 ID로 판단한다(#296 — 출시 구성은 `Ads.local.xcconfig`의 실제 ID, 없으면 시험 ID) — 진단 줄 `test-ads`가 실제와 맞게.
  */
 actual val appBuildInfo: AppBuildInfo = run {
@@ -29,12 +36,19 @@ actual val appBuildInfo: AppBuildInfo = run {
     AppBuildInfo(
         versionName = info?.get("CFBundleShortVersionString") as? String ?: "",
         versionCode = (info?.get("CFBundleVersion") as? String)?.toIntOrNull() ?: 0,
-        buildTime = info?.get("GoCoachBuildTime") as? String ?: "",
+        buildTime = bundledBuildTime(),
         buildType = if (isDebugBuild) "debug" else "release",
         useTestAds = (info?.get("GADApplicationIdentifier") as? String)?.startsWith(GoogleTestAdsPublisher) ?: true,
-        // iOS 첫 판(사용자 2026-10-27: 안드로이드와 같은 번호 1.8.4로 시작) — 「새로워진 점」은 이보다 뒤의 묶음부터.
+        // iOS 첫 판(판 번호는 안드로이드와 같다 — 사용자 2026-10-27) — 「새로워진 점」은 이보다 뒤의 묶음부터.
         firstReleaseVersionCode = IosFirstReleaseVersionCode,
     )
+}
+
+/** `ios-bundle-resources.sh`가 묶음에 적은 빌드 시각. Info.plist 키는 빌드의 Info.plist 처리가 덮어써 남지 않는다. */
+@OptIn(ExperimentalForeignApi::class)
+private fun bundledBuildTime(): String {
+    val path = NSBundle.mainBundle.pathForResource("build-time", ofType = "txt", inDirectory = "appassets") ?: return ""
+    return NSString.stringWithContentsOfFile(path, encoding = NSUTF8StringEncoding, error = null)?.trim().orEmpty()
 }
 
 actual fun localTimeOfDay(): LocalTimeOfDay {
