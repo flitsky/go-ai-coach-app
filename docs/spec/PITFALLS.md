@@ -1,4 +1,4 @@
-# 함정 — 색인과 전문 1~87
+# 함정 — 색인과 전문 1~102
 
 > **이 문서는 읽는 문서가 아니라 찾는 문서다.**
 > 바로 아래 **「색인」**에서 지금 하는 일에 걸리는 키워드를 먼저 고르고, **그 번호의 전문만** 아래에서 편다.
@@ -57,6 +57,7 @@
 - **65** 글꼴 배율 상한은 2.0이 아니라 **1.3**(둘뿐) — 실기 확인은 설정 화면 「글꼴 크기 → 크게」로(시스템 설정 `font_scale`은 아무 일도 안 한다). 문단 높이는 **영어**에서 먼저 터진다(같은 내용을 더 긴 글자 수로 적음), 세로 공간 배분은 영어·1.3배로 실기 검증할 것
 - **67** `GoCoachApp.kt`의 `wiringContext` `remember` 키 제거는 **하지 말 것** — 설계안 4개 전부가 같은 틀린 근거(*"64개 멤버가 전부 안정적이라 키가 필요 없다"*)로 제안했다. 지역 `val` 5개(`playerSetup`·`matchMode`·`searchTimeSettings`·`topMovesEnabled`·`shouldShowResumePrompt`)와 remember 금지가 명시된 `engineName`·`engineDiagnostic`이 첫 컴포지션 값에 영구히 얼어붙고, 네 안이 공통 제안한 회귀 테스트도 이 버그를 못 잡는다. **다음 스레드가 또 제안할 것이다** — 착수 전 ⓐ 위 8개 값을 람다/지연 읽기로 전환 ⓑ 64개 멤버 전수 감사(0건 확인), 순서를 반드시 지킬 것 ⚠️ **2026-09-28 갱신**: 전문의 *"위 8개"* 중 `searchTimeSettings`는 지금 object 멤버가 읽지 않고, `engineName`·`engineDiagnostic`은 늦은 읽기로 바뀌었다(refactor backlog #108). 지금 붙잡힌 평범한 지역 값의 정답 목록은 `WiringContextFreezeContractTest.FreezeProneMembers`다 — 키는 그 테스트가 무조건 고정한다
 - **74** 「훅 예산을 회수했다」는 실제로 상태 훅이 줄었는지 셀 것 — `GoCoachApp.kt`에서 지역 변수를 지워도 그 변수가 훅을 안 썼다면 줄어드는 건 줄수 예산(`lineBudget`)뿐, 상태 훅 예산(함정 3, 42/42)은 그대로다. 완료 기록에 어느 예산을 회수했는지 정확히 밝힐 것 ⚠️ **2026-09-28 #46 — 42/42 훅 개수는 「셸 상태 원장」으로 대체됐다(폐지 아님)**: 정본 `app-android/architecture-budgets.json` + `architecture/ShellStateLedger.kt`. 새 상태는 이름·종류·사유를 원장에 적고, 금지 종류(부채)는 늘 수 없다
+- **100** **iOS 글꼴은 안드로이드보다 넓다 — 직접 나눈 줄이 단어 중간에서 꺾이면 autoSize가 넘침으로 못 잡는다**(「Norma / l」) — 줄을 이미 나눴으면 `softWrap = false` + `TextOverflow.Clip`. ⚠️ `softWrap = false`에 Ellipsis를 쓰면 Compose가 `maxLines`를 1로 묶는다
 
 **제스처·입력·기기**
 - **17** 스크롤 안 길게 누르기 — 조용히 실패, 트리거는 탭 수·위치로. ⚠️ 전문의 *"`input swipe`는 MOVE를 안 만든다"* 는 2026-09-11 실측과 어긋난다(스와이프가 스크롤에 빼앗겼다 = MOVE가 있었다)
@@ -121,6 +122,7 @@
 - **76** 죽은 스캔을 `require`로 되살리는 조치는 실행 즉시 초록이 아니라 위반이 쏟아질 각오를 하고 넣을 것 — 오래 검사되지 않던 구간의 실제 위반이 무더기로 드러날 수 있다. `make test`가 유일한 릴리스 게이트라 드러난 위반은 **같은 스레드가 끝까지 초록으로 만들고 닫아야** 한다(위반 0건은 보장이 아니라 그때의 결과일 뿐)
 - **79** Lint `abortOnError=true`는 **새 Error만 막고 새 Warning은 통과시킨다**(`warningsAsErrors=false`이므로). 얻는 보장은 "새 Error 0"이지 "새 경고 0"이 아니다. 덤: `NewApi`는 인라인되는 상수 참조를 건너뛰어 음성 대조가 안 걸린다 — 실제 메서드 호출로 해야 한다
 - **82** 파일을 옮기면 `lint-baseline.xml`의 **경로가 낡아** 기준선에 묻어 둔 경고가 **새 Warning으로 되살아난다** — 79 때문에 게이트는 초록. `RepoPaths`·FQN 등록부·이름 전수 grep이 **전부 못 보는** 경로 계약이다. 옮기는 커밋에서 `LintBaselineFixed`·새 Warning 건수를 전후 비교하고, 기준선을 재생성하지 말고 **경로만** 고칠 것
+- **102** **iOS 빌드 단계에서 묶음의 Info.plist에 넣은 키는 뒤의 Info.plist 처리가 덮어써 사라진다**(빌드 시각 `GoCoachBuildTime`) — 빌드 때 만드는 값은 `appassets/`의 파일로 싣는다(`ios-bundle-resources.sh`)
 
 **광고·결제**
 - **8** `AndroidBillingClient` 공유 — 상품 종류는 **호출부가 선언**(#136에서 기본값 제거)
@@ -129,6 +131,7 @@
 - **99** **전면 광고는 앱 안의 화면이다 — 앱 소리는 광고 동안 스스로 놓아야 돌아온다** — 광고가 오디오 포커스를 가져가면 앱 배경음악은 「다른 앱이 음악을 틀었다」로 받아 다시 틀지 않았다(앱이 뒤로 가지 않으니 되돌릴 계기도 없다). 광고를 띄우는 깔때기 `showRewardedAdOnce`에서 `whileFullScreenAdShows`로 감싼다(#244)
 
 - **63** 마이페이지 "구독 관리·해지"는 실제 Google Play 구독 관리 화면으로 딥링크 — 에뮬레이터도 로그인 계정이 실사용 개인 계정이면 실수로 진짜 구독을 건드릴 수 있다("에뮬레이터=안전"은 전제가 깨진다). 실기 확인은 앱 안 다이얼로그 버튼까지만, Play 스토어로 나가는 "구독 관리·해지" 버튼은 누르지 말 것. 기기 여럿이면 `adb -s <serial>` 필수(안 붙이면 `installDebug`가 연결된 기기 전부에 설치)
+- **101** **iOS `UIKitView`의 자리는 Compose가 뚫어 둔 구멍이다 — 투명한 네이티브 뷰(배너)는 아래의 흰 창을 비춘다** — 광고가 오기 전(오지 않으면 계속) 흰 띠. 네이티브 뷰에 화면 바탕색을 칠한다(`BannerAdViewIos` update)
 
 **문서·에셋**
 - **18** 이 문서 스크립트 편집 — `---`로 항목 경계를 잡지 말 것(다음 항목 머리글로). 편집 뒤 출현 수를 세고 **읽은 뒤** 커밋, 편집·커밋을 한 호출에 묶지 말 것 ⚠️ **2026-10-23 #280** — 활성 백로그의 「지금」 카드를 다음 절(`---`)까지로 잘라 지웠더니 **동시에 돌던 스레드가 그 사이에 넣은 #282 카드까지** 지워졌다(커밋 전 diff에서 잡았다). 카드의 끝은 다음 `### ` 머리글로 잡고, 커밋 전 `git diff | grep '^-### '`로 지워지는 카드를 센다
@@ -1368,3 +1371,15 @@
     - 처방: 광고를 띄우는 단일 깔때기(`showRewardedAdOnce`)를 `BackgroundMusicCoordinator.whileFullScreenAdShows`로 감싼다 — 광고 직전에 스스로 멈추고
       포커스를 놓고, 닫히면 광고 전에 틀고 있었을 때만 되찾는다. `BackgroundMusicContractTest`가 감쌈과 깔때기가 하나인지를 본다.
     - 다시보기 화면의 배너(테스트 배너)는 포커스를 건드리지 않았다. 다른 전면 광고 형식을 들이면 같은 감쌈이 필요하다.
+100. **⚠️ iOS 글꼴은 안드로이드보다 넓다 — 직접 나눈 줄이 단어 중간에서 꺾이면 autoSize가 넘침으로 잡지 못한다** (2026-11-10, iOS 1.8.5 점검)
+    - 증상(시뮬레이터 · 영어 · 기본 글꼴): 홈 대국 카드 이름이 「Norma / l」로 꺾이고 「Match」가 사라졌다. 안드로이드는 같은 화면에서 「Normal / Match」.
+    - 원인: 이름은 `twoLineCardTitle`이 두 줄로 나누고 `maxLines = 2` + autoSize(20 → 14sp)로 맞춘다. iOS 글꼴에서는 「Normal」이 반 폭을 넘어 저절로 줄바꿈되며 단어 중간에서 꺾였고, 그 결과가 넘침으로 잡히지 않아 글자를 줄이지 않았다.
+    - 처방: 줄을 이미 나눴으면 `softWrap = false`로 저절로 꺾이지 않게 한다 — 그러면 폭을 넘는 줄이 넘침으로 잡혀 autoSize가 줄인다. ⚠️ 이때 `TextOverflow.Ellipsis`를 쓰면 Compose가 `maxLines`를 1로 묶어(한 덩어리에 말줄임을 여럿 못 넣는다) 둘째 줄이 사라진다 — `Clip`을 쓴다.
+101. **⚠️ iOS `UIKitView`의 자리는 Compose가 뚫어 둔 구멍이다 — 투명한 네이티브 뷰는 아래의 흰 창을 비춘다** (2026-11-10, iOS 1.8.5 점검)
+    - 증상(시뮬레이터): 다시보기 머리 아래에 흰 띠가 생기고 판이 작아졌다 — 광고가 오기 전, 그리고 광고가 오지 않으면 계속. 안드로이드는 같은 자리에 화면 배경이 비친다.
+    - 원인: 배너(`GADBannerView`)는 안드로이드 짝(`setBackgroundColor(TRANSPARENT)`)을 따라 투명하게 두었는데, iOS의 네이티브 뷰 자리는 Compose 화면의 일부가 아니라 그 아래 창이 비친다.
+    - 처방: 네이티브 뷰에 화면 바탕색을 칠한다(`BannerAdViewIos`의 `update` — 어두운 모드도 따라간다). 다른 `UIKitView`를 들일 때도 같다.
+102. **⚠️ iOS 빌드 단계에서 묶음의 Info.plist에 넣은 키는 뒤의 Info.plist 처리가 덮어써 사라진다** (2026-11-10, iOS 1.8.5 점검)
+    - 증상: iOS 설정 「앱 정보」의 「빌드」 뒤가 비고, 대국 화면 왼쪽 위에 「v」만 남았다. 진단 로그의 `builtAt=`도 비었다.
+    - 원인: `ios-bundle-resources.sh`가 PlistBuddy로 `GoCoachBuildTime`을 넣었지만, 그 단계 뒤의 Info.plist 처리(`GENERATE_INFOPLIST_FILE`)가 파일을 다시 써 키가 사라졌다.
+    - 처방: 빌드 때 만드는 값은 `appassets/` 아래 파일로 싣고(`build-time.txt`) 앱이 그 파일을 읽는다(`AppPlatformActualsIos.kt`). 묶음을 만든 뒤 `appassets/build-time.txt`가 있는지 본다.
