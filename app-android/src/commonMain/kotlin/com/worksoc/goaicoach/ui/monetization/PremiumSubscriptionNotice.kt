@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -150,6 +152,11 @@ internal fun rememberPremiumProductInfo(): PremiumProductInfoState {
 internal fun PremiumSubscriptionNoticeBlock(
     productInfo: PremiumProductInfoState,
     modifier: Modifier = Modifier,
+    // App Store의 「구매 복원」(iOS만 그린다) — 결제가 도는 동안은 잠그고([restoreEnabled]), 복원하는 동안은 창이 결제 단추 ·
+    // 닫기를 잠그며([onRestoreBusyChange]), 복원되면 결제가 끝났을 때처럼 창을 닫는다([onRestored]).
+    restoreEnabled: Boolean = true,
+    onRestoreBusyChange: (Boolean) -> Unit = {},
+    onRestored: () -> Unit = {},
 ) {
     val strings = LocalUiStrings.current
     val platform = LocalAppPlatform.current
@@ -185,7 +192,9 @@ internal fun PremiumSubscriptionNoticeBlock(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // App Store 심사가 결제 화면에 요구하는 줄(#296) — 두 결제 지점이 이 블록을 함께 쓰므로 여기 한 곳에 둔다. 안드로이드는 그리지 않는다.
-        if (platform.store == AppStoreKind.AppleAppStore) AppStorePurchaseLinks()
+        if (platform.store == AppStoreKind.AppleAppStore) {
+            AppStorePurchaseLinks(restoreEnabled, onRestoreBusyChange, onRestored)
+        }
     }
 }
 
@@ -198,7 +207,11 @@ private const val AppleStandardEulaUrl = "https://www.apple.com/legal/internet-s
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AppStorePurchaseLinks() {
+private fun AppStorePurchaseLinks(
+    restoreEnabled: Boolean,
+    onRestoreBusyChange: (Boolean) -> Unit,
+    onRestored: () -> Unit,
+) {
     val strings = LocalUiStrings.current
     val premium = LocalPremiumUiState.current
     val platform = LocalAppPlatform.current
@@ -206,12 +219,15 @@ private fun AppStorePurchaseLinks() {
     val scope = rememberCoroutineScope()
     var restoring by remember { mutableStateOf(false) }
     FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-        PurchaseLinkText(premiumSubscriptionRestoreActionFor(strings.language), enabled = !restoring) {
+        PurchaseLinkText(premiumSubscriptionRestoreActionFor(strings.language), enabled = !restoring && restoreEnabled) {
             restoring = true
+            onRestoreBusyChange(true)
             scope.launch {
                 val outcome = premium.restorePurchases()
                 restoring = false
+                onRestoreBusyChange(false)
                 platform.notice.show(restoreMessageFor(outcome, strings.language), long = true)
+                if (outcome == PurchaseOutcome.Purchased) onRestored()
             }
         }
         PurchaseLinkText(premiumSubscriptionTermsOfUseFor(strings.language)) { uriHandler.openUri(AppleStandardEulaUrl) }
@@ -456,18 +472,23 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     val productInfo = rememberPremiumProductInfo()
     var isPurchaseInProgress by remember { mutableStateOf(false) }
+    var isRestoring by remember { mutableStateOf(false) }
+    val isBusy = isPurchaseInProgress || isRestoring
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Dialog(
-        onDismissRequest = { if (!isPurchaseInProgress) onDismiss() },
+        onDismissRequest = { if (!isBusy) onDismiss() },
         properties = DialogProperties(
-            dismissOnBackPress = !isPurchaseInProgress,
-            dismissOnClickOutside = !isPurchaseInProgress,
+            dismissOnBackPress = !isBusy,
+            dismissOnClickOutside = !isBusy,
         ),
     ) {
         Surface(shape = RoundedCornerShape(AppRadius.Corner16), tonalElevation = AppElevation.Level2) {
+            // 넘칠 때만 스크롤된다(업셀 창과 같은 처방 — 함정 9) — iOS는 고지 아래에 구매 복원 · 약관 줄이 하나 더 붙는다.
             Column(
-                modifier = Modifier.padding(AppSpacing.Space24),
+                modifier = Modifier
+                    .padding(AppSpacing.Space24)
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12),
             ) {
                 Text(
@@ -476,7 +497,12 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                 )
                 PremiumBenefitsList(strings.language)
-                PremiumSubscriptionNoticeBlock(productInfo)
+                PremiumSubscriptionNoticeBlock(
+                    productInfo = productInfo,
+                    restoreEnabled = !isPurchaseInProgress,
+                    onRestoreBusyChange = { isRestoring = it },
+                    onRestored = onDismiss,
+                )
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage.orEmpty(),
@@ -502,7 +528,7 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
                     },
                     // ⚠️ **조회 실패로 버튼을 잠그지 않는다** — 가격을 못 읽은 것과 팔 수 없는 것은
                     // 다르고, 실제 금액은 Play 결제 시트가 반드시 보여준다.
-                    enabled = !isPurchaseInProgress,
+                    enabled = !isBusy,
                     colors = ButtonDefaults.buttonColors(containerColor = PremiumGold),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -518,7 +544,7 @@ internal fun PremiumSubscribeDialog(onDismiss: () -> Unit) {
                 }
                 TextButton(
                     onClick = onDismiss,
-                    enabled = !isPurchaseInProgress,
+                    enabled = !isBusy,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(strings.cancel)

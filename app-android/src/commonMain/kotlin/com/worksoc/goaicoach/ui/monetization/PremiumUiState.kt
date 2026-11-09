@@ -242,9 +242,12 @@ internal fun PremiumUpsellDialog(
     // 구독 고지(가격·주기·자동갱신·해지 경로)를 그릴 재료(#159). 결제 버튼이 숨겨져 있으면
     // 그리지 않으므로 기본값으로 둬도 된다.
     productInfo: PremiumProductInfoState = PremiumProductInfoState.Loading,
+    // App Store 「구매 복원」이 구독을 찾았을 때(iOS만 — 결제가 끝났을 때와 같게 닫고 다음으로 간다).
+    onRestored: () -> Unit = {},
 ) {
     val strings = LocalUiStrings.current
-    val isAnyInProgress = isAdGrantInProgress || isPurchaseInProgress
+    var isRestoring by remember { mutableStateOf(false) }
+    val isAnyInProgress = isAdGrantInProgress || isPurchaseInProgress || isRestoring
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -314,6 +317,9 @@ internal fun PremiumUpsellDialog(
                     PremiumSubscriptionNoticeBlock(
                         productInfo = productInfo,
                         modifier = Modifier.padding(top = AppSpacing.Space16, bottom = AppSpacing.Space8),
+                        restoreEnabled = !isAdGrantInProgress && !isPurchaseInProgress,
+                        onRestoreBusyChange = { isRestoring = it },
+                        onRestored = onRestored,
                     )
                     OutlinedButton(
                         onClick = onSelectPurchase,
@@ -377,6 +383,10 @@ internal fun PremiumUpsellDialogHost(
 
     PremiumUpsellDialog(
         productInfo = productInfo,
+        onRestored = {
+            onDismiss()
+            onAnyChoice()
+        },
         adSkipTicketCount = consumables.countOf(ConsumableCatalog.PremiumOnce),
         onSelectAdSkipTicket = {
             // 광고를 보지 않고 같은 1시간 프리미엄을 켠다 — 차감/활성화 판정은 6계층
