@@ -46,7 +46,7 @@
 | `work/knowhow-docs/` | AI 스레드 협업 방법론(코드베이스 비종속 이식용 가이드) | 표준 문서, 새 프로젝트로 복사해 이식 | "작업 방법론 문서" |
 | `work/artwork/` | 봇 캐릭터 **원화**(768px PNG 5장, 2026-09-06 사용자 제공) | 자산 원본. 앱에 들어가는 것은 여기서 `scripts/make-bot-avatars.py`가 뽑은 투명 WebP다 — 원화를 갈면 그 스크립트를 다시 돌린다 | "기능별 마스터플랜" |
 | `work/play-store-assets/` | Play Console 업로드 자산의 **git 추적 정본** — 스크린샷·앱 아이콘·피처 그래픽·`store_listing.txt` | 2026-09-13에 저장소 루트 `design-handoff/`(라운드별 스냅샷 방식)에서 이 경로로 통합했다. 버전 이력은 git이 기본이고, 필요하면 날짜 붙인 폴더/파일을 추가한다(사용자 결정). ⚠️ **`AppNameContractTest`가 이 경로를 실제로 읽는다** | "루트 자산 폴더의 흡수" |
-| `work/app-store-assets/` | **App Store** 업로드 자산 — 지금은 등재 글 `app_store_listing.txt`(4개 언어) 하나(2026-10-27, 사용자 「Play 짝으로 셋」). 스크린샷은 아이폰 크기로 찍으면 여기에 둔다 | `work/play-store-assets/`의 짝. 출시 절차 · 답안지는 `work/plans/APP_STORE_*.md` | "스토어 등록 자산" |
+| `work/app-store-assets/` | **App Store** 업로드 자산 — 등재 글 `app_store_listing.txt`(4개 언어 — 2026-10-27, 사용자 「Play 짝으로 셋」) · 아이폰 스크린샷 `iphone_6_9_screenshots/` · `iphone_6_5_screenshots/`(2026-11-11, 1.8.5) | `work/play-store-assets/`의 짝. 출시 절차 · 답안지는 `work/plans/APP_STORE_*.md` | "스토어 등록 자산" |
 | `docs/engine/measurements/` | 엔진 성능·매치 raw/summary 로그 | 데이터, 구조 고정. **깊이 규칙 적용 대상 밖** | "데이터 로그" |
 | `engine-lab/` (저장소 **루트**) | **엔진 실험실**(백로그 #214, 2026-10-03) — 맥에서 파이썬으로 KataGo를 시험하는 곳. 공용 패키지·실험·국면 세트·옛 벤치마크 러너·원격 분석 서버 | 앱과 **엄격히 분리** — 앱 코드를 import하지 않고, 앱 값은 대응표 한 곳에 두어 앱 소스와 대조하는 테스트가 지킨다. 실험 결과는 원자료까지 커밋. 규칙·지도는 `engine-lab/README.md`. **문서 구조 정책(깊이·개수) 적용 대상 밖** — 코드 폴더다 | "엔진 딥다이브·검증" |
 
@@ -211,7 +211,7 @@
 | --- | --- |
 | `work/play-store-assets/README.md` | Play Console 시각적 애셋(스크린샷·앱 아이콘·피처 그래픽) 캡처 조건과 갱신 이력 |
 | `work/play-store-assets/store_listing.txt` | Play 등록정보 원문 — 앱 이름·설명·요금 안내·출시 노트 |
-| `work/app-store-assets/app_store_listing.txt` | **App Store** 등재 글 정본(2026-10-27, 4개 언어 — 이름 · 부제 · 프로모션 · 키워드 · 설명 · 구독 현지화 · 카테고리 · URL). Play 글을 iOS 사실로 고쳐 옮겼고(사진 분석 · Google · 가격 숫자 없음), 칸마다 글자 수를 셌다. 스크린샷은 아직 없다 |
+| `work/app-store-assets/app_store_listing.txt` | **App Store** 등재 글 정본(2026-10-27, 4개 언어 — 이름 · 부제 · 프로모션 · 키워드 · 설명 · 구독 현지화 · 카테고리 · URL). Play 글을 iOS 사실로 고쳐 옮겼고(사진 분석 · Google · 가격 숫자 없음), 칸마다 글자 수를 셌다. 스크린샷(2026-11-11 · 1.8.5 · 일곱 장 — Play의 07 사진 분석은 iOS에 없어 뺐다)의 촬영 조건은 이 문서 7절 8 |
 
 ⚠️ **2026-09-13에 저장소 루트 `design-handoff/`(외부 디자이너 핸드오프용 export/import 채널)를
 없애고 이 경로로 흡수했다** — 디자이너 채널은 2026-08-11 발송 이후 회신이 없어 사실상 죽어 있었고,
