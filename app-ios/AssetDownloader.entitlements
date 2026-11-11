@@ -5,7 +5,7 @@
 	<!-- 앱과 모델 팩 확장이 같은 앱 그룹을 써야 한다(Info.plist의 BAAppGroupID와 같은 값 — 다르면 AssetPackManager가 앱을 멈춘다). -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.zenit9hub.ai.baduk</string>
+		<string>$(GOCOACH_APP_GROUP)</string>
 	</array>
 </dict>
 </plist>

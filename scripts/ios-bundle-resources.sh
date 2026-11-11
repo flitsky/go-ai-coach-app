@@ -37,6 +37,18 @@ elif [ "${CONFIGURATION:-Debug}" = "Release" ]; then
 else
   echo "warning: KataGo configs missing in $CFG_SRC — the simulator uses GOCOACH_KATAGO_* instead"
 fi
+# 실기기 시험 빌드(#297 — `make ios-run-device`): Apple 호스팅 모델 팩은 개발자 등록 · 업로드 뒤에만 받으므로, GOCOACH_BUNDLE_MODELS=1이면
+# 맥의 모델 둘을 묶음에 싣는다(앱이 모델 찾는 차례 ②, `IosEngineModels.kt`). App Store용 보관(archive)에는 싣지 않는다 — 모델은 팩으로 받는다.
+if [ "${GOCOACH_BUNDLE_MODELS:-0}" = "1" ]; then
+  if [ "${ACTION:-build}" = "install" ]; then
+    echo "error: GOCOACH_BUNDLE_MODELS is for local test builds — App Store archives get the models from the asset pack"
+    exit 1
+  fi
+  cp -f "${GOCOACH_MODEL_SRC:?}" "$DST/katago/model.bin.gz"
+  cp -f "${GOCOACH_HUMAN_MODEL_SRC:?}" "$DST/katago/human.bin.gz"
+else
+  rm -f "$DST/katago/model.bin.gz" "$DST/katago/human.bin.gz"
+fi
 
 mkdir -p "$DST/audio"
 FFMPEG="$(command -v ffmpeg || true)"

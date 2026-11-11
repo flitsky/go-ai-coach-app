@@ -11,7 +11,9 @@ import System
 ///    `AssetPackManager.shared`를 건드리면 앱이 멈출 수 있다. 시뮬레이터는 맥의 모델 파일(`GOCOACH_KATAGO_*`, `make ios-run`)로 돈다.
 final class AppleHostedModelSource: NSObject, IosEngineModelSource, @unchecked Sendable {
     static let packID = "katago-models"
-    static let appGroupID = "group.com.zenit9hub.ai.baduk"
+    /// 빌드 설정 `GOCOACH_APP_GROUP`(기본 `group.com.zenit9hub.ai.baduk`)이 Info.plist `BAAppGroupID`와 두 .entitlements에 같이 들어간다 —
+    /// 무료 팀 실기기 시험판(`make ios-run-device`)은 진짜 ID를 무료 팀에 묶지 않으려고 다른 값으로 빌드한다.
+    static let appGroupID = Bundle.main.object(forInfoDictionaryKey: "BAAppGroupID") as? String ?? "group.com.zenit9hub.ai.baduk"
 
     /// 쓸 수 있을 때만 만든다 — 실기기이고 앱 그룹이 열려 있을 때(그룹이 잘못되면 `AssetPackManager.shared`가 던지지 않고 앱을 멈춘다).
     static func makeIfAvailable() -> AppleHostedModelSource? {

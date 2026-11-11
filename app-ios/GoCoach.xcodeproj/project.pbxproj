@@ -304,6 +304,8 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GOCOACH_APP_GROUP = "group.$(GOCOACH_BUNDLE_ID)";
+				GOCOACH_BUNDLE_ID = com.zenit9hub.ai.baduk;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
@@ -324,6 +326,8 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GOCOACH_APP_GROUP = "group.$(GOCOACH_BUNDLE_ID)";
+				GOCOACH_BUNDLE_ID = com.zenit9hub.ai.baduk;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
@@ -374,7 +378,7 @@
 					"-lkatago",
 					"-lz",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GOCOACH_BUNDLE_ID)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -423,7 +427,7 @@
 					"-lkatago",
 					"-lz",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GOCOACH_BUNDLE_ID)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -445,7 +449,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.8.5;
-				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk.AssetDownloader;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GOCOACH_BUNDLE_ID).AssetDownloader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -468,7 +472,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.8.5;
-				PRODUCT_BUNDLE_IDENTIFIER = com.zenit9hub.ai.baduk.AssetDownloader;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(GOCOACH_BUNDLE_ID).AssetDownloader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
