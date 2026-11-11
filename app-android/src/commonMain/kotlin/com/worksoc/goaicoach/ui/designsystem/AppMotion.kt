@@ -21,4 +21,14 @@ internal object AppMotion {
 
     /** 누를 때 카드 · 타일 · 단추의 모양과 크기 — 손가락에 바로 따라와야 한다. */
     fun <T> fastSpatial(): SpringSpec<T> = spring(dampingRatio = 0.6f, stiffness = 800f)
+
+    /**
+     * 눈길을 끄는 반복 움직임(마지막 수 박동 · 「이전 대국 이어하기」 숨쉬기)이 도는 시간 — 지나면 제자리에서 멈춘다(사용자 2026-11-11).
+     * 끝없이 돌면 iOS의 Compose가 **창 전체를 매 프레임** 다시 그린다 — 실측(iPhone 11 Pro Max): 가만히 둔 다시보기 화면에서 앱 CPU 45%,
+     * 폰이 금방 뜨거워졌다. 안드로이드도 배터리를 그만큼 덜 쓴다. 3초는 스레드가 정했다.
+     */
+    const val AttentionMillis = 3_000
+
+    /** 한 번 오가는 데 [roundTripMillis]인 움직임을 [AttentionMillis]를 채울 만큼 몇 번 돌릴지 — 끝까지 오간 뒤 멈추도록 올림한다. */
+    fun attentionRounds(roundTripMillis: Int): Int = (AttentionMillis + roundTripMillis - 1) / roundTripMillis
 }

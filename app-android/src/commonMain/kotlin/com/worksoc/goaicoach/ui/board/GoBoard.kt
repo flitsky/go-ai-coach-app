@@ -28,8 +28,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +67,7 @@ import com.worksoc.goaicoach.shared.enginecontract.CandidateMove
 import com.worksoc.goaicoach.shared.enginecontract.OwnershipEstimate
 import com.worksoc.goaicoach.shared.policy.topMoveDeltaScoreLabel
 import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
+import com.worksoc.goaicoach.ui.designsystem.AppMotion
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.GoBoardColors
@@ -84,6 +87,27 @@ import kotlinx.coroutines.delay
 
 private const val EngineActivityFrameIntervalMillis = 1_000L
 private val ActivityIndicatorDots = listOf("", " .", " ..", " ...")
+
+/** 마지막 수 박동이 가장 어두운 데서 가장 밝은 데까지(-1→1) 가는 시간. */
+private const val LastMovePulseHalfCycleMillis = 500
+
+/** 가착수 · 끌기 돌 · 덮개 글자의 깜빡임 한쪽 길이. */
+private const val BlinkMillis = 800
+
+/**
+ * [running]일 때만 [initialValue]↔[targetValue]를 오가는 깜빡임 값. 멈춰 있을 때는 [initialValue]에 서 있다.
+ * 무한 애니메이션은 값을 아무도 그리지 않아도 프레임을 계속 요청한다 — 그래서 보일 때만 컴포지션에 둔다(`AppMotion.AttentionMillis`).
+ */
+@Composable
+private fun blinkingFloat(running: Boolean, initialValue: Float, targetValue: Float, label: String): State<Float> {
+    if (!running) return remember(initialValue) { mutableFloatStateOf(initialValue) }
+    return rememberInfiniteTransition(label = label).animateFloat(
+        initialValue = initialValue,
+        targetValue = targetValue,
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis = BlinkMillis, easing = LinearEasing), repeatMode = RepeatMode.Reverse),
+        label = label,
+    )
+}
 
 @Composable
 internal fun GoBoard(
@@ -190,35 +214,31 @@ internal fun GoBoard(
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val ghostAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.65f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "ghostAlpha"
-    )
-    val textAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "textAlpha"
-    )
-    // 마지막 착수 링이 눈에 잘 띄도록 -20%(어둡게)~+20%(밝게)를 0.5초 간격으로 오가는 박동 효과.
-    val lastMovePulse by infiniteTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 500, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "lastMovePulse"
-    )
+    // 깜빡임(가착수 · 끌기 돌 · 계가/준비 덮개의 글자)은 **그것이 보이는 동안만** 돈다 — 안 보일 때도 헛돌던 무한 애니메이션이
+    // iOS에서 창 전체를 매 프레임 다시 그리게 했다(실측 2026-11-11 — `AppMotion.AttentionMillis`).
+    // ⚠️ `playDrag`는 `derivedStateOf`로만 본다 — 손가락이 움직일 때마다 리컴포즈되면 안 된다(`isHoldingPlay`와 같은 이유).
+    val isDragging by remember { derivedStateOf { playDrag != null } }
+    val ghostAlpha by blinkingFloat(running = tentativeMove != null || isDragging, initialValue = 0.35f, targetValue = 0.65f, label = "ghostAlpha")
+    val showsPreparingOverlay = engineActivityIndicator == EngineActivityIndicator.Preparing
+    // 계가 중 덮개 — 조건의 사연은 아래 그 덮개 자리의 주석.
+    val showsScoringOverlay = gameState.hasConsecutivePasses() && isEngineBusy && !isGameEnded
+    val textAlpha by blinkingFloat(running = showsPreparingOverlay || showsScoringOverlay, initialValue = 0.4f, targetValue = 1.0f, label = "textAlpha")
+
+    // 마지막 착수 링이 눈에 잘 띄도록 -20%(어둡게)~+20%(밝게)를 오가는 박동 — **수가 바뀐 뒤 `AppMotion.AttentionMillis`만** 돌고
+    // 제 색(0)에서 멈춘다(사용자 2026-11-11 「몇 초 뒤 멈추기」 — 끝없이 돌면 iOS가 판이 보이는 내내 창 전체를 다시 그린다).
+    // 빠르기는 예전 무한 박동과 같다(0.5초에 -1↔1). ⚠️ 값은 **그리기 람다 안에서만** 읽는다(`playEffectScale`과 같은 이유).
+    val lastMovePulse = remember { Animatable(0f) }
+    val lastPlayCoordinate = (gameState.moves.lastOrNull() as? Move.Play)?.coordinate
+    LaunchedEffect(gameState.moves.size, lastPlayCoordinate, uxOptions.showLastMoveRing) {
+        lastMovePulse.snapTo(0f)
+        if (lastPlayCoordinate == null || !uxOptions.showLastMoveRing) return@LaunchedEffect
+        val quarter = LastMovePulseHalfCycleMillis / 2
+        repeat(AppMotion.attentionRounds(roundTripMillis = LastMovePulseHalfCycleMillis * 2)) {
+            lastMovePulse.animateTo(1f, tween(durationMillis = quarter, easing = LinearEasing))
+            lastMovePulse.animateTo(-1f, tween(durationMillis = LastMovePulseHalfCycleMillis, easing = LinearEasing))
+            lastMovePulse.animateTo(0f, tween(durationMillis = quarter, easing = LinearEasing))
+        }
+    }
 
     val platform = LocalAppPlatform.current
     val haptics = remember(platform) { platform.haptics }
@@ -497,10 +517,11 @@ internal fun GoBoard(
                     } else {
                         neutralOrToneColor.brighten(0.15f)
                     }
-                    val pulsedRingColor = if (lastMovePulse >= 0f) {
-                        baseRingColor.brighten(lastMovePulse * 0.2f)
+                    val pulse = lastMovePulse.value
+                    val pulsedRingColor = if (pulse >= 0f) {
+                        baseRingColor.brighten(pulse * 0.2f)
                     } else {
-                        baseRingColor.darken(-lastMovePulse * 0.2f)
+                        baseRingColor.darken(-pulse * 0.2f)
                     }
                     // 착수 이펙트(#145)가 도는 동안에는 **테두리도 돌과 같은 배율로** 커졌다 돌아온다
                     // (2026-09-12 사용자 요청). 돌만 부풀면 테두리가 돌 안으로 파고들어, 커지는 내내
@@ -585,7 +606,7 @@ internal fun GoBoard(
                 )
             }
 
-            if (engineActivityIndicator == EngineActivityIndicator.Preparing) {
+            if (showsPreparingOverlay) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -632,7 +653,7 @@ internal fun GoBoard(
             // ⚠️ **종국 플래그는 계가가 *끝난 뒤*에 켜진다** — 그래서 `!isGameEnded`가 계가 구간을
             //   가리지 않는다. 그 순서가 바뀌면 이 오버레이가 통째로 사라지니, 순서를 건드리는
             //   사람은 여기를 함께 볼 것.
-            if (gameState.hasConsecutivePasses() && isEngineBusy && !isGameEnded) {
+            if (showsScoringOverlay) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

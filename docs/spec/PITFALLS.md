@@ -1,4 +1,4 @@
-# 함정 — 색인과 전문 1~102
+# 함정 — 색인과 전문 1~103
 
 > **이 문서는 읽는 문서가 아니라 찾는 문서다.**
 > 바로 아래 **「색인」**에서 지금 하는 일에 걸리는 키워드를 먼저 고르고, **그 번호의 전문만** 아래에서 편다.
@@ -58,6 +58,7 @@
 - **67** `GoCoachApp.kt`의 `wiringContext` `remember` 키 제거는 **하지 말 것** — 설계안 4개 전부가 같은 틀린 근거(*"64개 멤버가 전부 안정적이라 키가 필요 없다"*)로 제안했다. 지역 `val` 5개(`playerSetup`·`matchMode`·`searchTimeSettings`·`topMovesEnabled`·`shouldShowResumePrompt`)와 remember 금지가 명시된 `engineName`·`engineDiagnostic`이 첫 컴포지션 값에 영구히 얼어붙고, 네 안이 공통 제안한 회귀 테스트도 이 버그를 못 잡는다. **다음 스레드가 또 제안할 것이다** — 착수 전 ⓐ 위 8개 값을 람다/지연 읽기로 전환 ⓑ 64개 멤버 전수 감사(0건 확인), 순서를 반드시 지킬 것 ⚠️ **2026-09-28 갱신**: 전문의 *"위 8개"* 중 `searchTimeSettings`는 지금 object 멤버가 읽지 않고, `engineName`·`engineDiagnostic`은 늦은 읽기로 바뀌었다(refactor backlog #108). 지금 붙잡힌 평범한 지역 값의 정답 목록은 `WiringContextFreezeContractTest.FreezeProneMembers`다 — 키는 그 테스트가 무조건 고정한다
 - **74** 「훅 예산을 회수했다」는 실제로 상태 훅이 줄었는지 셀 것 — `GoCoachApp.kt`에서 지역 변수를 지워도 그 변수가 훅을 안 썼다면 줄어드는 건 줄수 예산(`lineBudget`)뿐, 상태 훅 예산(함정 3, 42/42)은 그대로다. 완료 기록에 어느 예산을 회수했는지 정확히 밝힐 것 ⚠️ **2026-09-28 #46 — 42/42 훅 개수는 「셸 상태 원장」으로 대체됐다(폐지 아님)**: 정본 `app-android/architecture-budgets.json` + `architecture/ShellStateLedger.kt`. 새 상태는 이름·종류·사유를 원장에 적고, 금지 종류(부채)는 늘 수 없다
 - **100** **iOS 글꼴은 안드로이드보다 넓다 — 직접 나눈 줄이 단어 중간에서 꺾이면 autoSize가 넘침으로 못 잡는다**(「Norma / l」) — 줄을 이미 나눴으면 `softWrap = false` + `TextOverflow.Clip`. ⚠️ `softWrap = false`에 Ellipsis를 쓰면 Compose가 `maxLines`를 1로 묶는다
+- **103** **끝없는 애니메이션 하나가 iOS에서는 창 전체를 매 프레임 다시 그린다**(실측: 가만히 둔 다시보기에서 앱 CPU 45% → 폰 발열) — 눈길 끄는 반복은 `AppMotion.AttentionMillis`(3초)만 돌리고, 깜빡임은 보이는 동안만 컴포지션에 둔다. 실기 CPU는 `xctrace` Activity Monitor 누적 CPU 시간 두 번의 차로 잰다
 
 **제스처·입력·기기**
 - **17** 스크롤 안 길게 누르기 — 조용히 실패, 트리거는 탭 수·위치로. ⚠️ 전문의 *"`input swipe`는 MOVE를 안 만든다"* 는 2026-09-11 실측과 어긋난다(스와이프가 스크롤에 빼앗겼다 = MOVE가 있었다)
@@ -1383,3 +1384,14 @@
     - 증상: iOS 설정 「앱 정보」의 「빌드」 뒤가 비고, 대국 화면 왼쪽 위에 「v」만 남았다. 진단 로그의 `builtAt=`도 비었다.
     - 원인: `ios-bundle-resources.sh`가 PlistBuddy로 `GoCoachBuildTime`을 넣었지만, 그 단계 뒤의 Info.plist 처리(`GENERATE_INFOPLIST_FILE`)가 파일을 다시 써 키가 사라졌다.
     - 처방: 빌드 때 만드는 값은 `appassets/` 아래 파일로 싣고(`build-time.txt`) 앱이 그 파일을 읽는다(`AppPlatformActualsIos.kt`). 묶음을 만든 뒤 `appassets/build-time.txt`가 있는지 본다.
+103. **⚠️ 끝없는 애니메이션 하나가 iOS에서는 창 전체를 매 프레임 다시 그린다** (2026-11-11, iOS 실기 · iPhone 11 Pro Max)
+    - 증상(사용자): 실기에서 엔진은 빠른데 폰이 금방 뜨끈해졌다. 재 보니 가만히 둔 다시보기 화면에서 앱 CPU가 꾸준히 45%(분석이 끝난 뒤에도).
+    - 원인: 바둑판의 마지막 수 박동(`rememberInfiniteTransition`, 0.5초 왕복)과 홈 「이전 대국 이어하기」 숨쉬기가 끝없이 돌았다. 표본 기록(Time Profiler → `atos`)은
+      `DisplayLinkProxy.handleDisplayLinkTick → MetalRedrawer.draw`가 바둑판까지 매 프레임 새로 그리는 것을 보였다 — iOS의 Compose는 한 군데만 움직여도 창 전체를 다시 그린다.
+      같은 전이(transition) 안의 깜빡임 값(가착수 · 덮개 글자)은 그리는 곳이 없을 때도 프레임을 요청했다.
+    - 처방(사용자 「몇 초 뒤 멈추기」): 박동 · 숨쉬기는 `Animatable`로 `AppMotion.AttentionMillis`(3초)만 돌고 제자리에서 멈춘다. 깜빡임은 `blinkingFloat`(`GoBoard.kt`)로
+      보이는 동안만 무한 전이를 컴포지션에 둔다. 고친 뒤 실기: 앱 홈 0.5%, 손대지 않은 대국 화면 3%(1초 시계).
+    - 재는 법: `xctrace record --template 'Activity Monitor' --device <UDID> --all-processes --time-limit 2s`를 30초 간격으로 두 번 → `activity-monitor-process-live` 표의
+      GoCoach 누적 CPU 시간 차 ÷ 경과 시간. 그 전에 `devicectl device info processes`로 터널을 연다(없으면 "waiting for device to boot"). 릴리스 구성은 `--attach`가 안 되니
+      `--all-processes`로 기록하고 앱 주소를 dSYM으로 `atos`. ⚠️ 폰이 잠겨 있으면 앱이 멈춰 0이 나온다 — 화면을 켜 둔다.
+    - ⚠️ 시험 중 열의 다른 몫: Mac의 Device Hub가 폰 화면을 끌어가는 동안(상태 막대 보라색 표시) `avconferenced` · `backboardd`가 앱만큼 CPU를 썼다 — 안 볼 때는 Device Hub를 닫는다.

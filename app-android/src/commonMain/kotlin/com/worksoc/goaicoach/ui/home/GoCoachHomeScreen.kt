@@ -1,12 +1,9 @@
 package com.worksoc.goaicoach.ui.home
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -574,15 +571,15 @@ private fun HomePlayPage(
         // 글자가 흐려지지 않아 읽기 쉽고(옛 깜빡임은 투명도 0.35까지 내려갔다), 알약 전체가 천천히 커졌다 작아진다.
         // 자리는 대국 카드 **아래**다(#288, 사용자 2026-10-24) — 판이 생기고 없어져도 대국 카드는 움직이지 않는다. 밀리는 것은 아래 메뉴 칸이다.
         if (hasResumableSession) {
-            val breath by rememberInfiniteTransition(label = "resumeBreath").animateFloat(
-                initialValue = 1f,
-                targetValue = ResumeBreathScale,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = ResumeBreathMillis, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "resumeBreathScale",
-            )
+            // 숨쉬기는 홈에 들어올 때 `AppMotion.AttentionMillis`를 채울 만큼만 하고 제 크기에서 멈춘다(사용자 2026-11-11 「몇 초 뒤 멈추기」 —
+            // 끝없이 돌면 iOS가 홈이 떠 있는 내내 창 전체를 매 프레임 다시 그린다). 배율은 아래 `graphicsLayer` 안에서만 읽는다.
+            val breath = remember { Animatable(1f) }
+            LaunchedEffect(Unit) {
+                repeat(AppMotion.attentionRounds(roundTripMillis = ResumeBreathMillis * 2)) {
+                    breath.animateTo(ResumeBreathScale, tween(durationMillis = ResumeBreathMillis, easing = FastOutSlowInEasing))
+                    breath.animateTo(1f, tween(durationMillis = ResumeBreathMillis, easing = FastOutSlowInEasing))
+                }
+            }
 
             // 폭은 위 2열 카드와 같은 전폭이다(#288) — 가운데 뜬 알약보다 왼쪽 · 오른쪽 끝이 카드와 맞아 한 덩어리로 읽힌다. 글 두 줄(#287)은 그대로.
             Box(
@@ -590,8 +587,8 @@ private fun HomePlayPage(
                     .padding(top = AppSpacing.Space12)
                     .fillMaxWidth()
                     .graphicsLayer {
-                        scaleX = breath
-                        scaleY = breath
+                        scaleX = breath.value
+                        scaleY = breath.value
                     }
                     .clip(RoundedCornerShape(percent = 50))
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
