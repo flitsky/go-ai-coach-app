@@ -35,7 +35,8 @@ actual val appBuildInfo: AppBuildInfo = run {
     val info = NSBundle.mainBundle.infoDictionary
     AppBuildInfo(
         versionName = info?.get("CFBundleShortVersionString") as? String ?: "",
-        versionCode = (info?.get("CFBundleVersion") as? String)?.toIntOrNull() ?: 0,
+        // 다시 올린 빌드는 점 붙은 번호(`10805.1` — `make ios-archive IOS_BUILD_NUMBER=…`)다 — 앞 정수만 읽어 판 번호(안드로이드 versionCode)와 맞춘다.
+        versionCode = (info?.get("CFBundleVersion") as? String)?.substringBefore('.')?.toIntOrNull() ?: 0,
         buildTime = bundledBuildTime(),
         buildType = if (isDebugBuild) "debug" else "release",
         useTestAds = (info?.get("GADApplicationIdentifier") as? String)?.startsWith(GoogleTestAdsPublisher) ?: true,

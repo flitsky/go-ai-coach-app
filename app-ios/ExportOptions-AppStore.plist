@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- make ios-upload(백로그 #298): 보관본을 App Store Connect로 바로 올린다. 팀은 프로젝트의 DEVELOPMENT_TEAM. -->
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>upload</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>teamID</key>
+	<string>Z4B6R9M7Y6</string>
+	<!-- 빌드 번호는 우리가 정한다(안드로이드 versionCode와 같게) — Xcode가 올려 바꾸지 않게 한다. -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>

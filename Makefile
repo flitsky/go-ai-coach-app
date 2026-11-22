@@ -76,7 +76,7 @@ export JAVA_HOME
 
 .DEFAULT_GOAL := help
 
-.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe ios-prebuild-engine-device ios-ensure-engine-device ios-build-device-release ios-run-device ios-run-release ios-package-model-pack
+.PHONY: help doctor test test-ios test-device test-remote-analysis-server dev dev-stub install-dev install-dev-engine reinstall-dev-engine seed-engine launch play-internal-aab bundle-aab verify-admob-keys bump-version prepare-friend-assets engine-level-benchmark engine-device-benchmark engine-search-mode-benchmark engine-search-mode-benchmark-phone engine-lab-test release ensure-debug-engine prebuild-engine clean ios-build ios-run ios-catalog ios-prebuild-engine ios-ensure-engine ios-engine-probe ios-prebuild-engine-device ios-ensure-engine-device ios-build-device-release ios-run-device ios-archive ios-upload ios-upload-model-pack ios-run-release ios-package-model-pack
 
 help:
 	@echo "=========================================================================="
@@ -105,7 +105,9 @@ help:
 	@echo "  make ios-engine-probe    - Run KataGo inside the app on the simulator (GTP, main then human model; prints timings)"
 	@echo "  make ios-prebuild-engine-device - Build KataGo as a static library for iPhones (app-ios/build/katago/iphoneos/)"
 	@echo "  make ios-build-device-release   - Release build for iPhones without signing (checks compile + link; no Apple account)"
-	@echo "  make ios-run-device IOS_TEAM=… IOS_DEVICE=…  - Signed test build on a real iPhone (models bundled; Apple account in Xcode)"
+	@echo "  make ios-run-device IOS_DEVICE=…  - Signed test build on a real iPhone (models bundled; Apple account in Xcode)"
+	@echo "  make ios-archive / ios-upload  - App Store archive (real ad IDs in Ads.local.xcconfig) and upload to App Store Connect"
+	@echo "  make ios-upload-model-pack - Upload the KataGo asset pack to App Store Connect (API key in AppStoreConnect.local.mk)"
 	@echo "  make ios-run-release     - Release build on the simulator, install & launch (debug-only paths off, like the store build)"
 	@echo "  make ios-package-model-pack - Package the two KataGo models as the Apple-hosted asset pack (app-ios/build/asset-packs/)"
 	@echo "  make test-device         - Run instrumented (androidTest) smoke tests on TARGET=emu/phone"
@@ -231,7 +233,7 @@ ios-build-device-release: ios-ensure-engine-device
 	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Release -destination 'generic/platform=iOS' -derivedDataPath $(IOS_DERIVED) CODE_SIGNING_ALLOWED=NO build
 
 # 실기 아이폰에 시험 빌드를 설치하고 켠다(백로그 #297). Xcode › Settings › Accounts에 Apple 계정이 있어야 한다(무료 개인 팀도 된다 — 7일 유효).
-# 모델 둘을 묶음에 싣는다(GOCOACH_BUNDLE_MODELS — Apple 호스팅 팩은 등록 · 업로드 뒤에만 받는다). IOS_TEAM=<팀 ID> IOS_DEVICE=<기기 UDID>.
+# 모델 둘을 묶음에 싣는다(GOCOACH_BUNDLE_MODELS — Apple 호스팅 팩은 등록 · 업로드 뒤에만 받는다). IOS_DEVICE=<기기 UDID> (팀은 프로젝트의 DEVELOPMENT_TEAM, IOS_TEAM=으로 바꿀 수 있다).
 # 번들 ID · 앱 그룹은 `.devtest`를 붙인 시험용이다 — 무료 팀이 진짜 ID(com.zenit9hub.ai.baduk)를 먼저 등록해 유료 팀이 못 쓰는 일을 막는다.
 # 기기를 목적지로 집어야(id=) 자동 서명이 그 기기를 팀에 등록한다(`generic/platform=iOS`면 "Your team has no devices").
 # 앱 그룹 권한(.entitlements)은 뺀다 — 무료 팀 프로필엔 앱 그룹이 없다. 그러면 `AppleHostedModelSource`가 꺼지고 모델은 묶음에서 읽는다.
@@ -239,10 +241,9 @@ IOS_APP_DEVICE := $(IOS_DERIVED)/Build/Products/Release-iphoneos/GoCoach.app
 IOS_DEVICE_BUNDLE_ID := $(IOS_BUNDLE_ID).devtest
 
 ios-run-device: ios-ensure-engine-device
-	@test -n "$(IOS_TEAM)" || { echo "IOS_TEAM=<team id> is required (Xcode › Settings › Accounts)"; exit 2; }
 	@test -n "$(IOS_DEVICE)" || { echo "IOS_DEVICE=<device UDID> is required (xcrun devicectl list devices)"; exit 2; }
 	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Release -destination 'platform=iOS,id=$(IOS_DEVICE)' -derivedDataPath $(IOS_DERIVED) \
-		-allowProvisioningUpdates DEVELOPMENT_TEAM=$(IOS_TEAM) CODE_SIGN_STYLE=Automatic GOCOACH_BUNDLE_ID=$(IOS_DEVICE_BUNDLE_ID) CODE_SIGN_ENTITLEMENTS= \
+		-allowProvisioningUpdates $(if $(IOS_TEAM),DEVELOPMENT_TEAM=$(IOS_TEAM)) CODE_SIGN_STYLE=Automatic GOCOACH_BUNDLE_ID=$(IOS_DEVICE_BUNDLE_ID) CODE_SIGN_ENTITLEMENTS= \
 		GOCOACH_BUNDLE_MODELS=1 GOCOACH_MODEL_SRC="$(FRIEND_MODEL_PATH)" GOCOACH_HUMAN_MODEL_SRC="$(FRIEND_HUMAN_MODEL_PATH)" build
 	xcrun devicectl device install app --device "$(IOS_DEVICE)" $(IOS_APP_DEVICE)
 	xcrun devicectl device process launch --device "$(IOS_DEVICE)" $(IOS_DEVICE_BUNDLE_ID)
@@ -250,6 +251,38 @@ ios-run-device: ios-ensure-engine-device
 # 엔진 모델 팩(백로그 #293 — Apple이 호스팅하는 Background Assets) — 안드로이드 PAD 팩과 같은 두 모델을 묶는다. 올리기는 사용자가(App Store Connect).
 ios-package-model-pack:
 	./scripts/ios-package-model-pack.sh "$(FRIEND_MODEL_PATH)" "$(FRIEND_HUMAN_MODEL_PATH)"
+
+# App Store 제출용 보관 · 올리기(백로그 #298). 서명 · 업로드는 App Store Connect API 키로 한다 — Xcode 계정 로그인이 필요 없다
+# (2026-11-22: Xcode에 로그인해도 명령줄 xcodebuild는 계정 목록이 비어 「App Store Connect access … is required」로 멈췄다).
+# 키 ID · 발급자 ID는 `app-ios/Config/AppStoreConnect.local.mk`(커밋 금지), 키 파일은 `~/.appstoreconnect/private_keys/AuthKey_<키 ID>.p8`.
+# 그 파일이 없으면 Xcode 계정으로 시도한다.
+# 실제 광고 ID(`app-ios/Config/Ads.local.xcconfig`)가 없으면 `ios-bundle-resources.sh`가 보관을 멈춘다. 모델은 싣지 않는다(팩으로 받는다).
+# 빌드 번호는 프로젝트 값(= 안드로이드 versionCode). 같은 판을 다시 올릴 때만 IOS_BUILD_NUMBER=10805.1처럼 점 붙은 번호를 준다
+# (한 번 올린 빌드 번호는 다시 못 쓴다 — 앱은 앞 정수만 판 번호로 읽는다, `AppPlatformActualsIos.kt`).
+IOS_ARCHIVE := app-ios/build/GoCoach.xcarchive
+IOS_EXPORT := app-ios/build/export
+IOS_ASC_APP_ID := 6837705194
+IOS_MODEL_PACK := app-ios/build/asset-packs/katago-models.aar
+-include app-ios/Config/AppStoreConnect.local.mk
+ASC_KEY_PATH ?= $(HOME)/.appstoreconnect/private_keys/AuthKey_$(ASC_KEY_ID).p8
+ASC_XCODEBUILD_AUTH := $(if $(ASC_KEY_ID),-authenticationKeyPath "$(ASC_KEY_PATH)" -authenticationKeyID $(ASC_KEY_ID) -authenticationKeyIssuerID $(ASC_ISSUER_ID))
+
+ios-archive: ios-ensure-engine-device
+	rm -rf $(IOS_ARCHIVE)
+	xcodebuild -project $(IOS_PROJECT) -scheme GoCoach -configuration Release -destination 'generic/platform=iOS' -derivedDataPath $(IOS_DERIVED) \
+		-archivePath $(IOS_ARCHIVE) -allowProvisioningUpdates $(ASC_XCODEBUILD_AUTH) $(if $(IOS_TEAM),DEVELOPMENT_TEAM=$(IOS_TEAM)) $(if $(IOS_BUILD_NUMBER),CURRENT_PROJECT_VERSION=$(IOS_BUILD_NUMBER)) archive
+
+# 보관본을 App Store Connect로 올린다(내보내기 + 올리기 — `app-ios/ExportOptions-AppStore.plist`). 처리가 끝나면 TestFlight · 버전 페이지에 빌드가 보인다.
+ios-upload:
+	@test -d $(IOS_ARCHIVE) || { echo "no archive — run 'make ios-archive' first"; exit 2; }
+	rm -rf $(IOS_EXPORT)
+	xcodebuild -exportArchive -archivePath $(IOS_ARCHIVE) -exportOptionsPlist app-ios/ExportOptions-AppStore.plist -exportPath $(IOS_EXPORT) -allowProvisioningUpdates $(ASC_XCODEBUILD_AUTH)
+
+# 모델 팩(`make ios-package-model-pack`의 결과)을 올리고 처리가 끝날 때까지 기다린다. API 키가 있어야 한다.
+ios-upload-model-pack:
+	@test -n "$(ASC_KEY_ID)" || { echo "ASC_KEY_ID missing — see app-ios/Config/AppStoreConnect.local.mk"; exit 2; }
+	@test -f $(IOS_MODEL_PACK) || { echo "no model pack — run 'make ios-package-model-pack' first"; exit 2; }
+	xcrun altool --upload-asset-pack $(IOS_MODEL_PACK) --apple-id $(IOS_ASC_APP_ID) --api-key $(ASC_KEY_ID) --api-issuer $(ASC_ISSUER_ID) --p8-file-path "$(ASC_KEY_PATH)" --wait
 
 # 출시와 같은 Release 구성을 시뮬레이터에서 — 디버그에서만 도는 길(광고 보상 흉내 · 개발자 메뉴)이 꺼진 채로 본다(#297 「디버그에서 됐다고 릴리스에서 된다고 보지 않는다」).
 IOS_APP_RELEASE := $(IOS_DERIVED)/Build/Products/Release-iphonesimulator/GoCoach.app

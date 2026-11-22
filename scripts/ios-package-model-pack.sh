@@ -37,5 +37,6 @@ JSON
 
 xcrun ba-package evaluate "$OUT/Manifest.json"
 # ⚠️ -o는 절대 경로로 — 상대 경로는 sourceRoot 기준으로 풀려 실패한다.
+rm -f "$OUT/katago-models.aar"  # ba-package는 있는 파일을 덮어쓰지 않는다("File exists")
 xcrun ba-package package "$OUT/Manifest.json" -o "$OUT/katago-models.aar"
 ls -la "$OUT/katago-models.aar"

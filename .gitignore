@@ -15,6 +15,8 @@ xcuserdata/
 *.xcuserstate
 # 실제 AdMob ID(백로그 #296 — 안드로이드 local.properties의 admob.* 자리)
 app-ios/Config/Ads.local.xcconfig
+# App Store Connect API 키 ID · 발급자 ID(백로그 #298 — 키 파일 자체는 ~/.appstoreconnect/private_keys/)
+app-ios/Config/AppStoreConnect.local.mk
 
 # Android
 local.properties
