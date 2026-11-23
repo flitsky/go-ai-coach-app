@@ -42,7 +42,8 @@ class SettingsSchemaMigrationTest {
     fun theMigrationKeepsWhatTheUserDeliberatelyChose() {
         val old = UserPreferencesSnapshot(
             settingsSchemaGeneration = 0,
-            appFontScale = 1.3f,
+            // 옛 「글꼴 크기」(1.3) 자리 — 그 필드는 없앴다(QA-05, 2026-11-23).
+            isLargeHeldStoneEnabled = false,
             showCoordinates = true,
             isBoardMaxSize = false,
             hasSeenOnboarding = true,
@@ -50,7 +51,7 @@ class SettingsSchemaMigrationTest {
 
         val migrated = migrateSettingsSchema(old)
 
-        assertEquals(1.3f, migrated.appFontScale)
+        assertTrue(!migrated.isLargeHeldStoneEnabled)
         assertTrue(migrated.showCoordinates)
         assertTrue(!migrated.isBoardMaxSize)
         assertTrue(migrated.hasSeenOnboarding)

@@ -336,21 +336,21 @@ class UserPreferencesApplicationTest {
     @Test
     fun autosaveRunnerPreservesFieldsItDoesNotManage() {
         // 회귀 방지: 오토세이브는 대국 설정(계가/덤/바둑판 등)만 관리한다. 온보딩 완료 여부나
-        // 글꼴 배율처럼 오토세이브가 모르는 필드는, 매번 데이터 클래스 기본값으로 덮어쓰지 않고
+        // 설정 세대처럼 오토세이브가 모르는 필드는, 매번 데이터 클래스 기본값으로 덮어쓰지 않고
         // store에 이미 저장된 현재 값을 그대로 보존해야 한다.
         //
-        // ⚠️ **카나리아가 셋에서 둘로 줄었다**(#73이 `gameSetupUxMode`를 삭제). 남은 둘은 종류가
-        // 서로 달라서 그물이 얇아지지는 않았다 — `hasSeenOnboarding`은 **한 번만 참이 되는 플래그**,
-        // `appFontScale`은 **사용자가 직접 고르는 값**이다. ⚠️ 여기서 더 줄이는 항목은 대체
+        // ⚠️ **카나리아를 갈아 끼웠다**(QA-05, 2026-11-23 — 「크게」를 없애며 `appFontScale` 필드가 사라졌다).
+        // 대체는 `settingsSchemaGeneration`(#188)이다 — 오토세이브가 실제로 이어 붙이는데 지금까지 어떤 테스트도
+        // 보지 않던 필드다. 남은 둘은 종류가 서로 다르다: `hasSeenOnboarding`은 **한 번만 참이 되는 플래그**,
+        // `settingsSchemaGeneration`은 **마이그레이션이 돌았는지 적는 세대**다. ⚠️ 여기서 더 줄이는 항목은 대체
         // 카나리아를 함께 마련할 것(`UserPreferencesAutosaveApplication`의 `copy` KDoc에도 적었다).
         val store = RecordingUserPreferencesStore()
         store.save(
             UserPreferencesSnapshot(
                 hasSeenOnboarding = true,
-                // 백로그 #81 — 글꼴 배율도 오토세이브가 모르는 필드다. ⚠️ 이 카나리아가 특히
-                // 중요한 이유: 배율은 **사용자가 직접 고르는 설정**이라, 되돌아가면 곧바로 눈에
-                // 보이는 회귀가 된다(대국 설정을 한 번 만지면 글자 크기가 제자리로 돌아간다).
-                appFontScale = 1.3f,
+                // ⚠️ 기본값(현재 세대)이 아닌 값이어야 무언가를 잡는다 — 덮이면 기본값으로 돌아가는데, 기본값을
+                // 넣어 두면 덮여도 같아 보인다. 이 저장소는 마이그레이션을 하지 않으므로 0을 그대로 돌려준다.
+                settingsSchemaGeneration = 0,
             ),
         )
 
@@ -376,10 +376,10 @@ class UserPreferencesApplicationTest {
 
         assertTrue(store.saved.hasSeenOnboarding)
         assertEquals(
-            1.3f,
-            store.saved.appFontScale,
-            "오토세이브가 글꼴 배율을 기본값으로 되돌렸다 — 사용자가 고른 크기가 대국 설정을 " +
-                "한 번 만지는 순간 사라진다(#81, 함정 2번).",
+            0,
+            store.saved.settingsSchemaGeneration,
+            "오토세이브가 설정 세대를 현재 세대로 덮었다 — 마이그레이션이 이미 돈 것처럼 보여, 아직 안 돈 " +
+                "사용자에게는 영영 안 돈다(#188, 함정 2번).",
         )
     }
 

@@ -5,12 +5,15 @@ package com.worksoc.goaicoach.ui.l10n
  * 구조는 `UiStringsAppUpdate.kt`와 같다 — 화면 한 조각이 쓰는 문구를 한 파일에 모아 네 언어 파일을 건드리지 않는다.
  * ⚠️ 스레드가 정한 문구다(2026-10-13) — 영어·일본어·중국어는 원어민 확인이 없다.
  */
-/** 첫 절(#261 — 사용자 2026-10-13: 「화면」은 *"무슨 화면?"* 이라 「언어 및 글자 크기」로). */
+/**
+ * 첫 절(#261 — 사용자 2026-10-13: 「화면」은 *"무슨 화면?"* 이라 절에 든 것을 이름으로 적는다).
+ * 「글자 크기」는 뺐다 — 그 행이 없어졌다(QA-05, 사용자 2026-11-23). 없는 것을 제목이 말하지 않게.
+ */
 private val SettingsDisplaySection: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "언어 · 글자 크기 · 화면 모드",
-    UiLanguage.English to "Language, text size and theme",
-    UiLanguage.Japanese to "言語・文字サイズ・画面モード",
-    UiLanguage.ChineseSimplified to "语言、字号和显示模式",
+    UiLanguage.Korean to "언어 · 화면 모드",
+    UiLanguage.English to "Language and theme",
+    UiLanguage.Japanese to "言語・画面モード",
+    UiLanguage.ChineseSimplified to "语言和显示模式",
 )
 
 /**

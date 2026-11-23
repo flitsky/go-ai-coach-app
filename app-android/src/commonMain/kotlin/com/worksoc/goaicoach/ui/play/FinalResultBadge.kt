@@ -85,7 +85,7 @@ internal fun FinalResultBadge(
         shadowElevation = 2.dp,
     ) {
         Column(
-            // ⚠️ **고정 높이를 주지 않는다**(함정 9) — 세 줄이고 글꼴 배율이 1.3까지 올라간다.
+            // ⚠️ **고정 높이를 주지 않는다**(함정 9) — 세 줄이다. 처음엔 글꼴 1.3배(옛 「크게」 — QA-05로 없앴다)에서 잘렸고, 지금은 영어 · iOS 넓은 글꼴 · 360dp 몫으로 둔다.
             modifier = Modifier.padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space8),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),

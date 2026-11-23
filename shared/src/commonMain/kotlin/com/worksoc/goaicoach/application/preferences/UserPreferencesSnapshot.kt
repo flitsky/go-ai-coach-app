@@ -57,15 +57,7 @@ data class UserPreferencesSnapshot(
     val isDirectPlayEnabled: Boolean = true,
     val showMoveReview: Boolean = false,
     val hasSeenOnboarding: Boolean = false,
-    /**
-     * 앱 글꼴 배율(백로그 #81). **시스템 배율을 따르지 않고 이 값을 쓴다** — 사유와 접근성 비용은
-     * [DefaultAppFontScale]의 KDoc에 있다.
-     *
-     * ⚠️ **오토세이브가 관리하지 않는 필드다** — `buildUserPreferencesAutosaveSnapshot`이
-     * `hasSeenOnboarding`처럼 `current`에서 이어 붙여야 한다. 배선하지 않으면 대국 설정을 한 번만
-     * 바꿔도 **다음 저장에서 조용히 1.0으로 돌아간다**(함정 2번, 과거 실제 버그).
-     */
-    val appFontScale: Float = DefaultAppFontScale,
+    // 글꼴 배율 필드(#81)는 없앴다(QA-05, 사용자 2026-11-23) — 앱은 늘 `FixedAppFontScale`이고, 옛 저장의 키는 디코더가 보지 않는다.
     val isPlayHapticEnabled: Boolean = true,
     /**
      * **착수 이펙트**(백로그 #145) — 돌이 확정되는 순간 [PlayEffectMillis] 동안 [PlayEffectPeakScale]까지
@@ -86,7 +78,7 @@ data class UserPreferencesSnapshot(
      * 읽을 때 세대가 낮으면 **그 세대에서 뜻이 바뀐 필드만** 기본값으로 덮고 세대를 올린다.
      *
      * ## ⚠️ 전체 초기화가 아니다
-     * 사용자가 의도적으로 고른 언어·글꼴 배율·판 크기는 **지킨다.** 되돌리는 것은
+     * 사용자가 의도적으로 고른 언어·판 크기는 **지킨다.** 되돌리는 것은
      * [settingsMigrationsFor]가 세대별로 이름을 적어 둔 필드뿐이다.
      *
      * ## ⚠️ `ReleaseResetCoordinator`와 **다른 축**이다(함정 6)
@@ -96,7 +88,7 @@ data class UserPreferencesSnapshot(
      * ## ⚠️⚠️ 자동저장에 반드시 배선할 것(함정 2)
      * `buildUserPreferencesAutosaveSnapshot`이 스냅샷을 **새로 만든다.** 여기서 `current`의 값을
      * 이어 붙이지 않으면 저장할 때마다 세대가 초기값으로 돌아가 **마이그레이션이 매번 다시 돌고,
-     * 사용자가 고른 값이 계속 되돌려진다.** `appFontScale`·`hasSeenOnboarding`이 같은 자리다.
+     * 사용자가 고른 값이 계속 되돌려진다.** `hasSeenOnboarding`이 같은 자리다.
      */
     val settingsSchemaGeneration: Int = CurrentSettingsSchemaGeneration,
 )

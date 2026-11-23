@@ -287,7 +287,7 @@ _(없음 — 새로 찾으면 `#112`부터 번호를 받아 여기에 둔다)_
     · 멤버 **64개**(val 17 + 스냅샷 1 + 게터 25 + 세터 16 + 액션 5), 배선 인자 **236개**를
       `SessionPorts`/`StateReader`/`StateWriter`/`EngineRuntimeAccess`/`SessionEffects`로.
     · 🔴 **함정 67을 먼저 읽어라.** `remember` 키 제거는 이 분할과 **별개**이고, 선행 감사 없이는 금지다.
-    · 🧪 **실기**(함정 67의 동결 확인): 대국 중 설정에서 난이도·언어·글꼴 크기를 바꾸고 대국 화면으로 돌아와 **바뀐 값으로 동작**하면 통과
+    · 🧪 **실기**(함정 67의 동결 확인): 대국 중 설정에서 난이도·언어(~~글꼴 크기~~ — 2026-11-23 QA-05로 없앴다)를 바꾸고 대국 화면으로 돌아와 **바뀐 값으로 동작**하면 통과
       (AI 세기 표시, 문구 언어, 엔진 이름·상태 표시). 하나라도 옛 값이면 실패 — CI는 이것을 못 잡는다.
 44. **화면 상태 3분할 + `UiState` 파일 3개 분리** (AI 모델: Opus, 노력정도: 높음) — ⏸️ 보류
     · **선행** `#42` · **동시 금지** P5 나머지·`#48`
@@ -296,14 +296,15 @@ _(없음 — 새로 찾으면 `#112`부터 번호를 받아 여기에 둔다)_
     · 🧪 **실기**: 프리미엄·캐릭터 선택·소모품 화면을 각각 열어 수정 전과 같은 모양·동작이면 통과(구매는 누르지 않아도 된다 — 버튼 활성 상태만 본다).
 45. **전역 `object` 회수** (AI 모델: Opus, 노력정도: 중간) — ⏸️ 보류
     · **선행** `#44`(`#46`은 이미 앞에서 끝난다) · **동시 금지** P5 나머지·`#48`
-    · `SplashVisibility`·`FinishedGameFlow`·`AppFontScaleState` — 코드에 사유가 **"훅 예산 절약"** 이라고 적혀 있다.
+    · `SplashVisibility`·`FinishedGameFlow`·~~`AppFontScaleState`~~ — 코드에 사유가 **"훅 예산 절약"** 이라고 적혀 있다.
+      ✅ `AppFontScaleState`는 2026-11-23 QA-05(앱 설정 「크게」 삭제)가 클래스째 지웠다 — 아래 ⓓ와 ⓔ의 그 이름 몫은 끝났다(`MainActivity` 효과 수 2→1 · FROZEN에서 이름 삭제).
     · 📐 **원장(`#46`)을 쓰는 순서 — 숫자는 하나도 안 오른다**: ⓐ `remember` 안 한 저장소 넷을 `remember`로 감싸고 원장에 PLATFORM_PORT 넷을 적은 뒤
       `FROZEN_UNREMEMBERED_INSTANCES`를 비운다(예산 사유 주석도 지운다) ⓑ `SplashVisibility.isShowing` → `MainActivity`의 `var isSplashShowing by remember { mutableStateOf(false) }`
       (VISIBILITY_GATE 한 줄), `GoCoachApp`에는 `isSplashShowing = { … }` 파라미터로 — `AppSplashContractTest`의 `object` 전제(`SplashVisibility`를 찾는 단언)도 함께 고친다
-      ⓒ `FinishedGameFlow`: 대기 수는 목적지 인자로(원장 0줄), 닫힌 판정 키는 세션 홀더로(안 되면 VISIBILITY_GATE) ⓓ `AppFontScaleState` → `ProvideUiLanguage` 모양의
-      `ProvideAppFontScale`(`MainActivity` 효과 수 2→1) ⓔ 끝으로 `FROZEN_PROCESS_GLOBAL_STATE`에서 이름을 지운다. 새 효과를 인라인하면 효과 수 검사가 사용자 결정을 요구한다 —
+      ⓒ `FinishedGameFlow`: 대기 수는 목적지 인자로(원장 0줄), 닫힌 판정 키는 세션 홀더로(안 되면 VISIBILITY_GATE) ~~ⓓ `AppFontScaleState` → `ProvideUiLanguage` 모양의
+      `ProvideAppFontScale`(`MainActivity` 효과 수 2→1)~~ → ✅ QA-05로 해소(2026-11-23 — 옮길 것이 없어졌다) ⓔ 끝으로 `FROZEN_PROCESS_GLOBAL_STATE`에서 이름을 지운다. 새 효과를 인라인하면 효과 수 검사가 사용자 결정을 요구한다 —
       자식 컴포저블로 두는 쪽이 맞다.
-    · 🧪 **실기**: ① 첫 실행 스플래시가 한 번만 ② 대국 종료 → 결과 → 기록 흐름이 전과 같다 ③ 글꼴 크기 변경이 즉시 반영되고 재시작 뒤에도 유지.
+    · 🧪 **실기**: ① 첫 실행 스플래시가 한 번만 ② 대국 종료 → 결과 → 기록 흐름이 전과 같다 ~~③ 글꼴 크기 변경이 즉시 반영되고 재시작 뒤에도 유지~~(QA-05로 그 설정이 없어졌다, 2026-11-23).
 47. **`AppContainer` + Compose 성능** (AI 모델: Opus, 노력정도: 높음) — ⏸️ 보류
     · **선행** `#45` · **동시 금지** P5 나머지·`#48`
     · ⚠️ `@Immutable` 작업 **전에** Compose Compiler metrics를 켜고 현재 unstable 목록을 **baseline으로 커밋**하라 —

@@ -183,11 +183,12 @@ class ReviewRecommendationUiTest {
     }
 
     /**
-     * 가장 긴 문장(영어) × 글꼴 크게(1.3, 이 앱의 최대 — 함정 65)에서도 말풍선이 잘리지 않고 화면 폭 안에 선다(함정 9·21).
-     * 그림은 사람이 본다(`bubble_en_1.3.png`).
+     * 가장 긴 문장(영어)을 글꼴 1.3배로 키워도 말풍선이 잘리지 않고 화면 폭 안에 선다(함정 9·21).
+     * ⚠️ 1.3은 이제 앱의 최대가 아니라 **여유**다 — 앱은 글자를 1.0 한 크기로만 그린다(QA-05, 2026-11-23 「크게」 삭제).
+     * 1.0보다 넓게 그리는 iOS 글꼴(함정 100)과 좁은 폰을 함께 덮으려고 남긴다. 그림은 사람이 본다(`bubble_en_1.3.png`).
      */
     @Test
-    fun theLongestMessageAtTheLargestFontStillFits() {
+    fun theLongestMessageFitsWithAFontMargin() {
         val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
         composeRule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(density = density, fontScale = 1.3f)) {

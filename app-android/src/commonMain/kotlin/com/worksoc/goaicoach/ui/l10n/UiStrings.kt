@@ -99,14 +99,6 @@ internal data class UiStrings(
      */
     val appTitle: String,
     val languageLabel: String,
-    /**
-     * 글꼴 크기 설정(백로그 #106) — 개발자 도구에서 **정식 설정으로 승격**된 값이다.
-     * ⚠️ 선택지 라벨이 **[AppFontScales]의 값 수와 짝을 이룬다.** 배율을 늘리려면 라벨도 늘릴 것
-     * (`FontScaleSettingChoiceTest`가 그 어긋남을 잡는다).
-     */
-    val settingsFontScaleTitle: String,
-    val settingsFontScaleNormal: String,
-    val settingsFontScaleLarge: String,
     val close: String,
     val gameSection: String,
     val newGame: String,
@@ -589,15 +581,7 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> remainingMinutes?.let { "已启用 · 剩余 $it 分钟" } ?: "未启用 · 点击获得 1 小时"
         }
 
-    /**
-     * 글꼴 배율 행 부제(백로그 #81) — **지금 배율**과 **그것이 앱에 저장된 값**임을 말한다.
-     *
-     * ⚠️ **"앱에 저장됨"이라고 적는다.** 이 앱은 시스템 배율을 따르지 않으므로, 시스템 값처럼
-     * 읽히면 *"시스템에서 바꿨는데 왜 안 변하지"* 로 오진한다 — 그 오진이 실제로 이 항목을 만든
-     * 제보였다(2026-09-04).
-     *
-     * ⚠️ **`fun`이라 리플렉션 그물이 못 본다**(함정 10번) — `UiStringsDevFontScaleTest`가 손 그물이다.
-     */
+    /** 개발자 도구 출석 행 부제 — 지금 며칠째인지와, 누르면 다음 날이 보상을 주는지. */
     fun settingsDevAttendanceSubtitle(current: Int, next: Int, nextIsRewarded: Boolean): String =
         when (language) {
             UiLanguage.Korean ->

@@ -1829,6 +1829,9 @@ class LayeringContractTest {
         // ⚠️ ④ "숫자 상향 금지"의 새 뜻: 새 부채·새 효과·줄 상한 상향·전역 상태·remember 안 한 저장소는 테스트 코드를
         //    고쳐야만 늘어난다. 허용 종류 항목은 JSON 한 줄(since·why)로 된다 — #45가 전역 object를 되돌리는 정식 경로다.
         // ⚠️ 원칙은 그대로다 — "조립만 하는 셸은 상태를 소유하지 않는다". 원장은 그 원칙을 종류로 적은 것이다.
+        // ── 2026-11-23 (QA-05): mainActivity 효과 수 2 → 1, 동결 전역에서 `AppFontScaleState.scale`을 지웠다(사용자 결정: 「크게」 삭제). ──
+        //    앱 글꼴 크기 설정이 사라져 그것을 적재하던 `LaunchedEffect(preferencesStore)`와 저장소 자리, 그 전역이 함께 없어졌다.
+        //    줄인 것뿐이다 — 보류 백로그 #45 ⓓ(AppFontScaleState → ProvideAppFontScale)가 할 일을 삭제로 끝냈다.
         val offenders = ShellStateLedger.auditShell("goCoachApp")
 
         assertTrue(

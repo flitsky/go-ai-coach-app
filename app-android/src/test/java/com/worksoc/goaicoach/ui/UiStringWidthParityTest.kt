@@ -160,7 +160,7 @@ class UiStringWidthParityTest {
 
     private companion object {
         /** 기준선 줄 수 — 줄이면 함께 낮춘다. 늘리지 않는다([theBaselineNeverGrows]). */
-        const val BaselineSize = 278
+        const val BaselineSize = 277
 
         val ObjectDeclaration = Regex("""^\s*(?:internal\s+|private\s+)?object\s+(\w+)""", RegexOption.MULTILINE)
 

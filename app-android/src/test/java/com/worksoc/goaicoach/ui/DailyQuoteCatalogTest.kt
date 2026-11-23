@@ -43,7 +43,7 @@ class DailyQuoteCatalogTest {
      * 두 줄에 든 가장 긴 것이다(2026-10-21). 일본어가 짧은 것은 구절 단위로 줄을 바꾸기 때문이다(`HomeDailyQuote.kt`).
      * ⚠️ **그물일 뿐 보증이 아니다** — 긴 낱말 때문에 어림 80칸인 영어가 세 줄이 되기도 했다. 확정은 실제 배치로 잰다: 디버그 빌드에서
      * `files/debug-quote-sweep`을 만들고 홈을 열면 지금 언어의 명언 전부의 줄 수가 로그로 나온다(`adb logcat -s DailyQuoteSweep`) — 2026-10-21 네 언어 696줄 모두 두 줄 이하.
-     * 글꼴을 크게(1.3배) 하면 세 줄이 될 수 있다 — 자르지 않고 줄을 늘린다.
+     * 글꼴이 더 넓으면(iOS — 함정 100) 세 줄이 될 수 있다 — 자르지 않고 줄을 늘린다(옛 「크게」(1.3)는 QA-05로 없앴다).
      */
     @Test
     fun everyQuoteFitsInTwoLinesOnAPhone() {

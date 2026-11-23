@@ -1,5 +1,6 @@
 package com.worksoc.goaicoach
 
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
@@ -8,15 +9,13 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
-import com.worksoc.goaicoach.persistence.UserPreferencesStore
+import com.worksoc.goaicoach.application.preferences.FixedAppFontScale
 import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.play.allowsRotation
-import com.worksoc.goaicoach.ui.settings.AppFontScaleState
 import com.worksoc.goaicoach.ui.settings.AppTheme
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
 import com.worksoc.goaicoach.ui.splash.AppSplash
@@ -47,23 +46,31 @@ class MainActivity : ComponentActivity() {
         applyRotationPolicy(newConfig)
     }
 
+    /**
+     * 휴대폰 글자 크기를 **액티비티 설정에서** 덮는다(QA-05, 사용자 2026-11-23 — 사유는 `FixedAppFontScale`의 KDoc).
+     *
+     * ⚠️ **대화상자 · 팝업은 이것으로만 1.0이 된다.** 그 창들은 액티비티 문맥으로 제 컴포즈 뷰를 새로 세우고
+     * `LocalDensity`를 그 문맥의 `Configuration.fontScale`로 다시 건다 — `setContent`의 덮어쓰기는 본 창에만 닿는다
+     * (2026-11-23 실기: 시스템 글자를 키우면 본 화면은 그대로인데 대화상자만 커졌다).
+     * ⚠️ `fontScale` 한 칸만 담은 빈 `Configuration`을 넘긴다 — 지금 설정을 통째로 복사해 넘기면 방향 · 화면 크기 · 밤 모드까지
+     * 이 순간 값으로 굳는다. 덮는 칸은 리소스가 새 설정을 받을 때마다 그 위에 다시 얹힌다 — 앱을 켠 채 글자 크기를 바꿔도
+     * (`configChanges`의 `fontScale`로 액티비티는 다시 만들어지지 않는다) 대화상자는 1.0이어야 한다.
+     * ⚠️ 글자 토스트는 시스템 UI가 그린다(targetSdk 30부터) — 어떤 문맥을 넘겨도 휴대폰 글자 크기를 따른다.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(newBase)
+        applyOverrideConfiguration(Configuration().apply { fontScale = FixedAppFontScale })
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // ⚠️ **앱 글꼴 배율은 여기서 적용해야 한다**(백로그 #81) — 컴포지션 전체를 감싸야
-            // 모든 화면이 함께 바뀐다. `GoCoachApp`에서는 할 수 없다(그 파일은 상태 훅 42/42로
-            // 여유가 없다, 함정 3번).
-            //
-            // ⚠️ **이 앱은 시스템 배율을 따르지 않는다.** 저장된 값(기본 1.0)을 그대로 쓰므로,
-            // 시스템에서 글자를 키운 사용자도 이 앱에서는 1.0으로 본다 — 2026-09-04 사용자 결정이고
-            // **접근성 비용이 있다**(사유와 되돌리는 방법은 `DefaultAppFontScale`의 KDoc).
-            //
-            // ⚠️ `load`를 여기서 한 번 부르지 않으면 **저장값이 무시된다** — 저장은 되는데 반영이
-            // 안 되는 것처럼 보이는, 원인 찾기 어려운 종류다.
-            val preferencesStore = remember(applicationContext) { UserPreferencesStore(applicationContext) }
-            LaunchedEffect(preferencesStore) { AppFontScaleState.load(preferencesStore) }
+            // ⚠️ **앱은 글자를 1.0 하나로만 그린다**(2026-09-04 시스템 배율 무시 → 2026-11-23 「크게」 삭제, QA-05 —
+            // 사유와 접근성 비용은 `FixedAppFontScale`의 KDoc). 본 창은 `attachBaseContext`만으로도 1.0이지만, 규칙을
+            // 컴포지션 맨 위에 한 번 더 적는다 — iOS(`MainViewController`)와 같은 모양이라 두 플랫폼의 규칙이 한눈에 보인다.
+            // 덮는 것은 `fontScale`뿐이다 — `density`(OS 「디스플레이 크기」)는 그대로 따른다.
             val baseDensity = LocalDensity.current
-            val density = Density(density = baseDensity.density, fontScale = AppFontScaleState.scale)
+            val density = Density(density = baseDensity.density, fontScale = FixedAppFontScale)
             CompositionLocalProvider(LocalDensity provides density, LocalAppPlatform provides (application as GoAiCoachApplication).appPlatform) {
                 // ⚠️ **여기에 준비 화면이 있었다**(백로그 #101, 2026-09-05 제거). `engineBootstrap`이
                 // null인 동안 앱 전체를 막고 *"준비 중…"* 을 그렸는데, 최초 실행에는 약 100MB 모델

@@ -422,7 +422,6 @@ class KvStoreParityTest {
                     autoPlayDelayMillis = AutoPlayDelaySetting.Slow.millis,
                     searchTimeSettings = SearchTimeSettings(SearchTimeLimit.WithinFiveSeconds),
                     showMoveReview = true,
-                    appFontScale = 1.3f,
                 ),
                 everyPreferenceChanged(),
             ),
@@ -436,6 +435,8 @@ class KvStoreParityTest {
                 """{"schema":1}""",
                 // #73이 지운 필드가 남은 저장분.
                 """{"schema":2,"gameSetupUxMode":"Simple","komi":0.5,"hasSeenOnboarding":true}""",
+                // QA-05(2026-11-23)가 지운 「글꼴 크기」 — 1.3을 골라 둔 기기의 저장분. 두 코덱 모두 그냥 지나친다.
+                """{"schema":2,"appFontScale":"1.3","komi":0.5,"hasSeenOnboarding":true}""",
                 // 스키마 1의 옛 탐색 시간 — 꺼짐 · 가장 긴 한도 · 깨진 값.
                 """{"schema":1,"searchTimeSettings":{"timeCapEnabled":false,"b16Millis":1500,"b32Millis":4000,"b64Millis":7500}}""",
                 """{"schema":1,"searchTimeSettings":{"timeCapEnabled":true,"b16Millis":1500,"b32Millis":4000,"b64Millis":7500}}""",
@@ -743,7 +744,6 @@ class KvStoreParityTest {
             isDirectPlayEnabled = !defaults.isDirectPlayEnabled,
             showMoveReview = !defaults.showMoveReview,
             hasSeenOnboarding = !defaults.hasSeenOnboarding,
-            appFontScale = 1.3f,
             isPlayHapticEnabled = !defaults.isPlayHapticEnabled,
             isPlayEffectEnabled = !defaults.isPlayEffectEnabled,
             isBoardMaxSize = !defaults.isBoardMaxSize,

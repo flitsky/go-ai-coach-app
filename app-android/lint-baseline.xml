@@ -296,17 +296,6 @@
 
     <issue
         id="AutoboxingStateCreation"
-        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
-        errorLine1="    var scale by mutableStateOf(DefaultAppFontScale)"
-        errorLine2="                 ~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/com/worksoc/goaicoach/ui/settings/AppFontScaleState.kt"
-            line="32"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
         message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
         errorLine1="    var revision by mutableStateOf(0)"
         errorLine2="                    ~~~~~~~~~~~~~~">

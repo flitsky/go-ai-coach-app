@@ -1,11 +1,9 @@
 package com.worksoc.goaicoach.persistence
 
 import android.content.Context
-import com.worksoc.goaicoach.application.preferences.DefaultAppFontScale
 import com.worksoc.goaicoach.application.preferences.UserPreferencesSnapshot
 import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.preferences.migrateSettingsSchema
-import com.worksoc.goaicoach.application.preferences.sanitizeAppFontScale
 import com.worksoc.goaicoach.match.AutoPlayDelaySetting
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.decodePlayerSetup
 import com.worksoc.goaicoach.persistence.PlayerSetupJsonCodec.encodePlayerSetup
@@ -75,10 +73,7 @@ internal object UserPreferencesCodec {
             // **설정 세대**(백로그 #188). ⚠️ 키만 더한다(함정 55) — 스키마를 갈아엎으면
             // `wipeToFreshInstall`이 조용히 지나친다.
             .put("settingsSchemaGeneration", snapshot.settingsSchemaGeneration)
-            // ⚠️ **`Float`를 `Double`로 넣지 않는다** — `1.3f.toDouble()`이
-            // `1.2999999523162842`로 저장돼(2026-09-04 실기에서 확인) 사람이 읽을 수 없고,
-            // 개발자 도구가 이 파일을 쓰는 자리라 손 편집도 전제된다. 왕복은 문자열이 정확하다.
-            .put("appFontScale", snapshot.appFontScale.toString())
+            // 글꼴 배율(`"appFontScale"`)은 더 적지 않는다(QA-05, 2026-11-23) — 옛 파일의 그 키는 다음 저장에서 사라진다.
 
         val defaults = UserPreferencesSnapshot()
         fun putIfChanged(key: String, value: Boolean, default: Boolean) {
@@ -144,12 +139,7 @@ internal object UserPreferencesCodec {
                 // 바로 그 사람들에게 마이그레이션이 돌아야 한다. 기본값(현재 세대)을 쓰면
                 // **아무에게도 안 돈다.**
                 settingsSchemaGeneration = json.optInt("settingsSchemaGeneration", 0),
-                // ⚠️ 읽는 쪽에서 좁힌다 — 0이나 음수가 흘러들면 글자 높이가 0이 돼 화면이
-                // 통째로 사라진다. 개발자 도구가 이 파일을 쓰므로 손 편집도 가능한 자리다.
-                // 숫자로 저장된 예전 값(문자열로 바꾸기 전)도 `optString`이 그대로 읽어 준다.
-                appFontScale = sanitizeAppFontScale(
-                    json.optString("appFontScale").toFloatOrNull() ?: DefaultAppFontScale,
-                ),
+                // ⚠️ 옛 `"appFontScale"`(1.3 포함)은 **읽지 않는다**(QA-05, 2026-11-23) — 앱은 늘 1.0이라 옮길 것이 없다(#73 전례).
             )
         }.getOrNull()
 

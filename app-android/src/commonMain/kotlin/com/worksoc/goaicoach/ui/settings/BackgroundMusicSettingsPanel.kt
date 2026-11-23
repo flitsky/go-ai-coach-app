@@ -31,7 +31,7 @@ import com.worksoc.goaicoach.ui.l10n.backgroundMusicLabelFor
  *
  * 저장만 한다 — 트는 일은 앱 전체의 플레이어(`BackgroundMusicCoordinator`)가 저장소의 바뀜을 듣고 한다. 그래서 이 패널은
  * 플레이어를 모르고, 설정 화면 밖에서 음악이 이어지는 것도 이 패널과 상관없다.
- * ⚠️ 저장소는 이 패널이 스스로 갖는다 — 설정 화면의 상태는 원장으로 묶여 있다(#102, [FontScaleSettingsPanel]과 같은 자리·같은 모양).
+ * ⚠️ 저장소는 이 패널이 스스로 갖는다 — 설정 화면의 상태는 원장으로 묶여 있다(#102, [ThemeModeSettingsPanel]과 같은 모양).
  */
 @Composable
 internal fun BackgroundMusicSettingsPanel(modifier: Modifier = Modifier) {

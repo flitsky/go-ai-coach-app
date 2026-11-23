@@ -49,7 +49,8 @@ class FirstRunSetupApplicationTest {
             komi = 0.5,
             showCoordinates = true,
             isPlayHapticEnabled = false,
-            appFontScale = 1.3f,
+            // 옛 「글꼴 크기」(1.3) 자리 — 그 필드는 없앴다(QA-05, 2026-11-23).
+            isLargeHeldStoneEnabled = false,
         )
 
         assertEquals(current.copy(hasSeenOnboarding = true), completeFirstRun(current))

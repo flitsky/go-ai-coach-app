@@ -2,9 +2,12 @@ package com.worksoc.goaicoach.ios
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.uikit.ComposeUIViewControllerDelegate
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.window.ComposeUIViewController
 import com.worksoc.goaicoach.GoCoachProcessRuntime
+import com.worksoc.goaicoach.application.preferences.FixedAppFontScale
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.monetization.IosAppMonetization
 import com.worksoc.goaicoach.ui.monetization.LocalIosAppMonetization
@@ -55,8 +58,12 @@ class IosAppRoot(private val modelSource: IosEngineModelSource?, storeSource: Io
             }
         },
     ) {
+        // ⚠️ **글꼴 배율 1.0 고정은 여기서 건다**(QA-05, 사용자 2026-11-23 — 사유는 `FixedAppFontScale`의 KDoc) — 앱([GoCoachRoot])만이
+        //   아니라 알림 층([IosNoticeOverlay])과 디버그 화면도 이 안이어야 Dynamic Type을 따르지 않는다. 팝업 · 대화상자 층은 부른 자리의
+        //   `LocalDensity`를 물려받는 것으로 본다(⏳ 시뮬레이터 확인 전 — 더 큰 텍스트 최대에서 창 · 알림 하나씩). 덮는 것은 `fontScale`뿐이다 — `density`(디스플레이 확대)는 그대로 따른다.
         CompositionLocalProvider(
             LocalAppPlatform provides platform,
+            LocalDensity provides Density(density = LocalDensity.current.density, fontScale = FixedAppFontScale),
             LocalIosStatusBarAppearance provides statusBar,
             LocalIosAppMonetization provides monetization,
         ) {

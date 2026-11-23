@@ -78,7 +78,6 @@ internal val UiStringWidthParityBaseline: Set<String> = setOf(
     "UiStrings.settingsDeveloperModeOffTitle", // 한 21 · 허용 27 · 영 24 · 일 30 · 중 20
     "UiStrings.settingsDeveloperModeOptInConfirm", // 한 4 · 허용 6 · 영 7 · 일 10 · 중 4
     "UiStrings.settingsDeveloperModeOptInTitle", // 한 21 · 허용 27 · 영 23 · 일 30 · 중 20
-    "UiStrings.settingsFontScaleNormal", // 한 4 · 허용 6 · 영 7 · 일 4 · 중 4
     "UiStrings.settingsTitle", // 한 4 · 허용 6 · 영 8 · 일 4 · 중 4
     "UiStrings.settingsVersionLabel", // 한 4 · 허용 6 · 영 7 · 일 10 · 중 4
     "UiStrings.startMatch", // 한 9 · 허용 11 · 영 12 · 일 8 · 중 8

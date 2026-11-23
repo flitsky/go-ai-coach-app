@@ -3,6 +3,7 @@
 2026-10-27 작성·검증. 번들 ID `com.zenit9hub.ai.baduk`, 1.8.4(빌드 10804), iPhone 전용, 세로 전용. 저장소는 읽기만 했다(HEAD `43bc9ebc`).
 
 - 같은 날 `43bc9ebc`(앱 시작 때 UMP 동의 정보 갱신, 광고 요청에 `npa=1`)가 들어갔다. 등재 글은 이 변경과 상관없다.
+- 2026-11-23: 설명의 「화면 모드(…)와 글자 크기」에서 **글자 크기를 뺐다**(4개 언어) — 앱 설정 「크게」(1.3배)를 없앴다(`docs/spec/DECISIONS.md` §1 QA-05). ASC에 올라간 1.8.5(10805)에는 아직 있지만, 있는 기능을 적지 않는 것은 어느 빌드로 내도 거짓이 아니다. 설명 글자 수는 다시 셌다(0절 표).
 - 자리(사용자 2026-10-27): 이 파일이 App Store 등재 글의 정본이다 — Play의 `work/play-store-assets/store_listing.txt` 짝. 개인정보 · 연령 · 심사 답안은 `work/plans/APP_STORE_PRIVACY_ANSWERS.md`, 출시 절차와 #297 시험표는 `work/plans/APP_STORE_LAUNCH_PLAN.md`.
 
 ## 0. 요약
@@ -15,11 +16,11 @@
 | 부제 | 30자 | 19 | 27 | 16 | 14 |
 | 프로모션 텍스트 | 170자 | 127 | 168 | 102 | 84 |
 | 키워드 기본안(자 / UTF-8 바이트) | 100바이트 | 37자 / 91 | 99자 / 99 | 40자 / 98 | 39자 / 95 |
-| 설명 | 4000자 | 3546 | 3948 | 3001 | 2418 |
+| 설명 | 4000자 | 3539 | 3937 | 2995 | 2413 |
 | 구독 표시 이름 | 2~30자 | 7 | 12 | 7 | 6 |
 | 구독 설명 | 45자 | 30 | 42 | 26 | 21 |
 
-- 영어 설명은 3948자다. 줄바꿈을 두 글자(CRLF)로 세어도 3995자라 4000자 안에 든다.
+- 영어 설명은 3937자다. 줄바꿈을 두 글자(CRLF)로 세어도 3984자라 4000자 안에 든다.
 - 키워드는 4개 언어 모두 쉼표 뒤 공백이 없고, 빈 항목·중복이 없고, 모두 3자 이상이다(스크립트 확인).
 - 4개 언어 설명·프로모션·부제에 Android, Google, Google Play, Play 스토어, 사진·카메라, 로그인·계정 연동(「Apple 계정으로 청구」 안내만 있다), 가격 숫자(3,900, ₩), 알파고·AlphaGo, AdMob, 「준비 중」이 없다(스크립트 확인).
 
@@ -170,7 +171,7 @@ iPhone 안에서 돌아가는 KataGo AI와 대국하세요. AI 모델을 한 번
 - 착수 진동: 돌을 놓는 순간 짧은 진동(설정에서 끌 수 있습니다)
 - 바둑판: 9x9 / 13x13 / 19x19, 여백을 두고 보거나 가로 폭을 꽉 채워 크게 보기
 - 계가 방식(면적 계가·집 계가), 덤과 접바둑 설정
-- 화면 모드(시스템 따라가기·밝게·어둡게·밤 시간 자동)와 글자 크기
+- 화면 모드(시스템 따라가기·밝게·어둡게·밤 시간 자동)
 - 대국 이어하기: 저장된 대국을 나중에 이어서 둡니다
 - 한국어·영어·일본어·중국어(간체) 4개 국어
 - 기록 보관: 기록은 이 iPhone에만 저장됩니다. iPhone 백업(iCloud 또는 컴퓨터)에 함께 담겨, 새 iPhone으로 옮기거나 그 백업에서 복원하면 돌아옵니다. 앱만 지웠다 다시 설치하면 돌아오지 않습니다
@@ -201,7 +202,7 @@ iPhone 안에서 돌아가는 KataGo AI와 대국하세요. AI 모델을 한 번
 - 유료로만 얻는 상대나 기능이 하나도 없습니다 — 구독은 같은 것을 광고 없이 더 편하게 쓰는 길입니다
 ```
 
-- 글자 수: **3522자** (줄바꿈 포함, 한도 4000자)
+- 글자 수: **3539자** (줄바꿈 포함, 한도 4000자)
 
 ### 이 버전의 새로운 기능
 
@@ -280,7 +281,7 @@ Note: the AI models (about 200 MB) download once, with progress on the engine se
 - Lab: a Quote book, Today's fortune (just for fun) and a Daily draw with the odds on screen. The draw can't be bought: one ad a day (none with Premium)
 - Background music (four tracks) and vibration, both can be turned off
 - 9x9, 13x13 and 19x19 boards, with a margin or edge to edge; area or territory scoring; komi and handicap
-- System, light, dark or night-hours theme; text size
+- System, light, dark or night-hours theme
 - Resume a saved game
 - Korean, English, Japanese and Simplified Chinese
 - Records stay on this iPhone and in its backup (iCloud or computer), so a new iPhone or a restore brings them back; reinstalling only the app does not
@@ -308,7 +309,7 @@ Ads play only when you tap for them (the hour, shards, fortune refresh, daily dr
 - No opponent or feature is paid-only; Premium is an ad-free shortcut to the same things
 ```
 
-- 글자 수: **3948자** (줄바꿈 포함, 한도 4000자. 줄바꿈을 두 글자로 세어도 3995자)
+- 글자 수: **3937자** (줄바꿈 포함, 한도 4000자. 줄바꿈을 두 글자로 세어도 3984자)
 - 다른 세 언어의 「이런 분께 추천합니다」 절은 한도 때문에 넣지 않았다. 기능 주장은 4개 언어가 같다.
 
 ### 이 버전의 새로운 기능
@@ -404,7 +405,7 @@ iPhoneの中で動くKataGo AIと対局。AIモデルを一度受け取ればネ
 ・着手の振動：石を置いた瞬間の短い振動（設定でオフにできます）
 ・碁盤：9路・13路・19路、余白ありの表示と横幅いっぱいの表示
 ・計算方法（面積計算・地の計算）、コミと置き石の設定
-・画面モード（システムに合わせる・ライト・ダーク・夜間自動）と文字サイズ
+・画面モード（システムに合わせる・ライト・ダーク・夜間自動）
 ・対局の再開：保存した対局をあとから続けられます
 ・韓国語・英語・日本語・中国語（簡体字）の4言語に対応
 ・記録の保存：記録はこのiPhoneにだけ保存されます。iPhoneのバックアップ（iCloudまたはコンピュータ）に含まれるので、新しいiPhoneへの移行やそのバックアップからの復元で戻ります。アプリだけを削除して再インストールした場合は戻りません
@@ -435,7 +436,7 @@ iPhoneの中で動くKataGo AIと対局。AIモデルを一度受け取ればネ
 ・お金を払わないと手に入らない相手や機能はありません。プレミアム登録は同じものを広告なしでより快適に使う方法です
 ```
 
-- 글자 수: **2985자** (줄바꿈 포함, 한도 4000자)
+- 글자 수: **2995자** (줄바꿈 포함, 한도 4000자)
 
 ### 이 버전의 새로운 기능
 
@@ -530,7 +531,7 @@ iPhoneの中で動くKataGo AIと対局。AIモデルを一度受け取ればネ
 • 落子振动：落子瞬间的短暂振动（可在设置中关闭）
 • 棋盘：9路、13路、19路，可留白显示或铺满屏幕宽度
 • 计分规则（数子法、数目法）、贴目与让子设置
-• 画面模式（跟随系统、浅色、深色、夜间自动）与字体大小
+• 画面模式（跟随系统、浅色、深色、夜间自动）
 • 继续对局：稍后接着下已保存的对局
 • 支持韩语、英语、日语、简体中文四种语言
 • 记录保存：记录只保存在这台iPhone上。记录包含在iPhone备份（iCloud或电脑）中，迁移到新iPhone或从该备份恢复时会一并恢复；仅删除并重新安装本应用则不会恢复
@@ -561,7 +562,7 @@ iPhoneの中で動くKataGo AIと対局。AIモデルを一度受け取ればネ
 • 没有只能付费获得的对手或功能——订阅只是以无广告的方式更轻松地使用同样的内容
 ```
 
-- 글자 수: **2398자** (줄바꿈 포함, 한도 4000자)
+- 글자 수: **2413자** (줄바꿈 포함, 한도 4000자)
 
 ### 이 버전의 새로운 기능
 
@@ -599,7 +600,6 @@ iPhoneの中で動くKataGo AIと対局。AIモデルを一度受け取ればネ
 | (없음) | 「구독 안내」 블록: 이름·1개월·자동 갱신, Apple 계정 청구, App Store 구독 관리에서 해지, 「구매 복원」, 이용약관(Apple 표준 EULA) URL, 개인정보처리방침 URL | Apple 구독 페이지: 「앱과 App Store 메타데이터 모두에」 약관·방침 링크. 앱 안 결제 화면에도 구매 복원·EULA·방침 링크가 있다(`ui/monetization/PremiumSubscriptionNotice.kt`의 `AppStorePurchaseLinks`). 맞춤 EULA가 없으면 제품 페이지에 라이선스 링크가 보이지 않는다 |
 | (없음) | 광고 한 줄: 보상형 광고는 직접 눌렀을 때만, 다시보기 화면에 배너, 구독 중에는 없음 | 배너는 `ui/history/GameReplayScreen.kt` 222행 `SubscriptionAwareBannerAd` 한 곳뿐이다. 보상형 광고를 부르는 곳은 운세·뽑기·캐릭터 조각·업셀이다 |
 | 1일 1회 뽑기 「(확률 공개)」 | 「뽑기는 돈으로 살 수 없고, 광고 1편(구독 중에는 광고 없이)으로 하루 한 번」을 더했다 | `shared/.../application/dailydraw/DailyDraw.kt`, `ui/monetization/DailyDrawCard.kt` |
-| 「화면 모드」 | 「…와 글자 크기」를 더했다 | `ui/settings/SettingsScreen.kt`(`FontScaleSettingsPanel`) |
 | 영어 본문의 앱 이름 「Pocket Go Coach」 | 「Go AI Coach」 | 홈 화면 이름(`app-ios/GoCoach/en.lproj/InfoPlist.strings`)과 맞췄다 |
 | 영어 「colour」 | 「color」 | en-US 표기 |
 

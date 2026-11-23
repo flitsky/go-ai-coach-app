@@ -181,8 +181,8 @@ private fun <T> CompactSettingDropdownCell(
                     // 잠긴 것이 **보여야** 한다 — 색만 흐리게 하고 값은 그대로 읽히게 둔다.
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = DisabledAlpha)
                 },
-                // ⚠️ **1줄이면 큰 글꼴에서 값이 잘린다** — 글꼴 크기가 정식 설정이 되면서
-                // (#106) 일반 사용자가 1.3배에 닿게 됐고, 실기에서 `바둑판 (13…` 으로 잘렸다.
+                // ⚠️ **1줄이면 값이 잘린다** — 옛 「크게」(1.3배, #106 — 2026-11-23 QA-05로 없앴다)에서
+                // 실기로 `바둑판 (13…` 으로 잘렸다. 지금은 영어 · iOS 넓은 글꼴 · 360dp 몫으로 2줄을 남긴다.
                 // 고정 높이를 주지 않으므로 접혀도 칸이 함께 자란다(함정 9번).
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

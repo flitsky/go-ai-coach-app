@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
  * 요청을 만드는 곳은 **대국 화면**이고 받는 곳은 **대국 기록 화면**인데, 그 둘 사이에
  * `GoCoachApp`이 있다. 그 셸의 **상태 훅 예산은 42/42로 여유가 0**이라(함정 3,
  * `LayeringContractTest`) `var pendingReview by remember`를 하나 두는 순간 그물이 깨진다.
- * `AttendanceClaimReplaySignal`·`AppFontScaleState`가 같은 처방으로 먼저 간 길이다.
+ * `AttendanceClaimReplaySignal`이 같은 처방으로 먼저 간 길이다(`AppFontScaleState`도 그랬다 — 「크게」와 함께 지웠다, QA-05).
  *
  * ## ⚠️ 왜 기록 id가 아니라 수순 개수인가
  * 대국 화면은 **자기 기록의 id를 모른다.** 기록은 셸의 효과(`runGameHistoryAppendIfCompleted`)가

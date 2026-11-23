@@ -69,6 +69,6 @@ internal fun CatalogStores() {
             tick++
         }) { Text("빈 대국 기록 하나 붙이기") }
         val prefs = stores.userPreferences.load()
-        Text("설정 묶음: 글꼴 ${prefs.appFontScale} · 판 ${prefs.boardSize}")
+        Text("설정 묶음: 판 ${prefs.boardSize}")
     }
 }

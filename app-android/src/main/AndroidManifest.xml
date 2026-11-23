@@ -57,8 +57,10 @@
                · **회전만 액티비티를 죽이는 게 아니다** — 시스템 글꼴/화면 크기 변경,
                  다크 모드 전환, 멀티윈도우 크기 조절이 전부 같은 경로로 같은 사고를 낸다.
                Compose는 이 값들을 `LocalConfiguration`/`LocalDensity`로 다시 읽으므로 재생성
-               없이도 정상 동작한다. 이 앱은 문자열도 글꼴 배율도 자체 관리(`UiStrings`,
-               `AppFontScaleState`)라 리소스 재해석에 기대는 부분이 없다.
+               없이도 정상 동작한다. 이 앱은 문자열을 자체 관리(`UiStrings`)하고 글꼴 배율은 1.0으로
+               덮으므로(`MainActivity.attachBaseContext` · `FixedAppFontScale`) 리소스 재해석에 기대는 부분이 없다.
+               ⚠️ **`fontScale`을 빼지 말 것**(QA-05, 2026-11-23) — 앱은 휴대폰 글자 크기를 따르지 않는데, 빼면
+               글자 크기를 바꾸는 순간 액티비티가 다시 만들어져 대국이 날아간다.
         -->
         <activity
             android:name=".MainActivity"

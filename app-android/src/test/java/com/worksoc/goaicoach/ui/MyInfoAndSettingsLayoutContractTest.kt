@@ -25,7 +25,7 @@ class MyInfoAndSettingsLayoutContractTest {
         val order = listOf(
             "settingsDisplaySectionFor(",
             "LanguageSettingsPanel(",
-            "FontScaleSettingsPanel()",
+            // 「글꼴 크기」 행은 없앴다(QA-05, 사용자 2026-11-23 — 앱은 글자를 1.0 한 크기로만 그린다).
             // 「소리」 절 — 첫 절 바로 아래(#244, 사용자 2026-10-18).
             "settingsSoundSectionFor(",
             "BackgroundMusicSettingsPanel()",
