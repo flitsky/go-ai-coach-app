@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.smoke
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -26,9 +27,11 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.foundation.TestTags
+import com.worksoc.goaicoach.ui.home.twoLineCardTitle
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -82,6 +85,56 @@ class SavedSessionPromptSmokeTest {
 
     @Test
     fun resumePromptAppearsAndRestoresSavedGameOnConfirm() {
+        setApp()
+
+        composeRule.onNodeWithText("▶ " + strings.resumeTitle).performClick()
+        composeRule.onNodeWithText(strings.resumeTitle).assertIsDisplayed()
+
+        composeRule.onNodeWithText(strings.yes).performClick()
+
+        composeRule.onNodeWithTag(TestTags.GoBoard).assertIsDisplayed()
+        composeRule.onNodeWithText("${strings.moveCountPrefix} 1${strings.moveCountSuffix}")
+            .assertIsDisplayed()
+    }
+
+    /** QA-02(2026-11-22) — 이어하기 창을 닫는 것(「아니오」 · 뒤로 · 바깥)은 저장된 판을 지우지 않는다. 예전엔 셋 다 `sessionStore.clear()`였다. */
+    @Test
+    fun closingResumeDialogKeepsSavedGame() {
+        setApp()
+
+        composeRule.onNodeWithText("▶ " + strings.resumeTitle).performClick()
+        composeRule.onNodeWithText(strings.no).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("▶ " + strings.resumeTitle).assertIsDisplayed()
+        assertNotNull("이어하기 창을 닫았을 뿐인데 저장된 판이 지워졌다", savedSnapshot())
+    }
+
+    /**
+     * QA-03(2026-11-22) — 덮어쓰기 경고는 「새 대국을 **시작하면**」이라 말한다. 확인하고 로비에 들어갔다 물러나면 판은 그대로다
+     * (지우는 건 로비의 「대국 시작하기」 — 사용자 2026-11-23, 10-24의 「확인 즉시 지움」을 되돌렸다).
+     */
+    @Test
+    fun backingOutOfLobbyAfterOverwriteWarningKeepsSavedGame() {
+        setApp()
+
+        // 홈 카드는 이름을 두 줄로 접어 그린다(「일반\n대국」, #288) — 「일반 대국」 그대로는 왼쪽 페이지의 전적 라벨만 잡힌다.
+        composeRule.onNodeWithText(twoLineCardTitle(strings.startMatch)).performClick()
+        composeRule.onNodeWithText(strings.overwriteWarningTitle).assertIsDisplayed()
+        composeRule.onNodeWithText(strings.confirm).performClick()
+        composeRule.onNodeWithText(strings.matchSetup).assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription(strings.close).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("▶ " + strings.resumeTitle).assertIsDisplayed()
+        assertNotNull("로비에서 물러났을 뿐인데 저장된 판이 지워졌다", savedSnapshot())
+    }
+
+    private fun savedSnapshot(): SavedGameSnapshot? =
+        GameSessionStore(InstrumentationRegistry.getInstrumentation().targetContext).load()
+
+    private fun setApp() {
         composeRule.setContent {
             GoCoachApp(
                 engineClient = FakeNeverReadyEngineSessionClient(),
@@ -94,15 +147,6 @@ class SavedSessionPromptSmokeTest {
                 sessionGenerationRelay = SessionGenerationRelay(),
             )
         }
-
-        composeRule.onNodeWithText("▶ " + strings.resumeTitle).performClick()
-        composeRule.onNodeWithText(strings.resumeTitle).assertIsDisplayed()
-
-        composeRule.onNodeWithText(strings.yes).performClick()
-
-        composeRule.onNodeWithTag(TestTags.GoBoard).assertIsDisplayed()
-        composeRule.onNodeWithText("${strings.moveCountPrefix} 1${strings.moveCountSuffix}")
-            .assertIsDisplayed()
     }
 }
 

@@ -765,10 +765,8 @@ private fun GoCoachScreen(
                 showResumeDialog = false
                 dispatch(GameUiEvent.ResumeSavedSession(savedSessionToPrompt))
             },
-            onDismiss = {
-                showResumeDialog = false
-                dispatch(GameUiEvent.DismissResumePrompt)
-            },
+            // 창을 닫는 것(뒤로 · 바깥 · 「아니오」)은 **아무것도 지우지 않는다**(QA-02, 2026-11-23) — 판을 지우는 건 새 대국을 시작할 때뿐이다.
+            onDismiss = { showResumeDialog = false },
         )
     }
 
@@ -938,7 +936,8 @@ private fun GoCoachScreen(
         ScreenDestination.Home -> {
             GoCoachHomeScreen(
                 onStartMatchClick = {
-                    dispatch(GameUiEvent.DismissResumePrompt)
+                    // 이어 둘 판은 여기서 지우지 않는다 — 로비의 「대국 시작하기」(`StartConfiguredGame`)가 지운다. 경고 문구(「새 대국을 시작하면」) 그대로,
+                    // 로비에서 물러나면 이어하기가 남는다(QA-03, 사용자 2026-11-23 — 10-24의 「확인 즉시 지움」 `05c905d1`을 되돌렸다).
                     leaveRankMeasureGame(playerSetup, rankMeasureUiState, preferencesStore, controllers.settingsController)
                     currentDestination = ScreenDestination.GameSetup
                 },
@@ -956,7 +955,6 @@ private fun GoCoachScreen(
                 hasResumableSession = savedSessionToPrompt != null,
                 resumeSummary = savedSessionToPrompt?.let { resumeSummaryFor(LocalUiStrings.current, it, screenState.engine.name) },
                 onResumeClick = { showResumeDialog = true },
-                onDiscardResumableSession = { dispatch(GameUiEvent.DismissResumePrompt) },
                 playerSetup = screenState.playerSetup,
                 topNotice = { HomeTopNotice(it) },
                 // 홈의 왼쪽 페이지(#280) — 내 정보는 그 화면 그대로. 셋째 「실험실」은 홈이 스스로 그린다.
