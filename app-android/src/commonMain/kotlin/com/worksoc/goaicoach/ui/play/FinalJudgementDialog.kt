@@ -32,7 +32,7 @@ internal fun FinalJudgementDialog(
     onDismiss: () -> Unit,
     onReview: () -> Unit,
     /**
-     * 「복기 하기」 — 이 판을 다시보기로 연다(백로그 #185).
+     * 「복기하기」 — 이 판을 다시보기로 연다(백로그 #185).
      *
      * ⚠️ **여기 있던 「재 대국」을 밀어낸 자리다.** 재대국 길은 하단 액션바에 그대로 있으므로
      * 막히지 않지만, **복기는 이 팝업을 닫으면 찾기 어렵다** — 그래서 더 값진 쪽을 남겼다
@@ -40,7 +40,7 @@ internal fun FinalJudgementDialog(
      */
     onReplay: () -> Unit,
     /**
-     * 이 판의 「5집 이상 실착」 수(백로그 #200, `countReviewRecommendationMistakes`). 1 이상이면 「복기 하기」를
+     * 이 판의 「5집 이상 실착」 수(백로그 #200, `countReviewRecommendationMistakes`). 1 이상이면 「복기하기」를
      * **굵게** 쓰고 오른쪽 위에 배지(9 이상은 `9+`)를 단다. `0`·`null`(잴 자료가 없었다)이면 지금까지와 똑같다.
      * ⚠️ 기본값을 두지 않는다(함정 40) — 빠뜨리면 조용히 배지가 영영 안 뜬다.
      */

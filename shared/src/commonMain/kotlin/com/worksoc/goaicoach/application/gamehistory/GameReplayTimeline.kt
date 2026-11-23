@@ -78,11 +78,11 @@ data class ScoreSwingHighlight(
 )
 
 /**
- * 「변곡점」의 기본 임계 — 이전 수 대비 **5점** 이상 증감. 「복기 하기」 추천의
+ * 「변곡점」의 기본 임계 — 이전 수 대비 **5점** 이상 증감. 「복기하기」 추천의
  * [ReviewRecommendationMistakeThreshold]와 **같은 값을 따른다**(2026-10-01 사용자 — 3점에서 통일, 백로그 #207).
  *
  * ⚠️ 통일한 것은 **숫자뿐**이다 — 변곡점은 양방향(누구에게 유리해졌든)이고, 실착은 둔 쪽에 불리한 쪽만 센다.
- * 그래서 「복기 하기」 배지의 개수와 다시보기의 버튼 수는 같지 않을 수 있다.
+ * 그래서 「복기하기」 배지의 개수와 다시보기의 버튼 수는 같지 않을 수 있다.
  */
 const val ScoreSwingThreshold: Double = ReviewRecommendationMistakeThreshold
 
@@ -103,7 +103,7 @@ const val ScoreSwingMaxCount: Int = 5
  * ⚠️ **앞뒤 둘 다 같은 망의 신경망 평가일 때만 잰다**([networkScoreSwingByMoveNumber], 백로그 #200, 2026-09-30).
  * 엔진 평가가 실패·시간 초과·미준비인 수에는 로컬 영역 계산(`LocalAreaEstimate`)이, 종국에는 `FinalScore`가
  * 기록되는데 둘은 신경망 우세와 **척도가 달라** 섞어 빼면 가짜 변곡점이 생긴다 — 그런 수는 후보에서 빠진다.
- * 「복기 하기」 추천([countReviewRecommendationMistakes])과 **같은 거름망**이다.
+ * 「복기하기」 추천([countReviewRecommendationMistakes])과 **같은 거름망**이다.
  */
 fun deriveScoreSwingHighlights(
     scoreSnapshots: List<ScoreSnapshot>,

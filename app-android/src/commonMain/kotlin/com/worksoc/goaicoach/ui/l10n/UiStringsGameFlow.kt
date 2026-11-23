@@ -27,9 +27,12 @@ private val RematchActions: Map<UiLanguage, String> = mapOf(
  * 실수가 아니라 사용자 어휘를 따른 것이다 — 등재문 부제가 *"오프라인 AI 대국·복기"* 이고
  * 2026-09-22 지시도 「복기 하기」였다. 둘을 통일하려면 **화면 제목 쪽을 고쳐야** 하고,
  * 그것은 #156이 정한 이름을 바꾸는 별도 결정이다.
+ *
+ * 한국어는 붙여 쓴 「복기하기」다(QA-23a, 사용자 2026-11-23) — 「복기하다」가 한 낱말이고, 같은 말풍선의
+ * 「…복기하기를 추천드려요.」와 단추 글자가 어긋났다. 폭: 한 8 · 한도 10 · 일 8 · 영 6 · 중 4.
  */
 private val ReviewGameActions: Map<UiLanguage, String> = mapOf(
-    UiLanguage.Korean to "복기 하기",
+    UiLanguage.Korean to "복기하기",
     UiLanguage.English to "Review",
     UiLanguage.Japanese to "検討する",
     UiLanguage.ChineseSimplified to "复盘",

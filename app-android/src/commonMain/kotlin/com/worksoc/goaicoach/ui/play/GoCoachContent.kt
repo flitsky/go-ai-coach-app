@@ -94,7 +94,7 @@ internal fun GoCoachContent(
             isDisplayMenuExpanded = false
         }
     }
-    // ⚠️ **닫았다는 기억을 이 화면이 혼자 들지 않는다**(백로그 #185). 「복기 하기」가 목적지를
+    // ⚠️ **닫았다는 기억을 이 화면이 혼자 들지 않는다**(백로그 #185). 「복기하기」가 목적지를
     // 바꾸면 이 조각이 컴포지션에서 빠졌다가 돌아오는데, 그때 `remember`가 새로 만들어져
     // **판정 결과가 다시 뜬다**(2026-09-22 실기에서 잡혔다). 그래서 화면 밖에도 함께 적는다.
     var dismissedFinalJudgementKey by remember { mutableStateOf(FinishedGameFlow.dismissedJudgementKey) }
@@ -217,7 +217,7 @@ internal fun GoCoachContent(
     var viewportHeightPx by remember { mutableIntStateOf(0) }
     var contentHeightPx by remember { mutableIntStateOf(0) }
     var boardHeightPx by remember { mutableIntStateOf(0) }
-    // 백로그 #200 — 「복기 하기」 말풍선이 판을 가리지 않고 그 오른쪽 아래에 서려고 **판 자리**와 **오버레이 원점**을
+    // 백로그 #200 — 「복기하기」 말풍선이 판을 가리지 않고 그 오른쪽 아래에 서려고 **판 자리**와 **오버레이 원점**을
     // 루트 기준으로 잰다. ⚠️ 둘 다 오버레이의 측정 단계에서만 읽는다(스크롤마다 바뀐다 — 이 화면을 다시 짜지 않게).
     var boardSlotInRoot by remember { mutableStateOf<Rect?>(null) }
     var reviewOverlayOriginInRoot by remember { mutableStateOf(Offset.Zero) }
@@ -352,7 +352,7 @@ internal fun GoCoachContent(
         }
     }
 
-    // 판정 결과를 닫은 뒤의 「복기 하기」 추천(백로그 #200) — **본문 뒤에** 둔다: 형제는 나중이 위에 그려진다(함정 38).
+    // 판정 결과를 닫은 뒤의 「복기하기」 추천(백로그 #200) — **본문 뒤에** 둔다: 형제는 나중이 위에 그려진다(함정 38).
     //   자리는 판 안 아래 끝(폰 — 결과 배지를 가리지 않게, QA-07) → 판 오른쪽 → 화면 오른쪽 아래 끝(폴드) 순이다(`reviewRecommendationPlacement`).
     //   오버레이는 말풍선 밖을 누르는 것을 가로채지 않는다 — 새 대국·재 대국 버튼은 그대로 눌린다. 예외는 말풍선이 판에
     //   겹칠 때의 판 위이고, 그때 판을 누르면 말풍선이 닫힌다(끝난 판이라 판에 둘 수는 없다).

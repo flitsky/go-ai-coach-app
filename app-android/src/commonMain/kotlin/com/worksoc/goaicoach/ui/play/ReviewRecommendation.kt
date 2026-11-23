@@ -53,11 +53,11 @@ import com.worksoc.goaicoach.ui.l10n.reviewRecommendationMessageFor
 import kotlin.math.min
 
 /*
- * 대국 뒤 「복기 하기」 추천(백로그 #200, 2026-09-30 사용자 최우선) — 판정 결과 팝업을 **닫은 뒤에도** 복기로 가는
+ * 대국 뒤 「복기하기」 추천(백로그 #200, 2026-09-30 사용자 최우선) — 판정 결과 팝업을 **닫은 뒤에도** 복기로 가는
  * 길을 한 번 더 보여 준다. 개수는 `:shared`의 `countReviewRecommendationMistakes`가 세고(5집 이상 실착, 누가 두었든),
  * 여기는 그 수를 **어떻게 보여 줄지**만 정한다.
  *
- * - ① 판정 결과 팝업의 「복기 하기」 — 글자를 굵게, 오른쪽 위에 동그라미 숫자([ReviewMistakeBadgeBox]).
+ * - ① 판정 결과 팝업의 「복기하기」 — 글자를 굵게, 오른쪽 위에 동그라미 숫자([ReviewMistakeBadgeBox]).
  * - ② 「확인」으로 닫은 뒤 — 그 판의 캐릭터가 판 오른쪽 아래에서 말풍선으로 권한다([ReviewRecommendationOverlay]).
  * - 개수가 `0`이거나 `null`(잴 자료가 없었다)이면 **둘 다 지금까지와 똑같다** — 배지도 굵은 글자도 말풍선도 없다.
  */
@@ -73,7 +73,7 @@ internal fun reviewMistakeBadgeLabel(mistakeCount: Int?): String? =
 private const val ReviewMistakeBadgeCap = 9
 
 /**
- * 「복기 하기」 버튼을 감싸 **오른쪽 위에 배지**를 얹는다. 버튼(`TextButton`) 자체는 부르는 쪽이 그린다 —
+ * 「복기하기」 버튼을 감싸 **오른쪽 위에 배지**를 얹는다. 버튼(`TextButton`) 자체는 부르는 쪽이 그린다 —
  * 판정 결과 팝업의 버튼이 둘이라는 계약(`FinishedGameFlowContractTest`)이 그 파일의 `TextButton(`을 센다.
  *
  * ⚠️ 배지를 버튼 **안**(글자 옆)에 두지 않는다 — `TextButton`은 제 모양으로 내용을 잘라서(클립), 모서리에 걸친
@@ -198,7 +198,7 @@ internal fun boardSquareWithin(slot: Rect): Rect {
  * [boardSlotInRoot]·[originInRoot]는 **값이 아니라 읽는 함수**다 — 스크롤할 때마다 판 좌표가 바뀌는데, 그것을
  * 컴포지션에서 읽으면 대국 화면 전체가 매 프레임 다시 짜인다. 여기서는 측정 단계에서만 읽어 이 오버레이만 다시 잰다.
  *
- * 말풍선을 누르면 복기로 간다(「복기 하기」와 같은 길). ✕는 닫기만 한다. 오버레이의 나머지는 **누르는 것을 가로채지
+ * 말풍선을 누르면 복기로 간다(「복기하기」와 같은 길). ✕는 닫기만 한다. 오버레이의 나머지는 **누르는 것을 가로채지
  * 않는다** — 새 대국·재 대국 버튼은 그대로 눌린다. 예외는 말풍선이 판에 겹칠 때(폰의 판 아래 끝 · 폴드)의 판 위뿐이다(탭하면 닫힌다).
  */
 @Composable

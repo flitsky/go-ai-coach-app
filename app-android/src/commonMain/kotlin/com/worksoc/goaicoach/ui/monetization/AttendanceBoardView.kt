@@ -3,6 +3,7 @@ package com.worksoc.goaicoach.ui.monetization
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -21,6 +22,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -62,13 +67,15 @@ import com.worksoc.goaicoach.ui.l10n.botCharacterNameFor
  * 읽기 전용 판(`MyPageScreen`). 한쪽에만 고치면 같은 화면이 두 모양으로 갈린다.
  *
  * ⚠️ **이 컴포저블은 지급하지 않는다.** 지급은 팝업의 Claim만 한다
- * (`ATTENDANCE_REWARD_POLICY.md` 1장). 여기에 탭 동작을 붙이지 말 것.
+ * (`ATTENDANCE_REWARD_POLICY.md` 1장). 칸 탭은 판 아래 설명 한 줄만 바꾼다(QA-17, 2026-11-23) —
+ * 지급 동작을 붙이지 말 것.
  *
  * ## #57에서 글자를 버린 이유
  * #55는 칸마다 보상을 **글자로** 적었는데, 여섯 칸 폭(360dp 기기에서 칸당 약 45dp)에서는
  * 짧은 표기("형세 30")조차 말줄임으로 뭉개졌다. 언어마다 길이가 달라(`추천`/`Moves`/`推荐`)
  * 한국어에 맞추면 다른 언어가 깨지는 구조적 문제이기도 했다.
- * **글리프는 길이가 없다** — 네 언어가 같은 폭을 쓰고, 뜻은 `contentDescription`이 지킨다.
+ * **글리프는 길이가 없다** — 네 언어가 같은 폭을 쓰고, 뜻은 `contentDescription`과 칸을 누르면 판 아래에
+ * 나오는 한 줄([cellRewardLine], QA-17 2026-11-23)이 지킨다.
  *
  * [collection]이 필요한 이유는 5·6일차와 7·28일차가 **캐릭터 얼굴**을 그리기 때문이다.
  * 아직 못 얻은 캐릭터는 흑백이고, 조각 경로는 모은 만큼만 색이 돈다(#50 재사용).
@@ -79,9 +86,12 @@ internal fun AttendanceStampBoard(
     collection: BotCollectionState,
     modifier: Modifier = Modifier,
 ) {
+    // 누른 칸(QA-17, 2026-11-23) — 판이 다시 계산되면(지급 · 개발자 「출석 하루 진행」) 선택을 푼다.
+    var selected by remember(board) { mutableStateOf<AttendanceBoardCell?>(null) }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
-        StampRow(cells = board.daily, collection = collection, compact = true)
-        StampRow(cells = board.weekly, collection = collection, compact = false)
+        StampRow(cells = board.daily, collection = collection, compact = true, onSelect = { selected = it })
+        StampRow(cells = board.weekly, collection = collection, compact = false, onSelect = { selected = it })
+        SelectedCellLine(selected)
     }
 }
 
@@ -96,9 +106,31 @@ internal fun AttendanceStampBoardFolded(
     modifier: Modifier = Modifier,
 ) {
     val weekly = attendanceFoldedRowIsWeekly(board)
-    Column(modifier = modifier) {
-        StampRow(cells = if (weekly) board.weekly else board.daily, collection = collection, compact = !weekly)
+    var selected by remember(board) { mutableStateOf<AttendanceBoardCell?>(null) }
+    // 펼친 판과 같은 간격 — 없으면 설명 줄(QA-17)이 칸에 붙는다.
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
+        StampRow(
+            cells = if (weekly) board.weekly else board.daily,
+            collection = collection,
+            compact = !weekly,
+            onSelect = { selected = it },
+        )
+        SelectedCellLine(selected)
     }
+}
+
+/**
+ * 누른 칸의 「N일차 · 보상」 한 줄(QA-17, 사용자 2026-11-23 ⓐ). 누르기 전에는 없다.
+ * ⚠️ 지급 안내가 아니다 — 지금 받을 것은 출석 창의 구분선 아래(`ClaimDetail`)가 따로 적는다.
+ */
+@Composable
+private fun SelectedCellLine(cell: AttendanceBoardCell?) {
+    cell ?: return
+    Text(
+        text = cellRewardLine(LocalUiStrings.current, cell),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /**
@@ -123,7 +155,12 @@ internal fun attendanceFoldedRowIsWeekly(board: AttendanceBoard): Boolean =
  * 남겨 가며 맞춰 둔 그 정렬이 무너진다.
  */
 @Composable
-private fun StampRow(cells: List<AttendanceBoardCell>, collection: BotCollectionState, compact: Boolean) {
+private fun StampRow(
+    cells: List<AttendanceBoardCell>,
+    collection: BotCollectionState,
+    compact: Boolean,
+    onSelect: (AttendanceBoardCell) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -135,6 +172,7 @@ private fun StampRow(cells: List<AttendanceBoardCell>, collection: BotCollection
                 cell = cell,
                 collection = collection,
                 compact = compact,
+                onClick = { onSelect(cell) },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -148,6 +186,7 @@ private fun StampCell(
     cell: AttendanceBoardCell,
     collection: BotCollectionState,
     compact: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier,
 ) {
     val strings = LocalUiStrings.current
@@ -180,6 +219,9 @@ private fun StampCell(
                 ),
                 shape,
             )
+            // 판 아래 설명 한 줄만 바꾼다 — 지급하지 않는다(QA-17, 2026-11-23). `clip` 뒤라 물결이 둥근 칸 안에 갇힌다.
+            // ⚠️ `clearAndSetSemantics` **왼쪽**에 둔다 — 오른쪽이면 탭 동작이 지워져 낭독기에서 사라진다(ReviewRecommendation의 닫기 단추와 같은 순서).
+            .clickable(onClick = onClick)
             .padding(horizontal = AppSpacing.Space3, vertical = AppSpacing.Space6)
             // 칸 하나를 한 덩어리로 읽어 준다 — 글리프만으로는 뜻이 없으므로 여기서 말로 바꾼다.
             .clearAndSetSemantics { contentDescription = describeCell(strings, cell) },
@@ -430,17 +472,28 @@ internal fun rewardAmountOf(reward: AttendanceReward): Int? = when (reward) {
 }
 
 /**
- * 칸 하나를 소리로 읽어 주는 말. 글리프에는 글자가 없으므로 **이것이 유일한 뜻 전달 경로**다 —
- * 지우면 도장판이 스크린 리더에서 숫자 열 개가 된다.
+ * 칸의 뜻 「N일차 · 보상」 — 판 아래 한 줄([SelectedCellLine])과 낭독기([describeCell])가 같이 쓴다(QA-17, 2026-11-23).
+ * 상태(받음 · 받을 칸)는 칸 모양이 이미 보여 주므로 화면 줄에는 넣지 않는다.
+ */
+private fun cellRewardLine(strings: UiStrings, cell: AttendanceBoardCell): String =
+    listOf(
+        strings.attendanceRewardDayLabel(cell.tier),
+        cell.rewards.joinToString(", ") { strings.attendanceRewardLabel(it) },
+    )
+        .filter { it.isNotBlank() }
+        .joinToString(" · ")
+
+/**
+ * 칸 하나를 소리로 읽어 주는 말 — [cellRewardLine]에 상태 말을 붙인다. 글리프에는 글자가 없고 화면 줄은 누를 때만
+ * 나오므로(QA-17) **낭독기에는 이것이 유일한 뜻 전달 경로**다 — 지우면 도장판이 스크린 리더에서 숫자 열 개가 된다.
  */
 private fun describeCell(strings: UiStrings, cell: AttendanceBoardCell): String {
-    val rewards = cell.rewards.joinToString(", ") { strings.attendanceRewardLabel(it) }
     val state = when (cell.state) {
         AttendanceCellState.Stamped -> attendanceStampedNoticeFor(strings.language)
         AttendanceCellState.Claimable -> strings.attendanceRewardClaimAction
         AttendanceCellState.Upcoming -> attendanceUpcomingNoticeFor(strings.language)
     }
-    return listOf(strings.attendanceRewardDayLabel(cell.tier), rewards, state)
+    return listOf(cellRewardLine(strings, cell), state)
         .filter { it.isNotBlank() }
         .joinToString(" · ")
 }

@@ -981,7 +981,7 @@ private fun GoCoachScreen(
         ScreenDestination.GameHistory -> {
             GameHistoryScreen(
                 onBackClick = { currentDestination = ScreenDestination.Home },
-                // 대국 화면에서 「복기 하기」로 들어온 다시보기의 **나가는 문**(백로그 #185).
+                // 대국 화면에서 「복기하기」로 들어온 다시보기의 **나가는 문**(백로그 #185).
                 // 왔던 곳으로 돌려보낸다 — 그 대국 화면은 아직 살아 있고 계가 결과도 그대로다.
                 onReturnToGame = { currentDestination = ScreenDestination.InGame },
                 // 홈의 「캐릭터 대국」과 **같은 신호**다 — 분기 대국도 저장 슬롯 하나를 밀어낸다.

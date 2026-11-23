@@ -6,7 +6,7 @@ import com.worksoc.goaicoach.shared.scoring.ScoreSnapshot
 import com.worksoc.goaicoach.shared.scoring.ScoreSnapshotSource
 
 /**
- * 대국 뒤 「복기 하기」 추천의 실착 임계 — 둔 쪽에 **불리한 5집 이상** 변화(2026-09-30 사용자, 백로그 #200).
+ * 대국 뒤 「복기하기」 추천의 실착 임계 — 둔 쪽에 **불리한 5집 이상** 변화(2026-09-30 사용자, 백로그 #200).
  *
  * 매 수 평가가 탐색 없는 신경망 1회(`kata-raw-nn 0`)라 몇 집쯤은 노이즈다 — 그래서 5집이다.
  *
@@ -60,7 +60,7 @@ fun countReviewRecommendationMistakes(
 }
 
 /**
- * `수순 번호 k → k번째 수가 바꾼 백 리드`(k의 형세 − k-1의 형세) — 「복기 하기」 추천과 다시보기 「변곡점」
+ * `수순 번호 k → k번째 수가 바꾼 백 리드`(k의 형세 − k-1의 형세) — 「복기하기」 추천과 다시보기 「변곡점」
  * ([deriveScoreSwingHighlights])이 **같은 거름망**을 쓴다(백로그 #200).
  *
  * 앞뒤 스냅샷이 **둘 다 신경망 평가이고 같은 망이 본 값**일 때만 잰다([ScoreSnapshotSource.isNetworkEstimate]).

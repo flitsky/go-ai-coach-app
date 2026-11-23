@@ -130,11 +130,17 @@ class UiStringsRankMeasureTest {
         )
     }
 
-    /** 설정 창은 숫자가 **공인 기력이 아니라는 것**을 밝힌다(사용자 2026-10-04) — 그 한 줄이 빠지면 급수가 실력 인증처럼 읽힌다. */
+    /**
+     * 설정 창은 급수가 **KGS 기준**이라는 것을 밝힌다(사용자 2026-10-04 「공식 값을 믿고 쓰되 밝힌다」).
+     * 「공인 기력이 아닙니다」 문장은 사용자가 뺐다(QA-23c, 2026-11-23) — 고지는 이 한 문장이다.
+     */
     @Test
-    fun theDialogSaysTheRankIsNotACertifiedOne() {
-        assertTrue(rankMeasureOfficialNoteFor(UiLanguage.Korean).contains("공인 기력이 아닙니다"))
-        assertTrue(rankMeasureOfficialNoteFor(UiLanguage.English).contains("not a certified rank"))
+    fun theDialogSaysTheRanksFollowKgs() {
+        assertEquals(
+            listOf("급수는 KGS 기준입니다.", "Ranks follow KGS.", "級位はKGS基準です。", "级位按KGS标准。"),
+            listOf(UiLanguage.Korean, UiLanguage.English, UiLanguage.Japanese, UiLanguage.ChineseSimplified)
+                .map(::rankMeasureOfficialNoteFor),
+        )
     }
 
     /**

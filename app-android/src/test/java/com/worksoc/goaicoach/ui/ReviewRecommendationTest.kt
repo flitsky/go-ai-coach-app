@@ -25,7 +25,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 대국 뒤 「복기 하기」 추천(백로그 #200)의 화면 쪽 — 배지 숫자, 네 언어 문구, 말풍선 캐릭터, 말풍선 자리.
+ * 대국 뒤 「복기하기」 추천(백로그 #200)의 화면 쪽 — 배지 숫자, 네 언어 문구, 말풍선 캐릭터, 말풍선 자리.
  * 개수를 세는 규칙 자체는 `:shared`의 `ReviewRecommendationTest`가 지킨다.
  *
  * ⚠️ 문구가 **함수**라 `UiStringsTest`의 리플렉션 그물 밖이다(함정 10) — 여기가 손 그물이다.
@@ -101,7 +101,8 @@ class ReviewRecommendationTest {
     /** 말풍선의 행동 줄은 **화면의 버튼 글자 그대로**를 인용한다(함정 39) — 같은 함수에서 온다. */
     @Test
     fun theBubbleActionQuotesTheOnScreenButtonLabel() {
-        assertEquals("복기 하기", reviewGameActionFor(UiLanguage.Korean))
+        // 붙여 쓴다 — 말풍선 「…복기하기를 추천드려요.」와 같은 낱말(QA-23a, 사용자 2026-11-23).
+        assertEquals("복기하기", reviewGameActionFor(UiLanguage.Korean))
     }
 
     @Test

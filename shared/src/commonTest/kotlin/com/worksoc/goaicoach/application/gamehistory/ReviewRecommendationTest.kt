@@ -9,7 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-/** 대국 뒤 「복기 하기」 추천이 세는 「5집 이상 실착」(백로그 #200). */
+/** 대국 뒤 「복기하기」 추천이 세는 「5집 이상 실착」(백로그 #200). */
 class ReviewRecommendationTest {
 
     private fun black(row: Int = 0, column: Int = 0): Move = Move.Play(StoneColor.Black, BoardCoordinate(row, column))

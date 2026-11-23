@@ -56,7 +56,8 @@ class FinalScoreJudgementPresentationTest {
 
         val strings = UiStringsKorean
         val judgement = plan.judgement ?: error("missing judgement")
-        assertEquals("백 + 1.5집 승", judgement.resultText(strings))
+        // 집수는 붙여 쓴다 — 대국 기록 · 명국 기보와 같은 꼴, 옛 「백 + 1.5집 승」(QA-23f, 사용자 2026-11-23).
+        assertEquals("백 1.5집승", judgement.resultText(strings))
         assertEquals("흑: 집 15 + 사석 5 = 20집", judgement.blackLine(strings))
         assertEquals("백: 집 13 + 사석 2 + 덤 6.5 = 21.5집", judgement.whiteLine(strings))
 
@@ -64,6 +65,19 @@ class FinalScoreJudgementPresentationTest {
         val english = UiStrings.forLanguage(UiLanguage.English)
         assertEquals("White wins by 1.5", judgement.resultText(english))
         assertEquals("White wins", english.winnerWithoutMarginLabel(english.colorLabel(StoneColor.White)))
+        // 영어 대국 기록 줄은 짧은 꼴 그대로, 중국어는 판정 창과 같은 붙여 쓴 꼴(QA-23f, 2026-11-23).
+        assertEquals("White +1.5", english.gameHistoryOutcomeLabel(StoneColor.White, isResign = false, margin = 1.5))
+        assertEquals("白胜1.5目", UiStrings.forLanguage(UiLanguage.ChineseSimplified).gameHistoryOutcomeLabel(StoneColor.White, isResign = false, margin = 1.5))
+        // 다시보기 형세 표기 — 진영은 화면 언어 글자, 영어만 B/W(QA-23d, 2026-11-23).
+        assertEquals("흑 +5.4", UiStringsKorean.leadLabel(5.4))
+        assertEquals("백 +6.5", UiStringsKorean.leadLabel(-6.5))
+        assertEquals("B +5.4", english.leadLabel(5.4))
+        assertEquals("0.0", UiStringsKorean.leadLabel(0.0))
+
+        // 일본어는 진영과 결과를 붙여 쓰고, 대국 기록 줄도 판정 창과 같은 함수다(QA-23e · 23f, 2026-11-23).
+        val japanese = UiStrings.forLanguage(UiLanguage.Japanese)
+        assertEquals("白1.5目勝ち", judgement.resultText(japanese))
+        assertEquals("白1.5目勝ち", japanese.gameHistoryOutcomeLabel(StoneColor.White, isResign = false, margin = 1.5))
     }
 
     /**
@@ -90,7 +104,7 @@ class FinalScoreJudgementPresentationTest {
         val strings = UiStringsKorean
         val judgement = plan.judgement ?: error("missing judgement")
         assertEquals(2.0, judgement.whiteHandicapBonus, 0.0)
-        assertEquals("흑 + 72.5집 승", judgement.resultText(strings))
+        assertEquals("흑 72.5집승", judgement.resultText(strings))
         assertEquals("흑: 돌 + 집 = 81집", judgement.blackLine(strings))
         assertEquals("백: 돌 + 집 + 덤 6.5 + 접바둑 보정 2 = 8.5집", judgement.whiteLine(strings))
         assertTrue(plan.scoreText.contains("handicap bonus 2"))

@@ -51,8 +51,8 @@ import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.CanvasTextAnchor
 import com.worksoc.goaicoach.ui.designsystem.ScoreGraphPalette
 import com.worksoc.goaicoach.ui.designsystem.drawBoldCanvasText
+import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
-import com.worksoc.goaicoach.ui.l10n.blackLeadLabel
 import com.worksoc.goaicoach.ui.play.winRateLabelFor
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -117,7 +117,8 @@ internal fun ReplayScoreGraphPanel(
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2)) {
                     Text(
                         // 이 수까지 잰 형세가 없으면(앞부분 기록이 없는 옛 판 · 이어 둔 판) 점수를 지어내지 않는다 — 수순만 적는다.
-                        text = listOfNotNull("$moveNumber / $lastMoveNumber", current?.whiteScoreLead?.let { blackLeadLabel(-it) }).joinToString(" · "),
+                        // 진영 글자는 화면 언어 그대로 「흑 +5.4」(영어만 「B +5.4」 — QA-23d, 2026-11-23).
+                        text = listOfNotNull("$moveNumber / $lastMoveNumber", current?.whiteScoreLead?.let { strings.leadLabel(-it) }).joinToString(" · "),
                         color = graph.title,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
@@ -142,6 +143,7 @@ internal fun ReplayScoreGraphPanel(
                 readings = readings,
                 moveNumber = moveNumber,
                 lastMoveNumber = lastMoveNumber,
+                strings = strings,
                 onSeek = onSeek,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -164,6 +166,11 @@ internal fun ReplayScoreOverviewGraph(
     val graph = ScoreGraphPalette.current
     val readings = remember(snapshots) { replayScoreReadings(snapshots) }
     val maxScale = remember(readings) { replayGraphScale(readings) }
+    // 세로축 끝 글자는 화면 언어의 진영 글자 「흑 +15」 · 「백 +15」(영어 B/W — QA-23d, 2026-11-23). Canvas의 그리기 블록은 컴포저블이 아니라 여기서 잡는다.
+    val strings = LocalUiStrings.current
+    val scale = maxScale.toInt().toString()
+    val blackAxisLabel = strings.leadAxisLabel(StoneColor.Black, scale)
+    val whiteAxisLabel = strings.leadAxisLabel(StoneColor.White, scale)
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -210,9 +217,8 @@ internal fun ReplayScoreOverviewGraph(
             readings.lastOrNull { it.moveNumber <= moveNumber }?.let { reading ->
                 drawCircle(graph.activeDot, radius = 3.5.dp.toPx(), center = Offset(xForMove(reading.moveNumber), yForLead(reading.blackLead)))
             }
-            val scale = maxScale.toInt().toString()
-            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
-            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
+            drawGraphText(blackAxisLabel, Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
+            drawGraphText(whiteAxisLabel, Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
         }
     }
 }
@@ -223,6 +229,7 @@ private fun ScrubbableScoreGraph(
     readings: List<ReplayScoreReading>,
     moveNumber: Int,
     lastMoveNumber: Int,
+    strings: UiStrings,
     onSeek: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -274,6 +281,10 @@ private fun ScrubbableScoreGraph(
     }
 
     val maxScale = remember(readings) { replayGraphScale(readings) }
+    // 세로축 끝 글자 — 요약 그래프와 같은 진영 글자(QA-23d, 2026-11-23). Canvas 밖에서 잡는다.
+    val scale = maxScale.toInt().toString()
+    val blackAxisLabel = strings.leadAxisLabel(StoneColor.Black, scale)
+    val whiteAxisLabel = strings.leadAxisLabel(StoneColor.White, scale)
     BoxWithConstraints(modifier = modifier.testTag(ReplayScoreGraphScrollTag)) {
         val viewportWidth = maxWidth
         val viewportWidthPx = with(LocalDensity.current) { viewportWidth.toPx() }
@@ -335,9 +346,8 @@ private fun ScrubbableScoreGraph(
             val chartTop = 10.dp.toPx()
             val chartBottom = size.height - 12.dp.toPx()
             drawLine(graph.activeDot, Offset(size.width / 2f, chartTop), Offset(size.width / 2f, chartBottom), strokeWidth = 1.5.dp.toPx())
-            val scale = maxScale.toInt().toString()
-            drawGraphText("B +$scale", Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
-            drawGraphText("W +$scale", Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
+            drawGraphText(blackAxisLabel, Offset(size.width - 6.dp.toPx(), chartTop + 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
+            drawGraphText(whiteAxisLabel, Offset(size.width - 6.dp.toPx(), chartBottom - 5.dp.toPx()), graph.label, CanvasTextAnchor.Right)
         }
     }
 }

@@ -43,7 +43,6 @@ import com.worksoc.goaicoach.ui.designsystem.drawBoldCanvasText
 import com.worksoc.goaicoach.ui.foundation.screenWidthDp
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStrings
-import com.worksoc.goaicoach.ui.l10n.blackLeadLabel
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -57,9 +56,9 @@ internal fun blackLeadPoints(snapshots: List<ScoreSnapshot>): List<Double> {
     return list
 }
 
-/** 마지막 점수차를 [blackLeadLabel] 포맷으로. */
-internal fun latestLeadLabel(points: List<Double>): String =
-    blackLeadLabel(if (points.size > 1) points.last() else 0.0)
+/** 마지막 점수차를 [UiStrings.leadLabel] 포맷으로 — 한국어 「흑 +5.4」, 영어 「B +5.4」(QA-23d, 2026-11-23). */
+internal fun latestLeadLabel(points: List<Double>, strings: UiStrings): String =
+    strings.leadLabel(if (points.size > 1) points.last() else 0.0)
 
 internal fun winRateLabelFor(whiteWinRate: Double, strings: UiStrings): String {
     val blackPct = ((1.0 - whiteWinRate) * 100).roundToInt()
@@ -83,7 +82,7 @@ internal fun WideScoreSummary(
 ) {
     val graph = ScoreGraphPalette.current
     val strings = LocalUiStrings.current
-    val lead = androidx.compose.runtime.remember(snapshots) { latestLeadLabel(blackLeadPoints(snapshots)) }
+    val lead = androidx.compose.runtime.remember(snapshots, strings) { latestLeadLabel(blackLeadPoints(snapshots), strings) }
     Surface(
         modifier = modifier
             .heightIn(min = 48.dp)
@@ -161,7 +160,12 @@ internal fun ScoreTimelineGraph(
         maxOf(ceil(maxAbsLead / 5.0) * 5.0, 5.0)
     }
 
-    val currentScoreLabel = androidx.compose.runtime.remember(points) { latestLeadLabel(points) }
+    val currentScoreLabel = androidx.compose.runtime.remember(points, strings) { latestLeadLabel(points, strings) }
+
+    // 세로축 끝 글자 — 화면 언어의 진영 글자 「흑 +15」 · 「백 +15」(영어 B/W — QA-23d, 2026-11-23). Canvas의 그리기 블록은 컴포저블이 아니라 여기서 잡는다.
+    val formattedScale = maxScale.toInt().toString()
+    val blackAxisLabel = strings.leadAxisLabel(StoneColor.Black, formattedScale)
+    val whiteAxisLabel = strings.leadAxisLabel(StoneColor.White, formattedScale)
 
     // 승률(%)은 계산은 되지만 그동안 UI 어디에도 노출되지 않던 값이라, 항상 보이는 이 요약 바에 흡수한다.
     val winRateLabel = whiteWinRate?.let { rate -> winRateLabelFor(rate, strings) }
@@ -296,10 +300,9 @@ internal fun ScoreTimelineGraph(
                     
                     // 우측 라벨 텍스트 그리기
                     val labelX = chartRight + 8.dp.toPx()
-                    val formattedScale = maxScale.toInt().toString()
                     
-                    drawAxisText(label = "B +$formattedScale", center = Offset(labelX, chartTop), color = textBlueColor)
-                    drawAxisText(label = "W +$formattedScale", center = Offset(labelX, chartBottom), color = textBlueColor)
+                    drawAxisText(label = blackAxisLabel, center = Offset(labelX, chartTop), color = textBlueColor)
+                    drawAxisText(label = whiteAxisLabel, center = Offset(labelX, chartBottom), color = textBlueColor)
                     
                     // 꺾은선 그리기
                     val denominator = maxOf(points.size - 1, 15) // 최소 15개 슬롯 제공

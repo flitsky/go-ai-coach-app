@@ -23,6 +23,21 @@ private val boldTypeface: Typeface? by lazy {
         ?: FontMgr.default.legacyMakeTypeface("", FontStyle.BOLD)
 }
 
+/**
+ * [label]을 그릴 수 있는 굵은 글꼴. ⚠️ skia의 `drawString`은 글자마다 다른 글꼴로 대신 그려 주지 않는다 — Helvetica Neue에 없는
+ * 한글 · 한자 · 가나는 빈 네모가 된다. 그래프 축이 「흑 +15」 · 「黒 +15」가 되면서(QA-23d, 2026-11-23) 처음 닿았다. 그래서 첫 번째로
+ * 없는 글자를 그릴 수 있는 시스템 글꼴을 골라 그 줄 전체를 그것으로 그린다(숫자 · 기호는 그 글꼴에도 있다). 글자마다 한 번만 찾는다.
+ */
+private val fallbackTypefaces = mutableMapOf<Int, Typeface?>()
+
+private fun typefaceFor(label: String): Typeface? {
+    val base = boldTypeface ?: return null
+    val missing = label.firstOrNull { ch -> !ch.isWhitespace() && base.getUTF32Glyph(ch.code) == 0.toShort() } ?: return base
+    return fallbackTypefaces.getOrPut(missing.code) {
+        FontMgr.default.matchFamilyStyleCharacter(null, FontStyle.BOLD, null, missing.code)
+    } ?: base
+}
+
 actual fun DrawScope.drawBoldCanvasText(
     label: String,
     center: Offset,
@@ -33,7 +48,7 @@ actual fun DrawScope.drawBoldCanvasText(
     outlineWidthPx: Float,
 ) {
     drawIntoCanvas { canvas ->
-        val font = Font(boldTypeface, textSizePx)
+        val font = Font(typefaceFor(label), textSizePx)
         val metrics = font.metrics
         val baseline = center.y - (metrics.descent + metrics.ascent) / 2f
         val width = font.measureTextWidth(label)

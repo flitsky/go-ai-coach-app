@@ -49,7 +49,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 대국 뒤 「복기 하기」 추천(백로그 #200)을 **실제로 그려서** 본다 — 배지·굵은 글자는 단위 테스트가 볼 수 없다
+ * 대국 뒤 「복기하기」 추천(백로그 #200)을 **실제로 그려서** 본다 — 배지·굵은 글자는 단위 테스트가 볼 수 없다
  * (글자 굵기와 배지는 측정·그리기 결과다). 앱 데이터를 건드리지 않는다(갓 설치 초기화도 하지 않는다) —
  * 컴포저블만 따로 띄운다. 찍은 그림은 사람이 당겨 본다:
  *
@@ -139,7 +139,7 @@ class ReviewRecommendationUiTest {
             composeRule.onAllNodesWithText("9+", useUnmergedTree = true).assertCountEquals(0)
             // 「지금까지와 똑같다」 = 옆의 「확인」과 같은 굵기(TextButton 기본 labelLarge, Medium 500)다.
             assertEquals(
-                "count=$count 인데 「복기 하기」가 「확인」과 굵기가 다르다",
+                "count=$count 인데 「복기하기」가 「확인」과 굵기가 다르다",
                 composeRule.onNodeWithText(strings.reviewJudgement, useUnmergedTree = true).fontWeight(),
                 composeRule.onNodeWithText(reviewLabel, useUnmergedTree = true).fontWeight(),
             )

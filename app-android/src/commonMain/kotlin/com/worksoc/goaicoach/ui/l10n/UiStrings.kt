@@ -14,7 +14,6 @@ import com.worksoc.goaicoach.application.botcharacter.BotUnlockSource
 import com.worksoc.goaicoach.application.consumable.ConsumableCatalog
 import com.worksoc.goaicoach.application.consumable.ConsumableItem
 import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
-import com.worksoc.goaicoach.application.gamehistory.GameHistoryResult
 import com.worksoc.goaicoach.application.preferences.UiLanguageStorePort
 import com.worksoc.goaicoach.application.premium.port.AdRewardFailureReason
 import com.worksoc.goaicoach.application.premium.port.PurchaseFailureReason
@@ -26,7 +25,6 @@ import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
-import com.worksoc.goaicoach.platform.formatDeviceLocale
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.Ruleset
 import com.worksoc.goaicoach.shared.domain.StoneColor
@@ -1009,37 +1007,6 @@ internal data class UiStrings(
             UiLanguage.ChineseSimplified -> "${amount}个"
         }
 
-    /** 사람 플레이어 기준 결과 문구. [margin]은 [GameHistoryResult.Win]/[GameHistoryResult.Loss]에서만 쓰인다. */
-    fun gameHistoryResultLabel(result: GameHistoryResult, margin: Double?): String {
-        val marginText = margin?.let { formatDeviceLocale("%.1f", it) }
-        return when (result) {
-            GameHistoryResult.Resign -> when (language) {
-                UiLanguage.Korean -> "기권"
-                UiLanguage.English -> "Resigned"
-                UiLanguage.Japanese -> "投了"
-                UiLanguage.ChineseSimplified -> "认输"
-            }
-            GameHistoryResult.Draw -> when (language) {
-                UiLanguage.Korean -> "무승부"
-                UiLanguage.English -> "Draw"
-                UiLanguage.Japanese -> "持碁"
-                UiLanguage.ChineseSimplified -> "和棋"
-            }
-            GameHistoryResult.Win -> when (language) {
-                UiLanguage.Korean -> if (marginText != null) "승 (${marginText}집)" else "승"
-                UiLanguage.English -> if (marginText != null) "Win by $marginText" else "Win"
-                UiLanguage.Japanese -> if (marginText != null) "${marginText}目勝ち" else "勝ち"
-                UiLanguage.ChineseSimplified -> if (marginText != null) "胜 $marginText 目" else "胜"
-            }
-            GameHistoryResult.Loss -> when (language) {
-                UiLanguage.Korean -> if (marginText != null) "패 (${marginText}집)" else "패"
-                UiLanguage.English -> if (marginText != null) "Loss by $marginText" else "Loss"
-                UiLanguage.Japanese -> if (marginText != null) "${marginText}目負け" else "負け"
-                UiLanguage.ChineseSimplified -> if (marginText != null) "负 $marginText 目" else "负"
-            }
-        }
-    }
-
     fun removedStonesLabel(black: Int, white: Int): String =
         when (language) {
             UiLanguage.Korean -> "사석 제거: 흑 ${black}개, 백 ${white}개"
@@ -1066,13 +1033,19 @@ internal data class UiStrings(
         }
     }
 
+    /**
+     * 집수가 있는 승리 — 판정 창 제목, 그리고 대국 기록 줄의 한 · 일 · 중([gameHistoryOutcomeLabel])이 함께 쓴다.
+     * `백 6.5집승` · `白6.5目勝ち` · `白胜6.5目` · `White wins by 6.5`(QA-23f, 사용자 2026-11-23 — 옛 「백 + 6.5집 승」의 「+ 」를 뺐다).
+     * 한국어는 대국 기록 · 명국 기보(「백 2집승」)처럼 붙여 쓰고, 일본어 · 중국어는 진영과 결과를 붙여 쓴다(QA-23e).
+     * ⚠️ 중괄호를 빼지 말 것 — `$colorLabel胜`은 한자까지 변수 이름으로 읽힌다.
+     */
     fun winnerMarginLabel(colorLabel: String, margin: Double): String {
         val marginText = margin.formatScoreNumber()
         return when (language) {
-            UiLanguage.Korean -> "$colorLabel + ${marginText}집 승"
+            UiLanguage.Korean -> "$colorLabel ${marginText}집승"
             UiLanguage.English -> "$colorLabel wins by $marginText"
-            UiLanguage.Japanese -> "$colorLabel + ${marginText}目勝ち"
-            UiLanguage.ChineseSimplified -> "$colorLabel + ${marginText}目胜"
+            UiLanguage.Japanese -> "${colorLabel}${marginText}目勝ち"
+            UiLanguage.ChineseSimplified -> "${colorLabel}胜${marginText}目"
         }
     }
 
@@ -1106,12 +1079,14 @@ internal data class UiStrings(
         return null
     }
 
+    // 일본어·중국어는 진영과 결과를 붙여 쓴다 — 명국 기보 「白中押し勝ち」와 같은 꼴(QA-23e, 2026-11-23).
+    // ⚠️ 중괄호를 빼지 말 것 — `$colorLabel勝ち`는 한자까지 변수 이름으로 읽힌다.
     fun winnerWithoutMarginLabel(colorLabel: String): String =
         when (language) {
             UiLanguage.Korean -> "$colorLabel 승"
             UiLanguage.English -> "$colorLabel wins"
-            UiLanguage.Japanese -> "$colorLabel 勝ち"
-            UiLanguage.ChineseSimplified -> "$colorLabel 胜"
+            UiLanguage.Japanese -> "${colorLabel}勝ち"
+            UiLanguage.ChineseSimplified -> "${colorLabel}胜"
         }
 
     /**
@@ -1121,21 +1096,44 @@ internal data class UiStrings(
      *
      * 언어별로 자연어("백 13.4집 우세")를 우선 쓰되, **영어만 예외**다 — 번역 결과("White
      * leads by 13.4")가 버튼 폭(#27이 이미 한계까지 밀어붙인 자리)에 들어가지 않아
-     * [blackLeadLabel]과 같은 짧은 기호 표기("W +13.4")로 대신한다. 비김(0.0)도 모든 언어에서
-     * 이 기호 표기를 쓴다 — 그래프 쪽 [latestLeadLabel]과 같은 선택이다.
+     * [leadLabel]의 영어 꼴("W +13.4")로 대신한다. 비김도 모든 언어에서 [leadLabel]의 `0.0`이다 —
+     * 형세 그래프 머리와 같은 글자.
      */
     fun scoreLeadButtonLabel(whiteScoreLead: Double): String {
         val blackLead = -whiteScoreLead
-        if (language == UiLanguage.English || blackLead == 0.0) return blackLeadLabel(blackLead)
+        if (language == UiLanguage.English || blackLead == 0.0) return leadLabel(blackLead)
         val marginText = abs(blackLead).formatScoreNumber()
         val leader = colorLabel(if (blackLead > 0.0) StoneColor.Black else StoneColor.White)
         return when (language) {
             UiLanguage.Korean -> "$leader ${marginText}집 우세"
             UiLanguage.Japanese -> "$leader ${marginText}目優勢"
             UiLanguage.ChineseSimplified -> "$leader 领先 ${marginText}目"
-            UiLanguage.English -> blackLeadLabel(blackLead)
+            UiLanguage.English -> leadLabel(blackLead)
         }
     }
+
+    /**
+     * 형세 점수차 한 덩이 — `흑 +5.4` · `黒 +5.4` · `黑 +5.4` · `B +5.4`, 비기면 `0.0`. [blackLead]는 흑 기준(흑이 앞서면 +).
+     * 다시보기 · 대국 중 형세 그래프의 머리와 영어 형세 단추가 쓴다.
+     *
+     * 진영 글자는 화면 언어의 [colorLabel]이다 — 같은 패널의 사석 · 승률 줄과 같은 글자(QA-23d, 사용자 2026-11-23).
+     * 영어만 한 글자 `B`/`W`로 둔다(그래프 · 단추 폭). 폭: 한 7 · 일 7 · 중 7 · 영 6.
+     */
+    fun leadLabel(blackLead: Double): String {
+        val leader = when {
+            blackLead > 0.0 -> StoneColor.Black
+            blackLead < 0.0 -> StoneColor.White
+            else -> return "0.0"
+        }
+        val rounded = ((abs(blackLead) * 10).roundToInt() / 10.0).toString()
+        return "${leadSideMark(leader)} +$rounded"
+    }
+
+    /** 형세 그래프 세로축 끝의 글자 — `흑 +15` / `백 +15`(영어 `B +15` / `W +15`). [leadLabel]과 같은 진영 글자(QA-23d, 2026-11-23). */
+    fun leadAxisLabel(color: StoneColor, scale: String): String = "${leadSideMark(color)} +$scale"
+
+    private fun leadSideMark(color: StoneColor): String =
+        if (language == UiLanguage.English) (if (color == StoneColor.Black) "B" else "W") else colorLabel(color)
 
     fun scoreTextDetailTerritory(colorLabel: String, territory: Double, prisoners: Double, total: Double): String {
         val tVal = territory.formatScoreNumber()
@@ -1375,20 +1373,17 @@ internal data class UiStrings(
             }
         }
         val color = colorLabel(winner)
-        val marginText = margin?.formatScoreNumber()
+        // 일본어·중국어는 붙여 쓴다 — 명국 기보 「白中押し勝ち」 · 「白胜6目半」과 같은 꼴(QA-23e, 2026-11-23).
         return when {
             isResign -> when (language) {
                 UiLanguage.Korean -> "$color 불계승"
                 UiLanguage.English -> "$color wins by resignation"
-                UiLanguage.Japanese -> "$color 中押し勝ち"
-                UiLanguage.ChineseSimplified -> "$color 中盘胜"
+                UiLanguage.Japanese -> "${color}中押し勝ち"
+                UiLanguage.ChineseSimplified -> "${color}中盘胜"
             }
-            marginText != null -> when (language) {
-                UiLanguage.Korean -> "$color ${marginText}집승"
-                UiLanguage.English -> "$color +$marginText"
-                UiLanguage.Japanese -> "$color ${marginText}目勝ち"
-                UiLanguage.ChineseSimplified -> "$color 胜 $marginText 目"
-            }
+            // 집수는 판정 창 제목과 한 함수다(QA-23f, 2026-11-23). 영어만 줄 폭 때문에 짧은 꼴 「White +6.5」로 둔다.
+            margin != null ->
+                if (language == UiLanguage.English) "$color +${margin.formatScoreNumber()}" else winnerMarginLabel(color, margin)
             else -> winnerWithoutMarginLabel(color)
         }
     }

@@ -47,7 +47,7 @@ internal sealed interface StudyTarget {
 }
 
 /**
- * 대국 페이지의 칸(「고전 사활」 · 「바둑 배우기」)이 고른 것을 셸의 「학습」 목적지에 넘기는 **한 번짜리 요청**(백로그 #280) — `FinishedGameFlow`(대국 기록의 「복기 하기」)와 같은 틀이다.
+ * 대국 페이지의 칸(「고전 사활」 · 「바둑 배우기」)이 고른 것을 셸의 「학습」 목적지에 넘기는 **한 번짜리 요청**(백로그 #280) — `FinishedGameFlow`(대국 기록의 「복기하기」)와 같은 틀이다.
  *
  * ⚠️ 셸에 들게 하지 않는다 — 셸이 학습의 하위 분류를 알게 되고(`StudyHubContractTest`) 셸 상태 원장에 한 칸이 는다(함정 3).
  * 대국 페이지(홈)는 이 패키지를 import하지 못해(같은 층) 셸이 [requestClassicLifeAndDeath] · [requestBasics]를 부른다 — 분류의 이름은 여기에만 있다.

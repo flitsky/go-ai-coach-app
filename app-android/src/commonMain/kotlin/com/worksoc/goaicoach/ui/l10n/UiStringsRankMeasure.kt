@@ -18,8 +18,8 @@ import com.worksoc.goaicoach.shared.policy.customRank
  *
  * `UiStrings` 생성자 슬롯이 255/255로 꽉 차 있어(함정 61) 다른 화면들처럼 사이드 테이블에 둔다.
  *
- * ⚠️ 급수는 **공식 KGS 프로필 값**이지 공인 기력이 아니다 — 설정 창이 그것을 밝힌다([rankMeasureOfficialNoteFor]).
- * 기력을 증명·인증한다는 뜻의 문구를 여기에 더하지 말 것.
+ * ⚠️ 급수는 **공식 KGS 프로필 값**이지 공인 기력이 아니다 — 설정 창은 「KGS 기준」만 밝힌다([rankMeasureOfficialNoteFor],
+ * QA-23c 사용자 2026-11-23). 기력을 증명·인증한다는 뜻의 문구를 여기에 더하지 말 것.
  */
 
 /** 급수 한 칸의 표기 — `5급`·`3단` / `5 kyu`·`3 dan` / `5級`·`3段` / `5级`·`3段`. */
@@ -142,13 +142,17 @@ internal fun rankMeasureNoAssistNoteFor(language: UiLanguage): String =
         UiLanguage.ChineseSimplified -> "对局中无法使用形势判断、推荐着法和悔棋。结束后可在复盘中查看。"
     }
 
-/** 고지 — 숫자는 공식 프로필의 것이고 공인 기력이 아니다(사용자 2026-10-04: 공식 값을 믿고 쓰되 밝힌다). */
+/**
+ * 고지 — 급수가 어느 기준인지 밝힌다(사용자 2026-10-04: 공식 값을 믿고 쓰되 밝힌다).
+ * 「KGS 기준」 한 문장뿐이다(QA-23c, 사용자 2026-11-23 — 「공식 프로필 값」 · 「공인 기력이 아닙니다」를 뺐다).
+ * 폭: 한 22 · 한도 28 · 영 17 · 일 19 · 중 15.
+ */
 internal fun rankMeasureOfficialNoteFor(language: UiLanguage): String =
     when (language) {
-        UiLanguage.Korean -> "KGS 기준 공식 프로필 값입니다. 공인 기력이 아닙니다."
-        UiLanguage.English -> "Official KGS-based profile values, not a certified rank."
-        UiLanguage.Japanese -> "KGS基準の公式プロファイル値です。公認の棋力ではありません。"
-        UiLanguage.ChineseSimplified -> "这是基于KGS的官方配置值，并非认证棋力。"
+        UiLanguage.Korean -> "급수는 KGS 기준입니다."
+        UiLanguage.English -> "Ranks follow KGS."
+        UiLanguage.Japanese -> "級位はKGS基準です。"
+        UiLanguage.ChineseSimplified -> "级位按KGS标准。"
     }
 
 /**

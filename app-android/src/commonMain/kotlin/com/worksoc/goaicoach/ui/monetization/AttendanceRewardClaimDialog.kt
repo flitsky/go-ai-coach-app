@@ -246,6 +246,7 @@ private fun AttendanceRewardClaimDialogContent(
                 // ② 첫돌이가 거드는 한 줄. ⚠️ 보상 표 **밖**·작게 둔다 — 판 안의 5·6·7·28일차
                 // 그림들과 같은 크기로 두면 *"받는 캐릭터"* 로 오해된다.
                 GuideAnchor(surface = GuideSurface.AttendanceClaim, blocked = false)
+                // 칸을 누르면 판 바로 아래에 그 칸의 「N일차 · 보상」이 나온다(QA-17, 2026-11-23) — 아래 `ClaimDetail`과 다른 줄이다.
                 AttendanceStampBoard(board, collection)
                 if (board.beyondBoard.isNotEmpty()) {
                     Text(

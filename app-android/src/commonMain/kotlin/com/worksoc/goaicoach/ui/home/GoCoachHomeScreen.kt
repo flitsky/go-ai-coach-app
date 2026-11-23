@@ -366,7 +366,7 @@ internal fun GoCoachHomeScreen(
         )
     }
 
-    // "Premium?" 탭으로 여는 구독 창구(백로그 #182). `PremiumSubscriptionCard`와 같은 패턴 —
+    // "Get Premium" 탭으로 여는 구독 창구(백로그 #182, 문구는 QA-23b 2026-11-23). `PremiumSubscriptionCard`와 같은 패턴 —
     // 새 상태 훅이 아니라 이 컴포저블 로컬 `remember`.
     if (showSubscribeDialog) {
         PremiumSubscribeDialog(onDismiss = { showSubscribeDialog = false })
@@ -427,7 +427,8 @@ private fun HomeTopBar(
 private val HomeTopBarMinHeight = 56.dp
 
 /**
- * 윗줄 왼쪽의 로고 한 줄(#280 ③ B안) — 흑백 돌 엠블럼 + 앱 제목, 그 아래 「Premium?」(백로그 #182 — 구독 창구를 띄울 수 있을 때만).
+ * 윗줄 왼쪽의 로고 한 줄(#280 ③ B안) — 흑백 돌 엠블럼 + 앱 제목, 그 아래 「Get Premium」(백로그 #182 — 구독 창구를 띄울 수 있을 때만).
+ * 그 글자는 네 언어 모두 영어 그대로다(2026-09-21 결정). 「Premium?」은 질문으로 읽혀 「Get Premium」으로 바꿨다(QA-23b, 사용자 2026-11-23).
  * 구독 중이면 제목이 금색이다. 구독 창구를 띄울 수 있으면 묶음 전체가 누르는 표적이다(엠블럼만이 아니라).
  */
 @Composable
@@ -457,7 +458,7 @@ private fun HomeTopBarLogo(
                 overflow = TextOverflow.Ellipsis,
             )
             if (showsPremiumPrompt) {
-                Text(text = "Premium?", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = PremiumGold, maxLines = 1)
+                Text(text = "Get Premium", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = PremiumGold, maxLines = 1)
             }
         }
     }

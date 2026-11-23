@@ -3,7 +3,7 @@ package com.worksoc.goaicoach.ui.l10n
 import com.worksoc.goaicoach.application.gamehistory.ReviewRecommendationMistakeThreshold
 
 /**
- * 대국 뒤 「복기 하기」 추천(백로그 #200)의 문구 — 판정 결과 팝업의 배지와, 팝업을 닫은 뒤 판 옆에 뜨는 캐릭터 말풍선.
+ * 대국 뒤 「복기하기」 추천(백로그 #200)의 문구 — 판정 결과 팝업의 배지와, 팝업을 닫은 뒤 판 옆에 뜨는 캐릭터 말풍선.
  *
  * ⚠️ **[UiStrings]의 필드로 넣지 않는다** — 생성자 여유가 거의 없다(함정 61, 리팩토링 보류 `#48`).
  * `UiStringsBoardControls.kt`·`UiStringsGameFlow.kt`가 먼저 간 위성 표의 길이다.
@@ -33,7 +33,7 @@ internal fun reviewRecommendationMessageFor(
 }
 
 /**
- * 「복기 하기」 버튼 배지를 스크린 리더가 읽는 말 — 화면에는 숫자(`3`·`9+`)만 보이지만, 소리로 `3`만 들으면 무엇의
+ * 「복기하기」 버튼 배지를 스크린 리더가 읽는 말 — 화면에는 숫자(`3`·`9+`)만 보이지만, 소리로 `3`만 들으면 무엇의
  * 개수인지 알 수 없다(`boardSizeSubjectFor`와 같은 이유). 개수는 자르지 않은 **실제 값**을 읽는다.
  */
 internal fun reviewMistakeBadgeDescriptionFor(

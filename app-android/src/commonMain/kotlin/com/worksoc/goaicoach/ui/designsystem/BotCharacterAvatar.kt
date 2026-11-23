@@ -243,7 +243,7 @@ private val GreyscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setT
  * 2026-09-22 사용자 요청: 불투명도 90%(alpha = 0.9f)를 적용해 카드 배경과 부드럽게 어우러지도록 한다.
  *
  * ⚠️ **홈 카드(`ui.home`의 옛 `currentAiCharacterOrDefault`(지금 `aiSeatCharacterOrNull`)·옛 `GamePlayPreviewIcon`, #192)에서 여기로 내려왔다**(백로그 #200) —
- * 대국 화면(`ui.play`)의 「복기 하기」 추천 말풍선도 같은 원화를 쓰는데, 대국 화면이 홈 화면 파일을 부르게 두지 않으려고
+ * 대국 화면(`ui.play`)의 「복기하기」 추천 말풍선도 같은 원화를 쓰는데, 대국 화면이 홈 화면 파일을 부르게 두지 않으려고
  * 그림 해석([botAvatarRes])이 있는 이 층으로 옮겼다. 코드는 한 줄도 바꾸지 않았다.
  */
 @Composable

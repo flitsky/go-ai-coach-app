@@ -80,7 +80,7 @@ internal data class GameScreenState(
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
 
-    /** 끝난 판의 것(결과 배지 · 재 대국/복기 하기/대국 설정 · 「← 홈」 · 복기 말풍선)을 그릴 때 — 새 판 준비 중에는 아니다(QA-06). */
+    /** 끝난 판의 것(결과 배지 · 재 대국/복기하기/대국 설정 · 「← 홈」 · 복기 말풍선)을 그릴 때 — 새 판 준비 중에는 아니다(QA-06). */
     val showsFinishedGame: Boolean get() = isGameEnded && !isPreparingNewGame
 
     /**

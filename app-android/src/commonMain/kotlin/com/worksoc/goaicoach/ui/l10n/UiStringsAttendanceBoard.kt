@@ -40,6 +40,7 @@ private val UpcomingNotices: Map<UiLanguage, String> = mapOf(
 /**
  * 도장이 찍힌 칸에 붙는 말. **화면에는 안 보이고 스크린 리더만 읽는다**(#57) — 인장 그림에는
  * 글자가 없으므로, 이것이 없으면 받아 간 칸과 아직인 칸이 소리로 구분되지 않는다.
+ * 칸을 눌러 판 아래 나오는 줄(QA-17, 2026-11-23)에도 상태 말은 넣지 않는다 — 그 줄은 「N일차 · 보상」뿐이다.
  */
 private val StampedNotices: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "받았어요",

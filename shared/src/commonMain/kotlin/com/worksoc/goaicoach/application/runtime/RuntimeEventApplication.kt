@@ -220,9 +220,8 @@ private fun List<ScoreSnapshot>.runtimeScoreSnapshotsSummary(): String =
         }
     }
 
-// 그래프 헤더에 실제로 표시되는 "B +N.N" / "W +N.N" 라벨과 동일한 규칙으로 계산한다
-// (ScoreTimelineGraph.kt의 currentScoreLabel과 부호/반올림 방식을 맞춤) — 로그의 값과
-// 화면에서 본 값을 바로 대조할 수 있어야 하기 때문이다.
+// 그래프 헤더의 형세 라벨(`UiStrings.leadLabel`)과 부호 · 반올림 규칙이 같다 — 로그의 값과 화면에서 본 값을 바로 대조할 수
+// 있어야 하기 때문이다. 진영 글자는 로그에서 늘 B/W다(영어 화면과 같다) — 한 · 일 · 중 화면은 흑/백 · 黒/白 · 黑/白(QA-23d, 2026-11-23).
 private fun List<ScoreSnapshot>.runtimeLatestScoreLabel(): String {
     val latest = maxByOrNull { it.moveNumber } ?: return "none"
     val lead = latest.whiteScoreLead ?: return "none(m${latest.moveNumber})"
