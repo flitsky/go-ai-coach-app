@@ -75,7 +75,7 @@ internal fun GoCoachContent(
     onReviewFinishedGame: () -> Unit,
     /** 대국 설정 화면으로 간다(백로그 #185) — 끝난 판에서 하단 액션바가 여는 길. */
     onOpenGameSetup: () -> Unit,
-    /** ☰ 메뉴 최하단의 '대국 나가기'가 부른다(백로그 #175). 홈으로 돌아간다. */
+    /** ☰ 메뉴 최하단의 '대국 나가기'(백로그 #175)와 끝난 판 윗줄의 「← 홈」(QA-01)이 부른다. 홈으로 돌아간다. */
     onExitGame: () -> Unit,
     selectedLanguage: UiLanguage,
     onLanguageChange: (UiLanguage) -> Unit,
@@ -332,6 +332,7 @@ internal fun GoCoachContent(
                     screenState = screenState,
                     isDisplayMenuExpanded = isDisplayMenuExpanded,
                     onDisplayMenuExpandedChange = { expanded -> isDisplayMenuExpanded = expanded },
+                    onExitGame = onExitGame,
                 )
 
                 GamePlaySection(

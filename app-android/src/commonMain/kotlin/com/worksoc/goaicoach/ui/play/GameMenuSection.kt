@@ -5,13 +5,23 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.match.hasDeepSearchingAi
 import com.worksoc.goaicoach.match.isRankMeasure
@@ -41,6 +52,7 @@ import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.exitGameActionFor
+import com.worksoc.goaicoach.ui.l10n.finishedGameHomeActionFor
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
 import com.worksoc.goaicoach.ui.setup.CompactScoringAndBoardSettingsPanel
 import com.worksoc.goaicoach.ui.setup.KaTrainUxMenuButton
@@ -54,7 +66,8 @@ import com.worksoc.goaicoach.ui.setup.SearchTimeSettingsPanel
  * 대국 화면 최상단. **두 줄로 나뉜다**(#35, 2026-08-30 사용자 지시).
  *
  * ```
- * [빌드시각]        수순 12수            [♪][☰]
+ * [빌드시각]        수순 12수            [♪][☰]      ← 진행 중
+ * [← 홈]            수순 12수            [♪][☰]      ← 끝난 판(QA-01, 2026-11-23 — [FinishedGameHomeButton])
  * 흑: 유저 / 백: KataGo 초고수
  * ```
  *
@@ -76,6 +89,8 @@ internal fun GameHeaderSection(
     screenState: GameScreenState,
     isDisplayMenuExpanded: Boolean,
     onDisplayMenuExpandedChange: (Boolean) -> Unit,
+    /** 끝난 판의 「← 홈」이 부른다 — 메뉴의 「대국 나가기」 · 뒤로 키와 **같은 길**(셸의 `onExitGame`: 끝난 판이면 곧바로 홈). */
+    onExitGame: () -> Unit = {},
 ) {
     val strings = LocalUiStrings.current
     Column(
@@ -86,21 +101,27 @@ internal fun GameHeaderSection(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // [1] 좌측 끝: 빌드타임 [260717 15:33] — 개발/QA용 정보라 시각적 비중은 낮춘다.
+            // [1] 좌측 끝: 끝난 판이면 「← 홈」, 아니면 빌드타임 [260717 15:33](개발/QA용 정보라 시각적 비중은 낮춘다).
+            // ⚠️ **끝난 판에서는 가중치를 풀어 알약이 제 폭을 갖는다**(QA-01) — 1:2 칸(360dp에서 55dp쯤)에 넣으면 「← ホーム」 · 「← Home」이
+            //   배율 1.3에서 옆 칸의 수순과 겹쳤다(에뮬레이터 확인). 남는 폭은 [2]가 모두 갖고, 모자라면 수순 글자가 줄어든다.
             Box(
-                modifier = Modifier.weight(1f),
+                modifier = if (screenState.isGameEnded) Modifier else Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                // ⚠️ 잘리지 않고 칸 밖으로 그린다(#275) — 빠른 버튼이 둘이 되자 폭 360dp 폰에서 이 칸이 55dp쯤으로 줄어 끝자리가
-                //   잘렸다(`v261021.090`). 옆 칸의 수순은 가운데 맞춤이고 짧아(`수순 999수`) 이 몇 dp와 겹치지 않는다.
-                Text(
-                    text = formatBuildTime(appBuildInfo.buildTime),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Visible,
-                )
+                if (screenState.isGameEnded) {
+                    FinishedGameHomeButton(onClick = onExitGame)
+                } else {
+                    // ⚠️ 잘리지 않고 칸 밖으로 그린다(#275) — 빠른 버튼이 둘이 되자 폭 360dp 폰에서 이 칸이 55dp쯤으로 줄어 끝자리가
+                    //   잘렸다(`v261021.090`). 옆 칸의 수순은 가운데 맞춤이고 짧아(`수순 999수`) 이 몇 dp와 겹치지 않는다.
+                    Text(
+                        text = formatBuildTime(appBuildInfo.buildTime),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible,
+                    )
+                }
             }
 
             // [2] 가운데: 수순. `bodyMedium` + secondary는 **흑/백 줄이 쓰던 그대로**다 —
@@ -109,15 +130,15 @@ internal fun GameHeaderSection(
                 modifier = Modifier.weight(2f),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
+                // 한 줄. 진행 중에는 이 칸(남는 폭의 2/3)에 늘 들어간다. 끝난 판에서 「← 홈」이 폭을 더 가져가 모자라면
+                // 글자를 줄인다(QA-01 — 일본어 · 영어 배율 1.3, 360dp). 잘라 「…」로 만들지 않는다 — 수가 사라진다.
+                val moveCountStyle = MaterialTheme.typography.bodyMedium
+                BasicText(
                     text = "${strings.moveCountPrefix} ${screenState.gameState.moves.size}${strings.moveCountSuffix}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    // 한 줄로 충분하다 — 가장 긴 표기가 `Moves 999`(라틴) 수준이라 배율
-                    // 2.0배·좁은 폭에서도 이 칸(화면 폭의 절반)을 넘지 않는다.
+                    style = moveCountStyle.copy(color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = moveCountStyle.fontSize),
                 )
             }
 
@@ -152,6 +173,33 @@ internal fun GameHeaderSection(
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+
+/**
+ * 끝난 판에서만 윗줄 왼쪽에 서는 「← 홈」(QA-01, 사용자 2026-11-23 — 두 안의 화면을 보고 ⓐ를 골랐다).
+ *
+ * - 판이 끝나면 아래 단추가 「재 대국 · 복기 하기 · 대국 설정」으로 바뀌는데 **홈으로 가는 길이 화면에 없었다** — 뒤로 키(iOS엔 없다)나
+ *   ☰ 세 화면 아래의 「대국 나가기」뿐이었다.
+ * - **진행 중에는 그리지 않는다** — #175(2026-09-18)가 「대국 화면 왼쪽 위 나가기」를 오터치 = 대국 이탈이라 물렸다. 끝난 판에는 잃을 것이 없다.
+ * - 모양은 오른쪽 끝 ☰([KaTrainUxMenuButton] — 기본 `OutlinedButton`)과 마주 보는 같은 테두리 알약. 안쪽 여백만 줄였다.
+ *   폭은 이 알약이 정하고(윗줄의 [1] 칸이 끝난 판에서 가중치를 푼다), 수순 칸이 남는 폭을 쓴다.
+ */
+@Composable
+private fun FinishedGameHomeButton(onClick: () -> Unit) {
+    val strings = LocalUiStrings.current
+    OutlinedButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = AppSpacing.Space10),
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(AppSpacing.Space4))
+        Text(finishedGameHomeActionFor(strings.language), maxLines = 1, softWrap = false)
     }
 }
 

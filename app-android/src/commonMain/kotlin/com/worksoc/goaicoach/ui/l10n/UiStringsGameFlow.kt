@@ -42,6 +42,18 @@ private val ExitGameActions: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "退出对局",
 )
 
+/**
+ * 끝난 판 윗줄 왼쪽의 「← 홈」(QA-01, 사용자 2026-11-23 ⓐ안) — 좁은 칸(360dp에서 55dp쯤)에 서므로 한 낱말이다.
+ * 네 언어의 표시폭을 맞춘다(전각 2 · 반각 1): 홈 2 · Home 4 · 戻る 4 · 主页 4. 일본어는 처음 「ホーム」(6칸)이었다가
+ * 1.3배 · 360dp에서 옆의 수순과 겹쳐 「戻る」로 줄였다 — 언어마다 실기로 재는 대신 길이를 먼저 맞춘다(사용자 2026-11-23).
+ */
+private val FinishedGameHomeActions: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "홈",
+    UiLanguage.English to "Home",
+    UiLanguage.Japanese to "戻る",
+    UiLanguage.ChineseSimplified to "主页",
+)
+
 private val PassNoticeTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "통과",
     UiLanguage.English to "Pass",
@@ -87,6 +99,8 @@ internal fun rematchActionFor(language: UiLanguage): String = RematchActions.get
 internal fun reviewGameActionFor(language: UiLanguage): String = ReviewGameActions.getValue(language)
 
 internal fun exitGameActionFor(language: UiLanguage): String = ExitGameActions.getValue(language)
+
+internal fun finishedGameHomeActionFor(language: UiLanguage): String = FinishedGameHomeActions.getValue(language)
 
 internal fun passNoticeTitleFor(language: UiLanguage): String = PassNoticeTitles.getValue(language)
 
