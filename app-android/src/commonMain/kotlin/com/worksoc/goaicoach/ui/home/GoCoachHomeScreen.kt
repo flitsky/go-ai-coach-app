@@ -1334,8 +1334,9 @@ internal fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
             Box(modifier = Modifier.size(MenuTileIconSize), contentAlignment = Alignment.Center) { tile.icon() }
             Spacer(modifier = Modifier.width(AppSpacing.Space10))
             // 제목이 긴 언어에서는 두 줄이 된다 — 그림이 더 커서 타일의 키는 그대로다.
+            // 한국어는 어절 안에서 줄을 바꾸지 않는다 — 「바둑판 사진 분 / 석」(QA-15, 2026-11-23). [MenuCard] 부제와 같은 처방.
             Text(
-                text = tile.title,
+                text = keepWordsWhole(tile.title, LocalUiStrings.current.language),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = AppTextSize.Text16,
                 fontWeight = FontWeight.Bold,

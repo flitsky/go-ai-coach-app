@@ -1,13 +1,16 @@
 package com.worksoc.goaicoach.ui.settings
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
@@ -35,6 +39,7 @@ internal fun BackgroundMusicSettingsPanel(modifier: Modifier = Modifier) {
     val platform = LocalAppPlatform.current
     val store = remember(platform) { platform.stores.backgroundMusic }
     var isEnabled by remember(store) { mutableStateOf(store.isEnabled()) }
+    val interaction = remember { MutableInteractionSource() }
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -42,9 +47,20 @@ internal fun BackgroundMusicSettingsPanel(modifier: Modifier = Modifier) {
         tonalElevation = AppElevation.Level1,
         shadowElevation = AppElevation.Level0,
     ) {
+        // 줄 전체가 스위치다(QA-10, 2026-11-23) — 라벨이 이름이 되고 글자를 눌러도 켜진다. 눌림 표시는 지금처럼 손잡이가 한다(같은 interaction).
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .toggleable(
+                    value = isEnabled,
+                    interactionSource = interaction,
+                    indication = null,
+                    role = Role.Switch,
+                    onValueChange = { checked ->
+                        isEnabled = checked
+                        store.setEnabled(checked)
+                    },
+                )
                 .padding(horizontal = AppSpacing.Space12, vertical = AppSpacing.Space4),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -56,10 +72,10 @@ internal fun BackgroundMusicSettingsPanel(modifier: Modifier = Modifier) {
             )
             Switch(
                 checked = isEnabled,
-                onCheckedChange = { checked ->
-                    isEnabled = checked
-                    store.setEnabled(checked)
-                },
+                onCheckedChange = null,
+                interactionSource = interaction,
+                // null이면 M3가 48dp 자리를 빼므로(52×32) 그 자리를 남겨 줄 높이를 지킨다.
+                modifier = Modifier.minimumInteractiveComponentSize(),
             )
         }
     }

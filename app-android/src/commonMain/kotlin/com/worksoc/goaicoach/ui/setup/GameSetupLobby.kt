@@ -59,6 +59,7 @@ import com.worksoc.goaicoach.ui.designsystem.PremiumGoldGradient
 import com.worksoc.goaicoach.ui.designsystem.PremiumGoldLight
 import com.worksoc.goaicoach.ui.guide.GuideAnchor
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
 import com.worksoc.goaicoach.ui.monetization.PremiumUpsellDialogHost
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
@@ -128,7 +129,7 @@ internal fun GameSetupLobby(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = strings.close,
+                    contentDescription = backNavigationLabelFor(strings.language),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

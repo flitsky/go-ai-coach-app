@@ -39,7 +39,6 @@ import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeni
 import com.worksoc.goaicoach.application.analysis.JsonPositionAnalysisCacheOpeningMaxMoveCount
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProfile
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkProgress
-import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.gamehistory.countReviewRecommendationMistakes
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
@@ -131,14 +130,14 @@ internal fun GoCoachContent(
         reviewRecommendationKey = finalJudgementKey
         dismissFinalJudgement()
     }
-    // ⚠️ 엔진이 「새 대국을 위해 준비 중」이면 잠시 숨긴다(지우지는 않는다) — 재 대국을 누르면 새 판이 서기까지 끝난 판이
-    //   몇 초 더 보이는데(실기 약 20초), 그 위에 말풍선이 남으면 방금 떠난 판을 권하는 셈이다. 새 판이 서면 위 효과가 비운다.
-    val showReviewRecommendation = screenState.isGameEnded &&
+    // ⚠️ 새 판 준비 중이면 잠시 숨긴다(지우지는 않는다) — 재 대국을 누르면 새 판이 서기까지 끝난 판이 몇 초 더 보이는데
+    //   (실기 약 20초), 그 위에 말풍선이 남으면 방금 떠난 판을 권하는 셈이다. 새 판이 서면 위 효과가 비운다.
+    //   그 구간은 `showsFinishedGame` 한 곳에서 정한다(QA-06, 2026-11-23 — 결과 배지 · 끝난 판 버튼 · 「← 홈」과 같은 규칙).
+    val showReviewRecommendation = screenState.showsFinishedGame &&
         finalJudgementToShow == null &&
         reviewRecommendationKey != null &&
         reviewRecommendationKey == finalJudgementKey &&
-        (reviewMistakeCount ?: 0) >= 1 &&
-        screenState.engine.activityIndicator != EngineActivityIndicator.Preparing
+        (reviewMistakeCount ?: 0) >= 1
 
     // ⚠️ **벤치마크 팝업은 여기서 그리지 않는다**(2026-09-10). 이 화면은 `InGame`에서만
     // 컴포즈되는데 '엔진 성능 측정' 버튼은 **설정 화면**에 있어서, 여기서 그리면 설정에서 누른

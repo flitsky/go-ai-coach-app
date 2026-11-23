@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.application.gamehistory.ScoreSwingMaxCount
-import com.worksoc.goaicoach.ui.l10n.ReplayNavigation
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNoteDialogTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
@@ -11,7 +10,6 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayAnalysisFailedFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchBlockedFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchOverwriteMessageFor
-import com.worksoc.goaicoach.ui.l10n.gameReplayNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataForSwingsFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreSwingsFor
@@ -76,12 +74,6 @@ class UiStringsGameReplayTest {
                 "분석 — 판에 올릴 추천 수 없음(1회권 걸었음)" to gameReplayNoTopMovesFor(language, ticketKept = true),
             ).forEach { (what, text) ->
                 assertTrue("$language / $what 문구가 비었다", text.isNotBlank())
-            }
-            ReplayNavigation.entries.forEach { step ->
-                assertTrue(
-                    "$language / $step 이동 라벨이 비었다",
-                    gameReplayNavigationLabelFor(language, step).isNotBlank(),
-                )
             }
         }
     }

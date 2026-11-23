@@ -49,6 +49,11 @@ internal data class GameScreenState(
     val resumePrompt: ResumePromptState?,
     val cacheOptimizationPrompt: PositionAnalysisCacheOptimizationPrompt?,
     val isGameEnded: Boolean,
+    /**
+     * 새 판을 준비하는 중(QA-06, 2026-11-23) — 판은 엔진이 답한 뒤에 갈려(`runStartEngineBackedGameApplication`) 그동안
+     * [isGameEnded]·판정·수순은 앞 판의 것이다. 앱 시작의 엔진 기동(같은 「준비 중」)은 아니다 — 되살린 끝난 판은 끝난 판 그대로.
+     */
+    val isPreparingNewGame: Boolean = false,
     val endgameLog: String,
     val finalScoreJudgement: FinalScoreJudgement?,
     /**
@@ -74,6 +79,9 @@ internal data class GameScreenState(
 ) {
     val nextPlayer: StoneColor
         get() = gameState.nextPlayer
+
+    /** 끝난 판의 것(결과 배지 · 재 대국/복기 하기/대국 설정 · 「← 홈」 · 복기 말풍선)을 그릴 때 — 새 판 준비 중에는 아니다(QA-06). */
+    val showsFinishedGame: Boolean get() = isGameEnded && !isPreparingNewGame
 }
 
 internal data class GameScreenStateInput(
@@ -253,6 +261,9 @@ internal fun buildGameScreenState(input: GameScreenStateInput): GameScreenState 
         cacheOptimizationPrompt = input.cacheOptimizationPrompt
             ?.takeIf { promptVisibility.showCacheOptimizationPrompt },
         isGameEnded = input.isGameEnded,
+        // 기동을 마친 뒤의 「준비 중」만 센다 — 콜드 스타트의 기동(EngineStartup)도 Preparing이지만 그때 되살린 끝난 판은 끝난 판이다.
+        isPreparingNewGame = input.isGameEnded && input.hasCompletedEngineStartup &&
+            input.engineActivityIndicator == EngineActivityIndicator.Preparing,
         endgameLog = input.endgameLog,
         finalScoreJudgement = input.finalScoreJudgement,
         handicapCount = input.handicapCount,
@@ -433,7 +444,9 @@ internal fun buildGameActionButtonStates(input: GameScreenStateInput): List<Game
             // and safely, no matter what the engine is doing.
             // 켜짐의 조건은 "누르면 실제로 물러나는가"다(`canUndoLastTurn`, 백로그 #242) — 무를 수가 없는데 눌리면
             // 이 판의 무료 무르기가 헛되이 닳는다(백을 잡고 AI의 첫 수만 놓인 때가 그 자리였다).
-            enabled = canUndoLastTurn(input.gameState, input.matchMode, input.playerSetup) && !isRankMeasureGame,
+            // `!isGameEnded`(QA-06, 2026-11-23) — 끝난 판엔 무르기가 안 그려지지만(#185), 새 판 준비 중엔 이 칸이 무르기로 돌아오고
+            //   `canUndoLastTurn`은 종국을 보지 않아 앞 판의 수순을 무를 수 있었다.
+            enabled = !input.isGameEnded && canUndoLastTurn(input.gameState, input.matchMode, input.playerSetup) && !isRankMeasureGame,
             isFilled = false,
         ),
         GameActionButtonState(

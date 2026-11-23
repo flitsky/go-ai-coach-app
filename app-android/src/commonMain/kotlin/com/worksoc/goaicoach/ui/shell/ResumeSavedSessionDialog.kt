@@ -5,9 +5,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
-import com.worksoc.goaicoach.shared.domain.describe
 import com.worksoc.goaicoach.ui.guide.GuideBlockingOverlays
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.resumeLastMoveFor
 
 @Composable
 internal fun ResumeSavedSessionDialog(
@@ -30,12 +30,8 @@ internal fun ResumeSavedSessionDialog(
                     appendLine(strings.resumeQuestion)
                     appendLine()
                     append("${strings.lastMovePrefix}: ")
-                    append(
-                        snapshot.gameState.moves
-                            .lastOrNull()
-                            ?.describe(snapshot.gameState.boardSize)
-                            ?: strings.none,
-                    )
+                    // 「흑 D4」 — 화면 언어로(QA-12, 2026-11-23). shared `describe`는 엔진 · 로그용 영어라 쓰지 않는다.
+                    append(resumeLastMoveFor(strings, snapshot.gameState))
                     appendLine()
                     append(strings.setupSummary(snapshot.playerSetup, engineName))
                 },

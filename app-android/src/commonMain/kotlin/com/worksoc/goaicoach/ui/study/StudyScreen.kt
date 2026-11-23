@@ -34,6 +34,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyBasicsCategories
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.studyBasicsTitleFor
 import com.worksoc.goaicoach.ui.l10n.studyLessonTrackFor
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
@@ -169,7 +170,7 @@ internal fun StudyScreenHeader(title: String, onBackClick: () -> Unit) {
         IconButton(onClick = onBackClick) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
-                contentDescription = strings.close,
+                contentDescription = backNavigationLabelFor(strings.language),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }

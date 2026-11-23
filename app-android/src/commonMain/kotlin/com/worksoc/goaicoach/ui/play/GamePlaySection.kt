@@ -1212,10 +1212,12 @@ private fun GameActionButtonHost(
         },
         resign = { modifier ->
             // 기권 / 새 게임 버튼
-            val resignEnabled = screenState.isGameEnded || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
+            // ⚠️ 끝난 판의 세 칸(재 대국 · 복기 하기 · 대국 설정)은 `showsFinishedGame`으로 가른다(QA-06, 2026-11-23) — 새 판 준비 중에는
+            //   `isGameEnded`가 아직 참이라 앞 판의 복기가 열렸다. 그동안은 기권 · 통과 · 무르기로 돌아와 셋 다 꺼진다(차단 중 · 종국 가드).
+            val resignEnabled = screenState.showsFinishedGame || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
             ActionButton(
                 onClick = {
-                    if (screenState.isGameEnded) {
+                    if (screenState.showsFinishedGame) {
                         onEvent(GameUiEvent.StartConfiguredGame)
                     } else {
                         showResignConfirm = true
@@ -1228,7 +1230,7 @@ private fun GameActionButtonHost(
                 // (`StartConfiguredGame`). 문구만 달랐던 옛 사유는 끊어진 포인터였다 —
                 // `FinalJudgementDialog`의 주석이 가리키던 `UiStrings.rematchAction`의 KDoc은
                 // 이미 없다. 같은 일을 하는 버튼은 같은 이름으로 부른다.
-                label = if (screenState.isGameEnded) {
+                label = if (screenState.showsFinishedGame) {
                     rematchActionFor(strings.language)
                 } else {
                     strings.resign
@@ -1242,7 +1244,7 @@ private fun GameActionButtonHost(
             // ⚠️ **갈래를 여기(칸을 만드는 곳)에 둔다 — 배치에 두지 말 것.** 같은 다섯 칸을
             // 세 배치가 그리고(한 줄 다섯·좌우 기둥·두 줄) **좌우 기둥은 순서가 뒤집혀 있다** —
             // 배치마다 갈래를 적으면 한쪽만 고쳐진다(`GameActionSlots`의 KDoc, #44·#66).
-            if (screenState.isGameEnded) {
+            if (screenState.showsFinishedGame) {
                 ActionButton(
                     onClick = onReviewFinishedGame,
                     enabled = true,
@@ -1280,7 +1282,7 @@ private fun GameActionButtonHost(
             // 좋다고 2026-09-22 사용자가 확인했다. **되살리려면 그 확인부터 뒤집을 것.**
             // ⚠️ 대국 설정으로 가는 길은 끝난 판에 **달리 없다** — 대국 중 메뉴(☰)의 설정 컨트롤은
             // 종국 후에도 잠겨 있다(같은 날 실기 확인). 그래서 이 칸이 새로 여는 길이다.
-            if (screenState.isGameEnded) {
+            if (screenState.showsFinishedGame) {
                 ActionButton(
                     onClick = onOpenGameSetup,
                     enabled = true,

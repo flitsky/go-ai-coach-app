@@ -1,6 +1,7 @@
 package com.worksoc.goaicoach.ui.setup
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,12 +9,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.premium.state.FeatureAccess
@@ -38,6 +44,7 @@ import com.worksoc.goaicoach.ui.foundation.screenWidthDp
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.MenuSection
 import com.worksoc.goaicoach.ui.l10n.boardSizeToggleLabelFor
+import com.worksoc.goaicoach.ui.l10n.gameMenuButtonLabelFor
 import com.worksoc.goaicoach.ui.l10n.largeHeldStoneLabelFor
 import com.worksoc.goaicoach.ui.l10n.menuSectionTitleFor
 import com.worksoc.goaicoach.ui.monetization.LocalPremiumUiState
@@ -52,7 +59,13 @@ internal fun KaTrainUxMenuButton(
     OutlinedButton(
         onClick = { onMenuExpandedChange(!menuExpanded) },
     ) {
-        Text(if (menuExpanded) strings.close else "\u2630")
+        if (menuExpanded) {
+            Text(strings.close)
+        } else {
+            // 스크린 리더가 기호 「☰」를 읽지 않게 이름을 준다(QA-22, 2026-11-23). 단추에 걸면 onClick·역할까지 지워지므로 글자에 건다.
+            val menuLabel = gameMenuButtonLabelFor(strings.language)
+            Text("\u2630", modifier = Modifier.clearAndSetSemantics { contentDescription = menuLabel })
+        }
     }
 }
 
@@ -345,8 +358,16 @@ private fun OptionSwitchCell(
     switchAlpha: Float = 1f,
     onCheckedChange: (Boolean) -> Unit,
 ) {
+    // 칸 전체가 스위치다(QA-10, 2026-11-23) — 라벨이 이름이 되고 글자를 눌러도 켜진다. 눌림 표시는 지금처럼 손잡이가 한다(같은 interaction).
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        modifier = modifier,
+        modifier = modifier.toggleable(
+            value = checked,
+            interactionSource = interaction,
+            indication = null,
+            role = Role.Switch,
+            onValueChange = onCheckedChange,
+        ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -360,8 +381,11 @@ private fun OptionSwitchCell(
         )
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.alpha(switchAlpha),
+            onCheckedChange = null,
+            interactionSource = interaction,
+            // null이면 M3가 48dp 자리를 빼므로(52×32) 그 자리를 남겨 줄 높이를 지킨다.
+            // ⚠️ `Modifier.alpha(switchAlpha)`로 시작한다 — MenuOptionOrderContractTest가 이 글자로 「흐림은 스위치에만」(2026-09-12)을 지킨다.
+            modifier = Modifier.alpha(switchAlpha).minimumInteractiveComponentSize(),
         )
     }
 }

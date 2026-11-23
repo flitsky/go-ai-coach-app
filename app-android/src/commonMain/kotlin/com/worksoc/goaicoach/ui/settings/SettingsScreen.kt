@@ -54,6 +54,7 @@ import com.worksoc.goaicoach.ui.foundation.PRIVACY_POLICY_URL
 import com.worksoc.goaicoach.ui.home.LocalRankMeasureUiState
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesTitleFor
 import com.worksoc.goaicoach.ui.l10n.settingsAboutSectionFor
 import com.worksoc.goaicoach.ui.l10n.settingsDisplaySectionFor
@@ -159,7 +160,7 @@ internal fun SettingsScreen(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = strings.close,
+                    contentDescription = backNavigationLabelFor(strings.language),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }

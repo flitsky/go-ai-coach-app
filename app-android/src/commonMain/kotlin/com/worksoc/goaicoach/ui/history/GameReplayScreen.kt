@@ -1,7 +1,6 @@
 package com.worksoc.goaicoach.ui.history
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,8 +64,10 @@ import com.worksoc.goaicoach.ui.designsystem.ReplaySkipToFirstIcon
 import com.worksoc.goaicoach.ui.designsystem.ReplaySkipToLastIcon
 import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
+import com.worksoc.goaicoach.ui.l10n.ReplayTransportStep
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchBlockedFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayBranchLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayNoScoreDataFor
@@ -78,6 +81,7 @@ import com.worksoc.goaicoach.ui.l10n.gameReplayShowMoveNumbersLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayStartPositionFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameReplayTruncatedFor
+import com.worksoc.goaicoach.ui.l10n.replayTransportLabelFor
 import com.worksoc.goaicoach.ui.monetization.SubscriptionAwareBannerAd
 import com.worksoc.goaicoach.ui.play.ScoreTimelineGraph
 import com.worksoc.goaicoach.ui.quickactions.AppQuickActions
@@ -199,7 +203,6 @@ internal fun GameReplayScreen(
         ReplayHeader(
             title = gameReplayTitleFor(strings.language),
             subtitle = gameHistorySummaryLine(entry, strings),
-            closeLabel = strings.close,
             onBackClick = onBackClick,
         )
 
@@ -357,7 +360,6 @@ internal val ReplaySectionGap = 8.dp
 internal fun ReplayHeader(
     title: String,
     subtitle: String,
-    closeLabel: String,
     onBackClick: () -> Unit,
 ) {
     Row(
@@ -371,7 +373,8 @@ internal fun ReplayHeader(
         IconButton(onClick = onBackClick) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
-                contentDescription = closeLabel,
+                // 「닫기」가 아니라 「뒤로」(QA-22, 2026-11-23) — 다시보기와 기보 보기가 이 머리말을 함께 쓴다.
+                contentDescription = backNavigationLabelFor(LocalUiStrings.current.language),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
@@ -455,7 +458,8 @@ internal fun ReplayControls(
                     // ⚠️ 체크박스 자체(20dp 안팎)는 손가락으로 누르기엔 좁다 — 라벨까지 묶어
                     // **줄 전체를 관문으로** 둔다. `Checkbox`의 `onCheckedChange`는 `null`로
                     // 비워 이중 리스너(체크박스 + 바깥 Row)가 서로 다른 값을 부르는 사고를 막는다.
-                    .clickable(onClick = onToggleMoveNumbers),
+                    // `toggleable`이라 스크린 리더가 체크 상태까지 읽는다(QA-10). 48dp로 키우지 않는다 — 제목 줄이 커지면 판이 작아진다(#275).
+                    .toggleable(value = showMoveNumbers, role = Role.Checkbox, onValueChange = { onToggleMoveNumbers() }),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(checked = showMoveNumbers, onCheckedChange = null)
@@ -480,6 +484,7 @@ internal fun ReplayControls(
         ) {
             ActionButton(
                 label = "⏮",
+                spokenLabel = replayTransportLabelFor(language, ReplayTransportStep.First),
                 enabled = moveNumber > 0,
                 onClick = { onMoveNumberChange(0) },
                 modifier = Modifier.weight(1f),
@@ -488,30 +493,35 @@ internal fun ReplayControls(
             // ⚠️ 빨리 감기는 ⏪⏩가 아니라 ◀◀ ▶▶다 — ⏪⏩는 안드로이드에서 컬러 이모지로 그려져 옆의 ◀ ▶와 생김새가 어긋난다.
             ActionButton(
                 label = "◀◀",
+                spokenLabel = replayTransportLabelFor(language, ReplayTransportStep.FastBackward),
                 enabled = moveNumber > 0,
                 onClick = { onMoveNumberChange((moveNumber - ReplayFastStep).coerceAtLeast(0)) },
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
                 label = "◀",
+                spokenLabel = replayTransportLabelFor(language, ReplayTransportStep.Previous),
                 enabled = moveNumber > 0,
                 onClick = { onMoveNumberChange(moveNumber - 1) },
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
                 label = "▶",
+                spokenLabel = replayTransportLabelFor(language, ReplayTransportStep.Next),
                 enabled = moveNumber < lastMoveNumber,
                 onClick = { onMoveNumberChange(moveNumber + 1) },
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
                 label = "▶▶",
+                spokenLabel = replayTransportLabelFor(language, ReplayTransportStep.FastForward),
                 enabled = moveNumber < lastMoveNumber,
                 onClick = { onMoveNumberChange((moveNumber + ReplayFastStep).coerceAtMost(lastMoveNumber)) },
                 modifier = Modifier.weight(1f),
             )
             ActionButton(
                 label = "⏭",
+                spokenLabel = replayTransportLabelFor(language, ReplayTransportStep.Last),
                 enabled = moveNumber < lastMoveNumber,
                 onClick = { onMoveNumberChange(lastMoveNumber) },
                 modifier = Modifier.weight(1f),

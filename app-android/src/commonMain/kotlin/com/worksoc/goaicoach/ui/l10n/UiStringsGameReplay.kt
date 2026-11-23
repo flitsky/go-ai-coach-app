@@ -143,14 +143,6 @@ private val NoScoreSwings: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "没有转折点，对局进行平稳。",
 )
 
-private val NavigationLabels: Map<UiLanguage, List<String>> = mapOf(
-    // 차례: 처음 · 이전 · 다음 · 마지막
-    UiLanguage.Korean to listOf("처음으로", "이전 수", "다음 수", "마지막으로"),
-    UiLanguage.English to listOf("First", "Previous", "Next", "Last"),
-    UiLanguage.Japanese to listOf("最初へ", "前の手", "次の手", "最後へ"),
-    UiLanguage.ChineseSimplified to listOf("回到开局", "上一手", "下一手", "跳到最后"),
-)
-
 /**
  * 「현 지점부터 커스텀 새 대국하기」 버튼(백로그 #172).
  *
@@ -215,8 +207,6 @@ private val BranchOverwriteMessages: Map<UiLanguage, (Int) -> String> = mapOf(
             "要从第 $moveNumber 手开始新对局吗？"
     },
 )
-
-internal enum class ReplayNavigation { First, Previous, Next, Last }
 
 internal fun gameReplayTitleFor(language: UiLanguage): String = Titles.getValue(language)
 
@@ -288,9 +278,6 @@ internal fun gameReplayNoScoreDataForSwingsFor(language: UiLanguage): String =
     NoScoreDataForSwings.getValue(language)
 
 internal fun gameReplayNoScoreSwingsFor(language: UiLanguage): String = NoScoreSwings.getValue(language)
-
-internal fun gameReplayNavigationLabelFor(language: UiLanguage, step: ReplayNavigation): String =
-    NavigationLabels.getValue(language)[step.ordinal]
 
 internal fun gameReplayBranchLabelFor(language: UiLanguage, moveNumber: Int): String =
     if (moveNumber <= 0) {

@@ -6,6 +6,7 @@ import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.match.PlayerSetup
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.domain.BoardCoordinate
 import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.domain.GameState
 import com.worksoc.goaicoach.shared.domain.Move
@@ -15,6 +16,7 @@ import com.worksoc.goaicoach.shared.policy.KgsRank
 import com.worksoc.goaicoach.shared.policy.PlayLevelSetting
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.resumeLastMoveFor
 import com.worksoc.goaicoach.ui.l10n.resumeSummaryFor
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -60,6 +62,15 @@ class ResumeSummaryTest {
         val setup = PlayerSetup(black = SidePlayerSetup(controller = SeatController.Human), white = SidePlayerSetup(controller = SeatController.Human))
 
         assertEquals("둘이서 · 19줄 112수", summaryOf(setup, BoardSize.Nineteen, moves = 112))
+    }
+
+    /** 이어하기 창의 「마지막 수」는 화면 언어로 — 옛 글은 어느 언어에서나 「Black D4」였다(QA-12, 2026-11-23). */
+    @Test
+    fun lastMoveSpeaksTheScreenLanguage() {
+        val played = GameState.empty(boardSize = BoardSize.Nine).play(Move.Play(StoneColor.Black, BoardCoordinate.fromLabel("D4", BoardSize.Nine)))
+
+        assertEquals("흑 D4", resumeLastMoveFor(korean, played))
+        assertEquals("白 パス", resumeLastMoveFor(UiStrings.forLanguage(UiLanguage.Japanese), played.play(Move.Pass(StoneColor.White))))
     }
 
     private fun summaryOf(setup: PlayerSetup, size: BoardSize, moves: Int, handicap: Int = 0): String {

@@ -28,19 +28,28 @@ class FinalResultBadgeContractTest {
     private val panel = source(RepoPaths.uiFile("GameStatusPanel.kt").path)
     private val badge = source(RepoPaths.uiFile("FinalResultBadge.kt").path)
     private val palette = source(RepoPaths.uiFile("AppPalette.kt").path)
+    private val screenState = source(RepoPaths.appAndroid("presentation/GameScreenState.kt").path)
 
     /**
      * ⚠️ **대국 중에는 절대 뜨면 안 된다** — 좌석 카드 가운데를 가리는데 거기에 시계와 사석이 있다.
      * 게이트가 빠져도 컴파일은 되고, 대국 내내 결과 배지가 떠 있게 된다.
+     *
+     * QA-06(2026-11-23): 게이트가 `showsFinishedGame`(끝났고 새 판 준비 중이 아님)으로 바뀌었다 — 그래서 그 게터가
+     * 여전히 `isGameEnded`에서 출발하는지도 함께 본다. 안 보면 이 그물은 종국 게이트를 더는 재지 않는다.
      */
     @Test
     fun theBadgeOnlyAppearsOnceTheGameHasEnded() {
         assertTrue(
             "결과 배지가 `isGameEnded` 게이트 없이 그려진다 — 대국 중에 시계·사석을 가린다.",
             // #191: 게이트가 `shouldShowFinalResultBadge`로 옮겨 갔다 — 그 함수가 `isGameEnded &&`로 시작해야 한다.
-            panel.contains("if (shouldShowFinalResultBadge(screenState.isGameEnded, screenState.gameState.moves.size, isResultKnown))") &&
+            panel.contains("if (shouldShowFinalResultBadge(screenState.showsFinishedGame, screenState.gameState.moves.size, isResultKnown))") &&
                 panel.contains("isGameEnded && moveCount > 0 && isResultKnown") &&
                 panel.contains("FinalResultBadge("),
+        )
+        assertTrue(
+            "`showsFinishedGame`이 `isGameEnded && !isPreparingNewGame`이 아니다 — 대국 중에 배지가 뜨거나(종국 게이트가 빠졌다) " +
+                "새 판 준비 중에 앞 판의 결과가 남는다(QA-06).",
+            screenState.contains("val showsFinishedGame: Boolean get() = isGameEnded && !isPreparingNewGame"),
         )
     }
 

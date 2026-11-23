@@ -4,6 +4,7 @@ import com.worksoc.goaicoach.application.analysis.PositionAnalysisCacheOptimizat
 import com.worksoc.goaicoach.application.contract.GameSessionRuntimeState
 import com.worksoc.goaicoach.application.engine.EngineBenchmarkUiState
 import com.worksoc.goaicoach.application.engine.localScoreSnapshot
+import com.worksoc.goaicoach.application.engine.operation.EngineActivityIndicator
 import com.worksoc.goaicoach.application.rankmeasure.rankMeasurePlayerSetup
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.application.savedgame.SavedSessionUiState
@@ -202,6 +203,41 @@ class GameScreenStateTest {
         val actions = ended.actionButtons.associateBy { it.role }
         assertFalse(requireNotNull(actions[GameActionButtonRole.Eval]).enabled)
         assertFalse(requireNotNull(actions[GameActionButtonRole.TopMoves]).enabled)
+    }
+
+    /**
+     * **새 판 준비 중은 끝난 판이 아니다**(QA-06, 2026-11-23). 판은 엔진이 답한 뒤에 갈려 그동안 `isGameEnded`·수순이 앞 판의
+     * 것이다 — 결과 배지 · 재 대국/복기 하기/대국 설정 · 「← 홈」이 그대로 남아 앞 판의 복기가 열렸다. 그 구간에는 칸이
+     * 기권 · 통과 · 무르기로 돌아오므로, 종국을 보지 않는 `canUndoLastTurn`만으로는 앞 판의 수순을 무를 수 있었다.
+     * 앱 시작의 엔진 기동도 같은 `Preparing`이지만 그때 되살린 끝난 판은 끝난 판 그대로다.
+     */
+    @Test
+    fun preparingANewGameIsNotAFinishedGame() {
+        // 흑(사람)·백이 한 수씩 — 진행 중이면 무르기가 열리는 판이다(아래 판정이 종국 가드를 재게 하는 전제).
+        val previousGame = GameState.empty()
+            .play(Move.Play(StoneColor.Black, BoardCoordinate(2, 2)))
+            .play(Move.Play(StoneColor.White, BoardCoordinate(6, 6)))
+        fun screen(isGameEnded: Boolean, hasCompletedEngineStartup: Boolean = true, indicator: EngineActivityIndicator? = null) =
+            buildGameScreenState(
+                defaultInput(gameState = previousGame, isGameEnded = isGameEnded, hasCompletedEngineStartup = hasCompletedEngineStartup)
+                    .copy(engineActivityIndicator = indicator),
+            )
+        fun GameScreenState.undoEnabled() = requireNotNull(actionButtons.associateBy { it.role }[GameActionButtonRole.Undo]).enabled
+
+        assertTrue("전제: 진행 중인 이 판은 무를 수 있다", screen(isGameEnded = false).undoEnabled())
+
+        val preparing = screen(isGameEnded = true, indicator = EngineActivityIndicator.Preparing)
+        assertTrue(preparing.isPreparingNewGame)
+        assertFalse("새 판 준비 중에 끝난 판의 것(배지 · 끝난 판 버튼 · 「← 홈」)을 그린다", preparing.showsFinishedGame)
+        assertTrue("`isGameEnded` 자체는 그대로다(종료 버튼 묶음·계가 오버레이가 기댄다)", preparing.isGameEnded)
+        assertFalse("새 판 준비 중에 앞 판의 수순을 무를 수 있다", preparing.undoEnabled())
+
+        val restoredAtColdStart = screen(isGameEnded = true, hasCompletedEngineStartup = false, indicator = EngineActivityIndicator.Preparing)
+        assertFalse(restoredAtColdStart.isPreparingNewGame)
+        assertTrue("앱 시작 기동 중에 되살린 끝난 판이 끝난 판으로 보이지 않는다", restoredAtColdStart.showsFinishedGame)
+
+        assertTrue("평범한 끝난 판", screen(isGameEnded = true).showsFinishedGame)
+        assertFalse("진행 중인 판은 준비 중인 새 판이 아니다", screen(isGameEnded = false, indicator = EngineActivityIndicator.Preparing).isPreparingNewGame)
     }
 
     /**

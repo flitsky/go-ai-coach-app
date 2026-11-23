@@ -1086,7 +1086,7 @@ internal data class UiStrings(
         val marginText = margin.formatScoreNumber()
         return when (language) {
             UiLanguage.Korean -> "$colorLabel + ${marginText}집 승"
-            UiLanguage.English -> "$colorLabel + ${marginText} points win"
+            UiLanguage.English -> "$colorLabel wins by $marginText"
             UiLanguage.Japanese -> "$colorLabel + ${marginText}目勝ち"
             UiLanguage.ChineseSimplified -> "$colorLabel + ${marginText}目胜"
         }
@@ -1125,7 +1125,7 @@ internal data class UiStrings(
     fun winnerWithoutMarginLabel(colorLabel: String): String =
         when (language) {
             UiLanguage.Korean -> "$colorLabel 승"
-            UiLanguage.English -> "$colorLabel win"
+            UiLanguage.English -> "$colorLabel wins"
             UiLanguage.Japanese -> "$colorLabel 勝ち"
             UiLanguage.ChineseSimplified -> "$colorLabel 胜"
         }

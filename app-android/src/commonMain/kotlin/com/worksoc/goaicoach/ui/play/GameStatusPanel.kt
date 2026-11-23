@@ -117,13 +117,15 @@ internal fun GameStatusPanel(
         }
 
         // ⚠️ **종국에만 뜬다** — 대국 중에는 좌석 카드 가운데를 가리면 안 된다(시계·사석이 있다).
-        // ⚠️ **0수면 그리지 않는다**(백로그 #191) — 새 대국 준비 구간에도 `isGameEnded`가 참이라 승자 없는 배지가
-        //   「무승부」로 떴다. 끝난 판은 수가 반드시 하나 이상이다(기권 1수·양통과 2수) — 0수인데 끝났다는 것이 그 과도 상태다.
+        // ⚠️ **새 판 준비 중에는 그리지 않는다**(QA-06, 2026-11-23) — 판은 엔진이 답한 뒤에 갈려 그동안 `isGameEnded`·판정이
+        //   앞 판의 것이다. 재 대국을 누르면 앞 판의 결과가 준비 내내 떠 있었다. 게이트는 `showsFinishedGame` 하나다(`GameScreenState`).
         //   `isGameEnded` 자체는 건드리지 않는다(종료 버튼 묶음·계가 오버레이가 그 켜지는 순서에 기댄다).
+        // ⚠️ **0수면 그리지 않는다**(백로그 #191) — 끝난 판은 수가 반드시 하나 이상이다(기권 1수·양통과 2수). 0수인데 끝났다는 것은
+        //   로비 미리보기(`applyGameSetupPreview`) 같은 과도 상태다 — 승자 없는 배지가 「무승부」로 떴다.
         // ⚠️ **결과를 모르면 그리지 않는다**(2026-10-08) — 양통과로 끝난 판은 계가 판정이 몇 초 뒤에 온다(사석을 가려야 한다). 그 사이의
         //   배지는 승자가 없어 「무승부」로 떴다 — 판정 결과 창이 뜨기 직전에 잠깐. 진짜 무승부는 판정이 **있고** 승자가 없는 판이다.
         val isResultKnown = isFinalResultKnown(screenState.gameState, screenState.finalScoreJudgement)
-        if (shouldShowFinalResultBadge(screenState.isGameEnded, screenState.gameState.moves.size, isResultKnown)) {
+        if (shouldShowFinalResultBadge(screenState.showsFinishedGame, screenState.gameState.moves.size, isResultKnown)) {
             FinalResultBadge(
                 gameState = screenState.gameState,
                 judgement = screenState.finalScoreJudgement,

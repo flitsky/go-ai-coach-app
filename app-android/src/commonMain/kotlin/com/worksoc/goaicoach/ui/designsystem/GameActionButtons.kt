@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui.designsystem
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
@@ -19,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -175,8 +178,10 @@ internal fun ActionButton(
     mark: String? = null,
     premiumLocked: Boolean = false,
     premiumFeature: Boolean = false,
-    // 글자 대신 그림(다시보기의 ⏮ ⏭ — `ReplayStepIcons.kt`). [label]은 그 그림의 설명으로 남는다.
+    // 글자 대신 그림(다시보기의 ⏮ ⏭ — `ReplayStepIcons.kt`). 그림의 설명은 [spokenLabel], 없으면 [label].
     icon: ImageVector? = null,
+    // 화면 낭독기가 읽을 이름 — [label]이 기호(◀◀ · ▶ …)일 때만 준다(QA-22, 2026-11-23).
+    spokenLabel: String? = null,
 ) {
     FilledTonalButton(
         onClick = onClick,
@@ -190,10 +195,10 @@ internal fun ActionButton(
         ),
         border = premiumBorderOr(null, premiumFeature, premiumLocked),
     ) {
-        if (icon != null) {
-            Icon(imageVector = icon, contentDescription = label, modifier = Modifier.size(ActionButtonIconSize))
-        } else {
-            ActionButtonText(label = label, mark = mark)
+        when {
+            icon != null -> Icon(imageVector = icon, contentDescription = spokenLabel ?: label, modifier = Modifier.size(ActionButtonIconSize))
+            spokenLabel != null -> Box(Modifier.clearAndSetSemantics { contentDescription = spokenLabel }) { ActionButtonText(label = label, mark = mark) }
+            else -> ActionButtonText(label = label, mark = mark)
         }
     }
 }

@@ -5,6 +5,8 @@ import com.worksoc.goaicoach.application.rankmeasure.rankMeasureMatchup
 import com.worksoc.goaicoach.application.savedgame.SavedGameSnapshot
 import com.worksoc.goaicoach.match.SeatController
 import com.worksoc.goaicoach.match.SidePlayerSetup
+import com.worksoc.goaicoach.shared.domain.GameState
+import com.worksoc.goaicoach.shared.domain.Move
 import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.playstyle.humanPlayStyle
 
@@ -87,3 +89,17 @@ private fun resumeBoardAndMovesFor(language: UiLanguage, size: Int, moves: Int):
         UiLanguage.Japanese -> "${size}路 ${moves}手"
         UiLanguage.ChineseSimplified -> "${size}路 ${moves}手"
     }
+
+/**
+ * 이어하기 창의 「마지막 수」(QA-12, 2026-11-23) — 「흑 D4」 · 「백 통과」. 돌 색과 통과 · 기권은 화면 언어로, 좌표는 판 위 글자 그대로.
+ * ⚠️ shared `Move.describe`(「Black D4」)는 엔진 · 로그용 영어다 — 화면에 쓰지 않는다.
+ */
+internal fun resumeLastMoveFor(strings: UiStrings, state: GameState): String {
+    val move = state.moves.lastOrNull() ?: return strings.none
+    val color = strings.colorLabel(move.player)
+    return when (move) {
+        is Move.Play -> "$color ${move.coordinate.label(state.boardSize)}"
+        is Move.Pass -> "$color ${strings.pass}"
+        is Move.Resign -> "$color ${strings.resign}"
+    }
+}

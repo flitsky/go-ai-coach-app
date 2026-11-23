@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
@@ -26,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -61,6 +64,7 @@ import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryHideShortGamesLabelFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNoteDialogTitleFor
 import com.worksoc.goaicoach.ui.l10n.gameHistoryNotePlaceholderFor
@@ -296,7 +300,7 @@ internal fun GameHistoryScreen(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = strings.close,
+                    contentDescription = backNavigationLabelFor(strings.language),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -319,14 +323,16 @@ internal fun GameHistoryScreen(
         // 폭 360dp 폰에서 그 폭이 50dp쯤으로 줄어 제목에 붙고 영어(「Game History」)에서는 문구가 거의 다 잘렸다.
         // 이 체크는 목록에 무엇을 보일지를 정한다 — 그래서 승률 아래 · 목록 위가 제자리다(승률은 체크와 무관하다).
         // ⚠️ 줄 전체가 관문이다 — 체크박스만으로는 손가락에 좁다. `onCheckedChange`는 `null`로
-        // 비워 이중 리스너를 막는다(다시보기 「수순 표시」와 같은 방식).
+        // 비워 이중 리스너를 막는다(다시보기 「수순 표시」와 같은 방식). `toggleable`이라 스크린 리더가 체크 상태까지 읽는다(QA-10).
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = AppSpacing.Space8),
             horizontalArrangement = Arrangement.End,
         ) {
             Row(
                 modifier = Modifier
-                    .clickable { hideShortGames = !hideShortGames }
+                    .toggleable(value = hideShortGames, role = Role.Checkbox, onValueChange = { hideShortGames = it })
+                    // 누르는 자리 48dp(QA-18, 2026-11-23) — 체크박스는 `onCheckedChange = null`이면 M3의 48dp를 잃어 36dp였다.
+                    .minimumInteractiveComponentSize()
                     .padding(end = AppSpacing.Space8),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

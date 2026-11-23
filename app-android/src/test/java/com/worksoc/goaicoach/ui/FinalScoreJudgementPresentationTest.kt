@@ -9,6 +9,8 @@ import com.worksoc.goaicoach.shared.domain.StoneColor
 import com.worksoc.goaicoach.shared.enginecontract.EngineStatus
 import com.worksoc.goaicoach.shared.enginecontract.FinalScoreResult
 import com.worksoc.goaicoach.shared.scoring.BoardScorer
+import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.l10n.UiStringsKorean
 import com.worksoc.goaicoach.ui.play.blackLine
 import com.worksoc.goaicoach.ui.play.resultText
@@ -57,6 +59,11 @@ class FinalScoreJudgementPresentationTest {
         assertEquals("백 + 1.5집 승", judgement.resultText(strings))
         assertEquals("흑: 집 15 + 사석 5 = 20집", judgement.blackLine(strings))
         assertEquals("백: 집 13 + 사석 2 + 덤 6.5 = 21.5집", judgement.whiteLine(strings))
+
+        // 영어 결과 문구는 문법대로 — 옛 「White + 1.5 points win」 · 「White win」(QA-14, 2026-11-23).
+        val english = UiStrings.forLanguage(UiLanguage.English)
+        assertEquals("White wins by 1.5", judgement.resultText(english))
+        assertEquals("White wins", english.winnerWithoutMarginLabel(english.colorLabel(StoneColor.White)))
     }
 
     /**

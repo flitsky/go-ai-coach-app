@@ -134,7 +134,7 @@ internal fun GameRecordViewer(
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(ReplaySectionGap),
     ) {
-        ReplayHeader(title = opened.title, subtitle = subtitle, closeLabel = strings.close, onBackClick = onBackClick)
+        ReplayHeader(title = opened.title, subtitle = subtitle, onBackClick = onBackClick)
 
         if (timeline.isTruncated) {
             Text(

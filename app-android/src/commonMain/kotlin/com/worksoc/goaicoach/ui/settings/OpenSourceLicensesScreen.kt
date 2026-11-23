@@ -36,6 +36,7 @@ import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesEngineSectionFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesIntroFor
 import com.worksoc.goaicoach.ui.l10n.openSourceLicensesLibrarySectionFor
@@ -60,7 +61,7 @@ internal fun OpenSourceLicensesScreen(
     modifier: Modifier = Modifier,
 ) {
     val language = LocalUiStrings.current.language
-    val closeLabel = LocalUiStrings.current.close
+    val backLabel = backNavigationLabelFor(language)
     val platform = LocalAppPlatform.current
     // ⚠️ 한 번만 읽는다(~120KB). 실패는 삼키지 않고 아래에서 문구로 보인다(함정 40).
     val entries = remember(platform) { runCatching { platform.assets.licensesJson()?.let(::openSourceEntriesFrom).orEmpty() }.getOrDefault(emptyList()) }
@@ -84,7 +85,7 @@ internal fun OpenSourceLicensesScreen(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = closeLabel,
+                    contentDescription = backLabel,
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }

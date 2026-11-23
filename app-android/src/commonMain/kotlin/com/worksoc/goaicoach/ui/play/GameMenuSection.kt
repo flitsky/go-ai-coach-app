@@ -104,22 +104,27 @@ internal fun GameHeaderSection(
             // [1] 좌측 끝: 끝난 판이면 「← 홈」, 아니면 빌드타임 [260717 15:33](개발/QA용 정보라 시각적 비중은 낮춘다).
             // ⚠️ **끝난 판에서는 가중치를 풀어 알약이 제 폭을 갖는다**(QA-01) — 1:2 칸(360dp에서 55dp쯤)에 넣으면 「← ホーム」 · 「← Home」이
             //   배율 1.3에서 옆 칸의 수순과 겹쳤다(에뮬레이터 확인). 남는 폭은 [2]가 모두 갖고, 모자라면 수순 글자가 줄어든다.
+            // ⚠️ 새 판 준비 중은 끝난 판이 아니다(QA-06, 2026-11-23) — `isGameEnded`는 아직 참이지만 빌드 표기를 그린다(`showsFinishedGame`).
             Box(
-                modifier = if (screenState.isGameEnded) Modifier else Modifier.weight(1f),
+                modifier = if (screenState.showsFinishedGame) Modifier else Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                if (screenState.isGameEnded) {
+                if (screenState.showsFinishedGame) {
                     FinishedGameHomeButton(onClick = onExitGame)
                 } else {
-                    // ⚠️ 잘리지 않고 칸 밖으로 그린다(#275) — 빠른 버튼이 둘이 되자 폭 360dp 폰에서 이 칸이 55dp쯤으로 줄어 끝자리가
-                    //   잘렸다(`v261021.090`). 옆 칸의 수순은 가운데 맞춤이고 짧아(`수순 999수`) 이 몇 dp와 겹치지 않는다.
-                    Text(
+                    // ⚠️ **이 칸 안에서** 글자를 줄인다(QA-13, 2026-11-23) — 칸 밖으로 그리던 때(#275)는 「크게」(1.3) + 360dp에서 이 칸이
+                    //   53dp쯤이라 옆 칸의 「수순 0수」와 겹쳤다. 줄어드는 쪽은 비중이 낮은 이 표기다(수순은 그대로). 안드로이드 보통 크기에서는 9sp
+                    //   그대로 끝자리까지 보인다(#275가 지킨 것) — iOS는 글꼴이 넓어 보통에서도 조금 줄 수 있다(잘리지는 않는다). `softWrap = false`는 넘침을 폭으로만 재게 한다(함정 100 — iOS 글꼴이 넓다).
+                    BasicText(
                         text = formatBuildTime(appBuildInfo.buildTime),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
+                        ),
                         maxLines = 1,
                         softWrap = false,
-                        overflow = TextOverflow.Visible,
+                        overflow = TextOverflow.Clip,
+                        autoSize = TextAutoSize.StepBased(minFontSize = 5.sp, maxFontSize = 9.sp),
                     )
                 }
             }

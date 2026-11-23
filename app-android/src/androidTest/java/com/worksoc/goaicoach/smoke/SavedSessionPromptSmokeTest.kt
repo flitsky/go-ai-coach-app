@@ -30,6 +30,7 @@ import com.worksoc.goaicoach.ui.foundation.TestTags
 import com.worksoc.goaicoach.ui.home.twoLineCardTitle
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.backNavigationLabelFor
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -124,7 +125,8 @@ class SavedSessionPromptSmokeTest {
         composeRule.onNodeWithText(strings.confirm).performClick()
         composeRule.onNodeWithText(strings.matchSetup).assertIsDisplayed()
 
-        composeRule.onNodeWithContentDescription(strings.close).performClick()
+        // 로비의 ← 는 「닫기」가 아니라 「뒤로」라 읽힌다(QA-22, 2026-11-23).
+        composeRule.onNodeWithContentDescription(backNavigationLabelFor(strings.language)).performClick()
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("▶ " + strings.resumeTitle).assertIsDisplayed()
