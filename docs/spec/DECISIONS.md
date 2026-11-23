@@ -176,7 +176,7 @@
 3. 남은 상수 이름 `FixedAppFontScale`(AppFontScalePolicy.kt) · iOS 1.0 덮어쓰기를 `MainViewController` 한 곳으로 옮긴 것.
 4. 오토세이브 대체 카나리아 `settingsSchemaGeneration` · 첫 실행 · 마이그레이션 테스트의 예시 `isLargeHeldStoneEnabled`.
 5. `ReviewRecommendationUiTest`의 1.3배 검사는 스트레스 여유로 남긴다.
-6. iOS 대화상자 · 알림 층이 1.0 덮어쓰기를 물려받는지는 ⏳ 시뮬레이터 확인 전(더 큰 텍스트 최대).
+6. ~~iOS 대화상자 · 알림 층이 1.0 덮어쓰기를 물려받는가~~ → 물려받지 않았다(2026-11-23 시뮬레이터 — 더 큰 텍스트 최대에서 출석 창만 커졌다). `MainViewController`가 컨트롤러의 `preferredContentSizeCategory` 특성을 기본값으로 묶어 대화상자까지 1.0이 됐다(같은 날 확인 — `m14`).
 
 **2026-11-23 — 둘째 QA 묶음(QA-18 · 19b · 20 · 21)에서 스레드가 정한 것**
 1. 앱의 밑줄 글자 링크는 `AppTextLink` 하나로 — 누르는 자리 48dp, 링크 사이 간격은 그 48dp가 대신한다(글자 사이 24dp, 앱 정보 카드 약 +46dp).

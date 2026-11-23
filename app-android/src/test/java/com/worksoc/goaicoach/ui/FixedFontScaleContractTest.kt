@@ -79,6 +79,21 @@ class FixedFontScaleContractTest {
     }
 
     /**
+     * iOS — 대화상자 · 팝업 층은 부른 자리의 `LocalDensity`를 물려받지 않고 화면의 Dynamic Type 특성에서 배율을 다시 짓는다
+     * (2026-11-23 시뮬레이터: 더 큰 텍스트 최대에서 출석 창만 커졌다). 그래서 컨트롤러의 글자 크기 특성을 기본값으로 묶는다 —
+     * 안드로이드의 액티비티 설정 덮기와 짝이다.
+     */
+    @Test
+    fun theIosControllerPinsItsContentSizeTraitSoDialogsStayAtOne() {
+        val controller = codeOf(RepoPaths.appAndroid("ios/MainViewController.kt"))
+        assertTrue(
+            "MainViewController가 `traitOverrides.preferredContentSizeCategory`를 기본값(Large)으로 묶지 않는다 — iOS 대화상자가 " +
+                "휴대폰 글자 크기를 따른다(QA-05).",
+            Regex("""traitOverrides\.preferredContentSizeCategory\s*=\s*UIContentSizeCategoryLarge""").containsMatchIn(controller),
+        )
+    }
+
+    /**
      * ⚠️ **덮어쓰기와 함께 `configChanges`의 `fontScale`도 남긴다.** 빼면 휴대폰 글자 크기를 바꾸는 순간 액티비티가 다시
      * 만들어져 두던 판이 날아간다 — 앱이 그 값을 무시해도 시스템은 바뀐 줄 안다.
      */

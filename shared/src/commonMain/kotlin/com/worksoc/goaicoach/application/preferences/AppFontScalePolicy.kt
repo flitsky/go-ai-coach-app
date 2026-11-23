@@ -9,7 +9,8 @@ package com.worksoc.goaicoach.application.preferences
  *   - 안드로이드: `MainActivity.attachBaseContext`가 액티비티 설정의 `fontScale`을 이 값으로 덮는다 — 대화상자 · 팝업 창은
  *     액티비티 문맥에서 제 `LocalDensity`를 새로 만들어서 컴포지션의 덮어쓰기만으로는 닿지 않는다. `setContent`의 `Density`는
  *     같은 규칙을 한 번 더 적은 것이다. ⚠️ 글자 토스트는 시스템 UI가 그려(targetSdk 30부터) 이 값이 닿지 않는다.
- *   - iOS: `MainViewController`가 앱 · 알림 층(`IosNoticeOverlay`) · 디버그 화면을 함께 감싼다.
+ *   - iOS: `MainViewController`가 앱 · 알림 층(`IosNoticeOverlay`) · 디버그 화면을 함께 감싸고, 대화상자 · 팝업 층은 화면의
+ *     Dynamic Type 특성에서 배율을 다시 지으므로 컨트롤러의 `preferredContentSizeCategory`를 기본값으로 묶는다(2026-11-23 시뮬레이터).
  * · ⚠️ **접근성 비용을 알고 고른 것이다.** 글자만 키우는 길은 앱 안에 없다. OS의 「디스플레이 크기」 · 확대(화면 전체)는
  *   `density`를 통해 그대로 적용된다 — 덮는 것은 `fontScale`뿐이다.
  * · 저장된 옛 `"appFontScale"` 값은 읽을 때 무시된다(옮기기 없음 — 디코더가 그 키를 보지 않는다).

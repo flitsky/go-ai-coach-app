@@ -15,10 +15,12 @@ import com.worksoc.goaicoach.ui.settings.AppTheme
 import com.worksoc.goaicoach.ui.settings.IosStatusBarAppearance
 import com.worksoc.goaicoach.ui.settings.LocalIosStatusBarAppearance
 import platform.Foundation.NSProcessInfo
+import platform.UIKit.UIContentSizeCategoryLarge
 import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UIStatusBarStyleDarkContent
 import platform.UIKit.UIStatusBarStyleLightContent
 import platform.UIKit.UIViewController
+import platform.UIKit.traitOverrides
 
 /**
  * iOS 앱의 뿌리 묶음(백로그 #294) — 안드로이드 `GoAiCoachApplication`의 짝. Swift의 `AppDelegate`가 **프로세스에 하나** 들고(`let root = IosAppRoot(…)`),
@@ -58,9 +60,10 @@ class IosAppRoot(private val modelSource: IosEngineModelSource?, storeSource: Io
             }
         },
     ) {
-        // ⚠️ **글꼴 배율 1.0 고정은 여기서 건다**(QA-05, 사용자 2026-11-23 — 사유는 `FixedAppFontScale`의 KDoc) — 앱([GoCoachRoot])만이
-        //   아니라 알림 층([IosNoticeOverlay])과 디버그 화면도 이 안이어야 Dynamic Type을 따르지 않는다. 팝업 · 대화상자 층은 부른 자리의
-        //   `LocalDensity`를 물려받는 것으로 본다(⏳ 시뮬레이터 확인 전 — 더 큰 텍스트 최대에서 창 · 알림 하나씩). 덮는 것은 `fontScale`뿐이다 — `density`(디스플레이 확대)는 그대로 따른다.
+        // ⚠️ **글꼴 배율 1.0 고정은 두 겹이다**(QA-05, 사용자 2026-11-23 — 사유는 `FixedAppFontScale`의 KDoc). 이 덮어쓰기는 본 화면
+        //   ([GoCoachRoot]) · 알림 층([IosNoticeOverlay]) · 디버그 화면에 닿는다. 대화상자 · 팝업 층은 부른 자리의 `LocalDensity`를
+        //   **물려받지 않고** 화면의 Dynamic Type에서 배율을 다시 짓는다(2026-11-23 시뮬레이터 — 더 큰 텍스트 최대에서 출석 창만 커졌다).
+        //   그래서 아래 `traitOverrides`가 컨트롤러의 글자 크기 특성을 기본값으로 묶는다. 덮는 것은 글자 크기뿐 — `density`는 그대로.
         CompositionLocalProvider(
             LocalAppPlatform provides platform,
             LocalDensity provides Density(density = LocalDensity.current.density, fontScale = FixedAppFontScale),
@@ -77,5 +80,9 @@ class IosAppRoot(private val modelSource: IosEngineModelSource?, storeSource: Io
                 AppTheme { IosNoticeOverlay(platform.notice) }
             }
         }
+    }.also { controller ->
+        // 대화상자 · 팝업 층까지 1.0으로 — Compose는 화면의 `preferredContentSizeCategory` 특성에서 배율을 짓는다. 기본값(Large)으로
+        //   묶으면 휴대폰의 더 큰 텍스트를 따르지 않는다(QA-05, 2026-11-23 — 안드로이드의 `attachBaseContext`와 짝).
+        controller.traitOverrides.preferredContentSizeCategory = UIContentSizeCategoryLarge
     }
 }
