@@ -82,6 +82,13 @@ internal data class GameScreenState(
 
     /** 끝난 판의 것(결과 배지 · 재 대국/복기 하기/대국 설정 · 「← 홈」 · 복기 말풍선)을 그릴 때 — 새 판 준비 중에는 아니다(QA-06). */
     val showsFinishedGame: Boolean get() = isGameEnded && !isPreparingNewGame
+
+    /**
+     * AI 좌석이 있는 판은 엔진이 준비된 뒤 시작한다. 사람끼리는 기다리지 않는다(#101 · 2026-09-23).
+     * 로비 「대국 시작하기」와 끝난 판 「재 대국」이 같이 쓴다 — 콜드 스타트 기동 중 「재 대국」이 이 문을 건너뛰어
+     * 판은 죽은 채 시계만 흘렀다(QA-21, 2026-11-23).
+     */
+    val canStartMatch: Boolean get() = engine.isReady || matchMode == MatchMode.LocalTwoPlayer
 }
 
 internal data class GameScreenStateInput(

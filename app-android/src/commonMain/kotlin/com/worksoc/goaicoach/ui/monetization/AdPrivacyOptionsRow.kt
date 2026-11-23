@@ -1,20 +1,12 @@
 package com.worksoc.goaicoach.ui.monetization
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextDecoration
-import com.worksoc.goaicoach.ui.designsystem.AppSpacing
-import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.AppTextLink
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import kotlinx.coroutines.launch
 
@@ -41,13 +33,10 @@ internal fun AdPrivacyOptionsRow(strings: UiStrings) {
     var required by remember { mutableStateOf(monetization.isPrivacyOptionsRequired()) }
     if (!required) return
 
-    Spacer(modifier = Modifier.height(AppSpacing.Space8))
-    Text(
+    // 앱 정보 카드의 다른 링크와 같은 `AppTextLink` — 48dp로 맞닿으니 앞의 Spacer 8dp는 뺐다(QA-18, 2026-11-23).
+    AppTextLink(
         text = strings.settingsAdPrivacyOptionsLabel,
-        fontSize = AppTextSize.Text12,
-        color = MaterialTheme.colorScheme.primary,
-        textDecoration = TextDecoration.Underline,
-        modifier = Modifier.clickable {
+        onClick = {
             // 액티비티가 아니면 폼을 띄우지 않는다 — 그 판정은 안드로이드 구현(`AndroidAppMonetization`)에 있다.
             scope.launch {
                 monetization.showPrivacyOptionsForm()

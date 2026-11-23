@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -84,6 +85,8 @@ internal object GuideBlockingOverlays {
  * @param blocked 이 표면 위에 **다른 다이얼로그가 떠 있는가.** ⚠️ 카드 표현형(④⑤)에서는
  *   **기본값 없이** 넘겨 컴파일러가 게이트를 강제한다 — 가려진 채 그려지면 사용자는 못 봤는데
  *   `seen`으로 기록돼 가이드가 조용히 소진된다.
+ * @param onAcknowledged 카드·코치마크를 **눌러 넘길 때마다** 부른다. 대국 화면은 이것으로 안내가 판을 막은 시간을
+ *   둘 사람의 시계에서 뺀다(QA-21, 2026-11-23) — 흡수 층이 판 터치를 다 먹는 동안에도 시계는 흘렀다.
  *
  * ## 기록 시점: **충분히 보인 뒤에** — 실기에서 값을 치르고 고친 자리다
  *
@@ -113,12 +116,17 @@ internal fun GuideAnchor(
     blocked: Boolean,
     modifier: Modifier = Modifier,
     toolLabels: GuideToolLabels? = null,
+    onAcknowledged: () -> Unit = {},
 ) {
     val platform = LocalAppPlatform.current
     val store = remember(platform) { platform.stores.guideProgress }
     // 디스크는 한 번만 읽는다 — 앵커마다 컴포지션에서 `load()`를 부르면 그것이 디스크 읽기가 된다.
     var progress by remember(store) { mutableStateOf(store.load()) }
     var latched by remember(store) { mutableStateOf<GuideStep?>(null) }
+    // ⚠️ 같은 단계 동안 코치마크는 다시 그려지지 않는다 — 새 `::ack`가 옛것과 `==`라 건너뛴다(함정 46). 그래서 `ack()`는
+    //   여기서 최신 `onAcknowledged`를 읽는다(QA-21, 2026-11-23 — 코치마크의 `latestOnNext`와 같은 처방).
+    val latestOnAcknowledged = remember { mutableStateOf(onAcknowledged, referentialEqualityPolicy()) }
+    latestOnAcknowledged.value = onAcknowledged
 
     // ⚠️ `remember`로 감싸지 말 것(위 파일 머리말) — `blocked`와 `progress`가 둘 다 변한다.
     val candidate = autoPlayStep(surface, progress, blocked, appBuildInfo.versionCode)
@@ -131,6 +139,7 @@ internal fun GuideAnchor(
         store.markSeen(step)
         latched = null
         progress = store.load()
+        latestOnAcknowledged.value()
     }
 
     // ⚠️ **기록 시점이 표현형마다 다르다 — 그 비대칭이 의도다.**

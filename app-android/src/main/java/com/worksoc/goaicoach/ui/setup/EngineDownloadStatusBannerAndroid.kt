@@ -1,14 +1,12 @@
 package com.worksoc.goaicoach.ui.setup
 
-import android.app.Activity
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.google.android.play.core.assetpacks.AssetPackManagerFactory
 import com.worksoc.goaicoach.engine.currentEngineDownloadTracker
+import com.worksoc.goaicoach.ui.foundation.findActivity
 
 /**
  * 「모바일 데이터로 계속」이 띄울 Play 공식 승인창(`showConfirmationDialog`)을 이 화면이 떠 있는 동안 등록한다.
@@ -40,13 +38,4 @@ internal actual fun RegisterCellularConfirmationHandler() {
             currentEngineDownloadTracker().unregisterCellularConfirmationHandler(handler)
         }
     }
-}
-
-private fun Context.findActivity(): Activity? {
-    var current = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return null
 }

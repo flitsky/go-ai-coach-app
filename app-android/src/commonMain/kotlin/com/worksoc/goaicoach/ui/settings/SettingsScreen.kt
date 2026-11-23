@@ -35,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import com.worksoc.goaicoach.application.auth.port.AuthClientPort
 import com.worksoc.goaicoach.application.diagnostic.DiagnosticEventLogPort
 import com.worksoc.goaicoach.application.time.currentEpochMillis
@@ -47,6 +46,7 @@ import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextLink
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.foundation.FeatureFlags
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
@@ -304,20 +304,14 @@ internal fun SettingsScreen(
                     // 도움말은 #256에서 이 카드 밖, 자기 절(「도움말」)로 나갔다 — 이 카드에는 앱 정보와 법적 고지만 남는다.
                     // 「새로워진 점」(#257) — 버전 줄과는 링크 하나 거리(10탭 표적과 붙지 않게 위 간격을 그대로 둔다). 실린 묶음이 없으면 그리지 않는다.
                     SettingsWhatsNewLink()
-                    Text(
+                    // 링크는 하나마다 48dp로 맞닿는다 — 사이 Spacer를 뺐다(QA-18, 2026-11-23). 위 버전 줄 아래 8dp는 그대로다(#195 · #257).
+                    AppTextLink(
                         text = openSourceLicensesTitleFor(strings.language),
-                        fontSize = AppTextSize.Text12,
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable { showOpenSourceLicenses = true },
+                        onClick = { showOpenSourceLicenses = true },
                     )
-                    Spacer(modifier = Modifier.height(AppSpacing.Space8))
-                    Text(
+                    AppTextLink(
                         text = strings.settingsPrivacyPolicyLabel,
-                        fontSize = AppTextSize.Text12,
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable { uriHandler.openUri(PRIVACY_POLICY_URL) },
+                        onClick = { uriHandler.openUri(PRIVACY_POLICY_URL) },
                     )
                     // 광고 개인정보 옵션(#89). 자기 상태를 자기가 갖는다 — 이 파일은 상태 훅
                     // 13/13으로 여유가 0이다.

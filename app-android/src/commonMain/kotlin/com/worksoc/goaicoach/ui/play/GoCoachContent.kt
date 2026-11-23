@@ -411,6 +411,9 @@ internal fun GoCoachContent(
             eval = strings.eval,
             topMoves = strings.topMovesAction,
         ),
+        // 코치마크가 판 터치를 다 먹는 동안 흐른 시간은 첫 수 시간에 넣지 않는다 — 넘길 때마다 지금 차례를 새로 연다(QA-21, 2026-11-23).
+        // ⚠️ 사람 차례에만 — `restartCurrentTurn`은 누적은 두고 시작 시각만 옮기므로 AI 차례에 부르면 AI 시간이 준다(접바둑 첫 판은 AI가 먼저).
+        onAcknowledged = { if (!screenState.isGameEnded && screenState.matchSeats.current.isHuman) onEvent(GameUiEvent.RestartTurnClock) },
     )
 }
 

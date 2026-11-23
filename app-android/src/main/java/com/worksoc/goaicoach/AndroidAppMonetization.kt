@@ -10,7 +10,8 @@ import com.worksoc.goaicoach.platform.AdsConsentManager
 import com.worksoc.goaicoach.platform.AppMonetization
 
 /**
- * 안드로이드의 [AppMonetization](백로그 #294 — S12) — 옛 전역 함수(`PremiumPurchaseGlue.kt`)에 화면의 문맥을 그대로 넘긴다.
+ * 안드로이드의 [AppMonetization](백로그 #294 — S12) — 옛 전역 함수(`PremiumPurchaseGlue.kt`)에 화면의 문맥을 넘긴다.
+ * 그 문맥은 `rememberAppMonetization`이 액티비티로 풀어 준 것이다 — 창 안의 `LocalContext`는 액티비티가 아니라서(QA-19b, 2026-11-23).
  * 액티비티가 아니면 결제 · 광고가 「쓸 수 없음」인 규칙도 그 함수들 안에 그대로 있다.
  */
 internal class AndroidAppMonetization(private val context: Context) : AppMonetization {

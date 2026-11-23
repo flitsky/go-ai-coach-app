@@ -86,6 +86,9 @@ internal sealed interface GameUiEvent {
      * 와치독을 다시 건다 — 막힌 GTP 탐색은 프로세스를 죽이지 않고는 다시 요청할 수 없다).
      */
     data object RetryTimedOutAiTurn : GameUiEvent
+
+    /** 지금 차례의 시계를 새로 연다 — 첫 판 안내가 판을 막은 시간을 둘 사람의 시간에 넣지 않는다(QA-21, 2026-11-23). 무르기와 같은 `restartCurrentTurn`. */
+    data object RestartTurnClock : GameUiEvent
 }
 
 internal data class GameUiEventHandlers(
@@ -117,6 +120,7 @@ internal data class GameUiEventHandlers(
     val forceResetEngine: () -> Unit,
     val retryTimedOutAiTurn: () -> Unit,
     val answerAiResignation: (Boolean) -> Unit,
+    val restartTurnClock: () -> Unit = {},
 )
 
 internal fun buildGameUiEventHandlers(
@@ -148,6 +152,7 @@ internal fun buildGameUiEventHandlers(
     forceResetEngine: () -> Unit,
     retryTimedOutAiTurn: () -> Unit,
     answerAiResignation: (Boolean) -> Unit,
+    restartTurnClock: () -> Unit = {},
 ): GameUiEventHandlers =
     GameUiEventHandlers(
         currentPlayer = currentPlayer,
@@ -178,6 +183,7 @@ internal fun buildGameUiEventHandlers(
         forceResetEngine = forceResetEngine,
         retryTimedOutAiTurn = retryTimedOutAiTurn,
         answerAiResignation = answerAiResignation,
+        restartTurnClock = restartTurnClock,
     )
 
 internal fun dispatchGameUiEvent(
@@ -219,5 +225,6 @@ internal fun dispatchGameUiEvent(
             handlers.reportEngineTurnWatchdogTriggered(event.elapsedMillis, event.thresholdMillis)
         GameUiEvent.ForceResetEngine -> handlers.forceResetEngine()
         GameUiEvent.RetryTimedOutAiTurn -> handlers.retryTimedOutAiTurn()
+        GameUiEvent.RestartTurnClock -> handlers.restartTurnClock()
     }
 }

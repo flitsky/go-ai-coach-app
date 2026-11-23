@@ -2,6 +2,7 @@ package com.worksoc.goaicoach.ui
 
 import com.worksoc.goaicoach.architecture.RepoPaths
 import com.worksoc.goaicoach.architecture.readContractSource
+import java.io.File
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,19 +23,28 @@ import org.junit.Test
  *
  * 그래서 이 계약은 이제 **두 방향을 함께** 못박는다: AI 좌석이면 잠기고, 사람끼리면 열린다.
  * 한쪽만 고정하면 반대쪽으로 다시 미끄러진다.
+ *
+ * ## QA-21(2026-11-23): 규칙은 `GameScreenState.canStartMatch` 한 곳에 — 끝난 판 「재 대국」도 같은 문
+ *
+ * 콜드 스타트에 끝난 판을 되살린 뒤 엔진 기동 중에 「재 대국」을 누르면 이 문을 건너뛰어, 판은 둘 수 없는데
+ * 시계만 흘렀다. 그래서 식은 화면 상태로 옮기고 로비와 재 대국이 둘 다 그것을 본다.
  */
 class EngineReadyGateContractTest {
 
-    private val lobby = RepoPaths.uiFile("GameSetupLobby.kt").readContractSource()
+    private fun code(file: File): String = file.readContractSource()
         .replace(Regex("""/\*.*?\*/""", RegexOption.DOT_MATCHES_ALL), "")
         .lines().joinToString("\n") { it.substringBefore("//") }
+
+    private val lobby = code(RepoPaths.uiFile("GameSetupLobby.kt"))
+    private val screenState = code(RepoPaths.appAndroid("presentation/GameScreenState.kt"))
+    private val playSection = code(RepoPaths.uiFile("GamePlaySection.kt"))
 
     @Test
     fun theStartButtonIsDisabledUntilTheEngineIsReady() {
         assertTrue(
             "대국 시작 버튼이 엔진 준비 여부를 보지 않는다 — 준비 전에 누르면 AI 대국이 조용히 " +
                 "로컬 2인으로 강등되고 사용자는 터치가 죽은 판 앞에 앉는다(#101).",
-            lobby.contains("val engineReady = screenState.engine.isReady"),
+            screenState.contains("val canStartMatch: Boolean get() = engine.isReady || matchMode == MatchMode.LocalTwoPlayer"),
         )
         val gate = lobby.indexOf("enabled = canStartMatch")
         val click = lobby.indexOf("GameUiEvent.StartConfiguredGame")
@@ -42,8 +52,17 @@ class EngineReadyGateContractTest {
         assertTrue("시작 디스패치를 찾지 못했다 — 이 계약의 전제가 무너졌다.", click >= 0)
         assertTrue("게이트가 시작 디스패치보다 뒤에 있다 — 같은 버튼이 아닐 수 있다(#101).", gate < click)
         assertTrue(
-            "`canStartMatch`가 엔진 준비 여부에서 오지 않는다 — AI 좌석이 엔진 없이 시작된다(#101).",
-            lobby.contains("val canStartMatch = engineReady || !needsEngine"),
+            "로비의 `canStartMatch`가 화면 상태의 문에서 오지 않는다 — AI 좌석이 엔진 없이 시작된다(#101 · QA-21).",
+            lobby.contains("val canStartMatch = screenState.canStartMatch"),
+        )
+    }
+
+    /** 끝난 판 「재 대국」도 같은 문을 쓴다 — 콜드 스타트 기동 중에 눌리면 판은 죽은 채 시계만 흐른다(QA-21, 2026-11-23). */
+    @Test
+    fun theRematchButtonUsesTheSameGate() {
+        assertTrue(
+            "「재 대국」이 `canStartMatch`를 보지 않는다 — 엔진 기동 중에 AI 판이 엔진 없이 시작돼 시계만 흐른다(QA-21).",
+            playSection.contains("showsFinishedGame) screenState.canStartMatch"),
         )
     }
 
@@ -56,7 +75,7 @@ class EngineReadyGateContractTest {
     fun localTwoPlayerStartsWithoutWaitingForTheEngine() {
         assertTrue(
             "게이트가 좌석을 보지 않는다 — 엔진이 못 뜨면 사람끼리도 한 판을 못 둔다.",
-            lobby.contains("val needsEngine = screenState.matchMode != MatchMode.LocalTwoPlayer"),
+            screenState.contains("engine.isReady || matchMode == MatchMode.LocalTwoPlayer"),
         )
     }
 

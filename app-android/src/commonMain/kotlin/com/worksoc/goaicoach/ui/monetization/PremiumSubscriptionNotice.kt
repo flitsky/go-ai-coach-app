@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -50,6 +49,7 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppElevation
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextLink
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.designsystem.PremiumCardShape
 import com.worksoc.goaicoach.ui.designsystem.PremiumGold
@@ -241,15 +241,10 @@ private fun restoreMessageFor(outcome: PurchaseOutcome, language: UiLanguage): S
     else -> premiumSubscriptionRestoreUnavailableMessageFor(language)
 }
 
+// 앱의 밑줄 링크 한 규칙(`AppTextLink`)에 맞췄다 — 세로 패딩 4dp(약 32dp) 대신 48dp(QA-18, 2026-11-23). 결함 수정이 아니라 규칙 맞춤이다.
 @Composable
 private fun PurchaseLinkText(text: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Text(
-        text = text,
-        fontSize = AppTextSize.Text12,
-        color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        textDecoration = TextDecoration.Underline,
-        modifier = Modifier.clickable(enabled = enabled, onClick = onClick).padding(vertical = AppSpacing.Space4),
-    )
+    AppTextLink(text = text, onClick = onClick, enabled = enabled)
 }
 
 /**

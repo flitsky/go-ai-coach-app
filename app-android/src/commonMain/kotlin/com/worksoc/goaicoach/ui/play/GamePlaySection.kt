@@ -1214,7 +1214,10 @@ private fun GameActionButtonHost(
             // 기권 / 새 게임 버튼
             // ⚠️ 끝난 판의 세 칸(재 대국 · 복기 하기 · 대국 설정)은 `showsFinishedGame`으로 가른다(QA-06, 2026-11-23) — 새 판 준비 중에는
             //   `isGameEnded`가 아직 참이라 앞 판의 복기가 열렸다. 그동안은 기권 · 통과 · 무르기로 돌아와 셋 다 꺼진다(차단 중 · 종국 가드).
-            val resignEnabled = screenState.showsFinishedGame || (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
+            // ⚠️ 「재 대국」은 로비 「대국 시작하기」와 같은 문(`canStartMatch`)을 쓴다(QA-21, 2026-11-23) — 콜드 스타트에 끝난 판을
+            //   되살린 뒤 엔진 기동 중에 누르면 AI 판이 엔진 없이 시작돼, 판은 둘 수 없는데 시계만 흘렀다. 흐린 이유는 판의 「준비 중」
+            //   덮개가, 엔진이 끝내 못 뜨면 `EngineUnavailableNoticeDialog`가 말한다.
+            val resignEnabled = if (screenState.showsFinishedGame) screenState.canStartMatch else (!screenState.engine.isBlockingBusy && screenState.matchSeats.current.canAcceptBoardInput)
             ActionButton(
                 onClick = {
                     if (screenState.showsFinishedGame) {

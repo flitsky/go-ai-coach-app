@@ -50,7 +50,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -188,12 +187,6 @@ internal fun CameraCaptureView(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (!hasCameraPermission) {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-    }
-
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -312,7 +305,8 @@ internal fun CameraCaptureView(
                 drawLine(goldColor, Offset(left + boxWidth, top + boxWidth), Offset(left + boxWidth, top + boxWidth - cornerLen), cornerStroke)
             }
         } else {
-            // 카메라 권한 미부여 시 안내 화면
+            // 권한을 묻기 전에도, 거부한 뒤에도 같은 안내 화면 — 시스템 창은 아래 「권한 허용하기」로만 뜬다(QA-20, 2026-11-23).
+            // 들어오자마자 묻는 효과를 되살리지 말 것(설명 없이 창이 먼저 뜬다 · 거부한 사람에게 들어올 때마다 다시 묻는다).
             Column(
                 modifier = Modifier
                     .fillMaxSize()

@@ -66,6 +66,17 @@ class GameUiEventDispatchTest {
         assertEquals(listOf(true, false), answers)
     }
 
+    /** 첫 판 안내를 넘길 때 지금 차례의 시계를 새로 연다(QA-21, 2026-11-23) — 자기 핸들러로만 간다. */
+    @Test
+    fun dispatchRestartTurnClockRoutesToHandler() {
+        val calls = mutableListOf<String>()
+        val handlers = handlers(restartTurnClock = { calls += "restartClock" })
+
+        dispatchGameUiEvent(GameUiEvent.RestartTurnClock, handlers)
+
+        assertEquals(listOf("restartClock"), calls)
+    }
+
     @Test
     fun dispatchPlayAtAndPassSubmitMoveForCurrentPlayer() {
         val submitted = mutableListOf<Move>()
@@ -229,6 +240,7 @@ class GameUiEventDispatchTest {
         forceResetEngine: () -> Unit = {},
         retryTimedOutAiTurn: () -> Unit = {},
         answerAiResignation: (Boolean) -> Unit = {},
+        restartTurnClock: () -> Unit = {},
     ): GameUiEventHandlers =
         buildGameUiEventHandlers(
             currentPlayer = currentPlayer,
@@ -259,5 +271,6 @@ class GameUiEventDispatchTest {
             forceResetEngine = forceResetEngine,
             retryTimedOutAiTurn = retryTimedOutAiTurn,
             answerAiResignation = answerAiResignation,
+            restartTurnClock = restartTurnClock,
         )
 }

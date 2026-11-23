@@ -1,6 +1,5 @@
 package com.worksoc.goaicoach.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -15,9 +14,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import com.worksoc.goaicoach.platform.AppUpdateStatus
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextLink
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.foundation.rememberStoreListingLauncher
@@ -63,7 +62,7 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(AppSpacing.Space10))
+        // 위 링크가 48dp라 맨 앞의 Spacer 10dp는 뺐다 — 마지막 링크 글자에서 12dp 아래다(QA-18, 2026-11-23).
         when (status) {
             AppUpdateStatus.Available -> {
                 Text(
@@ -85,14 +84,11 @@ internal fun AppUpdateRow(status: AppUpdateStatus, modifier: Modifier = Modifier
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             )
 
-            // 확인하지 못한 경우의 폴백(선택지 ⓒ). 개인정보처리방침 링크와 같은 모양이라
+            // 확인하지 못한 경우의 폴백(선택지 ⓒ). 개인정보처리방침 링크와 같은 모양(`AppTextLink`)이라
             // "누를 수 있는 것"임이 이 화면 안에서 이미 학습돼 있다.
-            AppUpdateStatus.Unknown -> Text(
+            AppUpdateStatus.Unknown -> AppTextLink(
                 text = appUpdateCheckStoreLabelFor(language),
-                fontSize = AppTextSize.Text12,
-                color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { openStoreListing?.invoke() },
+                onClick = { openStoreListing?.invoke() },
             )
 
             AppUpdateStatus.Checking -> Unit // 위에서 이미 걸렀다.

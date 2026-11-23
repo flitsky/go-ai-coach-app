@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksoc.goaicoach.application.guide.GuideSurface
 import com.worksoc.goaicoach.application.time.currentEpochMillis
-import com.worksoc.goaicoach.match.MatchMode
 import com.worksoc.goaicoach.platform.formatDeviceLocale
 import com.worksoc.goaicoach.presentation.GameScreenState
 import com.worksoc.goaicoach.presentation.GameUiEvent
@@ -264,11 +263,10 @@ internal fun GameSetupLobby(
             // (2026-09-23 `NewGameBoardTapSmokeTest` 실패가 이 구멍을 드러냈다 — 영원히 준비되지
             // 않는 가짜 엔진으로 로컬 2인 대국을 시작하려다 버튼이 잠겨 대국 화면에 못 들어갔다.)
             //
-            // ⚠️ **다시 `enabled = engineReady`로 되돌리지 말 것.** 같은 예외가 형세 버튼에도
+            // ⚠️ **다시 `enabled = screenState.engine.isReady`로 되돌리지 말 것.** 같은 예외가 형세 버튼에도
             // 이미 있다(`GameScreenState`의 `canRequestEval`) — 이 화면만 좌석을 안 보고 있었다.
-            val engineReady = screenState.engine.isReady
-            val needsEngine = screenState.matchMode != MatchMode.LocalTwoPlayer
-            val canStartMatch = engineReady || !needsEngine
+            // 규칙은 `GameScreenState.canStartMatch` 한 곳에 있다 — 끝난 판 「재 대국」도 같은 문을 쓴다(QA-21, 2026-11-23).
+            val canStartMatch = screenState.canStartMatch
             Button(
                 enabled = canStartMatch,
                 onClick = {
@@ -313,7 +311,7 @@ internal fun GameSetupLobby(
                 }
             }
             // 잠긴 이유를 말한다 — 이유 없이 안 눌리는 버튼은 고장으로 읽힌다.
-            // ⚠️ 조건은 버튼과 **같은 값**이어야 한다 — `!engineReady`로 적으면 사람끼리 두는
+            // ⚠️ 조건은 버튼과 **같은 값**이어야 한다 — `!screenState.engine.isReady`로 적으면 사람끼리 두는
             //   대국에서 **눌리는 버튼 밑에 "잠겼다"는 안내**가 붙는다.
             if (!canStartMatch) {
                 Text(

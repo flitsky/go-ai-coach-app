@@ -690,6 +690,7 @@ private fun GoCoachScreen(
                 },
                 retryTimedOutAiTurn = controllers.autoAiTurnController::retryTimedOutTurn,
                 answerAiResignation = controllers.autoAiTurnController::answerResignationOffer,
+                restartTurnClock = { turnTimeState = turnTimeState.restartCurrentTurn(gameState, currentEpochMillis()) }, // QA-21(2026-11-23): 안내가 판을 막은 시간 빼기
             ),
         )
     }

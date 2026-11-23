@@ -28,9 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
+import com.worksoc.goaicoach.ui.designsystem.AppTextLink
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.foundation.PlatformBackHandler
@@ -199,15 +199,11 @@ private fun OpenSourceEntryRow(
                     )
                 }
                 // 원문이 목록에 없는 약관(Google SDK 약관 등)은 주소로 보낸다 — 원문이 있어도 출처는 남긴다.
+                // 앱의 밑줄 링크 한 규칙(`AppTextLink`, 48dp)에 맞췄다 — 결함 수정이 아니라 규칙 맞춤이다(QA-18, 2026-11-23).
                 license.url?.let { url ->
-                    Text(
+                    AppTextLink(
                         text = if (license.content == null) "${openSourceLicensesViewLicenseFor(language)} ($url)" else url,
-                        fontSize = AppTextSize.Text12,
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable {
-                            runCatching { uriHandler.openUri(url) }
-                        },
+                        onClick = { runCatching { uriHandler.openUri(url) } },
                     )
                 }
             }
