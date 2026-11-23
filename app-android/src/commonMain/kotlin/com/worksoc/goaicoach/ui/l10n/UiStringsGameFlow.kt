@@ -54,6 +54,26 @@ private val FinishedGameHomeActions: Map<UiLanguage, String> = mapOf(
     UiLanguage.ChineseSimplified to "主页",
 )
 
+/**
+ * 대국 중 메뉴 「대국 나가기」 · 뒤로가 여는 창(QA-04, 사용자 2026-11-23 — 「취소 · 기권」 두 단추, 말만 동작에 맞춘다).
+ * 묻는 말이 「정말 기권하시겠습니까?」뿐이라 「나가기」를 눌렀는데 「기권」을 묻는 꼴이었다. 판을 두고 나가는 셋째 단추는 두지 않는다 —
+ * 판은 자동 저장되어 앱을 닫아도 「이어하기」로 돌아오고, 남으려면 「취소」다. 대국 화면 아래 「기권」 단추의 창은 그대로(`resignConfirm…`).
+ * 네 언어의 폭을 한국어에 맞췄다(`DECISIONS.md` §1).
+ */
+private val LeaveGameConfirmTitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "대국을 나갈까요?",
+    UiLanguage.English to "Leave the game?",
+    UiLanguage.Japanese to "対局を出ますか？",
+    UiLanguage.ChineseSimplified to "要退出对局吗？",
+)
+
+private val LeaveGameConfirmBodies: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "나가려면 기권해야 해요.\n기권하면 패로 기록됩니다.",
+    UiLanguage.English to "To leave, you must resign.\nResigning counts as a loss.",
+    UiLanguage.Japanese to "出るには投了が必要です。\n投了は負けとして記録されます。",
+    UiLanguage.ChineseSimplified to "退出需要先认输。\n认输将记为负局。",
+)
+
 private val PassNoticeTitles: Map<UiLanguage, String> = mapOf(
     UiLanguage.Korean to "통과",
     UiLanguage.English to "Pass",
@@ -101,6 +121,10 @@ internal fun reviewGameActionFor(language: UiLanguage): String = ReviewGameActio
 internal fun exitGameActionFor(language: UiLanguage): String = ExitGameActions.getValue(language)
 
 internal fun finishedGameHomeActionFor(language: UiLanguage): String = FinishedGameHomeActions.getValue(language)
+
+internal fun leaveGameConfirmTitleFor(language: UiLanguage): String = LeaveGameConfirmTitles.getValue(language)
+
+internal fun leaveGameConfirmBodyFor(language: UiLanguage): String = LeaveGameConfirmBodies.getValue(language)
 
 internal fun passNoticeTitleFor(language: UiLanguage): String = PassNoticeTitles.getValue(language)
 

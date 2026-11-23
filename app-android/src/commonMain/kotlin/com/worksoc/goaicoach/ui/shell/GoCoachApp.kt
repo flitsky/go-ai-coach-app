@@ -120,6 +120,8 @@ import com.worksoc.goaicoach.ui.home.prepareNextRankMeasureGame
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.ProvideUiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
+import com.worksoc.goaicoach.ui.l10n.leaveGameConfirmBodyFor
+import com.worksoc.goaicoach.ui.l10n.leaveGameConfirmTitleFor
 import com.worksoc.goaicoach.ui.l10n.resumeSummaryFor
 import com.worksoc.goaicoach.ui.monetization.AttendanceRewardClaimDialog
 import com.worksoc.goaicoach.ui.monetization.LocalBotCharacterUiState
@@ -782,8 +784,9 @@ private fun GoCoachScreen(
         val strings = LocalUiStrings.current
         AlertDialog(
             onDismissRequest = { showResignConfirmFromBack = false },
-            title = { Text(strings.resignConfirmTitle) },
-            text = { Text(strings.resignConfirmMessage) },
+            // 「나가기」로 열린 창이라 「나갈까요?」로 묻고, 나가려면 기권해야 한다는 것을 그대로 말한다(QA-04, 사용자 2026-11-23 — 두 단추 그대로).
+            title = { Text(leaveGameConfirmTitleFor(strings.language)) },
+            text = { Text(leaveGameConfirmBodyFor(strings.language)) },
             confirmButton = {
                 TextButton(
                     onClick = {
