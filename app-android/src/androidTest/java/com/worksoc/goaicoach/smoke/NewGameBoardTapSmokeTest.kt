@@ -17,6 +17,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.foundation.TestTags
+import com.worksoc.goaicoach.ui.home.twoLineCardTitle
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
@@ -89,7 +90,7 @@ class NewGameBoardTapSmokeTest {
             )
         }
 
-        composeRule.onNodeWithText(strings.startMatch).performClick()
+        composeRule.onNodeWithText(twoLineCardTitle(strings.startMatch)).performClick()
 
         // Both seats to Human, so this is Local Two Player (see the class doc for why that
         // matters with a never-ready fake engine).

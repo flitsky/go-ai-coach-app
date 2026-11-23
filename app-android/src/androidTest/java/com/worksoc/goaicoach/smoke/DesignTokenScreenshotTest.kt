@@ -22,6 +22,7 @@ import com.worksoc.goaicoach.shared.enginecontract.EngineMode
 import com.worksoc.goaicoach.shared.enginecontract.EngineProfile
 import com.worksoc.goaicoach.testsupport.FakeEngineSessionClient
 import com.worksoc.goaicoach.ui.foundation.TestTags
+import com.worksoc.goaicoach.ui.home.twoLineCardTitle
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import com.worksoc.goaicoach.ui.shell.GoCoachApp
@@ -78,7 +79,7 @@ class DesignTokenScreenshotTest {
     @Test
     fun lobby() {
         launchApp()
-        composeRule.onNodeWithText(strings.startMatch).performClick()
+        composeRule.onNodeWithText(twoLineCardTitle(strings.startMatch)).performClick()
         capture("02_lobby")
     }
 
@@ -113,7 +114,7 @@ class DesignTokenScreenshotTest {
     @Test
     fun boardAfterFirstMove() {
         launchApp()
-        composeRule.onNodeWithText(strings.startMatch).performClick()
+        composeRule.onNodeWithText(twoLineCardTitle(strings.startMatch)).performClick()
         composeRule.onNodeWithTag(TestTags.seatControllerPill(StoneColor.Black, SeatController.Human))
             .performClick()
         composeRule.onNodeWithTag(TestTags.seatControllerPill(StoneColor.White, SeatController.Human))

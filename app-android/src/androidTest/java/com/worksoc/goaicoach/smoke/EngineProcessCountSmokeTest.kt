@@ -18,6 +18,7 @@ import com.worksoc.goaicoach.shared.domain.BoardSize
 import com.worksoc.goaicoach.shared.policy.SearchTimeLimit
 import com.worksoc.goaicoach.shared.policy.SearchTimeSettings
 import com.worksoc.goaicoach.ui.foundation.TestTags
+import com.worksoc.goaicoach.ui.home.twoLineCardTitle
 import com.worksoc.goaicoach.ui.l10n.UiLanguage
 import com.worksoc.goaicoach.ui.l10n.UiStrings
 import java.io.File
@@ -138,10 +139,12 @@ class EngineProcessCountSmokeTest {
      * 열린다 — 다시 만들어진 화면이면 그 화면의 기동이다.
      */
     private fun waitUntilTheEngineIsReady() {
+        // 홈 카드는 이름을 두 줄로 접어 그린다(「일반\n대국」, #288) — 「일반 대국」 그대로는 카드에 안 맞는다.
+        val matchCard = twoLineCardTitle(strings.startMatch)
         // 스플래시(약 1초)가 터치를 먹는 동안은 눌러도 넘어가지 않는다 — 대국 설정이 보일 때까지 다시 누른다.
         waitUntilDoing(StartupTimeoutMillis, "홈에서 대국 설정으로") {
             if (exists(strings.matchSetup)) return@waitUntilDoing true
-            if (exists(strings.startMatch)) composeRule.onNodeWithText(strings.startMatch).performClick()
+            if (exists(matchCard)) composeRule.onNodeWithText(matchCard).performClick()
             false
         }
         val startButton = hasText(strings.startMatchAction, substring = true) and isEnabled()
