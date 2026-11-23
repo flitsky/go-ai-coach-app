@@ -123,9 +123,9 @@ class ReviewRecommendationTest {
 
     // ── 자리 ─────────────────────────────────────────────────────────────
 
-    /** 폰 배치 — 판 아래에 상태판·버튼이 있어 **판 아래**, 판 오른쪽 끝에 맞춘다. 판과 겹치지 않는다. */
+    /** 폰 배치 — 판 아래에 상태판(결과 배지)·버튼이 있어 **판 안 아래 끝**, 판 오른쪽 끝에 맞춘다. 판 밖(배지)을 가리지 않는다(QA-07). */
     @Test
-    fun onAPhoneTheBubbleSitsBelowTheBoardRightAligned() {
+    fun onAPhoneTheBubbleSitsOnTheBoardsBottomEdgeRightAligned() {
         val board = Rect(left = 0f, top = 150f, right = 1080f, bottom = 1230f)
         val placement = reviewRecommendationPlacement(
             containerWidth = 1080,
@@ -137,10 +137,11 @@ class ReviewRecommendationTest {
             edgeMargin = 0,
         )
 
-        assertEquals(Side.BelowBoard, placement.side)
+        assertEquals(Side.OnBoardBottom, placement.side)
         assertEquals(1080 - 900, placement.x)
-        assertEquals(1250, placement.y)
-        assertTrue("판과 겹친다", placement.y >= board.bottom)
+        assertEquals(1230 - 20 - 300, placement.y)
+        assertTrue("판 아래(결과 배지)를 가린다", placement.y + 300 <= board.bottom)
+        assertTrue("판 위에 서면 판 탭으로 닫혀야 한다", placement.side.coversBoard)
     }
 
     /** 판이 세로를 다 쓰고 옆이 남으면(가로 배치) **판 오른쪽**, 판 아래 끝에 맞춘다. */

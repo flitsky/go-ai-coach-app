@@ -147,9 +147,9 @@ class ReviewRecommendationUiTest {
         }
     }
 
-    /** 말풍선: 판 **아래**에 서고, 누르면 복기, ✕는 닫기만. */
+    /** 말풍선: 판 **안 아래 끝**에 서고(QA-07 — 판 아래의 결과 배지를 가리지 않게), 누르면 복기, ✕는 닫기만, 판을 누르면 닫힌다. */
     @Test
-    fun theBubbleSitsBelowTheBoardAndOpensReviewOrCloses() {
+    fun theBubbleSitsOnTheBoardsBottomEdgeAndOpensReviewOrCloses() {
         var opened = 0
         var dismissed = 0
         val density = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
@@ -172,8 +172,8 @@ class ReviewRecommendationUiTest {
             }
         }
         val message = reviewRecommendationMessageFor(UiLanguage.Korean, 4)
-        val bubbleTop = composeRule.onNodeWithText(message, useUnmergedTree = true).getBoundsInRoot().top
-        assertTrue("말풍선이 판과 겹친다: top=$bubbleTop", bubbleTop.value >= 60f + 360f)
+        val bubbleBottom = composeRule.onNodeWithText(message, useUnmergedTree = true).getBoundsInRoot().bottom
+        assertTrue("말풍선이 판 아래(결과 배지)로 내려간다: bottom=$bubbleBottom", bubbleBottom.value <= 60f + 360f)
 
         composeRule.onNodeWithText(message, useUnmergedTree = true).performClick()
         composeRule.onNodeWithContentDescription(strings.close).performClick()
@@ -211,7 +211,7 @@ class ReviewRecommendationUiTest {
         val message = reviewRecommendationMessageFor(UiLanguage.English, 12)
         val bounds = composeRule.onNodeWithText(message, useUnmergedTree = true).getBoundsInRoot()
         assertTrue("말풍선 글이 화면 밖으로 나간다: $bounds", bounds.right.value <= 411f && bounds.left.value >= 0f)
-        assertTrue("말풍선이 판과 겹친다: $bounds", bounds.top.value >= 411f)
+        assertTrue("말풍선이 판 아래로 내려간다: $bounds", bounds.bottom.value <= 411f)
         save("bubble_en_1.3", composeRule.onNodeWithTag(OverlayTag).captureToImage().asAndroidBitmap())
     }
 

@@ -111,14 +111,19 @@ internal fun ReviewMistakeBadgeBox(
 internal fun reviewRecommendationCharacterFor(playerSetup: PlayerSetup): BotCharacter? =
     matchOpponentCharacter(playerSetup) ?: BotCharacterCatalog.byId(FirstDolCharacterId)
 
-/** 말풍선이 판 아래(또는 옆)에 설 자리. [side]는 어느 규칙으로 정해졌는지 — 실기 확인·테스트용이다. */
+/** 말풍선이 설 자리. [side]는 어느 규칙으로 정해졌는지 — 실기 확인·테스트용이다. */
 internal data class ReviewRecommendationPlacement(val x: Int, val y: Int, val side: Side) {
-    enum class Side {
-        /** 판 **아래**, 판 오른쪽 끝에 맞춰 — 폰 배치의 기본. */
-        BelowBoard,
+    /** [coversBoard] — 판 위에 겹치는 자리면 판을 누르는 것이 「치워 달라」가 된다([ReviewRecommendationOverlay]의 판 탭 받개). */
+    enum class Side(val coversBoard: Boolean) {
+        /**
+         * 판 **안 아래 끝**, 판 오른쪽 끝에 맞춰 — 폰 배치의 기본(QA-07, 사용자 2026-11-23 ⓐ). 판 아래는 상태판이고 그 가운데
+         * 결과 배지(#187)가 있어, 판 아래에 서면 「누가 이겼나」를 가렸다. 판 맨 아래 줄 몇을 가리는 대신 배지 · 단추가 보인다.
+         * 끝난 판이라 두는 입력은 없고, ✕ **또는 판 아무 데나 탭**하면 닫힌다.
+         */
+        OnBoardBottom(coversBoard = true),
 
         /** 판 **오른쪽**, 판 아래 끝에 맞춰 — 아래에 자리가 없고 판 옆에 말풍선 폭만큼 빈 곳이 있을 때(가로로 아주 긴 화면). */
-        RightOfBoard,
+        RightOfBoard(coversBoard = false),
 
         /**
          * 판 밖에 통째로 둘 자리가 없다 — **화면 오른쪽 아래 끝**에 둔다. 판 모서리에 맞추는 것보다 판을 덜 가린다(판
@@ -126,15 +131,16 @@ internal data class ReviewRecommendationPlacement(val x: Int, val y: Int, val si
          * 버튼 한 줄뿐이며(1812×2176 실측, 판 아래 약 69dp), 가로로 펼치면 오른쪽 기둥이 말풍선보다 좁다(2176×1812).
          * 끝난 판이라 두는 입력은 없고, ✕ **또는 판 아무 데나 탭**하면 닫힌다([ReviewRecommendationOverlay]).
          */
-        OverlapsBoard,
+        OverlapsBoard(coversBoard = true),
     }
 }
 
 /**
- * 말풍선 자리를 고른다 — **판을 가리지 않는 것**이 첫째다(카드 ⚠️: *"판 밖이거나 탭하면 닫힘"*).
+ * 말풍선 자리를 고른다 — 카드 ⚠️ *"판 밖이거나 탭하면 닫힘"*. 판 위에 설 때는 판을 누르면 닫힌다.
  *
- * 1. 판 **아래**에 말풍선 높이만큼 남으면 거기(판 오른쪽 끝에 맞춘다) — 폰 배치는 판 아래에 상태판·버튼이 있어 늘 여기다.
- * 2. 아니면 판 **오른쪽**에 폭만큼 남으면 거기(판 아래 끝에 맞춘다).
+ * 1. 판 **아래**에 말풍선 높이만큼 남으면(폰 배치 — 판 아래에 상태판 · 버튼이 있다) 판 **안 아래 끝**(판 오른쪽 끝에 맞춘다).
+ *    판 아래에 세우면 상태판 가운데의 결과 배지를 가렸다(QA-07, 사용자 2026-11-23 ⓐ — 「판 아래 끝」).
+ * 2. 아니면 판 **오른쪽**에 폭만큼 남으면 거기(판 아래 끝에 맞춘다) — 판 밖이다.
  * 3. 둘 다 없으면 화면 오른쪽 아래 끝 — 판을 조금 가리지만 가장 덜 가리는 자리다. ✕나 판 탭으로 닫힌다.
  *
  * 좌표는 전부 **오버레이 안** 픽셀이고, 결과는 오버레이 밖으로 나가지 않게 조인다. 가로는 [edgeMargin]만큼 화면 끝에서
@@ -158,8 +164,8 @@ internal fun reviewRecommendationPlacement(
     return when {
         containerHeight - board.bottom >= bubbleHeight + gap -> ReviewRecommendationPlacement(
             x = clampX(right - bubbleWidth),
-            y = clampY(board.bottom + gap),
-            side = ReviewRecommendationPlacement.Side.BelowBoard,
+            y = clampY(board.bottom - bubbleHeight - gap),
+            side = ReviewRecommendationPlacement.Side.OnBoardBottom,
         )
         containerWidth - board.right >= bubbleWidth + gap -> ReviewRecommendationPlacement(
             x = clampX(board.right + gap),
@@ -193,7 +199,7 @@ internal fun boardSquareWithin(slot: Rect): Rect {
  * 컴포지션에서 읽으면 대국 화면 전체가 매 프레임 다시 짜인다. 여기서는 측정 단계에서만 읽어 이 오버레이만 다시 잰다.
  *
  * 말풍선을 누르면 복기로 간다(「복기 하기」와 같은 길). ✕는 닫기만 한다. 오버레이의 나머지는 **누르는 것을 가로채지
- * 않는다** — 새 대국·재 대국 버튼은 그대로 눌린다. 예외는 말풍선이 판에 겹칠 때(폴드)의 판 위뿐이다(탭하면 닫힌다).
+ * 않는다** — 새 대국·재 대국 버튼은 그대로 눌린다. 예외는 말풍선이 판에 겹칠 때(폰의 판 아래 끝 · 폴드)의 판 위뿐이다(탭하면 닫힌다).
  */
 @Composable
 internal fun ReviewRecommendationOverlay(
@@ -209,7 +215,7 @@ internal fun ReviewRecommendationOverlay(
 ) {
     Layout(
         content = {
-            // 판 위 탭 받개 — 말풍선이 판에 **겹칠 때만** 놓인다(아래 배치). 끝난 판은 두는 입력이 없으니 판을
+            // 판 위 탭 받개 — 말풍선이 판에 **겹칠 때만**(`Side.coversBoard`) 놓인다. 끝난 판은 두는 입력이 없으니 판을
             // 누르는 것은 "치워 달라"는 뜻으로 읽는다(카드: *"판 밖이거나 탭하면 닫힘"*). 놓이지 않으면 누르는 것을 받지 않는다.
             Box(modifier = Modifier.pointerInput(onDismiss) { detectTapGestures { onDismiss() } })
             ReviewRecommendationBubble(
@@ -241,7 +247,7 @@ internal fun ReviewRecommendationOverlay(
                 edgeMargin = margin,
             )
         }
-        val catcher = if (board != null && placement?.side == ReviewRecommendationPlacement.Side.OverlapsBoard) {
+        val catcher = if (board != null && placement?.side?.coversBoard == true) {
             boardTapCatcher.measure(Constraints.fixed(board.width.toInt().coerceAtLeast(0), board.height.toInt().coerceAtLeast(0)))
         } else {
             null

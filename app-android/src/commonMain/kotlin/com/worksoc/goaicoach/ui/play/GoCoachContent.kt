@@ -353,9 +353,9 @@ internal fun GoCoachContent(
     }
 
     // 판정 결과를 닫은 뒤의 「복기 하기」 추천(백로그 #200) — **본문 뒤에** 둔다: 형제는 나중이 위에 그려진다(함정 38).
-    //   자리는 판 아래 → 판 오른쪽 → (둘 다 없을 때만 — 폴드) 화면 오른쪽 아래 끝 순이다(`reviewRecommendationPlacement`).
+    //   자리는 판 안 아래 끝(폰 — 결과 배지를 가리지 않게, QA-07) → 판 오른쪽 → 화면 오른쪽 아래 끝(폴드) 순이다(`reviewRecommendationPlacement`).
     //   오버레이는 말풍선 밖을 누르는 것을 가로채지 않는다 — 새 대국·재 대국 버튼은 그대로 눌린다. 예외는 말풍선이 판에
-    //   겹친 폴드 배치뿐이고, 그때 판을 누르면 말풍선이 닫힌다(끝난 판이라 판에 둘 수는 없다).
+    //   겹칠 때의 판 위이고, 그때 판을 누르면 말풍선이 닫힌다(끝난 판이라 판에 둘 수는 없다).
     if (showReviewRecommendation) {
         ReviewRecommendationOverlay(
             boardSlotInRoot = { boardSlotInRoot },
