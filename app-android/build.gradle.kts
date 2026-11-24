@@ -528,6 +528,8 @@ dependencies {
     // suspendCancellableCoroutine으로 직접 감싸는 쪽으로 통일돼 있다(billing·AdMob·Auth·AssetDelivery 넷 다) —
     // 여기만 -ktx를 쓰면 같은 일을 두 방식으로 하게 된다.
     implementation(libs.play.app.update)
+    // Play In-App Review — 대국 완료 후 긍정적 시점에 스토어 평가를 요청한다(-ktx 없이 suspendCancellableCoroutine 통일).
+    implementation(libs.play.review)
     // Play Asset Delivery(백로그 #245) — 모델 팩 다운로드(on-demand) 및 위치 조회.
     implementation(libs.play.asset.delivery)
 

@@ -203,7 +203,18 @@ internal fun GoCoachContent(
 
     // 기력 변동 팝업(백로그 #219, 사용자 2026-10-07) — **판정 결과 창이 닫힌 뒤에** 띄운다. 둘은 별도 윈도우라 함께 뜨면
     // 위아래가 정해지지 않는다(함정 7). 승급 대국이 아니면 띄울 것이 없어 아무것도 그리지 않는다.
-    if (finalJudgementToShow == null) RankMeasureChangeDialog(LocalRankMeasureUiState.current)
+    val rankMeasureUiState = LocalRankMeasureUiState.current
+    if (finalJudgementToShow == null) RankMeasureChangeDialog(rankMeasureUiState)
+
+    StoreReviewPromptHost(
+        completedJudgementKey = finalJudgementKey?.takeIf {
+            screenState.showsFinishedGame && finalJudgementToShow == null && dismissedFinalJudgementKey == it
+        },
+        isBlockedByDialog = benchmarkProgress != null ||
+            benchmarkResult != null ||
+            rankMeasureUiState.pendingChange != null ||
+            rankMeasureUiState.state.promotionOffer != null,
+    )
 
     // ⚠️ 판을 한 화면에 맞추려고 **세 높이**를 잰다(백로그 #139 1차, 계산은 `fittedBoardMaxHeightPx`).
     //   · 뷰포트 — `verticalScroll` **앞**에서 잰다. 스크롤 안에서는 잴 높이가 없다(함정 45).

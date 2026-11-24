@@ -33,6 +33,7 @@ internal class IosAppStores(
     override val attendance = KvAttendanceStore(kv)
     override val dailyDraw = KvDailyDrawStore(kv)
     override val rankMeasure = KvRankMeasureStore(kv)
+    override val storeReview = KvStoreReviewStore(kv)
     override val engineBenchmark = KvEngineBenchmarkStore(files)
     override val deviceIdentity = KvDeviceIdentityStore(kv)
     override val debugReportMirror = KvDebugReportMirrorStore(files)

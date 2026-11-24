@@ -15,6 +15,7 @@ googleid = "1.2.0"
 playServicesAds = "25.4.0"
 playBilling = "9.1.0"
 playAppUpdate = "2.1.0"
+playReview = "2.0.2"
 # 두 모델을 PAD 에셋 팩으로 받는다(백로그 #245) — 팩의 위치·받기 요청·진행 상태를 묻는 Play Core 라이브러리.
 playAssetDelivery = "2.3.0"
 lifecycleProcess = "2.8.7"
@@ -70,6 +71,7 @@ google-id = { module = "com.google.android.libraries.identity.googleid:googleid"
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 play-billing = { module = "com.android.billingclient:billing", version.ref = "playBilling" }
 play-app-update = { module = "com.google.android.play:app-update", version.ref = "playAppUpdate" }
+play-review = { module = "com.google.android.play:review", version.ref = "playReview" }
 play-asset-delivery = { module = "com.google.android.play:asset-delivery", version.ref = "playAssetDelivery" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcess" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }

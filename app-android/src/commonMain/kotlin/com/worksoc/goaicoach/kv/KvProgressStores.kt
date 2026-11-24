@@ -13,6 +13,8 @@ import com.worksoc.goaicoach.application.guide.GuideStep
 import com.worksoc.goaicoach.application.guide.LifeAndDeathProgressPort
 import com.worksoc.goaicoach.application.profile.UserNicknamePolicy
 import com.worksoc.goaicoach.application.profile.UserProfileStorePort
+import com.worksoc.goaicoach.application.prompt.StoreReviewProgress
+import com.worksoc.goaicoach.application.prompt.StoreReviewStorePort
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -108,5 +110,21 @@ internal class KvDeviceIdentityStore(factory: KeyValueStoreFactory) : DeviceIden
         val generated = Uuid.random().toString()
         kv.putString("device_id", generated)
         return DeviceIdentity(generated)
+    }
+}
+
+internal class KvStoreReviewStore(factory: KeyValueStoreFactory) : StoreReviewStorePort {
+    private val kv = factory.open(KvSuites.StoreReview)
+
+    override fun load(): StoreReviewProgress = StoreReviewProgress(
+        completedGames = kv.getInt("completed_games", 0),
+        promptCount = kv.getInt("prompt_count", 0),
+        lastPromptDay = kv.getLong("last_prompt_day", -1L).takeIf { it != -1L },
+    )
+
+    override fun save(progress: StoreReviewProgress) {
+        kv.putInt("completed_games", progress.completedGames)
+        kv.putInt("prompt_count", progress.promptCount)
+        kv.putLong("last_prompt_day", progress.lastPromptDay ?: -1L)
     }
 }

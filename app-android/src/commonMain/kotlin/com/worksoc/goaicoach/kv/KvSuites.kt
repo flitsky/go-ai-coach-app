@@ -25,6 +25,7 @@ internal object KvSuites {
     const val Attendance = "go_ai_coach_attendance"
     const val DailyDraw = "go_ai_coach_daily_draw"
     const val RankMeasure = "go_ai_coach_rank_measure"
+    const val StoreReview = "go_ai_coach_store_review"
     const val DeviceIdentity = "go_ai_coach_device_identity"
 
     val all: List<String> = listOf(
@@ -47,6 +48,7 @@ internal object KvSuites {
         Attendance,
         DailyDraw,
         RankMeasure,
+        StoreReview,
         DeviceIdentity,
     )
 

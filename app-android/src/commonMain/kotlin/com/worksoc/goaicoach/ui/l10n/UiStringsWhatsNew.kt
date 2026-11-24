@@ -21,6 +21,31 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.8.6 — QA-01~23 사용성 개선(끝난 판 ← 홈, 이어하기 보호, 나가기·복기·글자 크기 다듬기) + 인앱 스토어 리뷰 API(안드로이드 Play Review · iOS StoreKit).
+        WhatsNewRelease(versionCode = 10806, versionName = "1.8.6") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "끝난 대국 화면 왼쪽 위에 「← 홈」 단추가 생겨, 한 번에 홈으로 돌아갈 수 있어요.",
+                    "이전 대국 이어하기 창을 닫거나 대국 설정에서 뒤로 나와도 저장된 판이 지워지지 않고, 새 대국을 시작할 때만 지워져요.",
+                    "대국 중 나가기 안내·복기 말풍선 위치·급수(KGS 기준) 표시와 화면 글자 크기를 더 보기 편하게 다듬었어요.",
+                )
+                UiLanguage.English -> listOf(
+                    "A finished game now shows \"← Home\" at the top left, so you can return to Home in one tap.",
+                    "Your saved game is only cleared when a new game actually starts — closing the resume dialog or backing out of setup keeps it.",
+                    "Refined the leave-game prompt, review bubble placement, KGS rank note, and consistent text sizing across screens.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "終局画面の左上に「← 戻る」ボタンが加わり、ワンタップでホームに戻れるようになりました。",
+                    "保存された対局は新しい対局を実際に始めたときだけ消え、再開ダイアログを閉じたり設定から戻ったりしても残ります。",
+                    "対局中の退出案内・検討の吹き出し位置・棋力(KGS基準)の表示や文字サイズの見やすさを整えました。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "终局画面左上角新增「← 主页」按钮，一键即可返回主页。",
+                    "只有在实际开始新对局时才会清除已保存的棋局，关闭继续对局窗口或从设置返回时都会保留。",
+                    "优化了对局中退出提示、复盘气泡位置、棋力(KGS标准)说明及各画面的字号显示。",
+                )
+            }
+        },
         // 1.8.5 — #303 대국 페이지 맨 위의 명언 · 운세(사용자 2026-11-06) · #299 운세 · 뽑기 단추(바꾼 운세가 쌓인다 · 광고 단추의 📺). #301의 새 캐릭터는 가려 두었다 — 적지 않는다.
         WhatsNewRelease(versionCode = 10805, versionName = "1.8.5") { language ->
             when (language) {

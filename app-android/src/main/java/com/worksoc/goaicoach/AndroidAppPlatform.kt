@@ -25,6 +25,7 @@ import com.worksoc.goaicoach.persistence.PremiumStateStore
 import com.worksoc.goaicoach.persistence.RankMeasureStore
 import com.worksoc.goaicoach.persistence.ReleaseResetStore
 import com.worksoc.goaicoach.persistence.RuntimeEventLog
+import com.worksoc.goaicoach.persistence.StoreReviewStore
 import com.worksoc.goaicoach.persistence.ThemeModeStore
 import com.worksoc.goaicoach.persistence.UiLanguageStore
 import com.worksoc.goaicoach.persistence.UserPreferencesStore
@@ -142,6 +143,7 @@ internal class AndroidAppStores(private val appContext: Context) : AppStores {
     override val attendance get() = AttendanceStore(appContext)
     override val dailyDraw get() = DailyDrawStore(appContext)
     override val rankMeasure get() = RankMeasureStore(appContext)
+    override val storeReview get() = StoreReviewStore(appContext)
     override val engineBenchmark get() = EngineBenchmarkStore(appContext)
     override val deviceIdentity get() = DeviceIdentityStore(appContext)
     override val debugReportMirror get() = DebugReportMirrorStore(appContext)

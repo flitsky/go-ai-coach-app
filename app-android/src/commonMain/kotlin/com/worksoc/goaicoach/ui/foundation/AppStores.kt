@@ -21,6 +21,7 @@ import com.worksoc.goaicoach.application.preferences.UserPreferencesStorePort
 import com.worksoc.goaicoach.application.preferences.WhatsNewStorePort
 import com.worksoc.goaicoach.application.premium.port.PremiumStateStorePort
 import com.worksoc.goaicoach.application.profile.UserProfileStorePort
+import com.worksoc.goaicoach.application.prompt.StoreReviewStorePort
 import com.worksoc.goaicoach.application.rankmeasure.RankMeasureStorePort
 import com.worksoc.goaicoach.application.savedgame.SavedGameStorePort
 
@@ -49,6 +50,7 @@ interface AppStores {
     val attendance: AttendanceStorePort
     val dailyDraw: DailyDrawStorePort
     val rankMeasure: RankMeasureStorePort
+    val storeReview: StoreReviewStorePort
     val engineBenchmark: EngineBenchmarkStorePort
     val deviceIdentity: DeviceIdentityStorePort
     val debugReportMirror: DebugReportMirrorPort

@@ -148,7 +148,36 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.8.5 (versionCode 10805, 2026-11-06) ────────
+──────── 지금 붙여넣을 것 — 1.8.6 (versionCode 10806, 2026-11-24) ────────
+
+✅ **기준선은 1.8.5**(프로덕션 10805 — 2026-11-09). 이 본문은 1.8.5 뒤에 사용자에게 달라진 것만이다:
+   QA-01~23 사용성 개선(끝난 판 좌상단 「← 홈」, 이전 대국 이어하기 안전 보호, 대국 나가기 안내, 복기 말풍선 위치, KGS 기준 급수 안내, 화면 글자 크기 일관화) + 인앱 스토어 리뷰 프롬프트.
+   앱 안 「새로워진 점」은 1.8.6 묶음(`UiStringsWhatsNew.kt`).
+⚠️ Play Console에 `ja-JP` 등재정보가 추가된 뒤에는 `<ja-JP>` 블록까지 함께 붙여넣는다(등재정보에 없는 언어 태그는 넣지 말 것).
+
+<ko-KR>
+대국과 복기 화면의 사용성을 전반적으로 다듬었습니다.
+
+· 끝난 대국 화면 왼쪽 위에 「← 홈」 단추가 생겨 한 번에 홈으로 돌아갈 수 있어요
+· 이전 대국 이어하기 창을 닫거나 대국 설정에서 뒤로 나와도 저장된 판이 지워지지 않고, 새 대국을 시작할 때만 지워져요
+· 대국 중 나가기 안내, 복기 말풍선 위치, 급수(KGS 기준) 표시와 화면 글자 크기를 더 보기 편하게 개선했어요
+</ko-KR>
+<en-US>
+Polished match and review usability across the app.
+
+· Added a one-tap "← Home" button at the top left once a game ends
+· Your saved game is now cleared only when a new game actually starts — backing out of setup or closing the resume dialog keeps it
+· Improved the leave-game prompt, review bubble placement, KGS rank note, and consistent text sizing
+</en-US>
+<ja-JP>
+対局・検討画面の使いやすさを改善しました。
+
+・終局画面の左上に「← 戻る」ボタンを追加し、ワンタップでホームに戻れるようになりました
+・保存された対局は新しい対局を実際に始めたときだけ消え、設定から戻っても残るようになりました
+・対局中の退出案内、検討の吹き出し位置、棋力(KGS基準)の表示や文字サイズを見やすく整えました
+</ja-JP>
+
+──────── 지난 버전 — 1.8.5 (versionCode 10805, 2026-11-06) ────────
 
 ✅ **기준선은 1.8.4**(프로덕션 10804 — 2026-10-24). 이 본문은 1.8.4 뒤에 사용자에게 달라진 것만이다:
    #303 대국 페이지 맨 위의 명언 · 운세(명언은 닫지 못하고 두 줄 · 운세는 여는 단추와 새로고침 → 광고 확인 창) · #299 운세 · 뽑기 단추(바꾼 운세가 쌓여 넘겨 본다 · 광고 단추의 📺 · 「오늘의 운세 뽑기 (무료)」).
