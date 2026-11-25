@@ -21,46 +21,35 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
-        // 1.8.7 — 오늘의 운세 프리미엄 금박 연출 + 전용 길운 120편·행운 포인트, 「바둑판 촬영 분석」 대국 메인 승격·실험실 중복 제거(사용자 2026-11-25).
+        // 1.8.7 — 1.8.5 이후 프로덕션 직행 통합본(1.8.6은 내부 테스트만 거침):
+        // 오늘의 운세 금박 프리미엄 연출 + 전용 특별 운세 120편·행운 포인트, 「바둑판 촬영 분석」 대국 본 메뉴 승격·실험실 중복 제거,
+        // 끝난 판 좌상단 ← 홈, 이전 대국 이어하기 안전 보호, QA-04~23 사용성 개선 + 인앱 스토어 리뷰 API(사용자 2026-11-25).
         WhatsNewRelease(versionCode = 10807, versionName = "1.8.7") { language ->
             when (language) {
                 UiLanguage.Korean -> listOf(
                     "오늘의 운세를 광고·구독으로 바꾸면 금박 한지 카드와 함께 전용 특별 운세와 「✦ 오늘의 행운 포인트」가 열려요.",
                     "「바둑판 촬영 분석」을 대국 화면 본 메뉴로 크게 옮기고, 실험실에 중복돼 있던 입구를 정리했어요.",
-                )
-                UiLanguage.English -> listOf(
-                    "Changing today's fortune now reveals a gilded card with an exclusive fortune pool and \"✦ Today's lucky point\".",
-                    "Promoted \"Scan Board Photo\" to a prominent card right on the Play page and removed the duplicate tile in the Lab.",
-                )
-                UiLanguage.Japanese -> listOf(
-                    "今日の運勢を変えると、金箔風の特別カードに専用の運勢と「✦ 今日のラッキーポイント」が開くようになりました。",
-                    "「碁盤を撮影・分析」を対局ページのメイン画面へ大きく配置し、実験室の重複メニューを整理しました。",
-                )
-                UiLanguage.ChineseSimplified -> listOf(
-                    "改运后将展开金箔特别卡片，带来专属运势与「✦ 今日幸运提示」。",
-                    "将「拍照分析棋盘」升级为对弈主页的醒目卡片，并移除了实验室中的重复入口。",
-                )
-            }
-        },
-        // 1.8.6 — QA-01~23 사용성 개선(끝난 판 ← 홈, 이어하기 보호, 나가기·복기·글자 크기 다듬기) + 인앱 스토어 리뷰 API(안드로이드 Play Review · iOS StoreKit).
-        WhatsNewRelease(versionCode = 10806, versionName = "1.8.6") { language ->
-            when (language) {
-                UiLanguage.Korean -> listOf(
                     "끝난 대국 화면 왼쪽 위에 「← 홈」 단추가 생겨, 한 번에 홈으로 돌아갈 수 있어요.",
                     "이전 대국 이어하기 창을 닫거나 대국 설정에서 뒤로 나와도 저장된 판이 지워지지 않고, 새 대국을 시작할 때만 지워져요.",
                     "대국 중 나가기 안내·복기 말풍선 위치·급수(KGS 기준) 표시와 화면 글자 크기를 더 보기 편하게 다듬었어요.",
                 )
                 UiLanguage.English -> listOf(
+                    "Changing today's fortune now reveals a gilded card with an exclusive fortune pool and \"✦ Today's lucky point\".",
+                    "Promoted \"Scan Board Photo\" to a prominent card right on the Play page and removed the duplicate tile in the Lab.",
                     "A finished game now shows \"← Home\" at the top left, so you can return to Home in one tap.",
                     "Your saved game is only cleared when a new game actually starts — closing the resume dialog or backing out of setup keeps it.",
                     "Refined the leave-game prompt, review bubble placement, KGS rank note, and consistent text sizing across screens.",
                 )
                 UiLanguage.Japanese -> listOf(
+                    "今日の運勢を変えると、金箔風の特別カードに専用の運勢と「✦ 今日のラッキーポイント」が開くようになりました。",
+                    "「碁盤を撮影・分析」を対局ページのメイン画面へ大きく配置し、実験室の重複メニューを整理しました。",
                     "終局画面の左上に「← 戻る」ボタンが加わり、ワンタップでホームに戻れるようになりました。",
                     "保存された対局は新しい対局を実際に始めたときだけ消え、再開ダイアログを閉じたり設定から戻ったりしても残ります。",
                     "対局中の退出案内・検討の吹き出し位置・棋力(KGS基準)の表示や文字サイズの見やすさを整えました。",
                 )
                 UiLanguage.ChineseSimplified -> listOf(
+                    "改运后将展开金箔特别卡片，带来专属运势与「✦ 今日幸运提示」。",
+                    "将「拍照分析棋盘」升级为对弈主页的醒目卡片，并移除了实验室中的重复入口。",
                     "终局画面左上角新增「← 主页」按钮，一键即可返回主页。",
                     "只有在实际开始新对局时才会清除已保存的棋局，关闭继续对局窗口或从设置返回时都会保留。",
                     "优化了对局中退出提示、复盘气泡位置、棋力(KGS标准)说明及各画面的字号显示。",
