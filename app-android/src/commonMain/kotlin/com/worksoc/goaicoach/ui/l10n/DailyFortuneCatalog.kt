@@ -17,12 +17,24 @@ internal class FortuneText(
     private val english: String,
     private val japanese: String,
     private val chinese: String,
+    private val tipKorean: String? = null,
+    private val tipEnglish: String? = null,
+    private val tipJapanese: String? = null,
+    private val tipChinese: String? = null,
 ) {
     fun textFor(language: UiLanguage): String = when (language) {
         UiLanguage.Korean -> korean
         UiLanguage.English -> english
         UiLanguage.Japanese -> japanese
         UiLanguage.ChineseSimplified -> chinese
+    }
+
+    /** 광고/구독으로 운을 바꾼 프리미엄 운세에만 담기는 `✦ 오늘의 행운 포인트`(일반 무료 운세는 `null`). */
+    fun tipFor(language: UiLanguage): String? = when (language) {
+        UiLanguage.Korean -> tipKorean
+        UiLanguage.English -> tipEnglish
+        UiLanguage.Japanese -> tipJapanese
+        UiLanguage.ChineseSimplified -> tipChinese
     }
 }
 
@@ -2616,9 +2628,17 @@ internal object DailyFortuneCatalog {
     )
 
     /**
-     * 랜덤 운세의 글 전부 — 누른 순간의 타임스탬프로 이 목록의 한 자리를 고른다(shared `drawDailyFortune`).
+     * 랜덤 운세의 기본(무료) 글 전부 — 누른 순간의 타임스탬프로 이 목록(`0..367`)의 한 자리를 고른다(shared `drawDailyFortune`).
      * ⚠️ 고른 자리(순번)를 그날 저장한다 — 출시 뒤에는 **새 글을 맨 끝에만 더한다**(가운데에 끼우면 앱을 고친 날 그날의 운세가 바뀐다). 빼는 것은 끝에서부터.
      */
     val fortunes: List<FortuneText> = general + star + go
 
+    /** 광고/구독으로 운을 바꿀 때 열리는 프리미엄 전용 운세 120편(1.8.7, 각각 4개 국어 `tip` 포함). */
+    val boostedFortunes: List<FortuneText> = DailyFortuneBoostedEntries
+
+    /**
+     * 저장소 순번 전체(`0..<368` 일반 무료 풀 · `368..<488` 프리미엄 갱신 풀).
+     * 기존 버전 사용자가 저장한 `0..367` 순번과 100% 호환되며, 새 갱신은 `368` 이후에서만 뽑힌다.
+     */
+    val allFortunes: List<FortuneText> = fortunes + boostedFortunes
 }

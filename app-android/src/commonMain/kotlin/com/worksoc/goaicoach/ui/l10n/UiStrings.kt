@@ -965,10 +965,10 @@ internal data class UiStrings(
                 UiLanguage.ChineseSimplified -> "棋谱回顾"
             }
             FeatureId.BoardScan -> when (language) {
-                UiLanguage.Korean -> "바둑판 사진 분석"
-                UiLanguage.English -> "Board Photo Analysis"
-                UiLanguage.Japanese -> "盤面写真分析"
-                UiLanguage.ChineseSimplified -> "棋盘拍照分析"
+                UiLanguage.Korean -> "바둑판 촬영 분석"
+                UiLanguage.English -> "Scan Board Photo"
+                UiLanguage.Japanese -> "碁盤を撮影・分析"
+                UiLanguage.ChineseSimplified -> "拍照分析棋盘"
             }
         }
 

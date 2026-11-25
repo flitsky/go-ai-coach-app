@@ -160,3 +160,33 @@ internal fun fortuneOpenShortFor(language: UiLanguage): String = when (language)
     UiLanguage.Japanese -> "開く"
     UiLanguage.ChineseSimplified -> "打开"
 }
+
+/** 광고/구독으로 운을 바꾼 뒤 프리미엄 금박 카드 상단에 띄우는 배지(1.8.7) — 등급·점수 낱말 없이 정성의 의미를 담는다. */
+private val FortuneBoostedBadges: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "정성으로 바꾼 운세",
+    UiLanguage.English to "Refreshed fortune",
+    UiLanguage.Japanese to "塗り替えた運勢",
+    UiLanguage.ChineseSimplified to "改运特别运势",
+)
+
+internal fun fortuneBoostedBadgeFor(language: UiLanguage): String = FortuneBoostedBadges.getValue(language)
+
+/** 프리미엄 운세 하단의 행운 포인트 라벨(1.8.7) — 화면에서 앞에 `✦ `를 붙인다. */
+private val FortuneLuckyPointLabels: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "오늘의 행운 포인트",
+    UiLanguage.English to "Today's lucky point",
+    UiLanguage.Japanese to "今日のラッキーポイント",
+    UiLanguage.ChineseSimplified to "今日幸运提示",
+)
+
+internal fun fortuneLuckyPointLabelFor(language: UiLanguage): String = FortuneLuckyPointLabels.getValue(language)
+
+/** 운 바꾸기 안내 아래 덧붙이는 한 줄 힌트(1.8.7) — 광고/구독 갱신의 프리미엄 보상을 예고한다. */
+private val FortuneBoostedRefreshHints: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "운을 바꾸면 금빛 특별 운세와 행운 포인트가 열려요.",
+    UiLanguage.English to "Unlock a special golden fortune and lucky point.",
+    UiLanguage.Japanese to "運を変えると特別な運勢とラッキーポイントが開きます。",
+    UiLanguage.ChineseSimplified to "改运后将开启特别金色运势与今日幸运提示。",
+)
+
+internal fun fortuneBoostedRefreshHintFor(language: UiLanguage): String = FortuneBoostedRefreshHints.getValue(language)

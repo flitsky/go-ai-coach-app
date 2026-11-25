@@ -148,7 +148,35 @@ Go, Baduk, Weiqi, igo, Go AI, Go game, Go review, learn Go, Go lessons, Go coach
    · **앱 안 「새로워진 점」도 같은 범위로**(백로그 #257) — `app-android/src/main/java/com/worksoc/goaicoach/ui/l10n/UiStringsWhatsNew.kt`에 그 versionCode로 묶음을 더한다(4개 언어, 더 짧게).
      묶음이 없는 버전에는 앱에서 아무것도 안 뜬다. 1.4.0 묶음은 2026-10-13에 미리 적어 두었다.
 
-──────── 지금 붙여넣을 것 — 1.8.6 (versionCode 10806, 2026-11-24) ────────
+──────── 지금 붙여넣을 것 — 1.8.7 (versionCode 10807, 2026-11-25) ────────
+
+✅ **기준선은 1.8.5**(프로덕션 10805 — 2026-11-09; 1.8.6은 내부 테스트만 거침). 이 본문은 1.8.5 뒤에 사용자에게 달라진 전부를 담는다:
+   1.8.7(오늘의 운세 금박 프리미엄 연출 + 전용 특별 운세 120편·행운 포인트, 「바둑판 촬영 분석」 이름 직관화·대국 본 메뉴 승격·실험실 중복 제거) +
+   1.8.6(끝난 판 좌상단 「← 홈」, 이전 대국 이어하기 안전 보호, 대국·복기 사용성 다듬기, 인앱 리뷰 API).
+
+<ko-KR>
+오늘의 운세 프리미엄 연출과 바둑판 촬영 분석 접근성을 크게 개선했습니다.
+
+· 오늘의 운세: 광고·구독으로 운을 바꾸면 금박 한지 카드와 함께 전용 특별 운세와 「✦ 오늘의 행운 포인트」가 열려요
+· 바둑판 촬영 분석: 실험실 중복 메뉴를 없애고 대국 화면 본 메뉴로 직관적으로 크게 옮겼어요
+· 끝난 대국 화면 좌상단 「← 홈」 원탭 복귀, 이전 대국 이어하기 안전 보호 및 대국·복기 사용성을 전반적으로 다듬었어요
+</ko-KR>
+<en-US>
+Upgraded Today's Fortune and made Scan Board Photo easier to find.
+
+· Today's Fortune: Changing your luck now opens a gilded card with an exclusive fortune pool and "✦ Today's lucky point"
+· Scan Board Photo: Moved to a clear banner card right on the Play page and removed the duplicate tile in the Lab
+· Added a one-tap "← Home" button when a game ends, protected saved games until a new match starts, and refined match & review usability
+</en-US>
+<ja-JP>
+今日の運勢の演出と「碁盤を撮影・分析」の見つけやすさを改善しました。
+
+・今日の運勢：運を変えると金箔風の特別カードに専用の運勢と「✦ 今日のラッキーポイント」が開きます
+・碁盤を撮影・分析：実験室の重複をなくし、対局ページのメイン画面へ大きく配置しました
+・終局画面左上の「← 戻る」ボタン追加、保存対局の保護、対局・検討画面の見やすさを整えました
+</ja-JP>
+
+──────── 지난 버전(내부 테스트) — 1.8.6 (versionCode 10806, 2026-11-24) ────────
 
 ✅ **기준선은 1.8.5**(프로덕션 10805 — 2026-11-09). 이 본문은 1.8.5 뒤에 사용자에게 달라진 것만이다:
    QA-01~23 사용성 개선(끝난 판 좌상단 「← 홈」, 이전 대국 이어하기 안전 보호, 대국 나가기 안내, 복기 말풍선 위치, KGS 기준 급수 안내, 화면 글자 크기 일관화) + 인앱 스토어 리뷰 프롬프트.

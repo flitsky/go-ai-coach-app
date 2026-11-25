@@ -312,3 +312,13 @@ internal fun boardScanStringsFor(language: UiLanguage): BoardScanStrings = when 
     UiLanguage.Japanese -> Japanese
     UiLanguage.ChineseSimplified -> Chinese
 }
+
+/** 대국 페이지의 「바둑판 촬영 분석」 배너 카드 부제 — 카메라 촬영과 사진 불러오기·AI 복기를 한 줄로 직관 안내(1.8.7). */
+private val BoardScanHomeSubtitles: Map<UiLanguage, String> = mapOf(
+    UiLanguage.Korean to "카메라 · 사진으로 AI 복기",
+    UiLanguage.English to "Camera or photo · AI review",
+    UiLanguage.Japanese to "カメラ・写真からAI検討",
+    UiLanguage.ChineseSimplified to "相机或照片 · AI复盘",
+)
+
+internal fun boardScanHomeSubtitleFor(language: UiLanguage): String = BoardScanHomeSubtitles.getValue(language)

@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import com.worksoc.goaicoach.application.attendance.utcDayIndex
 import com.worksoc.goaicoach.application.dailyquote.DailyQuoteStorePort
 import com.worksoc.goaicoach.application.dailyquote.pickDailyQuote
-import com.worksoc.goaicoach.application.premium.state.FeatureId
 import com.worksoc.goaicoach.application.time.currentEpochMillis
 import com.worksoc.goaicoach.ui.designsystem.AppMotion
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
@@ -62,13 +61,13 @@ import kotlin.random.Random
 
 /**
  * 셋째 페이지 「실험실」(#280, 사용자 2026-10-22 — 처음에는 「학습 하기」였고, 학습은 대국 페이지의 타일로 갔다).
- * **섹션 셋 + 타일 하나**(#281 · #283, 사용자 2026-10-23): 명언록(제목 줄 오른쪽에 「+ 나만의 명언 추가 (준비 중)」) → 오늘의 운세(#276 — `DailyFortuneCard`)
- * → **1일 1회 뽑기**(#283) → **바둑판 사진 분석** 타일(오른쪽 아래, 사용자 2026-10-22). 「준비 중」 칸 둘(나만의 명언 추가하기 · 이름 없는 빈자리)은 없앴다.
+ * **데일리 콘텐츠 섹션 셋**(#281 · #283 · 1.8.7): 명언록(제목 줄 오른쪽에 「+ 나만의 명언 추가 (준비 중)」) → 오늘의 운세(#276 — `DailyFortuneCard`)
+ * → **1일 1회 뽑기**(#283). 「바둑판 촬영 분석」은 본 메뉴(대국 페이지)의 전폭 배너 카드로 통합 승격해 중복을 없앴다(1.8.7, 사용자 2026-11-25).
  *
  * ⚠️ 아직 없는 실험은 눌리지 않는다 — 누를 것처럼 보이는 모양(타일 · 단추)으로 두지 않는다(학습 허브의 U-16과 같은 결). 스토어 글에는 적지 않는다(함정 51).
  */
 @Composable
-internal fun HomeLabPage(dailyFortune: DailyFortuneState, onBoardScanClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun HomeLabPage(dailyFortune: DailyFortuneState, modifier: Modifier = Modifier) {
     val strings = LocalUiStrings.current
     val language = strings.language
     // 가로 여백은 줄마다 준다 — 명언록의 넘기기만은 화면 끝까지 닿아야 양옆 카드가 잘리지 않고 보인다(#281).
@@ -89,16 +88,6 @@ internal fun HomeLabPage(dailyFortune: DailyFortuneState, onBoardScanClick: () -
         // 1일 1회 뽑기(#283, 사용자 2026-10-23) — 광고 1편(구독자는 광고 없이)으로 하루 한 번. 규칙은 shared `DailyDraw.kt`, 카드는 `ui.monetization`.
         LabSectionHeader(title = dailyDrawTitleFor(language))
         DailyDrawCard(modifier = Modifier.padding(horizontal = AppSpacing.Space16))
-        Spacer(modifier = Modifier.height(AppSpacing.Space4))
-        // 바둑판 사진 분석은 오른쪽 아래의 반 폭 타일 그대로다(사용자 2026-10-22) — 왼쪽은 비운다.
-        // 사진 분석이 없는 플랫폼(iOS 첫 판 — U-84)에서는 타일을 그리지 않는다.
-        if (LocalAppPlatform.current.boardScan != null) Row(modifier = Modifier.padding(horizontal = AppSpacing.Space16), horizontalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-            Spacer(modifier = Modifier.weight(1f))
-            MenuTile(
-                tile = HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick) { BoardScanPreviewIcon() },
-                modifier = Modifier.weight(1f),
-            )
-        }
     }
 }
 

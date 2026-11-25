@@ -12,22 +12,26 @@ import org.junit.Test
  */
 class DailyFortuneCatalogTest {
     private val fortunes = DailyFortuneCatalog.fortunes
+    private val boosted = DailyFortuneCatalog.boostedFortunes
+    private val all = DailyFortuneCatalog.allFortunes
 
     @Test
     fun atLeast365Fortunes() {
         assertTrue("운세가 ${fortunes.size}개 — 사용자: 최소 365개", fortunes.size >= 365)
         assertEquals(DailyFortuneCatalog.general + DailyFortuneCatalog.star + DailyFortuneCatalog.go, fortunes)
+        assertTrue("프리미엄 운세가 ${boosted.size}개 — 최소 100개 이상이어야 한다", boosted.size >= 100)
+        assertEquals(fortunes + boosted, all)
     }
 
     @Test
     fun idsAreUnique() {
-        val ids = fortunes.map { it.id }
+        val ids = all.map { it.id }
         assertEquals("id가 겹친다", ids.size, ids.toSet().size)
     }
 
     @Test
     fun everyTextHasAllFourLanguagesWithoutHangulOutsideKorean() {
-        fortunes.forEach { text ->
+        all.forEach { text ->
             UiLanguage.entries.forEach { language ->
                 val line = text.textFor(language)
                 assertTrue("${text.id}/$language: 비었다", line.isNotBlank())
@@ -36,6 +40,15 @@ class DailyFortuneCatalogTest {
             assertTrue("${text.id}: 한국어에 한글이 없다", text.textFor(UiLanguage.Korean).any { it in '가'..'힣' })
             assertTrue("${text.id}: 중국어에 가나가 섞였다", text.textFor(UiLanguage.ChineseSimplified).none { it in '぀'..'ヿ' })
         }
+        boosted.forEach { text ->
+            UiLanguage.entries.forEach { language ->
+                val tip = text.tipFor(language)
+                assertTrue("${text.id}/$language: 행운 포인트(tip)가 비었다", !tip.isNullOrBlank())
+                if (language != UiLanguage.Korean) assertTrue("${text.id}/$language tip: 한글이 섞였다", tip!!.none { it in '가'..'힣' })
+            }
+            assertTrue("${text.id} tip: 한국어에 한글이 없다", text.tipFor(UiLanguage.Korean)!!.any { it in '가'..'힣' })
+            assertTrue("${text.id} tip: 중국어에 가나가 섞였다", text.tipFor(UiLanguage.ChineseSimplified)!!.none { it in '぀'..'ヿ' })
+        }
     }
 
     /** 사용자: 점수 · 등급이 드러나지 않게 — 글에 등급 낱말(길흉 · 吉凶 포함 — 2차 검수가 「길해요」 · 「更吉」을 등급으로 읽었다)이 없는지 본다. 그물일 뿐, 검수는 LLM 두 번이 했다. */
@@ -43,10 +56,14 @@ class DailyFortuneCatalogTest {
     fun noGradeWords() {
         // 「흉」 한 글자는 「흉내」에도 들어 있어 낱말로 막는다(b-77).
         val gradeWords = listOf("대길", "소길", "길해", "길하", "흉하", "흉한", "흉운", "점수", "등급", "吉", "凶", "★")
-        fortunes.forEach { text ->
+        all.forEach { text ->
             UiLanguage.entries.forEach { language ->
                 val line = text.textFor(language)
-                gradeWords.forEach { word -> assertTrue("${text.id}/$language: 「$word」", word !in line) }
+                val tip = text.tipFor(language).orEmpty()
+                gradeWords.forEach { word ->
+                    assertTrue("${text.id}/$language: 「$word」", word !in line)
+                    assertTrue("${text.id}/$language tip: 「$word」", word !in tip)
+                }
             }
         }
     }
@@ -60,10 +77,14 @@ class DailyFortuneCatalogTest {
             UiLanguage.Japanese to listOf("星座", "干支"),
             UiLanguage.ChineseSimplified to listOf("星座", "生肖"),
         )
-        fortunes.forEach { text ->
+        all.forEach { text ->
             signWords.forEach { (language, words) ->
                 val line = text.textFor(language)
-                words.forEach { word -> assertTrue("${text.id}/$language: 「$word」", word !in line) }
+                val tip = text.tipFor(language).orEmpty()
+                words.forEach { word ->
+                    assertTrue("${text.id}/$language: 「$word」", word !in line)
+                    assertTrue("${text.id}/$language tip: 「$word」", word !in tip)
+                }
             }
         }
     }

@@ -130,4 +130,40 @@ class DailyFortuneTest {
         assertEquals(0, tampered.refreshesLeftOn(Today))
         assertNull(refreshDailyFortune(tampered, Today, Tap, Pool))
     }
+
+    @Test
+    fun firstDrawUsesStandardPoolAndRefreshesUseBoostedPoolWithoutDuplicates() {
+        val totalPool = Pool + 120
+        var progress = assertNotNull(
+            drawDailyFortune(
+                progress = DailyFortuneProgress(),
+                today = Today,
+                timestampMillis = Tap,
+                poolSize = totalPool,
+                drawPoolSize = Pool,
+            ),
+        )
+        assertTrue(progress.fortuneIndex!! in 0 until Pool, "첫 무료 뽑기는 일반 풀에서만 골라야 한다")
+
+        repeat(DailyFortuneMaxRefreshes) { step ->
+            progress = assertNotNull(
+                refreshDailyFortune(
+                    progress = progress,
+                    today = Today,
+                    timestampMillis = Tap + (step + 1) * 3_333L,
+                    poolSize = totalPool,
+                    boostedStartIndex = Pool,
+                ),
+            )
+            assertTrue(
+                progress.fortuneIndex!! in Pool until totalPool,
+                "갱신 운세는 프리미엄 풀($Pool..<$totalPool)에서만 골라야 한다: ${progress.fortuneIndex}",
+            )
+        }
+        val all = progress.todaysIndices(Today, totalPool)
+        assertEquals(1 + DailyFortuneMaxRefreshes, all.size)
+        assertEquals(all.size, all.toSet().size, "같은 날 뽑힌 프리미엄 운세가 겹치면 안 된다")
+        assertTrue(all.first() in 0 until Pool)
+        assertTrue(all.drop(1).all { it in Pool until totalPool })
+    }
 }

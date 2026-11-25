@@ -43,28 +43,54 @@ internal class DailyFortuneState(private val store: DailyFortuneStorePort) {
     var busy by mutableStateOf(false)
         private set
 
-    private val poolSize: Int get() = DailyFortuneCatalog.fortunes.size
+    private val standardPoolSize: Int get() = DailyFortuneCatalog.fortunes.size
+    private val totalPoolSize: Int get() = DailyFortuneCatalog.allFortunes.size
 
     /** 오늘 본 운세들의 순번(#299) — 처음 뽑은 것부터, 새로 바꾼 운세가 맨 끝이다. 비어 있으면 아직 안 뽑았다. */
-    val todays: List<Int> get() = progress.todaysIndices(today, poolSize)
+    val todays: List<Int> get() = progress.todaysIndices(today, totalPoolSize)
+
+    /** 오늘 쓴 갱신 횟수(0 ~ 3) — 프리미엄 금빛 광택(shimmer) 트리거로도 쓴다. */
+    val refreshesUsed: Int get() = progress.refreshesUsedOn(today)
+
+    /** 순번에 해당하는 운세 글(일반 0..<368 · 프리미엄 368..<488). */
+    fun fortuneAt(index: Int): FortuneText? = DailyFortuneCatalog.allFortunes.getOrNull(index)
 
     /** 지금의 운세 — 오늘 가장 나중에 뽑거나 바꾼 것. 아직 안 뽑았으면 `null`. */
-    val current: FortuneText? get() = todays.lastOrNull()?.let { index -> DailyFortuneCatalog.fortunes.getOrNull(index) }
+    val current: FortuneText? get() = todays.lastOrNull()?.let(::fortuneAt)
+
+    /** 지금 대국 페이지 상단에 보이는 운세가 광고/구독으로 바꾼 프리미엄 운세인가. */
+    val isCurrentBoosted: Boolean get() = todays.isNotEmpty() && isPageBoosted(todays.lastIndex)
+
+    /**
+     * 실험실 페이저의 [page]가 광고/구독으로 바꾼 프리미엄 운세인가.
+     * 새 갱신은 프리미엄 풀(`index >= standardPoolSize`)에서 나오며, 업데이트 당일 기존에 이미 갱신해 둔 사용자도
+     * 첫 무료 운세(`page == 0`) 이후 쪽은 금박 스타일로 구별해 보여 준다.
+     */
+    fun isPageBoosted(page: Int): Boolean {
+        val index = todays.getOrNull(page) ?: return false
+        return index >= standardPoolSize || page > 0
+    }
 
     /** 오늘 남은 갱신 횟수(0 ~ 3). */
     val refreshesLeft: Int get() = progress.refreshesLeftOn(today)
 
-    /** 오늘의 첫 운세를 뽑는다 — **누른 순간**의 타임스탬프가 운세를 정한다(사용자 2026-10-23). 무료다. 이미 뽑았으면 아무 일도 없다. */
+    /** 오늘의 첫 운세를 뽑는다 — **누른 순간**의 타임스탬프가 일반 풀에서 운세를 정한다(사용자 2026-10-23). 무료다. 이미 뽑았으면 아무 일도 없다. */
     fun draw() {
         val now = currentEpochMillis()
         val day = utcDayIndex(now)
-        drawDailyFortune(store.load(), day, now, poolSize)?.let { drawn -> commit(drawn) }
+        drawDailyFortune(
+            progress = store.load(),
+            today = day,
+            timestampMillis = now,
+            poolSize = totalPoolSize,
+            drawPoolSize = standardPoolSize,
+        )?.let { drawn -> commit(drawn) }
         today = day
     }
 
     /**
      * 운을 바꾼다 — 구독자가 아니면([withAd]) 보상형 광고를 끝까지 본 뒤에만. 광고가 없거나 끝까지 보지 않았으면 운은 그대로이고 [onAdFailed]로 알린다.
-     * 광고를 본 뒤의 순간으로 다시 뽑는다 — 광고를 보는 사이 날이 바뀌었으면 갱신이 아니라 새 날의 뽑기가 남는다(shared 규칙).
+     * 광고를 본 뒤의 순간으로 **프리미엄 전용 풀**에서 다시 뽑는다 — 광고를 보는 사이 날이 바뀌었으면 갱신이 아니라 새 날의 뽑기가 남는다(shared 규칙).
      */
     suspend fun refresh(
         withAd: Boolean,
@@ -81,7 +107,13 @@ internal class DailyFortuneState(private val store: DailyFortuneStorePort) {
             }
             val now = currentEpochMillis()
             val day = utcDayIndex(now)
-            refreshDailyFortune(store.load(), day, now, poolSize)?.let { refreshed -> commit(refreshed) }
+            refreshDailyFortune(
+                progress = store.load(),
+                today = day,
+                timestampMillis = now,
+                poolSize = totalPoolSize,
+                boostedStartIndex = standardPoolSize,
+            )?.let { refreshed -> commit(refreshed) }
             today = day
         } finally {
             busy = false

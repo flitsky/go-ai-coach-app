@@ -21,6 +21,27 @@ internal class WhatsNewRelease(
 
 internal object WhatsNewCatalog {
     val releases: List<WhatsNewRelease> = listOf(
+        // 1.8.7 — 오늘의 운세 프리미엄 금박 연출 + 전용 길운 120편·행운 포인트, 「바둑판 촬영 분석」 대국 메인 승격·실험실 중복 제거(사용자 2026-11-25).
+        WhatsNewRelease(versionCode = 10807, versionName = "1.8.7") { language ->
+            when (language) {
+                UiLanguage.Korean -> listOf(
+                    "오늘의 운세를 광고·구독으로 바꾸면 금박 한지 카드와 함께 전용 특별 운세와 「✦ 오늘의 행운 포인트」가 열려요.",
+                    "「바둑판 촬영 분석」을 대국 화면 본 메뉴로 크게 옮기고, 실험실에 중복돼 있던 입구를 정리했어요.",
+                )
+                UiLanguage.English -> listOf(
+                    "Changing today's fortune now reveals a gilded card with an exclusive fortune pool and \"✦ Today's lucky point\".",
+                    "Promoted \"Scan Board Photo\" to a prominent card right on the Play page and removed the duplicate tile in the Lab.",
+                )
+                UiLanguage.Japanese -> listOf(
+                    "今日の運勢を変えると、金箔風の特別カードに専用の運勢と「✦ 今日のラッキーポイント」が開くようになりました。",
+                    "「碁盤を撮影・分析」を対局ページのメイン画面へ大きく配置し、実験室の重複メニューを整理しました。",
+                )
+                UiLanguage.ChineseSimplified -> listOf(
+                    "改运后将展开金箔特别卡片，带来专属运势与「✦ 今日幸运提示」。",
+                    "将「拍照分析棋盘」升级为对弈主页的醒目卡片，并移除了实验室中的重复入口。",
+                )
+            }
+        },
         // 1.8.6 — QA-01~23 사용성 개선(끝난 판 ← 홈, 이어하기 보호, 나가기·복기·글자 크기 다듬기) + 인앱 스토어 리뷰 API(안드로이드 Play Review · iOS StoreKit).
         WhatsNewRelease(versionCode = 10806, versionName = "1.8.6") { language ->
             when (language) {

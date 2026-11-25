@@ -341,8 +341,6 @@ class FirstDolGuideContractTest {
             "MenuCard(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
             // 대국 페이지의 메뉴 칸(#288 — 옛 반 폭 타일)도 다시보기가 빌린다(#261 — 대국 기록 · 바둑 배우기).
             "HomeMenuGrid(" to setOf("GoCoachHomeScreen.kt", "FirstDolGuideReplay.kt"),
-            // 반 폭 타일(#237)은 이제 실험실의 사진 분석 카드만 쓴다(#280 — 홈의 셋째 페이지도 홈이다).
-            "MenuTile(" to setOf("GoCoachHomeScreen.kt", "HomeLabPage.kt"),
         ).forEach { (call, allowed) ->
             val callers = uiSources
                 .filterValues { source -> source.contains(call) }

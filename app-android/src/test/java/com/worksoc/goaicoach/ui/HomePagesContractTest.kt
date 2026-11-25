@@ -97,10 +97,10 @@ class HomePagesContractTest {
         }
     }
 
-    /** 바둑판 사진 분석의 입구는 둘이다 — 대국 페이지 오른쪽 아래의 카메라 단추, 실험실 오른쪽 아래의 카드(사용자 2026-10-23). */
+    /** 바둑판 촬영 분석은 실험실 중복 입구를 없애고 대국 페이지 본 메뉴의 전폭 카드 하나로 통합했다(1.8.7, 사용자 2026-11-25). */
     @Test
-    fun boardScanHasTwoQuietDoors() {
-        assertTrue("대국 페이지에 카메라 단추가 없다(#280).", home.contains("imageVector = BoardScanCameraIcon"))
-        assertTrue("실험실에 바둑판 사진 분석 카드가 없다(#280).", lab.contains("HomeMenuTile(strings.featureShortName(FeatureId.BoardScan), onBoardScanClick)"))
+    fun boardScanLivesProminentlyOnPlayPageOnly() {
+        assertTrue("대국 페이지에 바둑판 촬영 분석 배너 카드가 없다(1.8.7).", home.contains("BoardScanFeatureCard("))
+        assertFalse("실험실에 바둑판 촬영 분석 중복 메뉴가 남아 있다(1.8.7).", lab.contains("FeatureId.BoardScan"))
     }
 }

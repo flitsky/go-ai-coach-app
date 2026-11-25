@@ -39,11 +39,12 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.boostedFortunePalette
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
-import com.worksoc.goaicoach.ui.l10n.DailyFortuneCatalog
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.QuoteLineBreak
 import com.worksoc.goaicoach.ui.l10n.fortuneAdFailedFor
+import com.worksoc.goaicoach.ui.l10n.fortuneBoostedRefreshHintFor
 import com.worksoc.goaicoach.ui.l10n.fortuneDrawButtonFor
 import com.worksoc.goaicoach.ui.l10n.fortuneDrawPromptFor
 import com.worksoc.goaicoach.ui.l10n.fortuneForFunFor
@@ -118,6 +119,7 @@ internal fun DailyFortuneCard(state: DailyFortuneState, modifier: Modifier = Mod
                 )
             }
         } else {
+            val goldPalette = boostedFortunePalette()
             HorizontalPager(
                 state = pagerState,
                 pageSpacing = AppSpacing.Space16,
@@ -126,23 +128,67 @@ internal fun DailyFortuneCard(state: DailyFortuneState, modifier: Modifier = Mod
                 beyondViewportPageCount = DailyFortuneMaxRefreshes,
                 modifier = Modifier.fillMaxWidth().nestedScroll(FortuneFlingStaysInside),
             ) { page ->
-                Text(
-                    text = keepWordsWhole(DailyFortuneCatalog.fortunes[todays[page]].textFor(language), language),
-                    fontSize = AppTextSize.Text16,
-                    color = colors.onSurface,
-                    style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                val fortune = state.fortuneAt(todays[page]) ?: return@HorizontalPager
+                val isBoosted = state.isPageBoosted(page)
+                if (isBoosted) {
+                    val tip = fortune.tipFor(language)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .boostedFortuneSurface(
+                                palette = goldPalette,
+                                shape = RoundedCornerShape(AppRadius.Corner16),
+                                shimmerTrigger = state.refreshesUsed to page,
+                            )
+                            .padding(AppSpacing.Space14),
+                        verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
+                    ) {
+                        BoostedFortuneBadge(language = language)
+                        Text(
+                            text = keepWordsWhole(fortune.textFor(language), language),
+                            fontSize = AppTextSize.Text16,
+                            fontWeight = FontWeight.Medium,
+                            color = colors.onSurface,
+                            style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        if (tip != null) {
+                            BoostedFortuneTipBox(language = language, tip = tip)
+                        }
+                    }
+                } else {
+                    Text(
+                        text = keepWordsWhole(fortune.textFor(language), language),
+                        fontSize = AppTextSize.Text16,
+                        color = colors.onSurface,
+                        style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             val left = state.refreshesLeft
             if (left > 0) {
-                Text(
-                    text = keepWordsWhole(fortuneRefreshInviteFor(language), language),
-                    fontSize = AppTextSize.Text13,
-                    color = colors.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.Space4),
+                ) {
+                    Text(
+                        text = keepWordsWhole(fortuneRefreshInviteFor(language), language),
+                        fontSize = AppTextSize.Text13,
+                        color = colors.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        text = "✦ " + keepWordsWhole(fortuneBoostedRefreshHintFor(language), language),
+                        fontSize = AppTextSize.Text12,
+                        fontWeight = FontWeight.Medium,
+                        color = goldPalette.accentText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 Box(modifier = Modifier.fillMaxWidth().heightIn(min = RefreshButtonMinHeight), contentAlignment = Alignment.Center) {
                     if (state.busy) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp, color = colors.primary)

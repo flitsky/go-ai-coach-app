@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -78,7 +79,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -140,6 +140,7 @@ import com.worksoc.goaicoach.ui.guide.guideTarget
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.StudyCategory
 import com.worksoc.goaicoach.ui.l10n.UiStrings
+import com.worksoc.goaicoach.ui.l10n.boardScanHomeSubtitleFor
 import com.worksoc.goaicoach.ui.l10n.gameRecordsTitleFor
 import com.worksoc.goaicoach.ui.l10n.homePageLabTabFor
 import com.worksoc.goaicoach.ui.l10n.homePagePlayTabFor
@@ -299,7 +300,7 @@ internal fun GoCoachHomeScreen(
                                 dailyFortune = dailyFortune,
                                 topNotice = topNotice,
                             )
-                            HomePage.Lab -> HomeLabPage(dailyFortune = dailyFortune, onBoardScanClick = onBoardScanClick)
+                            HomePage.Lab -> HomeLabPage(dailyFortune = dailyFortune)
                         }
                     }
                 }
@@ -629,31 +630,19 @@ private fun HomePlayPage(
             ),
         )
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // 「바둑판 사진 분석」은 페이지 오른쪽 아래의 **카메라 단추 하나**다(#280, 사용자 2026-10-22 — 아는 사람은 여기로, 이름 붙은 입구는 실험실 페이지).
-        // #281 A안: 맨 아이콘이 아니라 타일과 같은 바탕의 둥근 네모에 담는다 — 누를 수 있는 것으로 읽히고, 누르면 타일처럼 모양이 바뀐다.
-        // 사진 분석이 없는 플랫폼(iOS 첫 판 — U-84)에서는 단추를 그리지 않는다.
-        if (platform.boardScan != null) Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            val interaction = remember { MutableInteractionSource() }
-            val pressed by interaction.collectIsPressedAsState()
-            val corner by animateDpAsState(if (pressed) HomePressedCorner else BoardScanButtonCorner, AppMotion.fastSpatial(), label = "boardScanCorner")
-            Card(
+        // 「바둑판 촬영 분석」은 실험실의 중복 입구를 없애고 대국 페이지 본 메뉴의 전폭 하이라이트 카드로 승격했다(1.8.7, 사용자 2026-11-25).
+        // 작은 카메라 아이콘만 있던 옛 우측 하단 단추 대신, 미니 바둑판+카메라 프리뷰와 1줄 설명으로 기능을 한눈에 전달한다.
+        // 사진 분석이 없는 플랫폼(iOS 첫 판 — U-84)에서는 카드를 그리지 않는다.
+        if (platform.boardScan != null) {
+            Spacer(modifier = Modifier.height(AppSpacing.Space12))
+            BoardScanFeatureCard(
+                title = strings.featureShortName(FeatureId.BoardScan),
+                subtitle = boardScanHomeSubtitleFor(strings.language),
                 onClick = onBoardScanClick,
-                interactionSource = interaction,
-                shape = RoundedCornerShape(corner),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                modifier = Modifier.size(BoardScanButtonSize),
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = BoardScanCameraIcon,
-                        contentDescription = strings.featureShortName(FeatureId.BoardScan),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            )
         }
+
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
@@ -787,33 +776,6 @@ private val LabTabFlaskIcon: ImageVector = materialIcon(name = "HomeTab.Flask") 
         curveTo(3.71f, 19.06f, 4.18f, 20f, 5f, 20f)
         horizontalLineToRelative(14f)
         curveTo(19.82f, 20f, 20.29f, 19.06f, 19.8f, 18.4f)
-        close()
-    }
-}
-
-/** 대국 페이지 오른쪽 아래의 사진 분석 단추(#280) — 카메라(Material 「photo camera」 모양을 옮겨 그렸다). 몸체 · 렌즈 테 · 렌즈를 홀짝 채우기로 가른다. */
-private val BoardScanCameraIcon: ImageVector = materialIcon(name = "Home.BoardScanCamera") {
-    materialPath(pathFillType = PathFillType.EvenOdd) {
-        moveTo(9f, 2f)
-        lineTo(7.17f, 4f)
-        horizontalLineTo(4f)
-        curveToRelative(-1.1f, 0f, -2f, 0.9f, -2f, 2f)
-        verticalLineToRelative(12f)
-        curveToRelative(0f, 1.1f, 0.9f, 2f, 2f, 2f)
-        horizontalLineToRelative(16f)
-        curveToRelative(1.1f, 0f, 2f, -0.9f, 2f, -2f)
-        verticalLineTo(6f)
-        curveToRelative(0f, -1.1f, -0.9f, -2f, -2f, -2f)
-        horizontalLineToRelative(-3.17f)
-        lineTo(15f, 2f)
-        close()
-        moveTo(7f, 12f)
-        arcToRelative(5f, 5f, 0f, isMoreThanHalf = true, isPositiveArc = true, 10f, 0f)
-        arcToRelative(5f, 5f, 0f, isMoreThanHalf = true, isPositiveArc = true, -10f, 0f)
-        close()
-        moveTo(8.8f, 12f)
-        arcToRelative(3.2f, 3.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 6.4f, 0f)
-        arcToRelative(3.2f, 3.2f, 0f, isMoreThanHalf = true, isPositiveArc = true, -6.4f, 0f)
         close()
     }
 }
@@ -1209,10 +1171,6 @@ private class MenuCardSpin {
  * 쉴 때는 크게 둥글고, 누르면 [HomePressedCorner]로 덜 둥글어진다. 대국 카드 · 타일 · 카메라 단추가 같은 「누른 모서리」를 쓴다.
  */
 private val MenuCardCorner = 28.dp
-/** 반 폭 타일의 모서리 — 실험실의 「준비 중」 칸(`HomeLabPage.kt`)도 같은 값을 쓴다. */
-internal val MenuTileCorner = 22.dp
-private val BoardScanButtonCorner = 16.dp
-private val BoardScanButtonSize = 48.dp
 private val HomePressedCorner = 12.dp
 private const val MenuCardPressedScale = 0.965f
 private const val MenuTilePressedScale = 0.95f
@@ -1301,53 +1259,84 @@ private val HomeMenuTextTileMinHeight = 64.dp
 private val HomeMenuTextTileCorner = 18.dp
 private val HomeMenuTextTileChevronSize = 20.dp
 
-/** 홈의 반 폭 타일 하나 — 제목과 그림, 누르면 갈 곳. */
-internal class HomeMenuTile(val title: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
-
 /**
- * 홈의 **반 폭 타일** — 실험실 페이지의 「바둑판 사진 분석」이 쓴다(백로그 #237 — 대국 페이지의 타일 넷은 #288에서 그림 없는 칸([HomeMenuGrid])이 됐다).
- * [MenuCard]보다 작고 납작하며(그림자 없음) **부제가 없다** — 제목만으로 무엇인지 읽히는 메뉴들이고, 반 폭에는 부제가 설 자리가 없다.
+ * 대국 페이지의 **「바둑판 촬영 분석」 전폭 하이라이트 카드**(1.8.7, 사용자 2026-11-25).
+ * 실험실에 중복돼 있던 반 폭 타일과 대국 페이지 구석의 작은 카메라 아이콘을 하나로 통합해,
+ * 2×2 메뉴 칸 바로 아래에 미니 바둑판+카메라 프리뷰와 직관적인 제목·1줄 설명으로 눈에 띄게 배치한다.
  */
 @Composable
-internal fun MenuTile(tile: HomeMenuTile, modifier: Modifier = Modifier) {
-    // #281 A안: 누르면 살짝 줄고 모서리가 덜 둥글어진다 — [MenuCard]와 같은 움직임, 크기만 그리기 단계에서 바꾼다.
+private fun BoardScanFeatureCard(title: String, subtitle: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val language = LocalUiStrings.current.language
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val corner by animateDpAsState(if (pressed) HomePressedCorner else MenuTileCorner, AppMotion.fastSpatial(), label = "menuTileCorner")
-    val scale by animateFloatAsState(if (pressed) MenuTilePressedScale else 1f, AppMotion.fastSpatial(), label = "menuTileScale")
+    val corner by animateDpAsState(if (pressed) HomePressedCorner else BoardScanFeatureCardCorner, AppMotion.fastSpatial(), label = "boardScanCardCorner")
+    val scale by animateFloatAsState(if (pressed) BoardScanFeatureCardPressedScale else 1f, AppMotion.fastSpatial(), label = "boardScanCardScale")
     Card(
-        onClick = tile.onClick,
+        onClick = onClick,
         interactionSource = interaction,
         shape = RoundedCornerShape(corner),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant),
+        border = BorderStroke(AppBorderWidth.Hairline, colors.primary.copy(alpha = 0.35f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        modifier = modifier.graphicsLayer {
-            scaleX = scale
-            scaleY = scale
-        },
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = AppSpacing.Space8, top = AppSpacing.Space10, end = AppSpacing.Space12, bottom = AppSpacing.Space10),
+                .heightIn(min = BoardScanFeatureCardMinHeight)
+                .padding(start = AppSpacing.Space12, end = AppSpacing.Space10, top = AppSpacing.Space10, bottom = AppSpacing.Space10),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(modifier = Modifier.size(MenuTileIconSize), contentAlignment = Alignment.Center) { tile.icon() }
-            Spacer(modifier = Modifier.width(AppSpacing.Space10))
-            // 제목이 긴 언어에서는 두 줄이 된다 — 그림이 더 커서 타일의 키는 그대로다.
-            // 한국어는 어절 안에서 줄을 바꾸지 않는다 — 「바둑판 사진 분 / 석」(QA-15, 2026-11-23). [MenuCard] 부제와 같은 처방.
-            Text(
-                text = keepWordsWhole(tile.title, LocalUiStrings.current.language),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = AppTextSize.Text16,
-                fontWeight = FontWeight.Bold,
-                maxLines = 2,
+            Box(
+                modifier = Modifier
+                    .size(BoardScanFeatureIconSize)
+                    .clip(RoundedCornerShape(AppRadius.Corner10)),
+                contentAlignment = Alignment.Center,
+            ) {
+                BoardScanPreviewIcon()
+            }
+            Spacer(modifier = Modifier.width(AppSpacing.Space12))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.Space2),
+            ) {
+                Text(
+                    text = keepWordsWhole(title, language),
+                    color = colors.onSurface,
+                    fontSize = AppTextSize.Text16,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = keepWordsWhole(subtitle, language),
+                    color = colors.onSurfaceVariant,
+                    fontSize = AppTextSize.Text12,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(modifier = Modifier.width(AppSpacing.Space6))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = colors.primary,
+                modifier = Modifier.size(HomeMenuTextTileChevronSize),
             )
         }
     }
 }
 
-private val MenuTileIconSize = 52.dp
+private val BoardScanFeatureCardMinHeight = 68.dp
+private val BoardScanFeatureCardCorner = 18.dp
+private val BoardScanFeatureIconSize = 48.dp
+private const val BoardScanFeatureCardPressedScale = 0.975f
 
 /**
  * 이 좌석 배치의 AI가 쓰는 캐릭터 — AI 좌석이 없으면 `null`. 둘 다 AI면 백을 먼저 본다.

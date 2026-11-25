@@ -56,13 +56,20 @@ data class DailyFortuneProgress(
 /**
  * 오늘의 첫 운세를 뽑는다(무료) — [timestampMillis]는 사용자가 누른 순간. 오늘 이미 뽑았으면 `null`(아무것도 바꾸지 않는다).
  * 갱신 횟수와 앞서 본 운세는 새 날이면 비우고, 같은 날 글이 줄어 다시 뽑는 것이면 그대로다.
+ * [drawPoolSize]는 무료 첫 뽑기에 쓰는 앞쪽 일반 풀 크기(기본은 [poolSize] 전체)다.
  */
-fun drawDailyFortune(progress: DailyFortuneProgress, today: Long, timestampMillis: Long, poolSize: Int): DailyFortuneProgress? {
+fun drawDailyFortune(
+    progress: DailyFortuneProgress,
+    today: Long,
+    timestampMillis: Long,
+    poolSize: Int,
+    drawPoolSize: Int = poolSize,
+): DailyFortuneProgress? {
     if (progress.todaysIndex(today, poolSize) != null) return null
     val earlier = if (progress.day == today) progress.earlierIndices.filter { it in 0 until poolSize } else emptyList()
     return DailyFortuneProgress(
         day = today,
-        fortuneIndex = fortuneIndexAt(timestampMillis, poolSize, excluding = earlier.toSet()),
+        fortuneIndex = fortuneIndexAt(timestampMillis, drawPoolSize, excluding = earlier.toSet()),
         refreshesUsed = progress.refreshesUsedOn(today),
         earlierIndices = earlier,
     )
@@ -71,12 +78,24 @@ fun drawDailyFortune(progress: DailyFortuneProgress, today: Long, timestampMilli
 /**
  * 한 번 갱신한다 — 오늘 아직 뽑지 않았거나 남은 횟수가 없으면 `null`. 지금 운세는 앞서 본 운세의 끝으로 가고, 새 운세는 오늘 본 어느 것과도 다르다.
  * 광고는 호출부가 먼저 보인다(광고를 본 뒤에 부른다 — 광고가 실패하면 부르지 않는다).
+ * [boostedStartIndex]를 주면 광고/구독 갱신 전용 프리미엄 풀(`[boostedStartIndex] until [poolSize]`)에서만 고른다.
  */
-fun refreshDailyFortune(progress: DailyFortuneProgress, today: Long, timestampMillis: Long, poolSize: Int): DailyFortuneProgress? {
+fun refreshDailyFortune(
+    progress: DailyFortuneProgress,
+    today: Long,
+    timestampMillis: Long,
+    poolSize: Int,
+    boostedStartIndex: Int = 0,
+): DailyFortuneProgress? {
     val seen = progress.todaysIndices(today, poolSize).ifEmpty { return null }
     if (progress.refreshesLeftOn(today) <= 0) return null
     return progress.copy(
-        fortuneIndex = fortuneIndexAt(timestampMillis, poolSize, excluding = seen.toSet()),
+        fortuneIndex = fortuneIndexAtRange(
+            timestampMillis = timestampMillis,
+            startIndex = boostedStartIndex,
+            endExclusive = poolSize,
+            excluding = seen.toSet(),
+        ),
         refreshesUsed = progress.refreshesUsedOn(today) + 1,
         earlierIndices = seen,
     )
@@ -86,8 +105,22 @@ fun refreshDailyFortune(progress: DailyFortuneProgress, today: Long, timestampMi
  * 누른 순간([timestampMillis])으로 고른 글 번호 — 같은 순간이면 어느 기기에서나 같은 답이다(`Random(seed)`는 공통 구현).
  * [excluding]에 든 글이면 그다음 글로 넘긴다(글이 모자라 다 들었으면 그대로).
  */
-internal fun fortuneIndexAt(timestampMillis: Long, poolSize: Int, excluding: Set<Int> = emptySet()): Int {
-    require(poolSize > 0) { "운세 글이 하나도 없다" }
-    val picked = Random(timestampMillis).nextInt(poolSize)
-    return (0 until poolSize).asSequence().map { (picked + it) % poolSize }.firstOrNull { it !in excluding } ?: picked
+internal fun fortuneIndexAt(timestampMillis: Long, poolSize: Int, excluding: Set<Int> = emptySet()): Int =
+    fortuneIndexAtRange(timestampMillis = timestampMillis, startIndex = 0, endExclusive = poolSize, excluding = excluding)
+
+/** `[startIndex, endExclusive)` 구간 안에서 [timestampMillis] 시드로 중복 없이 하나를 고른다. */
+internal fun fortuneIndexAtRange(
+    timestampMillis: Long,
+    startIndex: Int,
+    endExclusive: Int,
+    excluding: Set<Int> = emptySet(),
+): Int {
+    val rangeSize = endExclusive - startIndex
+    require(startIndex >= 0 && rangeSize > 0) { "운세 글 구간이 비었다: $startIndex..<$endExclusive" }
+    val offset = Random(timestampMillis).nextInt(rangeSize)
+    return (0 until rangeSize)
+        .asSequence()
+        .map { startIndex + ((offset + it) % rangeSize) }
+        .firstOrNull { it !in excluding }
+        ?: (startIndex + offset)
 }

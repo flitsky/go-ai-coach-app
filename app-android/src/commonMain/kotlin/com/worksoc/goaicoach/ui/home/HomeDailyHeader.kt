@@ -48,10 +48,12 @@ import com.worksoc.goaicoach.ui.designsystem.AppBorderWidth
 import com.worksoc.goaicoach.ui.designsystem.AppRadius
 import com.worksoc.goaicoach.ui.designsystem.AppSpacing
 import com.worksoc.goaicoach.ui.designsystem.AppTextSize
+import com.worksoc.goaicoach.ui.designsystem.boostedFortunePalette
 import com.worksoc.goaicoach.ui.foundation.LocalAppPlatform
 import com.worksoc.goaicoach.ui.l10n.LocalUiStrings
 import com.worksoc.goaicoach.ui.l10n.QuoteLineBreak
 import com.worksoc.goaicoach.ui.l10n.fortuneAdFailedFor
+import com.worksoc.goaicoach.ui.l10n.fortuneBoostedRefreshHintFor
 import com.worksoc.goaicoach.ui.l10n.fortuneDrawPromptFor
 import com.worksoc.goaicoach.ui.l10n.fortuneForFunFor
 import com.worksoc.goaicoach.ui.l10n.fortuneOpenShortFor
@@ -103,16 +105,29 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
     var showWhole by remember { mutableStateOf(false) }
     var showRefresh by remember { mutableStateOf(false) }
     val current = state.current
+    val isBoosted = state.isCurrentBoosted
+    val goldPalette = boostedFortunePalette()
     val body = current?.textFor(language) ?: fortuneDrawPromptFor(language)
     val shape = RoundedCornerShape(AppRadius.Corner8)
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
+            .then(
+                if (isBoosted) {
+                    Modifier.boostedFortuneSurface(
+                        palette = goldPalette,
+                        shape = shape,
+                        shimmerTrigger = state.refreshesUsed,
+                        borderWidth = AppBorderWidth.Hairline,
+                    )
+                } else {
+                    Modifier.clip(shape)
+                },
+            )
             .then(if (current != null) Modifier.clickable { showWhole = true } else Modifier),
         shape = shape,
-        color = colors.surfaceVariant.copy(alpha = 0.55f),
+        color = if (isBoosted) androidx.compose.ui.graphics.Color.Transparent else colors.surfaceVariant.copy(alpha = 0.55f),
     ) {
         Row(
             modifier = Modifier.padding(start = AppSpacing.Space12, end = AppSpacing.Space8, top = AppSpacing.Space8, bottom = AppSpacing.Space8),
@@ -120,7 +135,9 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
         ) {
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = colors.primary, fontWeight = FontWeight.SemiBold)) { append(labFortuneTitleFor(language)) }
+                    val titlePrefix = if (isBoosted) "✦ " + labFortuneTitleFor(language) else labFortuneTitleFor(language)
+                    val titleColor = if (isBoosted) goldPalette.accentText else colors.primary
+                    withStyle(SpanStyle(color = titleColor, fontWeight = FontWeight.SemiBold)) { append(titlePrefix) }
                     append("  ")
                     withStyle(SpanStyle(color = if (current != null) colors.onSurface else colors.onSurfaceVariant)) {
                         append(keepWordsWhole(body, language))
@@ -136,10 +153,15 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
             Spacer(modifier = Modifier.width(AppSpacing.Space8))
             Box(contentAlignment = Alignment.Center) {
                 when {
-                    state.busy -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = colors.primary)
+                    state.busy -> CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = if (isBoosted) goldPalette.accentText else colors.primary,
+                    )
                     current == null -> StripPill(text = fortuneOpenShortFor(language), onClick = state::draw)
                     else -> RefreshIconButton(
                         dimmed = state.refreshesLeft <= 0,
+                        boosted = isBoosted,
                         contentDescription = fortuneRefreshButtonFor(language, withAd = false),
                         onClick = { showRefresh = true },
                     )
@@ -165,17 +187,54 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
     }
 
     if (showWhole && current != null) {
+        val tip = current.tipFor(language)
         AlertDialog(
             onDismissRequest = { showWhole = false },
-            title = { Text(labFortuneTitleFor(language), fontWeight = FontWeight.Bold) },
+            title = {
+                Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space6)) {
+                    Text(
+                        text = if (isBoosted) "✦ " + labFortuneTitleFor(language) else labFortuneTitleFor(language),
+                        fontWeight = FontWeight.Bold,
+                        color = if (isBoosted) goldPalette.accentText else colors.onSurface,
+                    )
+                    if (isBoosted) {
+                        BoostedFortuneBadge(language = language)
+                    }
+                }
+            },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.Space12)) {
-                    Text(
-                        text = keepWordsWhole(current.textFor(language), language),
-                        fontSize = AppTextSize.Text16,
-                        color = colors.onSurface,
-                        style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
-                    )
+                    if (isBoosted) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .boostedFortuneSurface(
+                                    palette = goldPalette,
+                                    shape = RoundedCornerShape(AppRadius.Corner14),
+                                    shimmerTrigger = state.refreshesUsed,
+                                )
+                                .padding(AppSpacing.Space14),
+                            verticalArrangement = Arrangement.spacedBy(AppSpacing.Space10),
+                        ) {
+                            Text(
+                                text = keepWordsWhole(current.textFor(language), language),
+                                fontSize = AppTextSize.Text16,
+                                fontWeight = FontWeight.Medium,
+                                color = colors.onSurface,
+                                style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
+                            )
+                            if (tip != null) {
+                                BoostedFortuneTipBox(language = language, tip = tip)
+                            }
+                        }
+                    } else {
+                        Text(
+                            text = keepWordsWhole(current.textFor(language), language),
+                            fontSize = AppTextSize.Text16,
+                            color = colors.onSurface,
+                            style = LocalTextStyle.current.copy(lineBreak = QuoteLineBreak, localeList = LocaleList(language.quoteLocaleTag)),
+                        )
+                    }
                     Text(
                         text = fortuneRefreshesLeftFor(language, state.refreshesLeft) + " · " + fortuneForFunFor(language),
                         fontSize = AppTextSize.Text12,
@@ -199,6 +258,7 @@ private fun DailyFortuneStrip(state: DailyFortuneState) {
 private fun FortuneRefreshDialog(refreshesLeft: Int, withAd: Boolean, onRefresh: () -> Unit, onClose: () -> Unit) {
     val language = LocalUiStrings.current.language
     val colors = MaterialTheme.colorScheme
+    val goldPalette = boostedFortunePalette()
     Dialog(onDismissRequest = onClose) {
         Surface(
             shape = AlertDialogDefaults.shape,
@@ -222,7 +282,16 @@ private fun FortuneRefreshDialog(refreshesLeft: Int, withAd: Boolean, onRefresh:
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (refreshesLeft > 0) {
-                    Spacer(modifier = Modifier.height(AppSpacing.Space16))
+                    Spacer(modifier = Modifier.height(AppSpacing.Space6))
+                    Text(
+                        text = "✦ " + keepWordsWhole(fortuneBoostedRefreshHintFor(language), language),
+                        fontSize = AppTextSize.Text12,
+                        fontWeight = FontWeight.Medium,
+                        color = goldPalette.accentText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(modifier = Modifier.height(AppSpacing.Space14))
                     StripPill(text = rewardedAdButtonText(fortuneRefreshButtonFor(language, withAd), withAd), large = true, onClick = onRefresh)
                     Spacer(modifier = Modifier.height(AppSpacing.Space4))
                     Text(text = fortuneRefreshesLeftFor(language, refreshesLeft), fontSize = AppTextSize.Text12, color = colors.secondary)
@@ -242,9 +311,11 @@ private fun FortuneRefreshDialog(refreshesLeft: Int, withAd: Boolean, onRefresh:
  * 이모지(🔄) 대신 앱의 초록 아이콘을 쓴다 — 안드로이드의 그 이모지는 파란 네모라 이 줄에서 튄다(스레드가 정한 것).
  */
 @Composable
-private fun RefreshIconButton(dimmed: Boolean, contentDescription: String, onClick: () -> Unit) {
+private fun RefreshIconButton(dimmed: Boolean, boosted: Boolean, contentDescription: String, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val tint = if (dimmed) colors.outline else colors.primary
+    val goldPalette = boostedFortunePalette()
+    val activeTint = if (boosted) goldPalette.accentText else colors.primary
+    val tint = if (dimmed) colors.outline else activeTint
     Surface(
         onClick = onClick,
         shape = CircleShape,
