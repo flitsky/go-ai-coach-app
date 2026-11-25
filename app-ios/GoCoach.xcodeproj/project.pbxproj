@@ -345,7 +345,7 @@
 				CODE_SIGN_ENTITLEMENTS = GoCoach.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Z4B6R9M7Y6;
-				CURRENT_PROJECT_VERSION = 10806;
+				CURRENT_PROJECT_VERSION = 10807;
 				ENABLE_PREVIEWS = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -371,7 +371,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/build/katago/$(PLATFORM_NAME)",
 				);
-				MARKETING_VERSION = 1.8.6;
+				MARKETING_VERSION = 1.8.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -395,7 +395,7 @@
 				CODE_SIGN_ENTITLEMENTS = GoCoach.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Z4B6R9M7Y6;
-				CURRENT_PROJECT_VERSION = 10806;
+				CURRENT_PROJECT_VERSION = 10807;
 				ENABLE_PREVIEWS = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -421,7 +421,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/build/katago/$(PLATFORM_NAME)",
 				);
-				MARKETING_VERSION = 1.8.6;
+				MARKETING_VERSION = 1.8.7;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
@@ -442,7 +442,7 @@
 				CODE_SIGN_ENTITLEMENTS = AssetDownloader.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Z4B6R9M7Y6;
-				CURRENT_PROJECT_VERSION = 10806;
+				CURRENT_PROJECT_VERSION = 10807;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "AssetDownloader-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = AssetDownloader;
@@ -451,7 +451,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.8.6;
+				MARKETING_VERSION = 1.8.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(GOCOACH_BUNDLE_ID).AssetDownloader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -466,7 +466,7 @@
 				CODE_SIGN_ENTITLEMENTS = AssetDownloader.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = Z4B6R9M7Y6;
-				CURRENT_PROJECT_VERSION = 10806;
+				CURRENT_PROJECT_VERSION = 10807;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "AssetDownloader-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = AssetDownloader;
@@ -475,7 +475,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.8.6;
+				MARKETING_VERSION = 1.8.7;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(GOCOACH_BUNDLE_ID).AssetDownloader";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
